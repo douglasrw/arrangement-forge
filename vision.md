@@ -17,6 +17,20 @@
 
 **In Plain English:** Musicians describe or show us a song. AI creates professional backing tracks. Musicians edit, practice, and share instantly.
 
+### Primary Use Case for MVP: Solo Practice
+
+The core problem Arrangement Forge solves at launch is **personal practice isolation**. Musicians of all calibers need to practice with accompaniment, but they don't always have a band, access to session musicians, or the ability to gather a group.
+
+The MVP is optimized for the solo musician practicing:
+- **At home** — woodshed in their living room or bedroom with a laptop
+- **In their home studio** — a musician with recording equipment who wants to practice along with generated accompaniment
+- **On the road** — a touring musician with a laptop backstage, in a hotel room, or on a tour bus preparing for the next gig
+- **Anytime, anywhere** — a musician who wants backing track accompaniment without the friction of finding people, coordinating schedules, or paying session fees
+
+For these use cases, a **generated backing track is not a compromise**—it's preferable to the alternatives. It's always available, always in the right key, adapts to any tempo the musician chooses, and costs nothing.
+
+Performance, teaching, collaboration, and marketplace features are valuable and come later. But the foundation is personal practice—the solo musician with a laptop and thirty minutes before soundcheck.
+
 ---
 
 ## 2. TARGET MARKET & USER PERSONAS
@@ -76,6 +90,12 @@
 ---
 
 ## 4. PROBLEM STATEMENT
+
+### The Shared Core Problem: Practice Isolation
+
+All four user segments face a version of the same core problem: **musicians need quality backing tracks to practice alone, but current solutions require either expensive outsourcing (hiring musicians), time-intensive manual work (arranging and recording), or low-quality compromises (pre-recorded generic tracks).**
+
+The solo musician with thirty minutes to practice—whether a professional preparing for a gig, a student working through a lesson, a teacher building practice material, or a band leader working up a new arrangement—currently has no good option that is fast, affordable, and flexible.
 
 ### Current Workflow Pain Points
 
@@ -151,7 +171,7 @@
 
 ---
 
-## 6. CORE PRODUCT - MVP FEATURES (Phase 0-1: Months 1-6)
+## 6. CORE PRODUCT - MVP FEATURES
 
 ### Tier 1: Generative Backbone (Critical)
 1. **Natural Language → Backing Track**
@@ -267,12 +287,13 @@
 
 ---
 
-## 7. SHARING & NETWORK EFFECTS (Phase 1-4: Build Progressively)
+## 7. SHARING & NETWORK EFFECTS
 
 ### Core Principle
 Every sharing feature must first be genuinely awesome for users. The defensible moat emerges naturally from that awesomeness—not from artificial lock-in, but from real value and community investment.
 
-### Phase 1 (MVP): Foundation Sharing
+### Phase 1: Foundation Sharing
+**[TENTATIVE — Subject to change pending further research]**
 **1. Shared Practice Rooms (Ensembles)**
 - Band leaders create shared room and invite members
 - Each member has independent tempo/key control
@@ -298,7 +319,8 @@ Every sharing feature must first be genuinely awesome for users. The defensible 
 - **User Value:** Motivation, accomplishment, non-recording-based goals
 - **Moat:** Habit formation; breaking streak to switch = psychological cost
 
-### Phase 2 (Months 6-9): Community & Marketplace
+### Phase 2: Community & Marketplace
+**[TENTATIVE — Subject to change pending further research]**
 **4. Arrangement Marketplace**
 - Professional arrangers publish arrangements
 - Revenue split: 70% arranger, 30% platform
@@ -337,7 +359,8 @@ Every sharing feature must first be genuinely awesome for users. The defensible 
 - **User Value:** Belonging, structured learning path, peer connections
 - **Moat:** Social graph lock-in (peer relationships are irreplaceable)
 
-### Phase 3 (Months 9-15): Advanced Collaboration & Recording Features
+### Phase 3: Advanced Collaboration & Recording Features
+**[TENTATIVE — Subject to change pending further research]**
 **9. Student Practice Portfolio** (Recording-Based)
 - Automatic collection of student recordings over time
 - System highlights "progression moments" (significant improvements in recorded performances)
@@ -369,7 +392,8 @@ Every sharing feature must first be genuinely awesome for users. The defensible 
 - **User Value:** Recognition, status, clear goals
 - **Moat:** Status is non-transferable; users develop identity ("I'm a jazz master")
 
-### Phase 4 (Months 15-24): Premium & Ecosystem
+### Phase 4: Premium & Ecosystem
+**[TENTATIVE — Subject to change pending further research]**
 **13. Live Practice Streaming (Premium, Recording-Based)**
 - Musicians stream live practice with <100ms latency
 - Teachers/bandmates watch, chat, interrupt with feedback
@@ -403,9 +427,10 @@ Every sharing feature must first be genuinely awesome for users. The defensible 
 
 ---
 
-## 8. POST-MVP ROADMAP (Phases 2-4: Core Features)
+## 8. POST-MVP ROADMAP
 
-### Phase 2: Differentiation Features (Months 6-9)
+### Phase 2: Differentiation Features
+**[TENTATIVE — Subject to change pending further research]**
 
 **Core Differentiators:**
 1. **Style/Groove Variation Without Regeneration**
@@ -430,7 +455,8 @@ Every sharing feature must first be genuinely awesome for users. The defensible 
    - AI fills appropriate sections with generated material
    - Use case: "Create a 32-bar jazz composition with intro/2 verses/chorus/outro"
 
-### Phase 3: Professional Grade (Months 9-15)
+### Phase 3: Professional Grade
+**[TENTATIVE — Subject to change pending further research]**
 
 **Advanced Features:**
 1. **Extended Stem Output (8+ stems)**
@@ -463,7 +489,8 @@ Every sharing feature must first be genuinely awesome for users. The defensible 
    - Synchronized playback: Multiple musicians practice together (bandwidth permitting)
    - Version history: Track changes to arrangements
 
-### Phase 4: Ecosystem & Monetization (Months 15-24)
+### Phase 4: Ecosystem & Monetization
+**[TENTATIVE — Subject to change pending further research]**
 
 **Marketplace & Network Effects:**
 1. **Arrangement Marketplace**
@@ -501,7 +528,8 @@ Every sharing feature must first be genuinely awesome for users. The defensible 
 
 ---
 
-## 8. MOONSHOT FEATURES (Long-term Differentiation)
+## 9. MOONSHOT FEATURES (Long-term Differentiation)
+**[TENTATIVE — Subject to change pending further research]**
 
 These features, if executed well, create defensible moat and enable $10M+ valuation:
 
@@ -567,7 +595,7 @@ These features, if executed well, create defensible moat and enable $10M+ valuat
 
 ---
 
-## 9. COMPETITIVE ADVANTAGES
+## 10. COMPETITIVE ADVANTAGES
 
 ### 1. Unique Technology Moat
 - **Nashville Number System Integration** - Only AI tool designed for NNS recognition and generation (60-year industry standard, used by 500K+ session musicians globally)
@@ -576,11 +604,13 @@ These features, if executed well, create defensible moat and enable $10M+ valuat
 - **Intelligent Style Adaptation** - Style/groove adjustment without full regeneration (not "just regenerate")
 
 ### 2. Market Positioning
+**[TENTATIVE — Subject to change pending further research]**
 - **Musician-First Design** - Built for musicians, not generic creators (all competitors chase broad market)
 - **Professional-Grade Quality** - Emphasis on studio-quality stems, serious musicians' needs
 - **Niche Focus** - Hyper-focused on practicing musicians; allows 10x depth vs. 1x breadth competitors
 
 ### 3. Network Effects & Community Lock-In
+**[TENTATIVE — Subject to change pending further research]**
 Network effects are the most defensible moat (harder to replicate than technology). Arrangement Forge builds multiple, reinforcing network effects:
 
 **Supply-Side Lock-In:**
@@ -610,6 +640,7 @@ Network effects are the most defensible moat (harder to replicate than technolog
 - These moats are **not artificial:** Users stay because the platform provides genuine value and because their friends/community is there
 
 ### 4. Data Advantage
+**[TENTATIVE — Subject to change pending further research]**
 - **Practice Patterns** - Accumulate data on: what musicians practice, what keys/genres/tempos are popular, skill progression patterns, what arrangement types are successful
 - **Community Insights** - Learn which teaching methods work (based on feedback effectiveness), which arrangements are most practiced, which mentorship pairs are most successful
 - **AI Training** - Use data to improve generation quality, personalization, recommendations for what to practice next, which arrangements suit which skill levels
@@ -617,7 +648,7 @@ Network effects are the most defensible moat (harder to replicate than technolog
 
 ---
 
-## 10. SUCCESS METRICS & KPIs
+## 11. SUCCESS METRICS & KPIs
 
 ### User Engagement
 - **DAU/MAU Ratio** - Target: 30%+ (musicians checking back regularly)
@@ -627,7 +658,7 @@ Network effects are the most defensible moat (harder to replicate than technolog
 - **Sharing Engagement** - % of users sharing recordings, inviting band members, or joining communities (Target: 40%+)
 - **Recording Portfolio Growth** - Average # of recordings per user (Target: 1-2/week active users)
 
-### Network Effect Indicators (Phase 1 MVP+)
+### Network Effect Indicators
 - **Ensemble Adoption:** % of users in shared practice rooms, average ensemble size (Target: 20% of users in at least 1 ensemble by Month 6)
 - **Arrangement Sharing:** # of shared arrangement links, sharing-to-signup conversion rate (Target: 30% of signups from shared links)
 - **Streak Retention:** % of users maintaining >7 day practice streak, >30 day streak (Target: 50% >7 day, 20% >30 day by Month 6)
@@ -670,7 +701,25 @@ Network effects are the most defensible moat (harder to replicate than technolog
 
 ---
 
-## 11. BUSINESS MODEL & PRICING
+## 12. BUSINESS MODEL & PRICING
+**[TENTATIVE — Subject to change pending further research]**
+
+### What Ships in MVP
+
+**What's live at launch:**
+- Free tier only — unlimited generations, basic export (MP3), personal use
+- Goal of free tier: validate core value, drive word-of-mouth, build habit
+- No credit card required; frictionless entry is deliberate
+
+**What's deferred (post-MVP):**
+- Pro Tier ($19–29/month) — launches after free tier demonstrates retention
+- School/Institution License — requires product maturity and a student user base first
+- À La Carte Add-Ons (MIDI export, commercial license) — deferred
+
+**The logic:**
+- Charge nothing until users say "I can't live without this"
+- Retention validates before monetization
+- Each deferred tier gets unlocked when the *prior* persona segment demonstrates clear value
 
 ### Revenue Streams
 
@@ -715,7 +764,6 @@ Network effects are the most defensible moat (harder to replicate than technolog
 - Arrangement licensing: 30% platform commission on sales
 - Session musician bookings: 15-20% commission
 - Certification programs: $50-100 per certification
-- (Phase 3-4 features)
 
 ### Pricing Strategy Rationale
 - **Student-first:** Affordable entry point drives adoption in education vertical (high leverage for viral growth)
@@ -723,7 +771,7 @@ Network effects are the most defensible moat (harder to replicate than technolog
 - **School licensing:** Large deals with education institutions (high LTV, low churn)
 - **Marketplace:** Long-tail revenue (small per-transaction, high volume over time)
 
-### Unit Economics (Year 1)
+### Unit Economics
 - **Paying Subscribers:** 3,500 (2,500 student, 400 pro, 100 schools)
 - **Average Revenue Per User (ARPU):** $12/month
 - **Annual Recurring Revenue (ARR):** $432,000 (conservative)
@@ -734,17 +782,48 @@ Network effects are the most defensible moat (harder to replicate than technolog
 - **Gross Margin:** 70-80% (cloud hosting, API costs ~20-30%)
 
 ### Path to $1M+ ARR
-- **Year 1:** $432K ARR (3,500 users)
-- **Year 2:** $1.73M ARR (12,000 users, 40% growth)
-- **Year 3:** $4.03M ARR (28,000 users, 35% growth)
-- **Year 4:** $7.92M ARR (55,000 users, 20% growth)
-- **Year 5:** $13.68M ARR (95,000 users, 20% growth)
+- **Stage 1:** $432K ARR (3,500 users)
+- **Stage 2:** $1.73M ARR (12,000 users, 40% growth)
+- **Stage 3:** $4.03M ARR (28,000 users, 35% growth)
+- **Stage 4:** $7.92M ARR (55,000 users, 20% growth)
+- **Stage 5:** $13.68M ARR (95,000 users, 20% growth)
 
 ---
 
-## 12. GO-TO-MARKET STRATEGY
+## 13. GO-TO-MARKET STRATEGY
 
-### Phase 1: Beta & Product-Market Fit (Months 1-6)
+### Sequencing by Persona
+
+**1. Professional Musicians & Band Leaders — First**
+- Fastest path to genuine feedback; they immediately know if the product works
+- Highest signal-to-noise ratio in beta (professionals articulate pain precisely)
+- Word-of-mouth is powerful in this community (tight social graph)
+- Entry point: free tier + shared practice rooms
+- Success signal: they keep returning and invite bandmates
+
+**2. Arrangers — Concurrent with #1 (supply-side seeding)**
+- Marketplace requires supply before demand; arrangers must be recruited before users expect a marketplace
+- Small cohort needed (20–50 arrangers) to seed initial library
+- Arrangers are often also professional musicians — natural overlap with persona 1
+- Entry point: free publisher account + revenue share incentive
+- Success signal: 20+ arrangements published before marketplace opens publicly
+
+**3. Music Students — After product is validated**
+- Large TAM but lower feedback signal; need a polished product before targeting
+- High volume, lower WTP — drives growth but not early revenue
+- Arrive naturally through teacher and band leader referrals
+- Entry point: free tier
+- Success signal: returning weekly, forming streaks, joining shared rooms
+
+**4. Music Teachers & Educational Institutions — Last**
+- Longest sales cycle of any persona; require product maturity and an existing student audience
+- Need to see students already using the product before institutions commit
+- Highest LTV but wrong persona to optimize for early
+- Entry point: school license (piloted with 2–3 early institutional partners)
+- Success signal: teacher invites students; engagement is measurable through practice rooms
+
+### Phase 1: Beta & Product-Market Fit
+**[TENTATIVE — Subject to change pending further research]**
 
 **Target:** 500-1000 beta users, strong validation signals
 
@@ -769,7 +848,8 @@ Network effects are the most defensible moat (harder to replicate than technolog
    - SEO targets: "Nashville Number System tools," "AI backing track," "free backing track generator"
    - Goal: Long-tail organic traffic
 
-### Phase 2: Growth & Market Expansion (Months 6-18)
+### Phase 2: Growth & Market Expansion
+**[TENTATIVE — Subject to change pending further research]**
 
 **Target:** 10K+ paying users, $100K+ MRR
 
@@ -795,7 +875,8 @@ Network effects are the most defensible moat (harder to replicate than technolog
    - White-label for music education platforms
    - API partnerships with music tools
 
-### Phase 3: Scale & Marketplace (Months 18-24)
+### Phase 3: Scale & Marketplace
+**[TENTATIVE — Subject to change pending further research]**
 
 **Target:** 25K+ users, $250K+ MRR, marketplace launch
 
@@ -816,55 +897,8 @@ Network effects are the most defensible moat (harder to replicate than technolog
 
 ---
 
-## 13. TECHNICAL ARCHITECTURE (High-Level)
-
-### Core Technology Stack
-- **Frontend:** React/TypeScript (web), responsive design
-- **Backend:** Cloud infrastructure (AWS/GCP), serverless for scaling
-- **AI/ML:**
-  - **Stem Separation:** Licensed from AudioShake, LALAL.AI, or Meta Demucs
-  - **Music Generation:** Existing model licensing (Beatoven, Musicful, or custom fine-tuning)
-  - **OCR:** Tesseract + custom training for Nashville Number System
-  - **NLP:** Semantic parsing of natural language input
-
-### API Integrations
-- Stripe for payments
-- Auth0 for authentication
-- Cloud storage (S3) for audio files
-- Licensing APIs for generated content
-
-### Data Privacy & Compliance
-- GDPR/CCPA compliant
-- Secure user authentication
-- Private file storage
-- Clear ToS on generated content usage rights
-
----
-
-## 14. OPEN QUESTIONS & FUTURE EXPLORATION
-
-### Technology
-- [ ] What stem separation model provides best quality/cost tradeoff? (AudioShake vs. LALAL vs. custom)
-- [ ] How do we achieve <30 second generation times at scale?
-- [ ] Can we implement real-time performance following (Tier 3 feature) with acceptable latency?
-
-### Business
-- [ ] What's the optimal school pricing tier? ($200/mo, $400/mo, $500/mo, or % of school size)
-- [ ] How much willingness to pay from international markets (EU, Asia)?
-- [ ] What partnership opportunities exist with DAW companies (Ableton, Logic)?
-
-### Product
-- [ ] Should free tier exist? (Freemium vs. paid-only)
-- [ ] Can we auto-generate backing tracks from YouTube videos or Spotify links?
-- [ ] How do we handle copyright/licensing for generated tracks used commercially?
-- [ ] What should the arranger revenue split be? (70/30, 80/20, tiered by volume?)
-- [ ] Should performance/recorded content rights belong to users or platform? (Important for trust/moat)
-- [ ] How do we moderate communities to prevent trolling while maintaining authentic peer feedback?
-- [ ] Should time-stamped teacher feedback be private or shareable with other teachers?
-
----
-
-## 15. SUCCESS DEFINITION (18-Month Checkpoint)
+## 14. SUCCESS DEFINITION
+**[TENTATIVE — Subject to change pending further research]**
 
 **We will know Arrangement Forge is succeeding if:**
 
@@ -924,6 +958,7 @@ The Nashville Number System is a notation system used by session musicians in Na
 ---
 
 ## Appendix B: Comprehensive Text Input Format Reference
+**[TENTATIVE — Subject to change pending further research]**
 
 Arrangement Forge supports **multiple text-based notation formats** that musicians already use. This flexibility is a core competitive advantage—users can input chord progressions in their preferred notation system without translation friction.
 
@@ -1286,6 +1321,7 @@ Dm7 - - -
 ---
 
 ## Appendix C: Competitor Feature Matrix
+**[TENTATIVE — Subject to change pending further research]**
 
 **Last Updated:** March 2026
 
