@@ -6,7 +6,7 @@ import { Block } from './Block';
 import type { Stem, InstrumentType } from '@/types';
 
 const GUTTER_WIDTH = 80;
-const BAR_WIDTH = 48; // base bar width in pixels
+const BAR_WIDTH = 48;
 
 const ABBREV: Record<InstrumentType, string> = {
   drums: 'DRUMS', bass: 'BASS', piano: 'PIANO', guitar: 'GTR', strings: 'STRS',
@@ -71,17 +71,21 @@ export function StemLane({ stem, barWidth = BAR_WIDTH }: Props) {
         </div>
       </div>
 
-      {/* Blocks */}
-      <div className="flex flex-1 items-stretch">
-        {stemBlocks.map((block) => (
-          <Block
-            key={block.id}
-            block={block}
-            instrument={stem.instrument}
-            stemId={stem.id}
-            barWidth={barWidth}
-          />
-        ))}
+      {/* Blocks — flex wrapper ensures blocks fill the full width */}
+      <div className="flex flex-1 min-w-0">
+        {stemBlocks.map((block) => {
+          const barSpan = block.endBar - block.startBar + 1;
+          return (
+            <div key={block.id} style={{ flex: barSpan }} className="min-w-0 h-full">
+              <Block
+                block={block}
+                instrument={stem.instrument}
+                stemId={stem.id}
+                barWidth={barWidth}
+              />
+            </div>
+          );
+        })}
       </div>
     </div>
   );

@@ -37,23 +37,25 @@ export function useAudio() {
 
   // Auto-load arrangement into audio engine when data changes
   useEffect(() => {
-    if (isReady && stems.length > 0 && project) {
+    if (engine.isInitialized && stems.length > 0 && project) {
       engine.setTempo(project.tempo);
       engine.loadArrangement(blocks, stems, sections, project.timeSignature);
     }
   }, [engine, isReady, blocks, stems, sections, project]);
 
   // Poll transport state at ~30fps for smooth playhead updates
-  // Only update React state when values actually change to avoid unnecessary re-renders
+  // Use engine.isInitialized instead of local isReady so ALL useAudio consumers get updates
   const lastStateRef = useRef<string>('');
   useEffect(() => {
     pollRef.current = setInterval(() => {
-      if (isReady) {
+      if (engine.isInitialized) {
         const next = engine.getTransportState();
         const key = `${next.playbackState}:${next.currentBar}:${next.currentBeat}:${Math.round(next.elapsedSeconds * 10)}`;
         if (key !== lastStateRef.current) {
           lastStateRef.current = key;
           setTransportState(next);
+          // Sync local isReady if engine was initialized elsewhere
+          if (!isReady) setIsReady(true);
         }
       }
     }, 33);
@@ -63,14 +65,14 @@ export function useAudio() {
   }, [engine, isReady]);
 
   const play = useCallback(async () => {
-    if (!isReady) await initEngine();
-    // Ensure arrangement is loaded (handles first-play race with useEffect)
+    if (!engine.isInitialized) await initEngine();
+    // Ensure arrangement is loaded
     if (stems.length > 0 && project) {
       engine.setTempo(project.tempo);
       engine.loadArrangement(blocks, stems, sections, project.timeSignature);
     }
     engine.play();
-  }, [engine, isReady, initEngine, blocks, stems, sections, project]);
+  }, [engine, initEngine, blocks, stems, sections, project]);
 
   const pause = useCallback(() => engine.pause(), [engine]);
   const stop = useCallback(() => engine.stop(), [engine]);

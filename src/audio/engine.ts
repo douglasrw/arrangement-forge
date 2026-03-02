@@ -18,7 +18,9 @@ export class AudioEngine {
   private masterGain: Tone.Gain | null = null;
   private metronome: Metronome;
   private transportController: TransportController;
-  private initialized = false;
+  private _initialized = false;
+
+  get isInitialized(): boolean { return this._initialized; }
 
   constructor() {
     this.metronome = new Metronome();
@@ -26,11 +28,11 @@ export class AudioEngine {
   }
 
   async init(): Promise<void> {
-    if (this.initialized) return;
+    if (this._initialized) return;
     await Tone.start(); // Resume AudioContext after user gesture
     this.masterGain = new Tone.Gain(0.8).toDestination();
     this.metronome.init();
-    this.initialized = true;
+    this._initialized = true;
   }
 
   dispose(): void {
@@ -44,7 +46,7 @@ export class AudioEngine {
     this.instruments.clear();
     this.channelGains.clear();
     this.channelPanners.clear();
-    this.initialized = false;
+    this._initialized = false;
   }
 
   play(): void {
@@ -107,7 +109,7 @@ export class AudioEngine {
     sections: Section[],
     timeSignature: string
   ): void {
-    if (!this.initialized || !this.masterGain) return;
+    if (!this._initialized || !this.masterGain) return;
 
     // Parse time signature
     const [numStr] = timeSignature.split('/');

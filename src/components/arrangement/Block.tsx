@@ -42,7 +42,7 @@ export function Block({ block, instrument, stemId, barWidth }: Props) {
 
   const isSelected = selectedBlockId === block.id;
   const barSpan = block.endBar - block.startBar + 1;
-  const width = barSpan * barWidth;
+
   const isPitched = instrument !== 'drums';
 
   const chordLabel = isPitched && block.chordDegree && project
@@ -94,9 +94,8 @@ export function Block({ block, instrument, stemId, barWidth }: Props) {
   return (
     <>
       <div
-        style={{ width, minWidth: barWidth }}
         className={`
-          shrink-0 h-full flex flex-col justify-center px-2 rounded border cursor-pointer
+          w-full h-full flex flex-col justify-center px-2 rounded border cursor-pointer
           transition-all select-none overflow-hidden relative
           ${isSelected ? INSTRUMENT_COLORS_SELECTED[instrument] : INSTRUMENT_COLORS[instrument]}
           ${toolMode === 'split' && barSpan > 1 ? 'cursor-crosshair' : ''}
