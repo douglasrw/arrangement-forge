@@ -1,0 +1,216 @@
+import { create } from 'zustand';
+import type { Project, Stem, Section, Block, Chord, AiChatMessage } from '@/types';
+import { useUndoStore } from './undo-store';
+import { useUiStore } from './ui-store';
+
+const genId = () => crypto.randomUUID();
+
+interface ProjectStore {
+  project: Project | null;
+  stems: Stem[];
+  sections: Section[];
+  blocks: Block[];
+  chords: Chord[];
+  chatMessages: AiChatMessage[];
+
+  setProject: (project: Project) => void;
+  updateProject: (partial: Partial<Project>) => void;
+  setArrangement: (data: {
+    stems: Stem[];
+    sections: Section[];
+    blocks: Block[];
+    chords: Chord[];
+  }) => void;
+  clearArrangement: () => void;
+
+  updateStem: (stemId: string, partial: Partial<Stem>) => void;
+  addStem: (stem: Stem) => void;
+  reorderStems: (stemIds: string[]) => void;
+
+  addSection: (section: Section) => void;
+  updateSection: (sectionId: string, partial: Partial<Section>) => void;
+  removeSection: (sectionId: string) => void;
+  reorderSections: (sectionIds: string[]) => void;
+
+  updateBlock: (blockId: string, partial: Partial<Block>) => void;
+  splitBlock: (blockId: string, atBar: number) => void;
+  mergeBlocks: (blockId1: string, blockId2: string) => void;
+  deleteBlock: (blockId: string) => void;
+  duplicateBlock: (blockId: string) => void;
+
+  updateChord: (barNumber: number, chord: Partial<Chord>) => void;
+  addChatMessage: (message: AiChatMessage) => void;
+
+  getTotalBars: () => number;
+  getBlocksForStem: (stemId: string) => Block[];
+  getBlocksForSection: (sectionId: string) => Block[];
+  getSectionAtBar: (bar: number) => Section | undefined;
+}
+
+function snapshotBlocks(blocks: Block[]): string {
+  return JSON.stringify(blocks);
+}
+
+export const useProjectStore = create<ProjectStore>()((set, get) => ({
+  project: null,
+  stems: [],
+  sections: [],
+  blocks: [],
+  chords: [],
+  chatMessages: [],
+
+  setProject: (project) => set({ project }),
+
+  updateProject: (partial) => {
+    set((state) => ({ project: state.project ? { ...state.project, ...partial } : null }));
+    useUiStore.getState().markDirty();
+  },
+
+  setArrangement: ({ stems, sections, blocks, chords }) =>
+    set({ stems, sections, blocks, chords }),
+
+  clearArrangement: () => set({ stems: [], sections: [], blocks: [], chords: [] }),
+
+  updateStem: (stemId, partial) => {
+    set((state) => ({
+      stems: state.stems.map((s) => (s.id === stemId ? { ...s, ...partial } : s)),
+    }));
+    useUiStore.getState().markDirty();
+  },
+
+  addStem: (stem) => {
+    set((state) => ({ stems: [...state.stems, stem] }));
+    useUiStore.getState().markDirty();
+  },
+
+  reorderStems: (stemIds) => {
+    set((state) => ({
+      stems: stemIds
+        .map((id, i) => {
+          const stem = state.stems.find((s) => s.id === id);
+          return stem ? { ...stem, sortOrder: i } : null;
+        })
+        .filter(Boolean) as Stem[],
+    }));
+    useUiStore.getState().markDirty();
+  },
+
+  addSection: (section) => {
+    set((state) => ({ sections: [...state.sections, section] }));
+    useUiStore.getState().markDirty();
+  },
+
+  updateSection: (sectionId, partial) => {
+    set((state) => ({
+      sections: state.sections.map((s) => (s.id === sectionId ? { ...s, ...partial } : s)),
+    }));
+    useUiStore.getState().markDirty();
+  },
+
+  removeSection: (sectionId) => {
+    set((state) => ({
+      sections: state.sections.filter((s) => s.id !== sectionId),
+      blocks: state.blocks.filter((b) => b.sectionId !== sectionId),
+    }));
+    useUiStore.getState().markDirty();
+  },
+
+  reorderSections: (sectionIds) => {
+    set((state) => ({
+      sections: sectionIds
+        .map((id, i) => {
+          const sec = state.sections.find((s) => s.id === id);
+          return sec ? { ...sec, sortOrder: i } : null;
+        })
+        .filter(Boolean) as Section[],
+    }));
+    useUiStore.getState().markDirty();
+  },
+
+  updateBlock: (blockId, partial) => {
+    set((state) => ({
+      blocks: state.blocks.map((b) => (b.id === blockId ? { ...b, ...partial } : b)),
+    }));
+    useUiStore.getState().markDirty();
+  },
+
+  splitBlock: (blockId, atBar) => {
+    const { blocks } = get();
+    const original = blocks.find((b) => b.id === blockId);
+    if (!original) return;
+    if (atBar <= original.startBar || atBar > original.endBar) return;
+
+    const before = snapshotBlocks(blocks);
+    const block1: Block = { ...original, endBar: atBar - 1 };
+    const block2: Block = { ...original, id: genId(), startBar: atBar };
+    const newBlocks = blocks.map((b) => (b.id === blockId ? block1 : b)).concat(block2);
+    set({ blocks: newBlocks });
+    useUndoStore.getState().pushUndo(
+      `Split block at bar ${atBar}`,
+      before,
+      snapshotBlocks(newBlocks)
+    );
+    useUiStore.getState().markDirty();
+  },
+
+  mergeBlocks: (blockId1, blockId2) => {
+    const { blocks } = get();
+    const b1 = blocks.find((b) => b.id === blockId1);
+    const b2 = blocks.find((b) => b.id === blockId2);
+    if (!b1 || !b2) return;
+    if (b1.stemId !== b2.stemId || b1.sectionId !== b2.sectionId) return;
+    if (b1.endBar + 1 !== b2.startBar) return;
+
+    const before = snapshotBlocks(blocks);
+    const merged: Block = { ...b1, endBar: b2.endBar };
+    const newBlocks = blocks.filter((b) => b.id !== blockId1 && b.id !== blockId2).concat(merged);
+    set({ blocks: newBlocks });
+    useUndoStore.getState().pushUndo(
+      `Merge blocks (bars ${b1.startBar}-${b2.endBar})`,
+      before,
+      snapshotBlocks(newBlocks)
+    );
+    useUiStore.getState().markDirty();
+  },
+
+  deleteBlock: (blockId) => {
+    const { blocks } = get();
+    const before = snapshotBlocks(blocks);
+    const newBlocks = blocks.filter((b) => b.id !== blockId);
+    set({ blocks: newBlocks });
+    useUndoStore.getState().pushUndo(
+      `Delete block`,
+      before,
+      snapshotBlocks(newBlocks)
+    );
+    useUiStore.getState().markDirty();
+  },
+
+  duplicateBlock: (blockId) => {
+    const { blocks } = get();
+    const original = blocks.find((b) => b.id === blockId);
+    if (!original) return;
+    const copy: Block = { ...original, id: genId() };
+    set({ blocks: [...blocks, copy] });
+    useUiStore.getState().markDirty();
+  },
+
+  updateChord: (barNumber, chord) => {
+    set((state) => ({
+      chords: state.chords.map((c) => (c.barNumber === barNumber ? { ...c, ...chord } : c)),
+    }));
+    useUiStore.getState().markDirty();
+  },
+
+  addChatMessage: (message) =>
+    set((state) => ({ chatMessages: [...state.chatMessages, message] })),
+
+  getTotalBars: () => get().sections.reduce((sum, s) => sum + s.barCount, 0),
+
+  getBlocksForStem: (stemId) => get().blocks.filter((b) => b.stemId === stemId),
+
+  getBlocksForSection: (sectionId) => get().blocks.filter((b) => b.sectionId === sectionId),
+
+  getSectionAtBar: (bar) =>
+    get().sections.find((s) => s.startBar <= bar && bar < s.startBar + s.barCount),
+}));
