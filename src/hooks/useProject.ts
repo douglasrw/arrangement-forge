@@ -61,7 +61,6 @@ function rowToMessage(row: Record<string, unknown>): AiChatMessage {
 // ---------- Hook ----------
 
 export function useProject() {
-  const projectStore = useProjectStore();
   const { setSystemStatus, markSaved, setLibraryCount } = useUiStore();
 
   const handleError = useCallback(
@@ -86,7 +85,9 @@ export function useProject() {
           ]);
 
         if (projectRes.error) throw projectRes.error;
-        projectStore.setProject(rowToProject(projectRes.data as Record<string, unknown>));
+
+        const store = useProjectStore.getState();
+        store.setProject(rowToProject(projectRes.data as Record<string, unknown>));
 
         const stemIds = (stemsRes.data ?? []).map((s: Record<string, unknown>) => s.id as string);
 
@@ -95,7 +96,7 @@ export function useProject() {
           ? await supabase.from('blocks').select('*').in('stem_id', stemIds)
           : { data: [], error: null };
 
-        projectStore.setArrangement({
+        store.setArrangement({
           stems: (stemsRes.data ?? []).map((r) => rowToStem(r as Record<string, unknown>)),
           sections: (sectionsRes.data ?? []).map((r) => rowToSection(r as Record<string, unknown>)),
           blocks: (blocksForProject.data ?? []).map((r) => rowToBlock(r as Record<string, unknown>)),
@@ -103,18 +104,18 @@ export function useProject() {
         });
 
         for (const msg of (messagesRes.data ?? [])) {
-          projectStore.addChatMessage(rowToMessage(msg as Record<string, unknown>));
+          store.addChatMessage(rowToMessage(msg as Record<string, unknown>));
         }
         // eslint-disable-next-line @typescript-eslint/no-unused-vars
       } catch (err) {
         handleError(err);
       }
     },
-    [projectStore, setSystemStatus, handleError]
+    [setSystemStatus, handleError]
   );
 
   const saveProject = useCallback(async () => {
-    const { project, stems, sections, blocks, chords } = projectStore;
+    const { project, stems, sections, blocks, chords } = useProjectStore.getState();
     if (!project) return;
     setSystemStatus('saving');
     try {
@@ -152,7 +153,7 @@ export function useProject() {
     } catch (err) {
       handleError(err);
     }
-  }, [projectStore, setSystemStatus, markSaved, handleError]);
+  }, [setSystemStatus, markSaved, handleError]);
 
   const createProject = useCallback(async (): Promise<string | null> => {
     try {
@@ -212,7 +213,7 @@ export function useProject() {
   }, [setLibraryCount, handleError]);
 
   const saveArrangement = useCallback(async () => {
-    const { project, stems, sections, blocks, chords } = projectStore;
+    const { project, stems, sections, blocks, chords } = useProjectStore.getState();
     if (!project) return;
     setSystemStatus('saving');
     try {
@@ -254,7 +255,7 @@ export function useProject() {
     } catch (err) {
       handleError(err);
     }
-  }, [projectStore, setSystemStatus, markSaved, handleError]);
+  }, [setSystemStatus, markSaved, handleError]);
 
   return {
     loadProject,
