@@ -54,10 +54,12 @@ export class AudioEngine {
   }
 
   pause(): void {
+    this.releaseAllNotes();
     Tone.getTransport().pause();
   }
 
   stop(): void {
+    this.releaseAllNotes();
     Tone.getTransport().stop();
     Tone.getTransport().position = 0;
   }
@@ -200,6 +202,16 @@ export class AudioEngine {
     };
   }
 
+
+  private releaseAllNotes(): void {
+    this.instruments.forEach((inst) => {
+      if ("releaseAll" in inst && typeof inst.releaseAll === "function") {
+        (inst as Tone.PolySynth).releaseAll();
+      } else if ("triggerRelease" in inst && typeof inst.triggerRelease === "function") {
+        (inst as Tone.MonoSynth).triggerRelease();
+      }
+    });
+  }
   private applyMuteState(): void {
     const anysoloed = Array.from(this.stemSoloed.values()).some(Boolean);
     this.instruments.forEach((_, instrument) => {
