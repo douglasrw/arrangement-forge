@@ -11,7 +11,7 @@
 | Layer | Technology | Why |
 |---|---|---|
 | **Frontend** | React 19 + TypeScript + Vite | Complex reactive UI (undo/redo, context-aware inspector, real-time playback). TypeScript required — data model complexity demands compile-time safety. |
-| **Styling** | Tailwind CSS 4 + DaisyUI 4 (wireframe theme) | Established in mockups. Zero custom CSS framework to learn. |
+| **Styling** | Tailwind CSS 4 + DaisyUI 4 (custom `forge` dark theme) | DaisyUI established in mockups. Custom premium dark theme defined in T24. Zero custom CSS framework to learn. |
 | **Audio** | Tone.js + Web Audio API | MIDI playback via browser synths/samplers. Tone.js for MVP; upgrade to SoundFont/custom samples post-MVP. |
 | **Backend** | Supabase (hosted) | Postgres + Auth + Storage + Edge Functions + Realtime. Minimal backend code for MVP. |
 | **Auth** | Supabase Auth | Email/password + Google OAuth. |
@@ -208,6 +208,7 @@ arrangement-forge/
 │   ├── lib/                              # Non-React utilities
 │   │   ├── supabase.ts                   # Supabase client init
 │   │   ├── chords.ts                     # Chord parsing, Roman↔letter conversion
+│   │   ├── chord-chart-parser.ts         # Raw text → ChordEntry[] (T26)
 │   │   ├── midi-generator.ts             # Stubbed AI: rule-based MIDI generation
 │   │   ├── description-parser.ts         # Free-text → structured controls parser
 │   │   ├── genre-config.ts               # GENRE_SUBSTYLES, GENRE_SLIDERS configs
@@ -218,11 +219,13 @@ arrangement-forge/
 │   │   ├── transport.ts                  # Transport controls (play/pause/seek/loop)
 │   │   └── metronome.ts                  # Click track and count-in
 │   ├── store/                            # State management
+│   │   ├── auth-store.ts                 # Auth state (T25)
 │   │   ├── project-store.ts              # Project state (Zustand or useReducer)
 │   │   ├── selection-store.ts            # Current selection (song/section/block)
 │   │   ├── undo-store.ts                 # Undo/redo stack
 │   │   └── ui-store.ts                   # UI state (mixer open, zoom level, etc.)
 │   ├── hooks/                            # Custom React hooks
+│   │   ├── useAuth.ts                    # Auth init, sign-in/out, profile hydration (T25)
 │   │   ├── useAudio.ts                   # Audio engine hook
 │   │   ├── useProject.ts                 # Project CRUD + Supabase sync
 │   │   ├── useSelection.ts               # Selection state hook
