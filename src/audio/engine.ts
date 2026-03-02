@@ -2,7 +2,7 @@
 // Signal chain: Instrument → Gain (per-stem) → Panner → Master Gain → Destination
 
 import * as Tone from 'tone';
-import type { Block, Stem, Section, InstrumentType, TransportState } from '@/types';
+import type { Block, Stem, Section, InstrumentType, TransportState, CountInSetting } from '@/types';
 import { TransportController } from './transport';
 import { Metronome } from './metronome';
 import { createInstrument } from './instruments';
@@ -87,6 +87,14 @@ export class AudioEngine {
 
   setMasterVolume(volume: number): void {
     if (this.masterGain) this.masterGain.gain.value = volume;
+  }
+
+  setMetronomeEnabled(enabled: boolean): void {
+    this.metronome.setEnabled(enabled);
+  }
+
+  setMetronomeCountIn(setting: CountInSetting): void {
+    this.metronome.setCountIn(setting);
   }
 
   setTempo(bpm: number): void {
