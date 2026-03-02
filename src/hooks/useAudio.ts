@@ -28,17 +28,34 @@ export function useAudio() {
   const engine = getEngine();
   const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
-  const { blocks, stems, sections } = useProjectStore();
+  const { project, blocks, stems, sections } = useProjectStore();
 
   const initEngine = useCallback(async () => {
     await engine.init();
     setIsReady(true);
   }, [engine]);
 
+  // Auto-load arrangement into audio engine when data changes
+  useEffect(() => {
+    if (isReady && stems.length > 0 && project) {
+      engine.setTempo(project.tempo);
+      engine.loadArrangement(blocks, stems, sections, project.timeSignature);
+    }
+  }, [engine, isReady, blocks, stems, sections, project]);
+
   // Poll transport state at ~30fps for smooth playhead updates
+  // Only update React state when values actually change to avoid unnecessary re-renders
+  const lastStateRef = useRef<string>('');
   useEffect(() => {
     pollRef.current = setInterval(() => {
-      if (isReady) setTransportState(engine.getTransportState());
+      if (isReady) {
+        const next = engine.getTransportState();
+        const key = `${next.playbackState}:${next.currentBar}:${next.currentBeat}:${Math.round(next.elapsedSeconds * 10)}`;
+        if (key !== lastStateRef.current) {
+          lastStateRef.current = key;
+          setTransportState(next);
+        }
+      }
     }, 33);
     return () => {
       if (pollRef.current) clearInterval(pollRef.current);
@@ -47,8 +64,13 @@ export function useAudio() {
 
   const play = useCallback(async () => {
     if (!isReady) await initEngine();
+    // Ensure arrangement is loaded (handles first-play race with useEffect)
+    if (stems.length > 0 && project) {
+      engine.setTempo(project.tempo);
+      engine.loadArrangement(blocks, stems, sections, project.timeSignature);
+    }
     engine.play();
-  }, [engine, isReady, initEngine]);
+  }, [engine, isReady, initEngine, blocks, stems, sections, project]);
 
   const pause = useCallback(() => engine.pause(), [engine]);
   const stop = useCallback(() => engine.stop(), [engine]);
@@ -63,7 +85,6 @@ export function useAudio() {
     stop,
     seek,
     initEngine,
-    // Expose arrange loader to allow components to trigger loadArrangement
     loadArrangement: useCallback(
       (timeSig: string) => engine.loadArrangement(blocks, stems, sections, timeSig),
       [engine, blocks, stems, sections]
