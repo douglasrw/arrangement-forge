@@ -3,7 +3,7 @@
 export type SelectionLevel = 'song' | 'section' | 'block';
 export type ToolMode = 'select' | 'split';
 export type GenerationState = 'idle' | 'generating' | 'complete';
-export type SystemStatus = 'ready' | 'generating' | 'saving' | 'error' | 'offline';
+export type SystemStatus = 'ready' | 'generating' | 'loading-samples' | 'saving' | 'error' | 'offline';
 
 export interface SelectionState {
   level: SelectionLevel;

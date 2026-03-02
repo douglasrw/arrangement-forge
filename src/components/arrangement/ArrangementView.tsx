@@ -41,7 +41,7 @@ function Playhead() {
       {/* Playhead line positioned within the bars area */}
       <div className="flex-1 relative">
         <div
-          className="absolute top-0 bottom-0 w-0.5 bg-primary shadow-[0_0_4px_rgba(0,255,128,0.5)]"
+          className="absolute top-0 bottom-0 w-0.5 bg-primary opacity-90"
           style={{ left: `${pct}%` }}
         />
       </div>

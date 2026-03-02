@@ -36,7 +36,9 @@ export function AppShell() {
       {/* Middle row — left panel + main area */}
       <div className="flex flex-1 min-h-0">
         {/* Left panel — fixed 320px */}
-        <LeftPanel />
+        <div className="w-80 shrink-0 border-r border-base-300 overflow-y-auto">
+          <LeftPanel />
+        </div>
 
         {/* Main area — arrangement + transport + mixer */}
         <div className="flex flex-col flex-1 min-w-0">

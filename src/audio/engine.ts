@@ -1,16 +1,15 @@
 // engine.ts — Core AudioEngine class.
-// Signal chain: Instrument → Gain (per-stem) → Panner → Master Gain → Destination
+// Signal chain: Sampler → Gain (per-stem) → Panner → Master Gain → Destination
+// Samplers are cached via sampler-cache.ts and persist across arrangement reloads.
 
 import * as Tone from 'tone';
 import type { Block, Stem, Section, InstrumentType, TransportState, CountInSetting } from '@/types';
 import { TransportController } from './transport';
 import { Metronome } from './metronome';
-import { createInstrument } from './instruments';
-
-type AnyInstrument = ReturnType<typeof createInstrument>;
+import { getSampler } from './sampler-cache';
 
 export class AudioEngine {
-  private instruments = new Map<InstrumentType, AnyInstrument>();
+  private instruments = new Map<InstrumentType, Tone.Sampler>();
   private channelGains = new Map<InstrumentType, Tone.Gain>();
   private channelPanners = new Map<InstrumentType, Tone.Panner>();
   private stemMuted = new Map<InstrumentType, boolean>();
@@ -20,8 +19,10 @@ export class AudioEngine {
   private transportController: TransportController;
   private _initialized = false;
   private _masterVolume = 0.8;
+  private _isLoading = false;
 
   get isInitialized(): boolean { return this._initialized; }
+  get isLoading(): boolean { return this._isLoading; }
 
   constructor() {
     this.metronome = new Metronome();
@@ -40,7 +41,9 @@ export class AudioEngine {
     Tone.getTransport().stop();
     Tone.getTransport().cancel();
     this.metronome.dispose();
-    this.instruments.forEach((inst) => inst.dispose());
+    // Don't dispose samplers — they are cached in sampler-cache.ts
+    // Just disconnect them from our signal chain
+    this.instruments.forEach((inst) => inst.disconnect());
     this.channelGains.forEach((g) => g.dispose());
     this.channelPanners.forEach((p) => p.dispose());
     this.masterGain?.dispose();
@@ -51,7 +54,6 @@ export class AudioEngine {
   }
 
   play(): void {
-    // Restore master gain (may have been zeroed by stop/pause)
     if (this.masterGain) {
       this.masterGain.gain.cancelScheduledValues(Tone.now());
       this.masterGain.gain.setValueAtTime(this._masterVolume, Tone.now());
@@ -62,7 +64,6 @@ export class AudioEngine {
   pause(): void {
     Tone.getTransport().pause();
     this.releaseAllNotes();
-    // Immediately zero master gain to kill release tails
     if (this.masterGain) {
       this.masterGain.gain.cancelScheduledValues(Tone.now());
       this.masterGain.gain.setValueAtTime(0, Tone.now());
@@ -74,7 +75,6 @@ export class AudioEngine {
     Tone.getTransport().cancel();
     Tone.getTransport().position = 0;
     this.releaseAllNotes();
-    // Immediately zero master gain to kill release tails
     if (this.masterGain) {
       this.masterGain.gain.cancelScheduledValues(Tone.now());
       this.masterGain.gain.setValueAtTime(0, Tone.now());
@@ -123,82 +123,90 @@ export class AudioEngine {
     this.transportController.setTempo(bpm);
   }
 
-  loadArrangement(
+  async loadArrangement(
     blocks: Block[],
     stems: Stem[],
     sections: Section[],
     timeSignature: string
-  ): void {
+  ): Promise<void> {
     if (!this._initialized || !this.masterGain) return;
+    if (this._isLoading) return; // prevent concurrent loads
 
-    const [numStr] = timeSignature.split('/');
-    const numerator = parseInt(numStr ?? '4', 10);
-    this.transportController.setTimeSignature(numerator, 4);
+    this._isLoading = true;
 
-    Tone.getTransport().cancel();
+    try {
+      const [numStr] = timeSignature.split('/');
+      const numerator = parseInt(numStr ?? '4', 10);
+      this.transportController.setTimeSignature(numerator, 4);
 
-    this.instruments.forEach((inst) => inst.dispose());
-    this.channelGains.forEach((g) => g.dispose());
-    this.channelPanners.forEach((p) => p.dispose());
-    this.instruments.clear();
-    this.channelGains.clear();
-    this.channelPanners.clear();
+      Tone.getTransport().cancel();
 
-    for (const stem of stems) {
-      const inst = createInstrument(stem.instrument);
-      const gain = new Tone.Gain(stem.volume);
-      const panner = new Tone.Panner(stem.pan);
-      inst.connect(gain);
-      gain.connect(panner);
-      panner.connect(this.masterGain);
-      this.instruments.set(stem.instrument, inst);
-      this.channelGains.set(stem.instrument, gain);
-      this.channelPanners.set(stem.instrument, panner);
-      this.stemMuted.set(stem.instrument, stem.isMuted);
-      this.stemSoloed.set(stem.instrument, stem.isSolo);
-    }
+      // Disconnect old signal chains (but don't dispose cached samplers)
+      this.instruments.forEach((inst) => inst.disconnect());
+      this.channelGains.forEach((g) => g.dispose());
+      this.channelPanners.forEach((p) => p.dispose());
+      this.instruments.clear();
+      this.channelGains.clear();
+      this.channelPanners.clear();
 
-    this.applyMuteState();
+      // Load samplers (cached after first load — returns instantly on subsequent calls)
+      for (const stem of stems) {
+        const inst = await getSampler(stem.instrument);
+        const gain = new Tone.Gain(stem.volume);
+        const panner = new Tone.Panner(stem.pan);
+        inst.disconnect(); // ensure clean state
+        inst.connect(gain);
+        gain.connect(panner);
+        panner.connect(this.masterGain);
+        this.instruments.set(stem.instrument, inst);
+        this.channelGains.set(stem.instrument, gain);
+        this.channelPanners.set(stem.instrument, panner);
+        this.stemMuted.set(stem.instrument, stem.isMuted);
+        this.stemSoloed.set(stem.instrument, stem.isSolo);
+      }
 
-    const tempo = Tone.getTransport().bpm.value;
-    const secondsPerBeat = 60 / tempo;
+      this.applyMuteState();
 
-    for (const block of blocks) {
-      const stem = stems.find((s) => s.id === block.stemId);
-      if (!stem) continue;
-      const instrument = this.instruments.get(stem.instrument);
-      if (!instrument) continue;
+      const tempo = Tone.getTransport().bpm.value;
+      const secondsPerBeat = 60 / tempo;
 
-      const blockStartSeconds = this.transportController.getTimeAtBar(block.startBar);
+      for (const block of blocks) {
+        const stem = stems.find((s) => s.id === block.stemId);
+        if (!stem) continue;
+        const instrument = this.instruments.get(stem.instrument);
+        if (!instrument) continue;
 
-      for (const note of block.midiData) {
-        const noteTime = blockStartSeconds + note.time * secondsPerBeat;
-        const noteDuration = note.duration * secondsPerBeat;
-        const velocity = note.velocity / 127;
+        const blockStartSeconds = this.transportController.getTimeAtBar(block.startBar);
 
-        Tone.getTransport().schedule((t) => {
-          try {
-            if ('triggerAttackRelease' in instrument) {
-              (instrument as Tone.PolySynth | Tone.MonoSynth | Tone.MembraneSynth).triggerAttackRelease(
+        for (const note of block.midiData) {
+          const noteTime = blockStartSeconds + note.time * secondsPerBeat;
+          const noteDuration = note.duration * secondsPerBeat;
+          const velocity = note.velocity / 127;
+
+          Tone.getTransport().schedule((t) => {
+            try {
+              instrument.triggerAttackRelease(
                 note.note,
                 noteDuration,
                 t,
                 velocity
               );
+            } catch {
+              // Ignore scheduling errors
             }
-          } catch {
-            // Ignore scheduling errors
-          }
-        }, noteTime);
+          }, noteTime);
+        }
       }
+
+      const totalBars = sections.reduce((sum, s) => sum + s.barCount, 0);
+      const totalSeconds = this.transportController.getTotalDuration(totalBars);
+      Tone.getTransport().loopEnd = totalSeconds;
+
+      // Schedule metronome clicks (checks enabled at trigger time)
+      this.metronome.scheduleClick(1, totalBars, tempo, timeSignature);
+    } finally {
+      this._isLoading = false;
     }
-
-    const totalBars = sections.reduce((sum, s) => sum + s.barCount, 0);
-    const totalSeconds = this.transportController.getTotalDuration(totalBars);
-    Tone.getTransport().loopEnd = totalSeconds;
-
-    // Schedule metronome clicks (checks enabled at trigger time)
-    this.metronome.scheduleClick(1, totalBars, tempo, timeSignature);
   }
 
   getTransportState(): TransportState {
@@ -220,11 +228,7 @@ export class AudioEngine {
 
   private releaseAllNotes(): void {
     this.instruments.forEach((inst) => {
-      if ('releaseAll' in inst && typeof inst.releaseAll === 'function') {
-        (inst as Tone.PolySynth).releaseAll();
-      } else if ('triggerRelease' in inst && typeof inst.triggerRelease === 'function') {
-        (inst as Tone.MonoSynth).triggerRelease();
-      }
+      inst.releaseAll();
     });
   }
 

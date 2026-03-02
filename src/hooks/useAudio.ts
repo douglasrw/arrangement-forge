@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { AudioEngine } from '@/audio/engine';
 import { useProjectStore } from '@/store/project-store';
+import { useUiStore } from '@/store/ui-store';
 import type { TransportState } from '@/types';
 
 // Module-level singleton — not stored in Zustand
@@ -29,6 +30,7 @@ export function useAudio() {
   const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   const { project, blocks, stems, sections } = useProjectStore();
+  const { setSystemStatus } = useUiStore();
 
   const initEngine = useCallback(async () => {
     await engine.init();
@@ -37,11 +39,26 @@ export function useAudio() {
 
   // Auto-load arrangement into audio engine when data changes
   useEffect(() => {
-    if (engine.isInitialized && stems.length > 0 && project) {
-      engine.setTempo(project.tempo);
-      engine.loadArrangement(blocks, stems, sections, project.timeSignature);
+    if (!engine.isInitialized || stems.length === 0 || !project) return;
+
+    let cancelled = false;
+
+    async function load() {
+      try {
+        setSystemStatus('loading-samples');
+        engine.setTempo(project!.tempo);
+        await engine.loadArrangement(blocks, stems, sections, project!.timeSignature);
+        if (!cancelled) setSystemStatus('ready');
+      } catch (err) {
+        console.error('Failed to load arrangement samples:', err);
+        if (!cancelled) setSystemStatus('error');
+      }
     }
-  }, [engine, isReady, blocks, stems, sections, project]);
+
+    load();
+
+    return () => { cancelled = true; };
+  }, [engine, isReady, blocks, stems, sections, project, setSystemStatus]);
 
   // Poll transport state at ~30fps for smooth playhead updates
   // Use engine.isInitialized instead of local isReady so ALL useAudio consumers get updates
@@ -66,10 +83,10 @@ export function useAudio() {
 
   const play = useCallback(async () => {
     if (!engine.isInitialized) await initEngine();
-    // Ensure arrangement is loaded
+    // Ensure arrangement is loaded before playing
     if (stems.length > 0 && project) {
       engine.setTempo(project.tempo);
-      engine.loadArrangement(blocks, stems, sections, project.timeSignature);
+      await engine.loadArrangement(blocks, stems, sections, project.timeSignature);
     }
     engine.play();
   }, [engine, initEngine, blocks, stems, sections, project]);
@@ -88,7 +105,7 @@ export function useAudio() {
     seek,
     initEngine,
     loadArrangement: useCallback(
-      (timeSig: string) => engine.loadArrangement(blocks, stems, sections, timeSig),
+      async (timeSig: string) => engine.loadArrangement(blocks, stems, sections, timeSig),
       [engine, blocks, stems, sections]
     ),
   };

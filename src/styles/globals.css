@@ -8,37 +8,37 @@
 [data-theme="forge"] {
   color-scheme: dark;
 
-  /* Base surfaces — deep dark with cool blue-gray tint */
-  --color-base-100: oklch(13% 0.008 260);
-  --color-base-200: oklch(17% 0.008 260);
-  --color-base-300: oklch(22% 0.008 260);
-  --color-base-content: oklch(78% 0.008 260);
+  /* Backgrounds — charcoal with cool blue-gray tint */
+  --color-base-100: oklch(15.5% 0.012 258);   /* #191c24 — main bg */
+  --color-base-200: oklch(19% 0.014 258);      /* #1f2330 — panels/cards */
+  --color-base-300: oklch(24% 0.014 258);      /* #282d3a — borders/dividers */
+  --color-base-content: oklch(82% 0.008 258);  /* #c8ccd6 — primary text */
 
-  /* Primary: teal/green — active states, playhead, selected blocks */
-  --color-primary: oklch(72% 0.18 168);
-  --color-primary-content: oklch(15% 0.05 168);
+  /* Primary — muted teal (no neon green) */
+  --color-primary: oklch(62% 0.09 172);        /* muted teal */
+  --color-primary-content: oklch(15% 0.03 172);
 
-  /* Secondary: amber/orange — warnings, secondary actions */
-  --color-secondary: oklch(75% 0.18 55);
-  --color-secondary-content: oklch(15% 0.05 55);
+  /* Secondary — warm coral-orange */
+  --color-secondary: oklch(68% 0.14 46);       /* warm burnt orange */
+  --color-secondary-content: oklch(15% 0.04 46);
 
-  /* Accent: violet — AI assistant, generation progress */
-  --color-accent: oklch(70% 0.20 295);
-  --color-accent-content: oklch(15% 0.05 295);
+  /* Accent — muted violet for AI elements */
+  --color-accent: oklch(55% 0.10 285);         /* soft purple */
+  --color-accent-content: oklch(15% 0.04 285);
 
-  /* Neutral — darker contrast areas */
-  --color-neutral: oklch(20% 0.008 260);
-  --color-neutral-content: oklch(85% 0.008 260);
+  /* Neutral — charcoal contrast areas */
+  --color-neutral: oklch(22% 0.010 258);
+  --color-neutral-content: oklch(85% 0.008 258);
 
   /* Status colors */
-  --color-info: oklch(65% 0.15 220);
-  --color-info-content: oklch(15% 0.05 220);
-  --color-success: oklch(70% 0.18 145);
-  --color-success-content: oklch(15% 0.05 145);
-  --color-warning: oklch(75% 0.18 75);
-  --color-warning-content: oklch(15% 0.05 75);
-  --color-error: oklch(65% 0.22 25);
-  --color-error-content: oklch(15% 0.05 25);
+  --color-info: oklch(60% 0.11 230);
+  --color-info-content: oklch(15% 0.04 230);
+  --color-success: oklch(60% 0.10 155);
+  --color-success-content: oklch(15% 0.04 155);
+  --color-warning: oklch(68% 0.13 70);
+  --color-warning-content: oklch(15% 0.04 70);
+  --color-error: oklch(60% 0.16 25);
+  --color-error-content: oklch(15% 0.04 25);
 
   /* Border radius */
   --radius-selector: 0.375rem;
@@ -69,10 +69,10 @@ body {
 ::-webkit-scrollbar { width: 6px; height: 6px; }
 ::-webkit-scrollbar-track { background: transparent; }
 ::-webkit-scrollbar-thumb {
-  background: oklch(35% 0.008 260);
+  background: oklch(30% 0.012 258);
   border-radius: 3px;
 }
-::-webkit-scrollbar-thumb:hover { background: oklch(45% 0.008 260); }
+::-webkit-scrollbar-thumb:hover { background: oklch(38% 0.012 258); }
 
 /* ============================================================
    FORGE UTILITY CLASSES
