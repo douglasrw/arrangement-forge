@@ -22,7 +22,7 @@ export function MasterStrip() {
     <div className="flex flex-col items-center gap-1.5 w-20 shrink-0 px-3 py-2 border-l border-base-300/50 bg-base-300/20">
       <span className="text-[9px] font-bold text-base-content/60 tracking-wider">MASTER</span>
 
-      <div className="relative flex items-center justify-center" style={{ height: 160, width: 24 }}>
+      <div className="relative flex items-center justify-center overflow-hidden" style={{ height: 120, width: 32 }}>
         <input
           type="range"
           min={0}
@@ -30,14 +30,10 @@ export function MasterStrip() {
           step={0.01}
           value={volume}
           onChange={(e) => handleVolume(parseFloat(e.target.value))}
-          className="range range-xs range-primary"
+          className="range range-xs range-primary absolute"
           style={{
-            writingMode: 'vertical-lr' as React.CSSProperties['writingMode'],
-            direction: 'rtl',
-            width: 160,
-            height: 24,
-            transform: 'rotate(180deg)',
-            cursor: 'ns-resize',
+            width: 120,
+            transform: 'rotate(-90deg)',
           }}
         />
       </div>

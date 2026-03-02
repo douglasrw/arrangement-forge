@@ -5,12 +5,11 @@ import { useSelectionStore } from '@/store/selection-store';
 import { useUiStore } from '@/store/ui-store';
 import { useUndoStore } from '@/store/undo-store';
 import { ConfirmDialog } from '@/components/shared/ConfirmDialog';
-import { formatChord } from '@/lib/chords';
 import type { Block as BlockType, InstrumentType } from '@/types';
 import { useState } from 'react';
 
 const INSTRUMENT_COLORS: Record<InstrumentType, string> = {
-  drums:   'bg-neutral/30 border-neutral/50',
+  drums:   'bg-warning/20 border-warning/40',
   bass:    'bg-info/20 border-info/40',
   piano:   'bg-primary/20 border-primary/30',
   guitar:  'bg-secondary/20 border-secondary/30',
@@ -18,7 +17,7 @@ const INSTRUMENT_COLORS: Record<InstrumentType, string> = {
 };
 
 const INSTRUMENT_COLORS_SELECTED: Record<InstrumentType, string> = {
-  drums:   'border-2 border-neutral/80',
+  drums:   'border-2 border-warning',
   bass:    'border-2 border-info/80',
   piano:   'border-2 border-primary',
   guitar:  'border-2 border-secondary',
@@ -33,9 +32,9 @@ interface Props {
 }
 
 export function Block({ block, instrument, stemId, barWidth }: Props) {
-  const { project, splitBlock, deleteBlock, duplicateBlock } = useProjectStore();
+  const { splitBlock, deleteBlock, duplicateBlock } = useProjectStore();
   const { blockId: selectedBlockId, selectBlock } = useSelectionStore();
-  const { toolMode, chordDisplayMode } = useUiStore();
+  const { toolMode } = useUiStore();
   const { pushUndo } = useUndoStore();
   const [ctxMenu, setCtxMenu] = useState<{ x: number; y: number } | null>(null);
   const [deleteOpen, setDeleteOpen] = useState(false);
@@ -43,20 +42,9 @@ export function Block({ block, instrument, stemId, barWidth }: Props) {
   const isSelected = selectedBlockId === block.id;
   const barSpan = block.endBar - block.startBar + 1;
 
-  const isPitched = instrument !== 'drums';
-
-  const chordLabel = isPitched && block.chordDegree && project
-    ? formatChord(
-        { id: '', projectId: '', barNumber: 0, degree: block.chordDegree, quality: block.chordQuality, bassDegree: block.chordBassDegree },
-        project.key,
-        chordDisplayMode
-      )
-    : null;
-
   function handleClick(e: React.MouseEvent) {
     e.stopPropagation();
     if (toolMode === 'split' && barSpan > 1) {
-      // Split at bar closest to click position
       const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
       const relX = e.clientX - rect.left;
       const barOffset = Math.round(relX / barWidth);
@@ -102,13 +90,8 @@ export function Block({ block, instrument, stemId, barWidth }: Props) {
         `}
         onClick={handleClick}
         onContextMenu={handleCtxMenu}
-        title={chordLabel ? `${chordLabel} · ${block.style}` : block.style}
+        title={block.style}
       >
-        {chordLabel && (
-          <span className="text-[11px] font-bold text-base-content truncate leading-tight">
-            {chordLabel}
-          </span>
-        )}
         <span className="text-[9px] text-base-content/50 truncate leading-tight">{block.style}</span>
       </div>
 

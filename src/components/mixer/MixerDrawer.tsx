@@ -10,17 +10,6 @@ const ABBREV: Record<InstrumentType, string> = {
   drums: 'DRM', bass: 'BAS', piano: 'PNO', guitar: 'GTR', strings: 'STR',
 };
 
-function MiniBar({ volume }: { volume: number }) {
-  return (
-    <div className="flex items-center gap-0.5 w-12">
-      <div
-        className="h-2 bg-primary/60 rounded-sm transition-all"
-        style={{ width: `${volume * 100}%`, minWidth: 2 }}
-      />
-    </div>
-  );
-}
-
 export function MixerDrawer() {
   const { stems, updateStem } = useProjectStore();
   const { mixerExpanded, toggleMixer, generationState } = useUiStore();
@@ -43,20 +32,19 @@ export function MixerDrawer() {
           {mixerExpanded ? '▼' : '▲'} Mixer
         </button>
 
-        {/* Mini channel overview */}
-        <div className="flex items-center gap-3">
+        {/* Stem names — click to mute, double-click to solo */}
+        <div className="flex items-center gap-4">
           {sorted.map((stem) => (
             <button
               key={stem.id}
-              className="flex items-center gap-1.5 text-[10px] text-base-content/50 hover:text-base-content/80 transition-colors"
+              className="text-[10px] font-mono text-base-content/50 hover:text-base-content/80 transition-colors"
               onClick={() => updateStem(stem.id, { isMuted: !stem.isMuted })}
               onDoubleClick={() => updateStem(stem.id, { isSolo: !stem.isSolo })}
               title={`Click to mute/unmute · Double-click to solo`}
             >
-              <span className={`font-mono ${stem.isMuted ? 'opacity-30' : ''}`}>
+              <span className={stem.isMuted ? 'opacity-30 line-through' : ''}>
                 {ABBREV[stem.instrument]}
               </span>
-              <MiniBar volume={stem.volume} />
             </button>
           ))}
         </div>

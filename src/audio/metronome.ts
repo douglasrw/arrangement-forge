@@ -35,9 +35,9 @@ export class Metronome {
     this.countIn = setting;
   }
 
-  /** Schedule metronome clicks for playback between startBar and endBar (1-indexed, inclusive) */
+  /** Schedule metronome clicks — always schedules, checks enabled at trigger time */
   scheduleClick(startBar: number, endBar: number, tempo: number, timeSig: string): void {
-    if (!this.enabled || !this.synth) return;
+    if (!this.synth) return;
     this.clearScheduled();
 
     const beatsPerBar = parseInt(timeSig.split('/')[0] ?? '4', 10);
@@ -50,7 +50,9 @@ export class Metronome {
       const time = (bar - 1) * beatsPerBar * secondsPerBeat + beatInBar * secondsPerBeat;
       const velocity = beatInBar === 0 ? 0.8 : 0.4;
       const id = Tone.getTransport().schedule((t) => {
-        this.synth?.triggerAttackRelease('16n', t, velocity);
+        if (this.enabled) {
+          this.synth?.triggerAttackRelease('16n', t, velocity);
+        }
       }, time);
       this.scheduledEvents.push(id as unknown as number);
     }
@@ -68,7 +70,6 @@ export class Metronome {
     const secondsPerBeat = 60 / tempo;
     const totalBeats = bars * beatsPerBar;
 
-    // Start at the very beginning of the transport
     for (let beat = 0; beat < totalBeats; beat++) {
       const time = beat * secondsPerBeat;
       const velocity = beat % beatsPerBar === 0 ? 0.9 : 0.5;
@@ -77,7 +78,6 @@ export class Metronome {
       }, time);
     }
 
-    // onComplete fires when count-in ends
     Tone.getTransport().schedule(() => {
       onComplete();
     }, totalBeats * secondsPerBeat);

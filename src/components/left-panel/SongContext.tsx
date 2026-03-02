@@ -3,12 +3,14 @@
 import { useState } from 'react';
 import { useProjectStore } from '@/store/project-store';
 import { useUiStore } from '@/store/ui-store';
+import { useGenerate } from '@/hooks/useGenerate';
 import { StyleControls } from './StyleControls';
 import { parseDescription } from '@/lib/description-parser';
 
 export function SongContext() {
   const { project, updateProject } = useProjectStore();
   const { generationState } = useUiStore();
+  const { runGeneration } = useGenerate();
   const [inputTab, setInputTab] = useState<'text' | 'upload' | 'image'>('text');
   const [inputExpanded, setInputExpanded] = useState(true);
 
@@ -138,7 +140,7 @@ export function SongContext() {
         <div className="px-1 pt-2">
           <button
             className="btn btn-outline btn-sm w-full text-xs"
-            id="regenerate-song-btn"
+            onClick={() => runGeneration(true)}
           >
             Regenerate Song
           </button>

@@ -19,6 +19,7 @@ export class AudioEngine {
   private metronome: Metronome;
   private transportController: TransportController;
   private _initialized = false;
+  private _masterVolume = 0.8;
 
   get isInitialized(): boolean { return this._initialized; }
 
@@ -29,8 +30,8 @@ export class AudioEngine {
 
   async init(): Promise<void> {
     if (this._initialized) return;
-    await Tone.start(); // Resume AudioContext after user gesture
-    this.masterGain = new Tone.Gain(0.8).toDestination();
+    await Tone.start();
+    this.masterGain = new Tone.Gain(this._masterVolume).toDestination();
     this.metronome.init();
     this._initialized = true;
   }
@@ -50,18 +51,34 @@ export class AudioEngine {
   }
 
   play(): void {
+    // Restore master gain (may have been zeroed by stop/pause)
+    if (this.masterGain) {
+      this.masterGain.gain.cancelScheduledValues(Tone.now());
+      this.masterGain.gain.setValueAtTime(this._masterVolume, Tone.now());
+    }
     Tone.getTransport().start();
   }
 
   pause(): void {
-    this.releaseAllNotes();
     Tone.getTransport().pause();
+    this.releaseAllNotes();
+    // Immediately zero master gain to kill release tails
+    if (this.masterGain) {
+      this.masterGain.gain.cancelScheduledValues(Tone.now());
+      this.masterGain.gain.setValueAtTime(0, Tone.now());
+    }
   }
 
   stop(): void {
-    this.releaseAllNotes();
     Tone.getTransport().stop();
+    Tone.getTransport().cancel();
     Tone.getTransport().position = 0;
+    this.releaseAllNotes();
+    // Immediately zero master gain to kill release tails
+    if (this.masterGain) {
+      this.masterGain.gain.cancelScheduledValues(Tone.now());
+      this.masterGain.gain.setValueAtTime(0, Tone.now());
+    }
   }
 
   seek(bar: number): void {
@@ -90,6 +107,7 @@ export class AudioEngine {
   }
 
   setMasterVolume(volume: number): void {
+    this._masterVolume = volume;
     if (this.masterGain) this.masterGain.gain.value = volume;
   }
 
@@ -113,15 +131,12 @@ export class AudioEngine {
   ): void {
     if (!this._initialized || !this.masterGain) return;
 
-    // Parse time signature
     const [numStr] = timeSignature.split('/');
     const numerator = parseInt(numStr ?? '4', 10);
     this.transportController.setTimeSignature(numerator, 4);
 
-    // Clear existing schedules
     Tone.getTransport().cancel();
 
-    // Rebuild instruments for stems present in this arrangement
     this.instruments.forEach((inst) => inst.dispose());
     this.channelGains.forEach((g) => g.dispose());
     this.channelPanners.forEach((p) => p.dispose());
@@ -145,7 +160,6 @@ export class AudioEngine {
 
     this.applyMuteState();
 
-    // Schedule MIDI notes
     const tempo = Tone.getTransport().bpm.value;
     const secondsPerBeat = 60 / tempo;
 
@@ -173,16 +187,18 @@ export class AudioEngine {
               );
             }
           } catch {
-            // Ignore scheduling errors (e.g., invalid note names for drum synths)
+            // Ignore scheduling errors
           }
         }, noteTime);
       }
     }
 
-    // Set total duration loop end
     const totalBars = sections.reduce((sum, s) => sum + s.barCount, 0);
     const totalSeconds = this.transportController.getTotalDuration(totalBars);
     Tone.getTransport().loopEnd = totalSeconds;
+
+    // Schedule metronome clicks (checks enabled at trigger time)
+    this.metronome.scheduleClick(1, totalBars, tempo, timeSignature);
   }
 
   getTransportState(): TransportState {
@@ -202,16 +218,16 @@ export class AudioEngine {
     };
   }
 
-
   private releaseAllNotes(): void {
     this.instruments.forEach((inst) => {
-      if ("releaseAll" in inst && typeof inst.releaseAll === "function") {
+      if ('releaseAll' in inst && typeof inst.releaseAll === 'function') {
         (inst as Tone.PolySynth).releaseAll();
-      } else if ("triggerRelease" in inst && typeof inst.triggerRelease === "function") {
+      } else if ('triggerRelease' in inst && typeof inst.triggerRelease === 'function') {
         (inst as Tone.MonoSynth).triggerRelease();
       }
     });
   }
+
   private applyMuteState(): void {
     const anysoloed = Array.from(this.stemSoloed.values()).some(Boolean);
     this.instruments.forEach((_, instrument) => {
