@@ -190,7 +190,7 @@ npm run build
 
 ---
 
-### [ ] T3 — Wire TransportBar to useAudio + projectStore
+### [x] T3 — Wire TransportBar to useAudio + projectStore
 
 **Files:** `src/components/transport/TransportBar.tsx`
 

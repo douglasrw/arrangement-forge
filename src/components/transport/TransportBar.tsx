@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect, useCallback } from "react"
+import { useState, useRef, useEffect } from "react"
 import { cn } from "@/lib/utils"
 import {
   Square,
@@ -7,6 +7,8 @@ import {
   Circle,
   Repeat,
 } from "lucide-react"
+import { useAudio } from "@/hooks/useAudio"
+import { useProjectStore } from "@/store/project-store"
 
 /* ------------------------------------------------------------------ */
 /*  Metronome icon (not available in lucide)                           */
@@ -34,75 +36,51 @@ function MetronomeIcon({ className }: { className?: string }) {
 /*  Transport Bar                                                      */
 /* ------------------------------------------------------------------ */
 export function TransportBar() {
-  const [isPlaying, setIsPlaying] = useState(false)
+  const { transportState, play, pause, stop } = useAudio()
+  const { project, updateProject } = useProjectStore()
+
+  const isPlaying = transportState.playbackState === "playing"
+  const bar = transportState.currentBar
+  const beat = transportState.currentBeat
+
+  const bpm = project?.tempo ?? 120
+  const timeSig = project?.timeSignature ?? "4/4"
+
+  /* Compute elapsed from bar/beat and tempo */
+  const elapsed = ((bar - 1) * 4 + (beat - 1)) * (60 / bpm)
+
   const [loopActive, setLoopActive] = useState(false)
   const [metronomeActive, setMetronomeActive] = useState(false)
 
-  /* BPM inline editing */
-  const [bpm, setBpm] = useState(120)
+  /* BPM inline editing — local draft only */
   const [editingBpm, setEditingBpm] = useState(false)
-  const [bpmDraft, setBpmDraft] = useState("120")
+  const [bpmDraft, setBpmDraft] = useState(String(bpm))
   const bpmInputRef = useRef<HTMLInputElement>(null)
 
-  /* Simulated playback position */
-  const [bar, setBar] = useState(1)
-  const [beat, setBeat] = useState(1)
-  const [elapsed, setElapsed] = useState(0)
-  const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null)
-
-  const stopPlayback = useCallback(() => {
-    setIsPlaying(false)
-    if (intervalRef.current) {
-      clearInterval(intervalRef.current)
-      intervalRef.current = null
-    }
-  }, [])
-
-  const handleStop = useCallback(() => {
-    stopPlayback()
-    setBar(1)
-    setBeat(1)
-    setElapsed(0)
-  }, [stopPlayback])
-
-  const handlePlayPause = useCallback(() => {
-    setIsPlaying((prev) => !prev)
-  }, [])
-
-  /* Tick forward when playing */
+  /* Sync draft when project bpm changes externally */
   useEffect(() => {
-    if (isPlaying) {
-      intervalRef.current = setInterval(() => {
-        setBeat((prev) => {
-          if (prev >= 4) {
-            setBar((b) => b + 1)
-            return 1
-          }
-          return prev + 1
-        })
-        setElapsed((e) => e + 60 / bpm)
-      }, (60 / bpm) * 1000)
-    } else {
-      if (intervalRef.current) {
-        clearInterval(intervalRef.current)
-        intervalRef.current = null
-      }
-    }
-    return () => {
-      if (intervalRef.current) clearInterval(intervalRef.current)
-    }
-  }, [isPlaying, bpm])
+    if (!editingBpm) setBpmDraft(String(bpm))
+  }, [bpm, editingBpm])
 
   /* Focus BPM input */
   useEffect(() => {
     if (editingBpm) bpmInputRef.current?.select()
   }, [editingBpm])
 
+  function handleStop() {
+    stop()
+  }
+
+  function handlePlayPause() {
+    if (isPlaying) pause()
+    else void play()
+  }
+
   function commitBpm() {
     const val = Math.min(280, Math.max(40, parseInt(bpmDraft) || 120))
-    setBpm(val)
     setBpmDraft(String(val))
     setEditingBpm(false)
+    updateProject({ tempo: val })
   }
 
   /* Format elapsed */
@@ -207,7 +185,7 @@ export function TransportBar() {
         </div>
 
         {/* Time signature */}
-        <span className="text-sm text-[#71717a]">4/4</span>
+        <span className="text-sm text-[#71717a]">{timeSig}</span>
       </div>
 
       {/* ---- RIGHT: Loop, Metronome, Elapsed ---- */}
