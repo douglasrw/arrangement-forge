@@ -4,13 +4,172 @@ import { Settings } from "lucide-react"
 import { useProjectStore } from "@/store/project-store"
 import { useUiStore } from "@/store/ui-store"
 import { useProject } from "@/hooks/useProject"
+import { ALL_KEYS } from "@/lib/chords"
+
+/* ------------------------------------------------------------------ */
+/*  Key dropdown                                                       */
+/* ------------------------------------------------------------------ */
+function KeyDropdown({
+  value,
+  onChange,
+}: {
+  value: string
+  onChange: (key: string) => void
+}) {
+  return (
+    <div className="relative">
+      <label htmlFor="topbar-key-select" className="sr-only">Key</label>
+      <select
+        id="topbar-key-select"
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        className={cn(
+          "h-7 cursor-pointer appearance-none rounded-md border border-border/30 bg-secondary/50",
+          "pl-2 pr-6 text-xs text-muted-foreground",
+          "focus:border-ring focus:outline-none focus:ring-1 focus:ring-ring"
+        )}
+      >
+        {ALL_KEYS.map((k) => (
+          <option key={k} value={k}>
+            Key of {k}
+          </option>
+        ))}
+      </select>
+      {/* Custom dropdown arrow */}
+      <div className="pointer-events-none absolute right-1.5 top-1/2 -translate-y-1/2">
+        <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className="text-muted-foreground">
+          <path d="m6 9 6 6 6-6" />
+        </svg>
+      </div>
+    </div>
+  )
+}
+
+/* ------------------------------------------------------------------ */
+/*  BPM click-to-edit                                                  */
+/* ------------------------------------------------------------------ */
+function BpmEditor({
+  value,
+  onChange,
+}: {
+  value: number
+  onChange: (bpm: number) => void
+}) {
+  const [editing, setEditing] = useState(false)
+  const [draft, setDraft] = useState(String(value))
+  const inputRef = useRef<HTMLInputElement>(null)
+
+  useEffect(() => {
+    if (!editing) setDraft(String(value))
+  }, [value, editing])
+
+  useEffect(() => {
+    if (editing) inputRef.current?.select()
+  }, [editing])
+
+  function commit(raw: string) {
+    setEditing(false)
+    const parsed = parseInt(raw, 10)
+    if (!isNaN(parsed)) {
+      const clamped = Math.min(240, Math.max(40, parsed))
+      onChange(clamped)
+    }
+  }
+
+  if (editing) {
+    return (
+      <>
+        <label htmlFor="topbar-bpm-input" className="sr-only">BPM</label>
+        <input
+          ref={inputRef}
+          id="topbar-bpm-input"
+          type="number"
+          min={40}
+          max={240}
+          value={draft}
+          onChange={(e) => setDraft(e.target.value)}
+          onBlur={() => commit(draft)}
+          onKeyDown={(e) => {
+            if (e.key === "Enter") commit(draft)
+            if (e.key === "Escape") setEditing(false)
+          }}
+          className={cn(
+            "h-7 w-20 rounded-md border border-border/30 bg-secondary/50",
+            "px-2 text-center font-mono text-xs text-muted-foreground",
+            "focus:border-ring focus:outline-none focus:ring-1 focus:ring-ring"
+          )}
+        />
+      </>
+    )
+  }
+
+  return (
+    <button
+      type="button"
+      onClick={() => setEditing(true)}
+      className="rounded-md border border-border/30 bg-secondary/50 px-2 py-0.5 text-xs text-muted-foreground transition-colors hover:border-border hover:text-foreground"
+      title="Click to edit BPM"
+    >
+      {'\u2669'} {value} bpm
+    </button>
+  )
+}
+
+/* ------------------------------------------------------------------ */
+/*  Chord display toggle [A | I]                                       */
+/* ------------------------------------------------------------------ */
+function ChordDisplayToggle({
+  mode,
+  onToggle,
+}: {
+  mode: "letter" | "roman"
+  onToggle: () => void
+}) {
+  return (
+    <div
+      className="flex h-7 items-center overflow-hidden rounded-md border border-border/30"
+      role="radiogroup"
+      aria-label="Chord display mode"
+    >
+      <button
+        type="button"
+        role="radio"
+        aria-checked={mode === "letter"}
+        onClick={() => mode !== "letter" && onToggle()}
+        className={cn(
+          "px-2 py-0.5 text-xs font-medium transition-colors",
+          mode === "letter"
+            ? "bg-ring/20 text-ring"
+            : "bg-secondary/50 text-muted-foreground hover:text-foreground"
+        )}
+      >
+        A
+      </button>
+      <div className="h-full w-px bg-border/30" />
+      <button
+        type="button"
+        role="radio"
+        aria-checked={mode === "roman"}
+        onClick={() => mode !== "roman" && onToggle()}
+        className={cn(
+          "px-2 py-0.5 text-xs font-medium transition-colors",
+          mode === "roman"
+            ? "bg-ring/20 text-ring"
+            : "bg-secondary/50 text-muted-foreground hover:text-foreground"
+        )}
+      >
+        I
+      </button>
+    </div>
+  )
+}
 
 /* ------------------------------------------------------------------ */
 /*  TopBar                                                             */
 /* ------------------------------------------------------------------ */
 export function TopBar() {
   const { project, updateProject } = useProjectStore()
-  const { unsavedChanges } = useUiStore()
+  const { unsavedChanges, chordDisplayMode, toggleChordDisplay } = useUiStore()
   const { saveProject } = useProject()
 
   const projectName = project?.name ?? "Untitled Project"
@@ -18,7 +177,6 @@ export function TopBar() {
   const tempo = project?.tempo ?? 120
   const genre = project?.genre ?? "Jazz"
   const timeSig = project?.timeSignature ?? "4/4"
-  const metaChips = [`Key of ${key}`, `\u2669 ${tempo} bpm`, genre, timeSig]
 
   const [isEditing, setIsEditing] = useState(false)
   const [nameDraft, setNameDraft] = useState(projectName)
@@ -69,22 +227,25 @@ export function TopBar() {
         {/* Editable project name */}
         <div className="flex items-center gap-2">
           {isEditing ? (
-            <input
-              ref={inputRef}
-              id="project-name-input"
-              value={nameDraft}
-              onChange={(e) => setNameDraft(e.target.value)}
-              onBlur={() => commitName(nameDraft)}
-              onKeyDown={(e) => {
-                if (e.key === "Enter") commitName(nameDraft)
-                if (e.key === "Escape") {
-                  setNameDraft(projectName)
-                  setIsEditing(false)
-                }
-              }}
-              placeholder="Untitled Project"
-              className="h-6 w-40 rounded-[5px] border border-border bg-secondary px-2 text-sm font-medium text-foreground outline-none focus:border-[#0891b2]"
-            />
+            <>
+              <label htmlFor="project-name-input" className="sr-only">Project name</label>
+              <input
+                ref={inputRef}
+                id="project-name-input"
+                value={nameDraft}
+                onChange={(e) => setNameDraft(e.target.value)}
+                onBlur={() => commitName(nameDraft)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") commitName(nameDraft)
+                  if (e.key === "Escape") {
+                    setNameDraft(projectName)
+                    setIsEditing(false)
+                  }
+                }}
+                placeholder="Untitled Project"
+                className="h-6 w-40 rounded-[5px] border border-border bg-secondary px-2 text-sm font-medium text-foreground outline-none focus:border-[#0891b2]"
+              />
+            </>
           ) : (
             <button
               type="button"
@@ -114,16 +275,26 @@ export function TopBar() {
         </div>
       </div>
 
-      {/* ---- CENTER: Metadata chips ---- */}
+      {/* ---- CENTER: Interactive metadata controls ---- */}
       <div className="hidden items-center gap-1.5 md:flex">
-        {metaChips.map((chip) => (
-          <span
-            key={chip}
-            className="rounded-md border border-border/30 bg-secondary/50 px-2 py-0.5 text-xs text-muted-foreground"
-          >
-            {chip}
-          </span>
-        ))}
+        <KeyDropdown
+          value={key}
+          onChange={(k) => updateProject({ key: k })}
+        />
+        <BpmEditor
+          value={tempo}
+          onChange={(bpm) => updateProject({ tempo: bpm })}
+        />
+        <span className="rounded-md border border-border/30 bg-secondary/50 px-2 py-0.5 text-xs text-muted-foreground">
+          {genre}
+        </span>
+        <span className="rounded-md border border-border/30 bg-secondary/50 px-2 py-0.5 text-xs text-muted-foreground">
+          {timeSig}
+        </span>
+        <ChordDisplayToggle
+          mode={chordDisplayMode}
+          onToggle={toggleChordDisplay}
+        />
       </div>
 
       {/* ---- RIGHT: Export + Gear + Avatar ---- */}
