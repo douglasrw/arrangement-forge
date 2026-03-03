@@ -24,6 +24,8 @@ interface SequencerBlockProps {
   instrument: Instrument
   styleName?: string
   state?: BlockState
+  /** True when any block in the arrangement is selected (dims unselected blocks) */
+  dimmed?: boolean
   onClick?: () => void
   className?: string
 }
@@ -32,6 +34,7 @@ export function SequencerBlock({
   instrument,
   styleName = "Jazz brush swing",
   state = "default",
+  dimmed = false,
   onClick,
   className,
 }: SequencerBlockProps) {
@@ -50,24 +53,30 @@ export function SequencerBlock({
         className,
       )}
       style={{
-        background: `linear-gradient(to bottom, ${color}26 0%, transparent 100%), #111113`,
-        borderTop: isSelected ? `2px solid ${color}` : `2px solid ${color}99`,
-        borderRight: isSelected ? `1px solid ${color}` : `1px solid transparent`,
-        borderBottom: isSelected ? `1px solid ${color}` : `1px solid #27272a`,
-        borderLeft: isSelected ? `1px solid ${color}` : `1px solid transparent`,
+        background: isSelected
+          ? `linear-gradient(to bottom, ${color}33 0%, ${color}0d 100%), #141416`
+          : `linear-gradient(to bottom, ${color}26 0%, transparent 100%), #111113`,
+        border: isSelected ? `2px solid ${color}` : undefined,
+        borderTop: isSelected ? undefined : `2px solid ${color}99`,
+        borderRight: isSelected ? undefined : `1px solid transparent`,
+        borderBottom: isSelected ? undefined : `1px solid #27272a`,
+        borderLeft: isSelected ? undefined : `1px solid transparent`,
         boxShadow: isSelected
-          ? `0 0 16px 2px ${color}33, 0 0 4px 1px ${color}22`
+          ? `0 0 20px 3px ${color}40, 0 0 6px 1px ${color}30, inset 0 0 12px ${color}10`
           : "none",
+        opacity: dimmed && !isSelected ? 0.55 : 1,
         outlineColor: color,
       }}
       onMouseEnter={(e) => {
         if (!isSelected) {
           e.currentTarget.style.borderTopColor = color
+          if (dimmed) e.currentTarget.style.opacity = "0.8"
         }
       }}
       onMouseLeave={(e) => {
         if (!isSelected) {
           e.currentTarget.style.borderTopColor = `${color}99`
+          if (dimmed) e.currentTarget.style.opacity = "0.55"
         }
       }}
     >

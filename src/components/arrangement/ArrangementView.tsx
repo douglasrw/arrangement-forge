@@ -138,6 +138,7 @@ export function ArrangementView({
   const { sectionId: selectedSectionId, blockId: selectedBlockId, selectSection, selectBlock, selectSong } = useSelectionStore()
   const { transportState } = useAudio()
   const key = project?.key ?? "C"
+  const hasAnyBlockSelected = selectedBlockId !== null
 
   /* Measure container to compute dynamic lane heights */
   const containerRef = useRef<HTMLDivElement>(null)
@@ -354,6 +355,7 @@ export function ArrangementView({
                         instrument={inst.instrument}
                         styleName={block.style ?? "Default"}
                         state={isSelected ? "selected" : "default"}
+                        dimmed={hasAnyBlockSelected && !isSelected}
                         onClick={() => {
                           const isDeselecting = block.id === selectedBlockId
                           if (isDeselecting) {
