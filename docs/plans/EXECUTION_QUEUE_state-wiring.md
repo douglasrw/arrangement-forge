@@ -80,7 +80,7 @@ but now reflect real project state.
 
 ---
 
-### [ ] T1 — Remove dead component files
+### [x] T1 — Remove dead component files
 
 **Files:** Delete only — no new code.
 

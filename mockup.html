@@ -1,1725 +1,319 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" data-theme="wireframe">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Arrangement Forge</title>
+<title>Arrangement Forge - Song Level Context</title>
+<link href="https://cdn.jsdelivr.net/npm/daisyui@4/dist/full.min.css" rel="stylesheet">
+<script src="https://cdn.tailwindcss.com"></script>
 <style>
-  * { margin: 0; padding: 0; box-sizing: border-box; }
-  :root {
-    --bg: #1a1a2e;
-    --surface: #16213e;
-    --surface2: #0f3460;
-    --border: #2a2a4a;
-    --text: #e0e0e0;
-    --text-dim: #8888aa;
-    --accent: #e94560;
-    --accent2: #f5a623;
-    --green: #4ecdc4;
-    --blue: #5b8def;
-    --fader-track: #333355;
-    --drums-color: #e94560;
-    --bass-color: #5b8def;
-    --piano-color: #4ecdc4;
-    --guitar-color: #f5a623;
-    --strings-color: #b388ff;
-  }
-  html, body {
-    height: 100%;
-    overflow: hidden;
-    font-family: 'SF Mono', 'Fira Code', 'Consolas', monospace;
-    font-size: 12px;
-    background: var(--bg);
-    color: var(--text);
-  }
+  html, body { height: 100%; overflow: hidden; font-size: 12px; }
 
-  /* ─── LAYOUT ─── */
-  .app {
-    display: grid;
-    grid-template-rows: auto auto 1fr auto;
-    height: 100vh;
-    width: 100vw;
-  }
-
-  /* ─── TOP BAR ─── */
-  .top-bar {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding: 8px 16px;
-    background: var(--surface);
-    border-bottom: 1px solid var(--border);
-  }
-  .logo {
-    font-size: 16px;
-    font-weight: 700;
-    letter-spacing: 1px;
-    color: var(--accent);
-  }
-  .song-title {
-    font-size: 15px;
-    color: var(--text);
-    background: transparent;
-    border: 1px solid transparent;
-    padding: 4px 12px;
-    border-radius: 4px;
-    text-align: center;
-    min-width: 280px;
-    font-family: inherit;
-  }
-  .song-title:hover { border-color: var(--border); }
-  .song-title:focus { border-color: var(--accent); outline: none; background: var(--bg); }
-  .top-actions { display: flex; gap: 8px; align-items: center; }
-  .top-actions button {
-    padding: 5px 14px;
-    border: 1px solid var(--border);
-    background: var(--surface2);
-    color: var(--text);
-    border-radius: 4px;
-    cursor: pointer;
-    font-family: inherit;
-    font-size: 11px;
-  }
-  .top-actions button:hover { border-color: var(--accent); }
-  .avatar {
-    width: 28px; height: 28px;
-    border-radius: 50%;
-    background: var(--accent);
+  /* ─── Arrangement-only (block sequencer layout) ─── */
+  .bar-blocks { display: flex; height: 100%; gap: 1px; }
+  .bar-block {
+    position: relative; border-radius: 3px;
     display: flex; align-items: center; justify-content: center;
-    font-size: 11px; font-weight: 700; color: #fff;
-    margin-left: 8px;
+    cursor: pointer; overflow: hidden; min-width: 0;
+    background: oklch(var(--n));
+    border: 1px solid oklch(var(--bc) / 0.2);
   }
-
-  /* ─── PARAMS BAR ─── */
-  .params-bar {
-    display: flex;
-    align-items: center;
-    gap: 16px;
-    padding: 8px 16px;
-    background: var(--surface);
-    border-bottom: 1px solid var(--border);
-    flex-wrap: wrap;
+  .bar-block:hover { filter: brightness(1.1); }
+  .bar-block.selected { outline: 2px solid oklch(var(--bc)); outline-offset: -2px; z-index: 5; }
+  .block-label {
+    font-size: 9px; font-weight: 600;
+    color: oklch(var(--nc));
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    padding: 0 4px; pointer-events: none;
   }
-  .param-group {
-    display: flex;
-    align-items: center;
-    gap: 6px;
+  .bar-seam {
+    position: absolute; top: 0; bottom: 0; width: 1px;
+    background: oklch(var(--bc) / 0.15); pointer-events: none;
   }
-  .param-group label {
-    color: var(--text-dim);
-    font-size: 11px;
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
-  }
-  .param-group select, .param-group input[type="number"] {
-    background: var(--bg);
-    color: var(--text);
-    border: 1px solid var(--border);
-    padding: 4px 8px;
-    border-radius: 4px;
-    font-family: inherit;
-    font-size: 12px;
-  }
-  .param-group select:focus, .param-group input:focus { border-color: var(--accent); outline: none; }
-  .tempo-control {
-    display: flex; align-items: center; gap: 4px;
-  }
-  .tempo-control button {
-    width: 22px; height: 22px;
-    background: var(--bg); border: 1px solid var(--border);
-    color: var(--text); border-radius: 3px; cursor: pointer;
-    font-size: 10px; display: flex; align-items: center; justify-content: center;
-  }
-  .tempo-control button:hover { border-color: var(--accent); }
-  .tempo-control input[type="number"] {
-    width: 60px; text-align: center;
-  }
-  .generate-btn {
-    padding: 7px 28px;
-    background: var(--accent);
-    color: #fff;
-    border: none;
-    border-radius: 4px;
-    font-family: inherit;
-    font-size: 13px;
-    font-weight: 700;
-    cursor: pointer;
-    letter-spacing: 1px;
-    margin-left: auto;
-  }
-  .generate-btn:hover { background: #d6304d; }
-  .generate-btn:active { transform: scale(0.97); }
-
-  /* ─── MAIN CONTENT ─── */
-  .main {
-    display: grid;
-    grid-template-columns: 300px 1fr;
-    overflow: hidden;
-  }
-
-  /* ─── LEFT PANEL ─── */
-  .left-panel {
-    background: var(--surface);
-    border-right: 1px solid var(--border);
-    overflow-y: auto;
-    display: flex;
-    flex-direction: column;
-  }
-  .panel-section {
-    border-bottom: 1px solid var(--border);
-    padding: 10px 12px;
-  }
-  .panel-section-header {
-    font-size: 10px;
-    text-transform: uppercase;
-    letter-spacing: 1.5px;
-    color: var(--text-dim);
-    margin-bottom: 8px;
-    font-weight: 600;
-  }
-
-  /* Tabs */
-  .tabs {
-    display: flex;
-    gap: 2px;
-    margin-bottom: 10px;
-  }
-  .tab {
-    flex: 1;
-    padding: 6px 4px;
-    background: var(--bg);
-    border: 1px solid var(--border);
-    color: var(--text-dim);
-    text-align: center;
-    cursor: pointer;
-    font-size: 10px;
-    font-family: inherit;
-    border-radius: 3px;
-  }
-  .tab.active {
-    background: var(--surface2);
-    color: var(--text);
-    border-color: var(--accent);
-  }
-  .tab:hover { border-color: var(--accent); }
-
-  /* Text input */
-  .chord-input {
-    width: 100%;
-    height: 110px;
-    background: var(--bg);
-    color: var(--text);
-    border: 1px solid var(--border);
-    border-radius: 4px;
-    padding: 8px;
-    font-family: inherit;
-    font-size: 12px;
-    resize: none;
-    line-height: 1.6;
-  }
-  .chord-input:focus { border-color: var(--accent); outline: none; }
-  .chord-input::placeholder { color: var(--text-dim); }
-
-  .nl-input {
-    width: 100%;
-    height: 65px;
-    background: var(--bg);
-    color: var(--accent2);
-    border: 1px solid var(--border);
-    border-radius: 4px;
-    padding: 8px;
-    font-family: inherit;
-    font-size: 12px;
-    resize: none;
-    font-style: italic;
-    line-height: 1.5;
-  }
-  .nl-input:focus { border-color: var(--accent); outline: none; }
-  .or-divider {
-    color: var(--text-dim);
-    font-size: 10px;
-    text-align: center;
-    margin: 6px 0;
-    text-transform: uppercase;
-    letter-spacing: 2px;
-  }
-
-  /* Style controls */
-  .style-row {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    margin-bottom: 6px;
-    gap: 8px;
-  }
-  .style-row label {
-    font-size: 11px;
-    color: var(--text-dim);
-    min-width: 65px;
-  }
-  .style-row select {
-    flex: 1;
-    background: var(--bg);
-    color: var(--text);
-    border: 1px solid var(--border);
-    padding: 3px 6px;
-    border-radius: 3px;
-    font-family: inherit;
-    font-size: 11px;
-  }
-  .style-row input[type="range"] {
-    flex: 1;
-    height: 4px;
-    -webkit-appearance: none;
-    background: var(--fader-track);
-    border-radius: 2px;
-    outline: none;
-  }
-  .style-row input[type="range"]::-webkit-slider-thumb {
-    -webkit-appearance: none;
-    width: 12px; height: 12px;
-    border-radius: 50%;
-    background: var(--blue);
-    cursor: pointer;
-  }
-  .style-row .range-val {
-    font-size: 10px;
-    color: var(--green);
-    min-width: 32px;
-    text-align: right;
-  }
-
-  /* AI Chat */
-  .ai-messages {
-    max-height: 120px;
-    overflow-y: auto;
-    margin-bottom: 8px;
-  }
-  .ai-msg {
-    font-size: 11px;
-    padding: 5px 8px;
-    margin-bottom: 4px;
-    border-radius: 4px;
-    line-height: 1.4;
-  }
-  .ai-msg.user {
-    background: var(--surface2);
-    color: var(--text);
-  }
-  .ai-msg.assistant {
-    background: var(--bg);
-    color: var(--green);
-    border-left: 2px solid var(--green);
-  }
-  .ai-input-row {
-    display: flex; gap: 4px;
-  }
-  .ai-input {
-    flex: 1;
-    background: var(--bg);
-    color: var(--text);
-    border: 1px solid var(--border);
-    padding: 6px 8px;
-    border-radius: 4px;
-    font-family: inherit;
-    font-size: 11px;
-  }
-  .ai-input:focus { border-color: var(--accent); outline: none; }
-  .ai-input::placeholder { color: var(--text-dim); }
-  .ai-send {
-    background: var(--surface2);
-    border: 1px solid var(--border);
-    color: var(--accent);
-    padding: 4px 10px;
-    border-radius: 4px;
-    cursor: pointer;
-    font-family: inherit;
-    font-weight: 700;
-  }
-  .ai-send:hover { border-color: var(--accent); }
-  .regen-btn {
-    width: 100%;
-    padding: 6px;
-    background: var(--bg);
-    border: 1px dashed var(--border);
-    color: var(--text-dim);
-    border-radius: 4px;
-    cursor: pointer;
-    font-family: inherit;
-    font-size: 10px;
-    margin-top: 6px;
-  }
-  .regen-btn:hover { border-color: var(--accent); color: var(--accent); }
-
-  /* ─── RIGHT PANEL ─── */
-  .right-panel {
-    display: grid;
-    grid-template-rows: 1fr auto auto;
-    overflow: hidden;
-  }
-
-  /* Arrangement area */
-  .arrangement {
-    display: flex;
-    flex-direction: column;
-    overflow: hidden;
-    padding: 8px 12px;
-    border-bottom: 1px solid var(--border);
-  }
-  .arrangement-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 6px;
-  }
-  .arrangement-header span {
-    font-size: 10px;
-    text-transform: uppercase;
-    letter-spacing: 1.5px;
-    color: var(--text-dim);
-    font-weight: 600;
-  }
-  .arrangement-tools {
-    display: flex;
-    gap: 4px;
-    align-items: center;
-  }
-  .tool-btn {
-    padding: 3px 10px;
-    background: var(--bg);
-    border: 1px solid var(--border);
-    color: var(--text-dim);
-    border-radius: 3px;
-    cursor: pointer;
-    font-family: inherit;
-    font-size: 10px;
-    font-weight: 600;
-  }
-  .tool-btn:hover { border-color: var(--accent); color: var(--text); }
-  .tool-btn.active { border-color: var(--accent); color: var(--accent); background: rgba(233,69,96,0.1); }
-  .zoom-controls button {
-    width: 22px; height: 22px;
-    background: var(--surface); border: 1px solid var(--border);
-    color: var(--text); border-radius: 3px; cursor: pointer;
-    font-size: 12px; margin-left: 4px;
-  }
-  .zoom-controls button:hover { border-color: var(--accent); }
-
-  /* Section headers */
-  .sections-row {
-    display: flex;
-    margin-bottom: 4px;
-    gap: 2px;
-  }
-  .section-block {
-    text-align: center;
-    padding: 4px 0;
-    border-radius: 3px;
-    font-size: 10px;
-    font-weight: 600;
-    cursor: pointer;
-    border: 1px solid var(--border);
-    background: var(--surface);
-  }
-  .section-block:hover { border-color: var(--accent); }
-  .section-block.active { border-color: var(--accent); background: var(--surface2); }
-  .section-block .bars {
-    font-size: 9px;
-    color: var(--text-dim);
-    font-weight: 400;
-  }
-
-  /* ─── STEM LANES (Bar-Level Block Sequencer) ─── */
-  .stems-container {
-    flex: 1;
-    overflow-y: auto;
-    position: relative;
+  .block-popover {
+    position: absolute; top: 100%; left: 50%; transform: translateX(-50%);
+    z-index: 100; width: 220px; border-radius: 6px; padding: 10px;
+    background: oklch(var(--b1)); border: 1px solid oklch(var(--bc) / 0.2);
+    box-shadow: 0 8px 24px rgba(0,0,0,0.15);
   }
   .playhead {
-    position: absolute;
-    top: 0;
-    width: 2px;
-    height: 100%;
-    background: var(--accent);
-    z-index: 10;
-    pointer-events: none;
-    transition: left 0.1s linear;
+    position: absolute; top: 0; bottom: 0; width: 2px;
+    background: oklch(var(--p)); z-index: 10; pointer-events: none;
+    transition: left 0.05s linear;
   }
-
-  .stem-lane {
-    display: flex;
-    align-items: stretch;
-    border-bottom: 1px solid var(--border);
-    min-height: 44px;
-  }
-  .stem-lane:hover { background: rgba(255,255,255,0.02); }
-
-  .stem-controls {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    gap: 3px;
-    min-width: 90px;
-    padding: 4px 6px;
-    border-right: 1px solid var(--border);
-    background: var(--surface);
-  }
-  .stem-label {
-    font-size: 10px;
-    font-weight: 600;
-    color: var(--text);
-  }
-  .stem-btns {
-    display: flex;
-    gap: 3px;
-  }
-  .stem-btn {
-    width: 20px; height: 18px;
-    border: 1px solid var(--border);
-    border-radius: 2px;
-    font-size: 9px;
-    font-weight: 700;
-    cursor: pointer;
-    display: flex; align-items: center; justify-content: center;
-    font-family: inherit;
-  }
-  .stem-btn.solo {
-    background: var(--bg);
-    color: var(--text-dim);
-  }
-  .stem-btn.solo.active {
-    background: var(--accent2);
-    color: #000;
-    border-color: var(--accent2);
-  }
-  .stem-btn.mute {
-    background: var(--bg);
-    color: var(--text-dim);
-  }
-  .stem-btn.mute.active {
-    background: var(--accent);
-    color: #fff;
-    border-color: var(--accent);
-  }
-  .stem-btn:hover { border-color: var(--accent); }
-
-  /* ─── BAR BLOCKS ─── */
-  .bar-blocks {
-    flex: 1;
-    display: flex;
-    align-items: stretch;
-    gap: 0;
-    background: var(--bg);
-    position: relative;
-    overflow: hidden;
-  }
-
-  .bar-block {
-    position: relative;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    border-right: 1px solid rgba(255,255,255,0.08);
-    cursor: pointer;
-    transition: filter 0.15s ease, border-color 0.15s ease;
-    min-width: 0;
-    overflow: hidden;
-  }
-  .bar-block:last-child { border-right: none; }
-  .bar-block:hover {
-    filter: brightness(1.2);
-    z-index: 2;
-  }
-  .bar-block.selected {
-    outline: 2px solid #fff;
-    outline-offset: -2px;
-    z-index: 3;
-    filter: brightness(1.3);
-  }
-
-  /* Bar seams within a block (shown as faint vertical lines) */
-  .bar-seam {
-    position: absolute;
-    top: 0;
-    width: 1px;
-    height: 100%;
-    background: rgba(255,255,255,0.06);
-    pointer-events: none;
-  }
-
-  /* Split indicator on block edges */
-  .bar-block.split-left {
-    border-left: 2px solid rgba(255,255,255,0.2);
-  }
-
-  .block-label {
-    font-size: 9px;
-    font-weight: 600;
-    color: rgba(255,255,255,0.9);
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    padding: 0 6px;
-    text-shadow: 0 1px 2px rgba(0,0,0,0.5);
-    pointer-events: none;
-    max-width: 100%;
-  }
-
-  /* Bar block popover (edit panel) */
-  .block-popover {
-    display: none;
-    position: absolute;
-    top: 100%;
-    left: 0;
-    min-width: 220px;
-    background: var(--surface);
-    border: 1px solid var(--accent);
-    border-radius: 6px;
-    padding: 10px 12px;
-    z-index: 100;
-    box-shadow: 0 8px 24px rgba(0,0,0,0.5);
-    font-size: 11px;
-  }
-  .block-popover.visible {
-    display: block;
-  }
-  .popover-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 8px;
-    padding-bottom: 6px;
-    border-bottom: 1px solid var(--border);
-  }
-  .popover-title {
-    font-size: 11px;
-    font-weight: 700;
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
-  }
-  .popover-bar-info {
-    font-size: 9px;
-    color: var(--text-dim);
-  }
-  .popover-close {
-    background: none;
-    border: none;
-    color: var(--text-dim);
-    cursor: pointer;
-    font-size: 14px;
-    line-height: 1;
-    padding: 0 2px;
-  }
-  .popover-close:hover { color: var(--accent); }
-  .popover-row {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    margin-bottom: 6px;
-  }
-  .popover-row label {
-    font-size: 10px;
-    color: var(--text-dim);
-    min-width: 50px;
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
-  }
-  .popover-row select {
-    flex: 1;
-    background: var(--bg);
-    color: var(--text);
-    border: 1px solid var(--border);
-    padding: 3px 6px;
-    border-radius: 3px;
-    font-family: inherit;
-    font-size: 11px;
-  }
-  .popover-row select:focus { border-color: var(--accent); outline: none; }
-  .popover-actions {
-    display: flex;
-    gap: 6px;
-    margin-top: 8px;
-    padding-top: 6px;
-    border-top: 1px solid var(--border);
-  }
-  .popover-action-btn {
-    padding: 3px 10px;
-    background: var(--bg);
-    border: 1px solid var(--border);
-    color: var(--text-dim);
-    border-radius: 3px;
-    cursor: pointer;
-    font-family: inherit;
-    font-size: 9px;
-    font-weight: 600;
-  }
-  .popover-action-btn:hover { border-color: var(--accent); color: var(--text); }
-  .popover-action-btn.split-btn { color: var(--accent2); }
-  .popover-action-btn.split-btn:hover { border-color: var(--accent2); }
-
-  /* Chord lane */
-  .chord-lane {
-    display: flex;
-    align-items: center;
-    height: 28px;
-    border-bottom: 1px solid var(--border);
-    padding: 0 4px;
-    gap: 6px;
-  }
-  .chord-lane-label {
-    min-width: 90px;
-    font-size: 9px;
-    color: var(--text-dim);
-    text-transform: uppercase;
-    letter-spacing: 1px;
-    padding-left: 6px;
-  }
-  .chord-display {
-    flex: 1;
-    display: flex;
-    gap: 0;
-  }
-  .chord-cell {
-    flex: 1;
-    text-align: center;
-    font-size: 10px;
-    color: var(--accent2);
-    font-weight: 600;
-    padding: 2px 0;
-    border-right: 1px solid var(--border);
-  }
-  .chord-cell:last-child { border-right: none; }
-
-  /* ─── TRANSPORT ─── */
-  .transport {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    padding: 8px 16px;
-    background: var(--surface);
-    border-bottom: 1px solid var(--border);
-  }
-  .transport-btns {
-    display: flex;
-    gap: 4px;
-  }
-  .transport-btn {
-    width: 32px; height: 28px;
-    background: var(--bg);
-    border: 1px solid var(--border);
-    color: var(--text);
-    border-radius: 4px;
-    cursor: pointer;
-    font-size: 12px;
-    display: flex; align-items: center; justify-content: center;
-  }
-  .transport-btn:hover { border-color: var(--accent); }
-  .transport-btn.play {
-    width: 64px;
-    background: var(--accent);
-    border-color: var(--accent);
-    color: #fff;
-    font-weight: 700;
-    font-size: 11px;
-    gap: 4px;
-  }
-  .transport-btn.play:hover { background: #d6304d; }
-  .transport-btn.play.playing {
-    background: var(--green);
-    border-color: var(--green);
-    color: #000;
-  }
-  .scrubber {
-    flex: 1;
-    height: 6px;
-    -webkit-appearance: none;
-    background: var(--fader-track);
-    border-radius: 3px;
-    outline: none;
-    cursor: pointer;
-  }
-  .scrubber::-webkit-slider-thumb {
-    -webkit-appearance: none;
-    width: 14px; height: 14px;
-    border-radius: 50%;
-    background: var(--accent);
-    cursor: pointer;
-  }
-  .time-display {
-    font-size: 12px;
-    color: var(--text);
-    min-width: 85px;
-    text-align: center;
-    font-variant-numeric: tabular-nums;
-  }
-  .loop-toggle {
-    display: flex; align-items: center; gap: 4px;
-  }
-  .loop-toggle label { font-size: 10px; color: var(--text-dim); }
-  .loop-toggle select {
-    background: var(--bg); color: var(--text); border: 1px solid var(--border);
-    padding: 2px 6px; border-radius: 3px; font-family: inherit; font-size: 10px;
-  }
-  .master-vol {
-    display: flex; align-items: center; gap: 6px;
-  }
-  .master-vol label { font-size: 10px; color: var(--text-dim); }
-  .master-vol input[type="range"] {
-    width: 70px; height: 4px;
-    -webkit-appearance: none;
-    background: var(--fader-track);
-    border-radius: 2px;
-  }
-  .master-vol input::-webkit-slider-thumb {
-    -webkit-appearance: none;
-    width: 10px; height: 10px;
-    border-radius: 50%;
-    background: var(--green);
-    cursor: pointer;
-  }
-
-  /* ─── MIXER ─── */
-  .mixer {
-    display: flex;
-    align-items: flex-end;
-    padding: 6px 12px 8px;
-    background: var(--surface);
-    gap: 0;
-    justify-content: center;
-  }
-  .mixer-channel {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    width: 80px;
-    padding: 0 6px;
-  }
-  .mixer-channel.master {
-    border-left: 1px solid var(--border);
-    margin-left: 12px;
-    padding-left: 18px;
-  }
-  .channel-label {
-    font-size: 9px;
-    color: var(--text-dim);
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
-    margin-bottom: 4px;
-    font-weight: 600;
-  }
-  .channel-label.master-label { color: var(--accent2); }
-  .fader-container {
-    position: relative;
-    width: 28px;
-    height: 100px;
-    margin-bottom: 4px;
-  }
-  .fader-track-v {
-    position: absolute;
-    left: 50%;
-    transform: translateX(-50%);
-    width: 4px;
-    height: 100%;
-    background: var(--fader-track);
-    border-radius: 2px;
-  }
-  .fader-input {
-    position: absolute;
-    width: 100px;
-    height: 28px;
-    -webkit-appearance: none;
-    background: transparent;
-    transform: rotate(-90deg);
-    transform-origin: 50px 50px;
-    top: 0;
-    left: -36px;
-    cursor: pointer;
-  }
-  .fader-input::-webkit-slider-thumb {
-    -webkit-appearance: none;
-    width: 28px;
-    height: 12px;
-    background: var(--blue);
-    border-radius: 2px;
-    cursor: pointer;
-    border: 1px solid #7aa3f5;
-  }
-  .fader-input::-webkit-slider-runnable-track {
-    height: 4px;
-    background: transparent;
-  }
-  .db-display {
-    font-size: 9px;
-    color: var(--green);
-    font-variant-numeric: tabular-nums;
-    margin-bottom: 4px;
-  }
-  .mixer-sm {
-    display: flex;
-    gap: 2px;
-    margin-bottom: 3px;
-  }
-  .mixer-sm button {
-    width: 18px; height: 16px;
-    border: 1px solid var(--border);
-    border-radius: 2px;
-    font-size: 8px;
-    font-weight: 700;
-    cursor: pointer;
-    font-family: inherit;
-    display: flex; align-items: center; justify-content: center;
-  }
-  .mixer-sm .s-btn { background: var(--bg); color: var(--text-dim); }
-  .mixer-sm .s-btn.active { background: var(--accent2); color: #000; border-color: var(--accent2); }
-  .mixer-sm .m-btn { background: var(--bg); color: var(--text-dim); }
-  .mixer-sm .m-btn.active { background: var(--accent); color: #fff; border-color: var(--accent); }
-  .mixer-sm button:hover { border-color: var(--accent); }
-  .pan-container {
-    display: flex;
-    align-items: center;
-    gap: 2px;
-  }
-  .pan-container input[type="range"] {
-    width: 50px;
-    height: 3px;
-    -webkit-appearance: none;
-    background: var(--fader-track);
-    border-radius: 2px;
-  }
-  .pan-container input::-webkit-slider-thumb {
-    -webkit-appearance: none;
-    width: 8px; height: 8px;
-    border-radius: 50%;
-    background: var(--green);
-    cursor: pointer;
-  }
-  .pan-label {
-    font-size: 8px;
-    color: var(--text-dim);
-  }
-  .add-stem-btn {
-    font-size: 10px;
-    background: transparent;
-    border: 1px dashed var(--border);
-    color: var(--text-dim);
-    padding: 3px 10px;
-    border-radius: 3px;
-    cursor: pointer;
-    font-family: inherit;
-  }
-  .add-stem-btn:hover { border-color: var(--accent); color: var(--accent); }
-
-  /* ─── STATUS BAR ─── */
-  .status-bar {
-    display: flex;
-    align-items: center;
-    gap: 20px;
-    padding: 5px 16px;
-    background: var(--surface);
-    border-top: 1px solid var(--border);
-    font-size: 10px;
-    color: var(--text-dim);
-  }
-  .status-bar .status-item { display: flex; align-items: center; gap: 4px; }
-  .status-bar .dot {
-    width: 6px; height: 6px; border-radius: 50%;
-    background: var(--green);
-    display: inline-block;
-  }
-  .status-bar .streak { color: var(--accent2); }
-  .status-bar .shortcut {
-    margin-left: auto;
-    background: var(--bg);
-    padding: 2px 8px;
-    border-radius: 3px;
-    border: 1px solid var(--border);
-    color: var(--text-dim);
-  }
-
-  /* scrollbar */
-  ::-webkit-scrollbar { width: 6px; }
-  ::-webkit-scrollbar-track { background: var(--bg); }
-  ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
 </style>
 </head>
-<body>
+<body class="font-mono bg-base-100 text-base-content">
 
-<div class="app">
+<div class="grid grid-rows-[auto_auto_1fr_auto] h-screen w-screen">
+
   <!-- ═══ TOP BAR ═══ -->
-  <div class="top-bar">
-    <div class="logo">ARRANGEMENT FORGE</div>
-    <input class="song-title" type="text" value="Autumn Leaves - Jazz Trio">
-    <div class="top-actions">
-      <button>Save</button>
-      <button>Export &#9662;</button>
-      <button>Share</button>
-      <div class="avatar">DP</div>
+  <div class="flex items-center justify-between px-4 py-2 bg-base-200 border-b border-base-300">
+    <div class="text-base font-bold tracking-wider text-base-content">ARRANGEMENT FORGE</div>
+    <input class="input input-ghost input-sm text-center min-w-[280px] text-[15px] focus:input-bordered focus:input-neutral text-base-content/40" type="text" value="Untitled Project" placeholder="Project name...">
+    <div class="flex gap-2 items-center">
+      <button class="btn btn-sm btn-outline btn-ghost">Save</button>
+      <button class="btn btn-sm btn-outline btn-ghost">Export &#9662;</button>
+      <button class="btn btn-sm btn-outline btn-ghost">Share</button>
+      <div class="avatar placeholder ml-2">
+        <div class="bg-neutral text-base-content-content rounded-full w-7 h-7">
+          <span class="text-xs font-bold">DP</span>
+        </div>
+      </div>
     </div>
   </div>
 
   <!-- ═══ PARAMS BAR ═══ -->
-  <div class="params-bar">
-    <div class="param-group">
-      <label>Key</label>
-      <select>
+  <div class="flex items-center gap-4 px-4 py-2 bg-base-200 border-b border-base-300 flex-wrap">
+    <div class="flex items-center gap-1.5">
+      <label class="text-base-content/50 text-[11px] uppercase tracking-wider">Key</label>
+      <select class="select select-bordered select-xs bg-base-100 min-h-0 h-7">
         <option>C</option><option>C#/Db</option><option>D</option><option>D#/Eb</option>
         <option>E</option><option>F</option><option>F#/Gb</option><option>G</option>
         <option>G#/Ab</option><option>A</option><option selected>Bb</option><option>B</option>
       </select>
     </div>
-    <div class="param-group">
-      <label>Tempo</label>
-      <div class="tempo-control">
-        <button id="tempo-down">&#9664;</button>
-        <input type="number" id="tempo-val" value="128" min="40" max="240" style="width:56px;text-align:center;">
-        <button id="tempo-up">&#9654;</button>
-        <span style="color:var(--text-dim);font-size:10px;">BPM</span>
+    <div class="flex items-center gap-1.5">
+      <label class="text-base-content/50 text-[11px] uppercase tracking-wider">Tempo</label>
+      <div class="join">
+        <button class="btn btn-xs join-item bg-base-100 border-base-300" id="tempo-down">&#9664;</button>
+        <input type="number" id="tempo-val" value="128" min="40" max="240"
+          class="input input-xs input-bordered w-14 text-center join-item bg-base-100 min-h-0 h-6">
+        <button class="btn btn-xs join-item bg-base-100 border-base-300" id="tempo-up">&#9654;</button>
       </div>
+      <span class="text-base-content/50 text-[10px]">BPM</span>
     </div>
-    <div class="param-group">
-      <label>Time</label>
-      <select>
+    <div class="flex items-center gap-1.5">
+      <label class="text-base-content/50 text-[11px] uppercase tracking-wider">Time</label>
+      <select class="select select-bordered select-xs bg-base-100 min-h-0 h-7">
         <option>2/4</option><option selected>3/4</option><option>4/4</option>
         <option>5/4</option><option>6/8</option><option>7/8</option><option>12/8</option>
       </select>
     </div>
-    <div class="param-group">
-      <label>Style</label>
-      <select>
+    <div class="flex items-center gap-1.5">
+      <label class="text-base-content/50 text-[11px] uppercase tracking-wider">Style</label>
+      <select class="select select-bordered select-xs bg-base-100 min-h-0 h-7">
         <option selected>Jazz Swing</option><option>Jazz Bebop</option><option>Jazz Latin</option>
         <option>Blues</option><option>Country</option><option>Rock</option><option>Funk</option>
         <option>R&B</option><option>Gospel</option><option>Bossa Nova</option><option>Pop</option>
       </select>
     </div>
-    <div class="param-group">
-      <label>Feel</label>
-      <select>
+    <div class="flex items-center gap-1.5">
+      <label class="text-base-content/50 text-[11px] uppercase tracking-wider">Feel</label>
+      <select class="select select-bordered select-xs bg-base-100 min-h-0 h-7">
         <option>Soft</option><option selected>Medium</option><option>Driving</option><option>Intense</option>
       </select>
     </div>
-    <button class="generate-btn" id="generate-btn">GENERATE</button>
+    <button class="btn btn-neutral btn-sm ml-auto font-bold tracking-wider" id="generate-btn">GENERATE</button>
   </div>
 
   <!-- ═══ MAIN CONTENT ═══ -->
-  <div class="main">
+  <div class="grid grid-cols-[300px_1fr] overflow-hidden">
 
-    <!-- ─── LEFT PANEL ─── -->
-    <div class="left-panel">
-      <div class="panel-section">
-        <div class="panel-section-header">Input</div>
-        <div class="tabs">
-          <button class="tab active" data-tab="text">Text</button>
-          <button class="tab" data-tab="upload">Upload</button>
-          <button class="tab" data-tab="image">Image</button>
-          <button class="tab" data-tab="ai">AI</button>
+    <!-- ─── LEFT PANEL (Song-Level Context) ─── -->
+    <div class="bg-base-200 border-r border-base-300 overflow-y-auto flex flex-col">
+
+      <!-- Scope Breadcrumb -->
+      <div class="px-3 py-1.5 border-b border-base-300 bg-base-200">
+        <div class="text-[10px] font-bold text-base-content tracking-wider">Song</div>
+      </div>
+
+      <!-- Input Section -->
+      <div class="border-b border-base-300 p-3">
+        <div class="text-[10px] uppercase tracking-[1.5px] text-base-content/50 font-semibold mb-2">Input</div>
+        <div role="tablist" class="tabs tabs-boxed tabs-xs bg-base-100 mb-2.5">
+          <a role="tab" class="tab tab-active" data-tab="text">Text</a>
+          <a role="tab" class="tab" data-tab="upload">Upload</a>
+          <a role="tab" class="tab" data-tab="image">Image</a>
+          <a role="tab" class="tab" data-tab="ai">AI</a>
         </div>
-        <textarea class="chord-input" placeholder="Enter chords: Cmaj7 | Dm7 | G7 | Cmaj7&#10;Supports: Lead sheet, Nashville, Roman numerals, iReal Pro...">Cmaj7 | Dm7  | G7    | Cmaj7
+        <textarea class="textarea textarea-bordered w-full bg-base-100 text-xs leading-relaxed h-24 resize-none font-mono"
+          placeholder="Enter chords: Cmaj7 | Dm7 | G7 | Cmaj7&#10;Supports: Lead sheet, Nashville, Roman numerals, iReal Pro...">Cmaj7 | Dm7  | G7    | Cmaj7
 Am7   | D7   | Gmaj7 |  %
 Fmaj7 | Bm7b5| E7    | Am7
 Dm7   | G7   | Cmaj7 | A7</textarea>
-        <div class="or-divider">- - or describe - -</div>
-        <textarea class="nl-input" placeholder="Describe in plain English...">"Jazz waltz, medium tempo, smoky feel, brushes on drums, walking bass, comping piano"</textarea>
+        <div class="text-center text-base-content/50 text-[10px] py-1.5">- - or describe - -</div>
+        <textarea class="textarea textarea-bordered w-full bg-base-100 text-xs h-12 resize-none font-mono"
+          placeholder="Describe in plain English...">"Jazz waltz, medium tempo, smoky feel, brushes on drums, walking bass, comping piano"</textarea>
       </div>
 
-      <div class="panel-section">
-        <div class="panel-section-header">Style Controls</div>
-        <div class="style-row">
-          <label>Genre</label>
-          <select><option selected>Jazz</option><option>Blues</option><option>Rock</option><option>Funk</option><option>Country</option><option>Gospel</option><option>R&B</option><option>Latin</option><option>Pop</option></select>
-        </div>
-        <div class="style-row">
-          <label>Sub-style</label>
-          <select><option selected>Swing</option><option>Bebop</option><option>Cool</option><option>Modal</option><option>Free</option><option>Fusion</option></select>
-        </div>
-        <div class="style-row">
-          <label>Energy</label>
-          <input type="range" min="0" max="100" value="45" oninput="this.nextElementSibling.textContent=['Low','Low','Med','Med','High'][Math.floor(this.value/25)]">
-          <span class="range-val">Med</span>
-        </div>
-        <div class="style-row">
-          <label>Groove</label>
-          <input type="range" min="0" max="100" value="60" oninput="this.nextElementSibling.textContent=['Tight','Tight','Laid','Laid','Loose'][Math.floor(this.value/25)]">
-          <span class="range-val">Laid</span>
-        </div>
-        <div class="style-row">
-          <label>Swing %</label>
-          <input type="range" min="50" max="80" value="65" oninput="this.nextElementSibling.textContent=this.value+'%'">
-          <span class="range-val">65%</span>
-        </div>
-        <div class="style-row">
-          <label>Dynamics</label>
-          <input type="range" min="0" max="100" value="30" oninput="this.nextElementSibling.textContent=['pp','p','mp','mf','f','ff'][Math.min(5,Math.floor(this.value/18))]">
-          <span class="range-val">p</span>
+      <!-- Style Controls (Song-Level Defaults) -->
+      <div class="border-b border-base-300 p-3">
+        <div class="text-[10px] uppercase tracking-[1.5px] text-base-content/50 font-semibold mb-2">Style Controls <span class="text-base-content/30 normal-case">(song defaults)</span></div>
+        <div class="space-y-2">
+          <div class="flex items-center justify-between">
+            <label class="text-base-content/50 text-[11px] w-16">Genre</label>
+            <select class="select select-bordered select-xs bg-base-100 flex-1 ml-2 min-h-0 h-6">
+              <option selected>Jazz</option><option>Blues</option><option>Rock</option><option>Funk</option>
+              <option>Country</option><option>Gospel</option><option>R&B</option><option>Latin</option><option>Pop</option>
+            </select>
+          </div>
+          <div class="flex items-center justify-between">
+            <label class="text-base-content/50 text-[11px] w-16">Sub-style</label>
+            <select class="select select-bordered select-xs bg-base-100 flex-1 ml-2 min-h-0 h-6">
+              <option selected>Swing</option><option>Bebop</option><option>Cool</option>
+              <option>Modal</option><option>Free</option><option>Fusion</option>
+            </select>
+          </div>
+          <div class="flex items-center justify-between">
+            <label class="text-base-content/50 text-[11px] w-16">Energy</label>
+            <input type="range" class="range range-xs flex-1 ml-2" min="0" max="100" value="45"
+              oninput="this.nextElementSibling.textContent=['Low','Low','Med','Med','High'][Math.floor(this.value/25)]">
+            <span class="text-base-content/50 text-[10px] w-8 text-right">Med</span>
+          </div>
+          <div class="flex items-center justify-between">
+            <label class="text-base-content/50 text-[11px] w-16">Groove</label>
+            <input type="range" class="range range-xs flex-1 ml-2" min="0" max="100" value="60"
+              oninput="this.nextElementSibling.textContent=['Tight','Tight','Laid','Laid','Loose'][Math.floor(this.value/25)]">
+            <span class="text-base-content/50 text-[10px] w-8 text-right">Laid</span>
+          </div>
+          <div class="flex items-center justify-between">
+            <label class="text-base-content/50 text-[11px] w-16">Swing %</label>
+            <input type="range" class="range range-xs flex-1 ml-2" min="50" max="80" value="65"
+              oninput="this.nextElementSibling.textContent=this.value+'%'">
+            <span class="text-base-content/50 text-[10px] w-8 text-right">65%</span>
+          </div>
+          <div class="flex items-center justify-between">
+            <label class="text-base-content/50 text-[11px] w-16">Dynamics</label>
+            <input type="range" class="range range-xs flex-1 ml-2" min="0" max="100" value="30"
+              oninput="this.nextElementSibling.textContent=['pp','p','mp','mf','f','ff'][Math.min(5,Math.floor(this.value/18))]">
+            <span class="text-base-content/50 text-[10px] w-8 text-right">p</span>
+          </div>
         </div>
       </div>
 
-      <div class="panel-section" style="flex:1;display:flex;flex-direction:column;">
-        <div class="panel-section-header">AI Assistant</div>
-        <div class="ai-messages" id="ai-messages">
-          <div class="ai-msg user">"Add more syncopation to the bass line"</div>
-          <div class="ai-msg assistant">Done. Bass now has dotted-quarter syncopation in bars 5-12.</div>
-          <div class="ai-msg user">"Make the piano comp more sparse in verse 2"</div>
-          <div class="ai-msg assistant">Piano now plays whole-note voicings in Verse 2 (bars 13-20).</div>
+      <!-- Chord Display Toggle -->
+      <div class="border-b border-base-300 p-3">
+        <div class="text-[10px] uppercase tracking-[1.5px] text-base-content/50 font-semibold mb-2">Chord Display</div>
+        <div class="join w-full">
+          <button class="btn btn-xs join-item btn-neutral flex-1">Letter (Cmaj7)</button>
+          <button class="btn btn-xs join-item bg-base-100 border-base-300 flex-1">Roman (Imaj7)</button>
         </div>
-        <button class="regen-btn">Regenerate Section &#9662;</button>
-        <div style="flex:1;"></div>
-        <div class="ai-input-row">
-          <input class="ai-input" id="ai-input" placeholder="Ask AI to refine...">
-          <button class="ai-send" id="ai-send">&#9654;</button>
+      </div>
+
+      <!-- AI Assistant (Song scope) -->
+      <div class="p-3 flex-1 flex flex-col">
+        <div class="flex items-center justify-between mb-2">
+          <div class="text-[10px] uppercase tracking-[1.5px] text-base-content/50 font-semibold">AI Assistant</div>
+          <div class="badge badge-ghost badge-xs text-[9px]">Song</div>
+        </div>
+        <div class="flex-1 overflow-y-auto space-y-2 mb-2 flex items-center justify-center" id="ai-messages">
+          <div class="text-center text-base-content/20 text-xs px-4">
+            AI assistant will help you refine your arrangement after generation.
+          </div>
+        </div>
+        <button class="btn btn-xs btn-outline btn-ghost w-full mb-2 btn-disabled">Regenerate Song</button>
+        <div class="join w-full">
+          <input class="input input-bordered input-sm join-item flex-1 bg-base-100" id="ai-input" placeholder="Ask AI to refine...">
+          <button class="btn btn-sm btn-neutral join-item" id="ai-send">&#9654;</button>
         </div>
       </div>
     </div>
 
-    <!-- ─── RIGHT PANEL ─── -->
-    <div class="right-panel">
+    <!-- ─── RIGHT PANEL (Pre-Generation: Empty) ─── -->
+    <div class="flex flex-col overflow-hidden bg-base-100">
 
-      <!-- Arrangement -->
-      <div class="arrangement">
-        <div class="arrangement-header">
-          <span>Arrangement</span>
-          <div class="arrangement-tools">
-            <button class="tool-btn" id="select-tool" title="Select tool">Select</button>
-            <button class="tool-btn active" id="split-tool" title="Split at bar boundary">Split</button>
-            <span style="color:var(--border);margin:0 4px;">|</span>
-            <div class="zoom-controls">
-              <button>-</button>
-              <button>+</button>
+      <!-- Arrangement Header -->
+      <div class="flex flex-col flex-1 overflow-hidden">
+        <div class="flex items-center justify-between px-3 py-1.5 bg-base-200 border-b border-base-300">
+          <span class="text-[10px] uppercase tracking-[1.5px] text-base-content/50 font-semibold">Arrangement</span>
+          <div class="flex items-center gap-1">
+            <div class="join">
+              <button class="btn btn-xs join-item bg-base-100 border-base-300 btn-disabled" id="select-tool">Select</button>
+              <button class="btn btn-xs join-item bg-base-100 border-base-300 btn-disabled" id="split-tool">Split</button>
+            </div>
+            <span class="text-base-300 mx-1">|</span>
+            <div class="join">
+              <button class="btn btn-xs join-item bg-base-100 border-base-300 btn-disabled">-</button>
+              <button class="btn btn-xs join-item bg-base-100 border-base-300 btn-disabled">+</button>
             </div>
           </div>
         </div>
 
-        <div class="sections-row" id="sections-row">
-          <div class="section-block active" style="flex:4;">Intro<br><span class="bars">4 bars</span></div>
-          <div class="section-block" style="flex:8;">Verse 1<br><span class="bars">8 bars</span></div>
-          <div class="section-block" style="flex:8;">Chorus<br><span class="bars">8 bars</span></div>
-          <div class="section-block" style="flex:8;">Verse 2<br><span class="bars">8 bars</span></div>
-          <div class="section-block" style="flex:4;">Bridge<br><span class="bars">4 bars</span></div>
-          <div class="section-block" style="flex:4;">Outro<br><span class="bars">4 bars</span></div>
-        </div>
-
-        <!-- ─── STEM LANES (Bar-Level Block Sequencer) ─── -->
-        <div class="stems-container" id="stems-container">
-          <div class="playhead" id="playhead"></div>
-
-          <!-- DRUMS -->
-          <div class="stem-lane" data-instrument="drums" id="lane-drums"></div>
-
-          <!-- BASS -->
-          <div class="stem-lane" data-instrument="bass" id="lane-bass"></div>
-
-          <!-- PIANO -->
-          <div class="stem-lane" data-instrument="piano" id="lane-piano"></div>
-
-          <!-- GUITAR -->
-          <div class="stem-lane" data-instrument="guitar" id="lane-guitar"></div>
-
-          <!-- STRINGS -->
-          <div class="stem-lane" data-instrument="strings" id="lane-strings"></div>
-
-          <!-- Chord Lane -->
-          <div class="chord-lane">
-            <span class="chord-lane-label">CHORDS</span>
-            <div class="chord-display">
-              <div class="chord-cell">Cmaj7</div>
-              <div class="chord-cell">Dm7</div>
-              <div class="chord-cell">G7</div>
-              <div class="chord-cell">Cmaj7</div>
-              <div class="chord-cell">Am7</div>
-              <div class="chord-cell">D7</div>
-              <div class="chord-cell">Gmaj7</div>
-              <div class="chord-cell">Fmaj7</div>
-              <div class="chord-cell">Bm7b5</div>
-              <div class="chord-cell">E7</div>
-              <div class="chord-cell">Am7</div>
-              <div class="chord-cell">A7</div>
-            </div>
+        <!-- Empty State -->
+        <div class="flex-1 flex flex-col items-center justify-center text-center px-8" id="stems-container">
+          <div class="text-base-content/20 text-6xl mb-4">&#9835;</div>
+          <div class="text-base-content/40 text-sm font-semibold mb-2">No arrangement yet</div>
+          <div class="text-base-content/30 text-xs mb-6 max-w-[300px]">Enter your chord chart or description on the left, set your style preferences, then hit GENERATE to create your arrangement.</div>
+          <div class="flex items-center gap-2 text-base-content/30 text-[10px]">
+            <kbd class="kbd kbd-xs">1</kbd> Input chords
+            <span class="text-base-content/15">&rarr;</span>
+            <kbd class="kbd kbd-xs">2</kbd> Set style
+            <span class="text-base-content/15">&rarr;</span>
+            <kbd class="kbd kbd-xs">3</kbd> Generate
           </div>
         </div>
       </div>
 
-      <!-- Transport -->
-      <div class="transport">
-        <div class="transport-btns">
-          <button class="transport-btn" title="Start">&#9198;</button>
-          <button class="transport-btn" title="Rewind">&#9194;</button>
-          <button class="transport-btn play" id="play-btn" title="Play">&#9654; PLAY</button>
-          <button class="transport-btn" title="Forward">&#9193;</button>
-          <button class="transport-btn" title="End">&#9197;</button>
+      <!-- Transport (disabled state) -->
+      <div class="flex items-center gap-3 px-3 py-1.5 bg-base-200 border-y border-base-300">
+        <div class="join">
+          <button class="btn btn-xs join-item bg-base-100 border-base-300 btn-disabled" title="Start">&#9198;</button>
+          <button class="btn btn-xs join-item bg-base-100 border-base-300 btn-disabled" title="Rewind">&#9194;</button>
+          <button class="btn btn-sm join-item bg-base-100 border-base-300 btn-disabled font-bold" id="play-btn" title="Play">&#9654; PLAY</button>
+          <button class="btn btn-xs join-item bg-base-100 border-base-300 btn-disabled" title="Forward">&#9193;</button>
+          <button class="btn btn-xs join-item bg-base-100 border-base-300 btn-disabled" title="End">&#9197;</button>
         </div>
-        <input type="range" class="scrubber" id="scrubber" min="0" max="232" value="107">
-        <div class="time-display" id="time-display">1:47 / 3:52</div>
-        <div class="loop-toggle">
-          <label>LOOP</label>
-          <select>
-            <option>Off</option><option>All</option><option>Intro</option>
-            <option>Verse 1</option><option selected>Chorus</option>
-            <option>Verse 2</option><option>Bridge</option><option>Outro</option>
+        <input type="range" class="range range-xs flex-1" id="scrubber" min="0" max="100" value="0" disabled>
+        <span class="text-xs text-base-content/30 font-mono" id="time-display">0:00 / 0:00</span>
+        <div class="flex items-center gap-1">
+          <label class="text-[10px] text-base-content/30 uppercase tracking-wider">Loop</label>
+          <select class="select select-bordered select-xs bg-base-100 min-h-0 h-6" disabled>
+            <option>Off</option>
           </select>
         </div>
-        <div class="master-vol">
-          <label>VOL</label>
-          <input type="range" min="0" max="100" value="80">
+        <div class="flex items-center gap-1">
+          <label class="text-[10px] text-base-content/30 uppercase tracking-wider">Vol</label>
+          <input type="range" class="range range-xs w-20" min="0" max="100" value="80" disabled>
         </div>
       </div>
 
-      <!-- Mixer -->
-      <div style="display:flex;flex-direction:column;">
-        <div class="mixer" id="mixer">
-          <div class="mixer-channel" data-ch="drums">
-            <span class="channel-label">DRUMS</span>
-            <div class="fader-container">
-              <div class="fader-track-v"></div>
-              <input type="range" class="fader-input" min="0" max="100" value="62" orient="vertical"
-                oninput="this.closest('.mixer-channel').querySelector('.db-display').textContent=Math.round((this.value-80)*0.3)+'dB'">
-            </div>
-            <span class="db-display">-6dB</span>
-            <div class="mixer-sm">
-              <button class="s-btn" data-type="solo">S</button>
-              <button class="m-btn" data-type="mute">M</button>
-            </div>
-            <div class="pan-container">
-              <span class="pan-label">L</span>
-              <input type="range" min="0" max="100" value="45">
-              <span class="pan-label">R</span>
-            </div>
-          </div>
-          <div class="mixer-channel" data-ch="bass">
-            <span class="channel-label">BASS</span>
-            <div class="fader-container">
-              <div class="fader-track-v"></div>
-              <input type="range" class="fader-input" min="0" max="100" value="70" orient="vertical"
-                oninput="this.closest('.mixer-channel').querySelector('.db-display').textContent=Math.round((this.value-80)*0.3)+'dB'">
-            </div>
-            <span class="db-display">-3dB</span>
-            <div class="mixer-sm">
-              <button class="s-btn" data-type="solo">S</button>
-              <button class="m-btn" data-type="mute">M</button>
-            </div>
-            <div class="pan-container">
-              <span class="pan-label">L</span>
-              <input type="range" min="0" max="100" value="60">
-              <span class="pan-label">R</span>
-            </div>
-          </div>
-          <div class="mixer-channel" data-ch="piano">
-            <span class="channel-label">PIANO</span>
-            <div class="fader-container">
-              <div class="fader-track-v"></div>
-              <input type="range" class="fader-input" min="0" max="100" value="80" orient="vertical"
-                oninput="this.closest('.mixer-channel').querySelector('.db-display').textContent=Math.round((this.value-80)*0.3)+'dB'">
-            </div>
-            <span class="db-display">0dB</span>
-            <div class="mixer-sm">
-              <button class="s-btn" data-type="solo">S</button>
-              <button class="m-btn" data-type="mute">M</button>
-            </div>
-            <div class="pan-container">
-              <span class="pan-label">L</span>
-              <input type="range" min="0" max="100" value="35">
-              <span class="pan-label">R</span>
-            </div>
-          </div>
-          <div class="mixer-channel" data-ch="guitar">
-            <span class="channel-label">GUITAR</span>
-            <div class="fader-container">
-              <div class="fader-track-v"></div>
-              <input type="range" class="fader-input" min="0" max="100" value="55" orient="vertical"
-                oninput="this.closest('.mixer-channel').querySelector('.db-display').textContent=Math.round((this.value-80)*0.3)+'dB'">
-            </div>
-            <span class="db-display">-8dB</span>
-            <div class="mixer-sm">
-              <button class="s-btn" data-type="solo">S</button>
-              <button class="m-btn" data-type="mute">M</button>
-            </div>
-            <div class="pan-container">
-              <span class="pan-label">L</span>
-              <input type="range" min="0" max="100" value="70">
-              <span class="pan-label">R</span>
-            </div>
-          </div>
-          <div class="mixer-channel" data-ch="strings">
-            <span class="channel-label">STRINGS</span>
-            <div class="fader-container">
-              <div class="fader-track-v"></div>
-              <input type="range" class="fader-input" min="0" max="100" value="62" orient="vertical"
-                oninput="this.closest('.mixer-channel').querySelector('.db-display').textContent=Math.round((this.value-80)*0.3)+'dB'">
-            </div>
-            <span class="db-display">-6dB</span>
-            <div class="mixer-sm">
-              <button class="s-btn" data-type="solo">S</button>
-              <button class="m-btn" data-type="mute">M</button>
-            </div>
-            <div class="pan-container">
-              <span class="pan-label">L</span>
-              <input type="range" min="0" max="100" value="45">
-              <span class="pan-label">R</span>
-            </div>
-          </div>
-          <div class="mixer-channel master" data-ch="master">
-            <span class="channel-label master-label">MASTER</span>
-            <div class="fader-container">
-              <div class="fader-track-v"></div>
-              <input type="range" class="fader-input" min="0" max="100" value="80" orient="vertical"
-                oninput="this.closest('.mixer-channel').querySelector('.db-display').textContent=Math.round((this.value-80)*0.3)+'dB'">
-            </div>
-            <span class="db-display">0dB</span>
-            <div class="mixer-sm">
-              <button class="s-btn" disabled style="visibility:hidden;">S</button>
-              <button class="m-btn" disabled style="visibility:hidden;">M</button>
-            </div>
-            <div class="pan-container" style="visibility:hidden;">
-              <span class="pan-label">L</span>
-              <input type="range" min="0" max="100" value="50">
-              <span class="pan-label">R</span>
-            </div>
-          </div>
+      <!-- Mixer (empty/disabled state) -->
+      <div class="flex flex-col bg-base-200 border-t border-base-300">
+        <div class="flex items-center justify-center py-8 text-base-content/20 text-xs" id="mixer">
+          Mixer will appear after generation
         </div>
-        <div style="padding:4px 12px 6px;display:flex;gap:16px;align-items:center;">
-          <button class="add-stem-btn">+ Add Stem</button>
-          <span style="color:var(--text-dim);font-size:10px;">Drag to reorder</span>
-          <span style="margin-left:auto;color:var(--text-dim);font-size:10px;">Export:</span>
-          <button class="add-stem-btn">MP3</button>
-          <button class="add-stem-btn">WAV</button>
-          <button class="add-stem-btn">MIDI</button>
-          <button class="add-stem-btn">Stems ZIP</button>
+
+        <div class="flex gap-4 items-center px-3 pb-1.5">
+          <button class="btn btn-xs btn-outline btn-ghost border-dashed btn-disabled">+ Add Stem</button>
+          <span class="text-base-content/30 text-[10px]">Drag to reorder</span>
+          <span class="ml-auto text-base-content/30 text-[10px]">Export:</span>
+          <div class="join">
+            <button class="btn btn-xs join-item btn-outline btn-ghost btn-disabled">MP3</button>
+            <button class="btn btn-xs join-item btn-outline btn-ghost btn-disabled">WAV</button>
+            <button class="btn btn-xs join-item btn-outline btn-ghost btn-disabled">MIDI</button>
+            <button class="btn btn-xs join-item btn-outline btn-ghost btn-disabled">Stems ZIP</button>
+          </div>
         </div>
       </div>
     </div>
   </div>
 
   <!-- ═══ STATUS BAR ═══ -->
-  <div class="status-bar">
-    <div class="status-item">Library: <strong style="color:var(--text);margin-left:3px;">47 tracks</strong></div>
-    <div class="status-item streak">Streak: 12 days</div>
-    <div class="status-item"><span class="dot"></span> Ready</div>
-    <div class="status-item">Saved: 2 min ago</div>
-    <div class="status-item"><span style="cursor:pointer;">? Help</span></div>
-    <span class="shortcut">Cmd+K</span>
+  <div class="flex items-center gap-5 px-4 py-1 bg-base-200 border-t border-base-300 text-[10px] text-base-content/50">
+    <span>Library: <strong class="text-base-content ml-0.5">47 tracks</strong></span>
+    <span class="text-base-content/70">Streak: 12 days</span>
+    <span class="flex items-center gap-1"><span class="w-1.5 h-1.5 rounded-full bg-base-content inline-block"></span> Ready</span>
+    <span>Not saved yet</span>
+    <span class="cursor-pointer">? Help</span>
+    <kbd class="kbd kbd-xs ml-auto">Cmd+K</kbd>
   </div>
 </div>
 
 <script>
   // ═══════════════════════════════════════════════════════
-  // BAR-LEVEL BLOCK SEQUENCER DATA
-  // ═══════════════════════════════════════════════════════
-  // Total: 36 bars (Intro:4, Verse1:8, Chorus:8, Verse2:8, Bridge:4, Outro:4)
-  //
-  // Each block: { bars: number, label: string, ...instrument-specific props }
-  // "bars" = how many bars this block spans
-
-  const TOTAL_BARS = 36;
-
-  const STEM_COLORS = {
-    drums:   { base: '#e94560', alt: '#c73850' },
-    bass:    { base: '#5b8def', alt: '#4a74cc' },
-    piano:   { base: '#4ecdc4', alt: '#3db3ab' },
-    guitar:  { base: '#f5a623', alt: '#d4901e' },
-    strings: { base: '#b388ff', alt: '#9a6ee6' }
-  };
-
-  // Instrument-specific block data
-  const BLOCK_DATA = {
-    drums: {
-      label: 'DRUMS',
-      color: 'drums',
-      // Drums: pattern/style per bar-block
-      styleOptions: ['Jazz brush swing','Brush cross-stick','Open swing','Half-time feel',
-                     'Funk pocket','Latin groove','Mallets','Brush fade','Fill','Intro fill'],
-      blocks: [
-        { bars: 4, style: 'Intro fill' },
-        { bars: 4, style: 'Jazz brush swing' },
-        { bars: 4, style: 'Brush cross-stick' },
-        { bars: 8, style: 'Open swing' },
-        { bars: 4, style: 'Jazz brush swing' },
-        { bars: 4, style: 'Half-time feel' },
-        { bars: 4, style: 'Mallets' },
-        { bars: 4, style: 'Brush fade' }
-      ]
-    },
-    bass: {
-      label: 'BASS',
-      color: 'bass',
-      // Bass: note + playing style per bar-block
-      noteOptions: ['Bb','C','D','Eb','F','G','A','Ab'],
-      styleOptions: ['Walking','Pedal tone','Half notes','Slap','Arco feel','Staccato','Legato','Root-fifth'],
-      blocks: [
-        { bars: 4, note: 'Bb', style: 'Pedal tone' },
-        { bars: 8, note: 'C', style: 'Walking' },
-        { bars: 2, note: 'C', style: 'Walking' },
-        { bars: 2, note: 'F', style: 'Walking' },
-        { bars: 2, note: 'G', style: 'Root-fifth' },
-        { bars: 2, note: 'C', style: 'Walking' },
-        { bars: 8, note: 'A', style: 'Walking' },
-        { bars: 4, note: 'D', style: 'Half notes' },
-        { bars: 4, note: 'Bb', style: 'Pedal tone' }
-      ]
-    },
-    piano: {
-      label: 'PIANO',
-      color: 'piano',
-      // Piano: chord + voicing/comping style per bar-block
-      chordOptions: ['Cmaj7','Dm7','G7','Am7','D7','Gmaj7','Fmaj7','Bm7b5','E7','A7','Bbmaj7'],
-      styleOptions: ['Jazz comp','Sparse comp','Block chords','Stride','Whole notes','Building comp','Arpeggios','Montuno'],
-      blocks: [
-        { bars: 4, chord: 'Cmaj7', style: 'Sparse comp' },
-        { bars: 8, chord: '', style: 'Jazz comp' },
-        { bars: 8, chord: '', style: 'Block chords' },
-        { bars: 4, chord: '', style: 'Sparse comp' },
-        { bars: 4, chord: '', style: 'Building comp' },
-        { bars: 4, chord: 'Am7', style: 'Whole notes' },
-        { bars: 4, chord: 'Cmaj7', style: 'Arpeggios' }
-      ]
-    },
-    guitar: {
-      label: 'GUITAR',
-      color: 'guitar',
-      // Guitar: chord + strumming/picking style per bar-block
-      chordOptions: ['Cmaj7','Dm7','G7','Am7','D7','Gmaj7','Fmaj7','Bm7b5','E7','A7'],
-      styleOptions: ['Fingerpick','Rhythm strum','Power strum','Arpeggios','Muted','Chord melody','Travis pick','Bossa comp'],
-      blocks: [
-        { bars: 4, chord: 'Cmaj7', style: 'Fingerpick' },
-        { bars: 8, chord: '', style: 'Rhythm strum' },
-        { bars: 8, chord: '', style: 'Power strum' },
-        { bars: 8, chord: '', style: 'Fingerpick' },
-        { bars: 4, chord: 'Am7', style: 'Muted' },
-        { bars: 4, chord: 'Cmaj7', style: 'Fingerpick' }
-      ]
-    },
-    strings: {
-      label: 'STRINGS',
-      color: 'strings',
-      // Strings: chord + texture style per bar-block
-      chordOptions: ['Cmaj7','Dm7','G7','Am7','D7','Gmaj7','Fmaj7','Bm7b5','E7','A7'],
-      styleOptions: ['Sustained pad','Tremolo','Swell','Pizzicato','Legato lines','Fade pad','Staccato','Con sordino'],
-      blocks: [
-        { bars: 4, chord: 'Cmaj7', style: 'Sustained pad' },
-        { bars: 8, chord: '', style: 'Sustained pad' },
-        { bars: 8, chord: '', style: 'Tremolo' },
-        { bars: 8, chord: '', style: 'Sustained pad' },
-        { bars: 4, chord: 'Dm7', style: 'Swell' },
-        { bars: 4, chord: 'Cmaj7', style: 'Fade pad' }
-      ]
-    }
-  };
-
-  // ═══════════════════════════════════════════════════════
-  // RENDER STEM LANES
+  // PRE-GENERATION STATE — minimal JS
   // ═══════════════════════════════════════════════════════
 
-  let activePopover = null;
-
-  function closePopover() {
-    if (activePopover) {
-      activePopover.remove();
-      activePopover = null;
-    }
-    document.querySelectorAll('.bar-block.selected').forEach(b => b.classList.remove('selected'));
-  }
-
-  function renderLane(instrument) {
-    const data = BLOCK_DATA[instrument];
-    const lane = document.getElementById('lane-' + instrument);
-    const colors = STEM_COLORS[instrument];
-
-    // Build controls
-    const controlsHTML = `
-      <div class="stem-controls">
-        <span class="stem-label" style="color:${colors.base}">${data.label}</span>
-        <div class="stem-btns">
-          <button class="stem-btn solo" data-type="solo">S</button>
-          <button class="stem-btn mute" data-type="mute">M</button>
-        </div>
-      </div>
-    `;
-
-    // Build bar blocks
-    let blocksHTML = '<div class="bar-blocks">';
-    let barOffset = 0;
-
-    data.blocks.forEach((block, blockIdx) => {
-      const useAlt = blockIdx % 2 === 1;
-      const bgColor = useAlt ? colors.alt : colors.base;
-
-      // Build the label text
-      let labelText = '';
-      if (instrument === 'drums') {
-        labelText = block.style;
-      } else if (instrument === 'bass') {
-        labelText = block.note ? block.note + ' \u2022 ' + block.style : block.style;
-      } else {
-        labelText = block.chord ? block.chord + ' \u2022 ' + block.style : block.style;
-      }
-
-      // Bar seams inside the block
-      let seamsHTML = '';
-      if (block.bars > 1) {
-        for (let i = 1; i < block.bars; i++) {
-          const pct = (i / block.bars) * 100;
-          seamsHTML += '<div class="bar-seam" style="left:' + pct + '%"></div>';
-        }
-      }
-
-      blocksHTML += '<div class="bar-block" '
-        + 'data-instrument="' + instrument + '" '
-        + 'data-block-idx="' + blockIdx + '" '
-        + 'data-bar-start="' + barOffset + '" '
-        + 'data-bar-count="' + block.bars + '" '
-        + 'style="flex:' + block.bars + ';background:' + bgColor + ';"'
-        + '>'
-        + seamsHTML
-        + '<span class="block-label">' + labelText + '</span>'
-        + '</div>';
-
-      barOffset += block.bars;
+  // Tab switching
+  document.querySelectorAll('.tabs .tab').forEach(tab => {
+    tab.addEventListener('click', function() {
+      document.querySelectorAll('.tabs .tab').forEach(t => t.classList.remove('tab-active'));
+      this.classList.add('tab-active');
     });
-
-    blocksHTML += '</div>';
-
-    lane.innerHTML = controlsHTML + blocksHTML;
-  }
-
-  function renderAllLanes() {
-    ['drums', 'bass', 'piano', 'guitar', 'strings'].forEach(renderLane);
-    attachBlockListeners();
-    attachSoloMuteListeners();
-  }
-
-  // ═══════════════════════════════════════════════════════
-  // BLOCK CLICK → POPOVER
-  // ═══════════════════════════════════════════════════════
-
-  function showPopover(blockEl) {
-    closePopover();
-
-    const instrument = blockEl.dataset.instrument;
-    const blockIdx = parseInt(blockEl.dataset.blockIdx);
-    const barStart = parseInt(blockEl.dataset.barStart);
-    const barCount = parseInt(blockEl.dataset.barCount);
-    const data = BLOCK_DATA[instrument];
-    const block = data.blocks[blockIdx];
-    const colors = STEM_COLORS[instrument];
-
-    blockEl.classList.add('selected');
-
-    const popover = document.createElement('div');
-    popover.className = 'block-popover visible';
-
-    let barLabel = barCount === 1
-      ? 'Bar ' + (barStart + 1)
-      : 'Bars ' + (barStart + 1) + '-' + (barStart + barCount);
-
-    let fieldsHTML = '';
-
-    if (instrument === 'drums') {
-      fieldsHTML = `
-        <div class="popover-row">
-          <label>Pattern</label>
-          <select data-field="style">
-            ${data.styleOptions.map(s => '<option' + (s === block.style ? ' selected' : '') + '>' + s + '</option>').join('')}
-          </select>
-        </div>
-      `;
-    } else if (instrument === 'bass') {
-      fieldsHTML = `
-        <div class="popover-row">
-          <label>Note</label>
-          <select data-field="note">
-            ${data.noteOptions.map(n => '<option' + (n === block.note ? ' selected' : '') + '>' + n + '</option>').join('')}
-          </select>
-        </div>
-        <div class="popover-row">
-          <label>Style</label>
-          <select data-field="style">
-            ${data.styleOptions.map(s => '<option' + (s === block.style ? ' selected' : '') + '>' + s + '</option>').join('')}
-          </select>
-        </div>
-      `;
-    } else {
-      fieldsHTML = `
-        <div class="popover-row">
-          <label>Chord</label>
-          <select data-field="chord">
-            <option value="">(follows chord lane)</option>
-            ${data.chordOptions.map(c => '<option' + (c === block.chord ? ' selected' : '') + '>' + c + '</option>').join('')}
-          </select>
-        </div>
-        <div class="popover-row">
-          <label>Style</label>
-          <select data-field="style">
-            ${data.styleOptions.map(s => '<option' + (s === block.style ? ' selected' : '') + '>' + s + '</option>').join('')}
-          </select>
-        </div>
-      `;
-    }
-
-    const canSplit = barCount > 1;
-    const canMerge = blockIdx > 0 || blockIdx < data.blocks.length - 1;
-
-    popover.innerHTML = `
-      <div class="popover-header">
-        <span class="popover-title" style="color:${colors.base}">${data.label}</span>
-        <span class="popover-bar-info">${barLabel}</span>
-        <button class="popover-close" title="Close">&times;</button>
-      </div>
-      ${fieldsHTML}
-      <div class="popover-actions">
-        ${canSplit ? '<button class="popover-action-btn split-btn" data-action="split">Split at bars</button>' : ''}
-        ${canMerge ? '<button class="popover-action-btn" data-action="merge-right">Merge &rarr;</button>' : ''}
-        <button class="popover-action-btn" data-action="duplicate">Duplicate</button>
-      </div>
-    `;
-
-    // Position popover
-    blockEl.style.position = 'relative';
-    blockEl.appendChild(popover);
-    activePopover = popover;
-
-    // Close button
-    popover.querySelector('.popover-close').addEventListener('click', (e) => {
-      e.stopPropagation();
-      closePopover();
-    });
-
-    // Field changes
-    popover.querySelectorAll('select[data-field]').forEach(sel => {
-      sel.addEventListener('change', (e) => {
-        e.stopPropagation();
-        const field = sel.dataset.field;
-        block[field] = sel.value;
-        renderLane(instrument);
-        // Re-open popover on the same block (re-rendered)
-        const newBlock = document.querySelector(
-          '.bar-block[data-instrument="' + instrument + '"][data-block-idx="' + blockIdx + '"]'
-        );
-        if (newBlock) showPopover(newBlock);
-      });
-      sel.addEventListener('click', (e) => e.stopPropagation());
-    });
-
-    // Action buttons
-    popover.querySelectorAll('.popover-action-btn').forEach(btn => {
-      btn.addEventListener('click', (e) => {
-        e.stopPropagation();
-        const action = btn.dataset.action;
-
-        if (action === 'split' && barCount > 1) {
-          // Split into individual bars
-          const newBlocks = [];
-          for (let i = 0; i < barCount; i++) {
-            const newBlock = Object.assign({}, block);
-            newBlock.bars = 1;
-            newBlocks.push(newBlock);
-          }
-          data.blocks.splice(blockIdx, 1, ...newBlocks);
-          closePopover();
-          renderLane(instrument);
-        } else if (action === 'merge-right' && blockIdx < data.blocks.length - 1) {
-          // Merge with next block
-          const nextBlock = data.blocks[blockIdx + 1];
-          block.bars += nextBlock.bars;
-          data.blocks.splice(blockIdx + 1, 1);
-          closePopover();
-          renderLane(instrument);
-        } else if (action === 'duplicate') {
-          // Duplicate this block (insert copy after)
-          const dup = Object.assign({}, block);
-          data.blocks.splice(blockIdx + 1, 0, dup);
-          closePopover();
-          renderLane(instrument);
-        }
-      });
-    });
-
-    // Prevent popover clicks from bubbling
-    popover.addEventListener('click', (e) => e.stopPropagation());
-  }
-
-  function attachBlockListeners() {
-    document.querySelectorAll('.bar-block').forEach(block => {
-      block.addEventListener('click', function(e) {
-        if (e.target.closest('.stem-btn')) return;
-        e.stopPropagation();
-        showPopover(this);
-      });
-    });
-  }
-
-  function attachSoloMuteListeners() {
-    document.querySelectorAll('.stem-lane .stem-btn').forEach(btn => {
-      btn.addEventListener('click', function(e) {
-        e.stopPropagation();
-        this.classList.toggle('active');
-      });
-    });
-  }
-
-  // Close popover on outside click
-  document.addEventListener('click', (e) => {
-    if (!e.target.closest('.bar-block') && !e.target.closest('.block-popover')) {
-      closePopover();
-    }
   });
 
-  // ═══════════════════════════════════════════════════════
-  // INITIALIZE
-  // ═══════════════════════════════════════════════════════
-
-  renderAllLanes();
-
-  // ─── Tool switching ───
-  document.getElementById('select-tool').addEventListener('click', function() {
-    this.classList.add('active');
-    document.getElementById('split-tool').classList.remove('active');
-  });
-  document.getElementById('split-tool').addEventListener('click', function() {
-    this.classList.add('active');
-    document.getElementById('select-tool').classList.remove('active');
-  });
-
-  // ─── Playhead animation ───
-  let playing = false;
-  const playhead = document.getElementById('playhead');
-  const scrubber = document.getElementById('scrubber');
-  const timeDisplay = document.getElementById('time-display');
-  const totalSeconds = 232;
-
-  function formatTime(s) {
-    const m = Math.floor(s / 60);
-    const sec = Math.floor(s % 60);
-    return m + ':' + (sec < 10 ? '0' : '') + sec;
-  }
-
-  function updateTime() {
-    const current = parseFloat(scrubber.value);
-    timeDisplay.textContent = formatTime(current) + ' / ' + formatTime(totalSeconds);
-    const container = document.getElementById('stems-container');
-    const pct = current / totalSeconds;
-    playhead.style.left = (pct * container.offsetWidth) + 'px';
-  }
-
-  scrubber.addEventListener('input', updateTime);
-
-  let animFrame;
-  function animate() {
-    if (!playing) return;
-    let v = parseFloat(scrubber.value);
-    v += 0.3;
-    if (v > totalSeconds) v = 0;
-    scrubber.value = v;
-    updateTime();
-    animFrame = requestAnimationFrame(animate);
-  }
-
-  document.getElementById('play-btn').addEventListener('click', function() {
-    playing = !playing;
-    this.classList.toggle('playing', playing);
-    this.innerHTML = playing ? '&#9646;&#9646; PAUSE' : '&#9654; PLAY';
-    if (playing) animate();
-    else cancelAnimationFrame(animFrame);
-  });
-
-  // ─── Tempo controls ───
+  // Tempo controls
   document.getElementById('tempo-down').addEventListener('click', () => {
     const el = document.getElementById('tempo-val');
     el.value = Math.max(40, parseInt(el.value) - 1);
@@ -1729,73 +323,17 @@ Dm7   | G7   | Cmaj7 | A7</textarea>
     el.value = Math.min(240, parseInt(el.value) + 1);
   });
 
-  // ─── Mixer Solo/Mute toggles ───
-  document.querySelectorAll('.mixer-sm button').forEach(btn => {
-    btn.addEventListener('click', function(e) {
-      e.stopPropagation();
-      this.classList.toggle('active');
-    });
-  });
-
-  // ─── Tab switching ───
-  document.querySelectorAll('.tab').forEach(tab => {
-    tab.addEventListener('click', function() {
-      document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
-      this.classList.add('active');
-    });
-  });
-
-  // ─── Section selection ───
-  document.querySelectorAll('.section-block').forEach(sec => {
-    sec.addEventListener('click', function() {
-      document.querySelectorAll('.section-block').forEach(s => s.classList.remove('active'));
-      this.classList.add('active');
-    });
-  });
-
-  // ─── AI chat ───
-  document.getElementById('ai-send').addEventListener('click', sendAI);
-  document.getElementById('ai-input').addEventListener('keydown', function(e) {
-    if (e.key === 'Enter') sendAI();
-  });
-  function sendAI() {
-    const input = document.getElementById('ai-input');
-    const val = input.value.trim();
-    if (!val) return;
-    const msgs = document.getElementById('ai-messages');
-    const userMsg = document.createElement('div');
-    userMsg.className = 'ai-msg user';
-    userMsg.textContent = '"' + val + '"';
-    msgs.appendChild(userMsg);
-    input.value = '';
-    setTimeout(() => {
-      const reply = document.createElement('div');
-      reply.className = 'ai-msg assistant';
-      const replies = [
-        'Applied. Regenerating affected bars...',
-        'Done. Check the updated pattern.',
-        'Understood. Style updated for that section.',
-        'Adjustment made. Hit play to preview.',
-        'Got it. Bar blocks updated.'
-      ];
-      reply.textContent = replies[Math.floor(Math.random() * replies.length)];
-      msgs.appendChild(reply);
-      msgs.scrollTop = msgs.scrollHeight;
-    }, 400);
-  }
-
-  // ─── Generate button ───
+  // Generate button (visual feedback only)
   document.getElementById('generate-btn').addEventListener('click', function() {
     this.textContent = 'GENERATING...';
-    this.style.background = 'var(--accent2)';
+    this.classList.remove('btn-neutral');
+    this.classList.add('btn-active');
     setTimeout(() => {
       this.textContent = 'GENERATE';
-      this.style.background = '';
-      renderAllLanes();
+      this.classList.remove('btn-active');
+      this.classList.add('btn-neutral');
     }, 1500);
   });
-
-  updateTime();
 </script>
 
 </body>
