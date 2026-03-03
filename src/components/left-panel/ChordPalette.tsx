@@ -209,7 +209,7 @@ export function ChordPalette({
         ) : (
           <div className="flex flex-col gap-1">
             {rows.map((row, rowIdx) => (
-              <div key={rowIdx} className="flex items-stretch gap-0">
+              <div key={rowIdx} className="-mx-1 flex items-stretch gap-0 overflow-x-auto px-1" style={{ scrollbarWidth: "none" }}>
                 {row.map((chord, colIdx) => {
                   const globalIdx = rowIdx * perRow + colIdx
                   const isBarline = colIdx > 0 && colIdx % beatsPerBar === 0
@@ -217,24 +217,26 @@ export function ChordPalette({
                     <Fragment key={globalIdx}>
                       {/* Barline indicator */}
                       {isBarline && (
-                        <div className="mx-0.5 w-px shrink-0 self-stretch bg-[#52525b]" />
+                        <div className="mx-1 w-0.5 shrink-0 self-stretch rounded-full bg-[#71717a]" />
                       )}
-                      {/* Chord cell — equal width */}
+                      {/* Chord cell — equal width, min-width ensures text fits */}
                       <div
                         className={cn(
-                          "group relative flex min-w-0 flex-1 items-center justify-center rounded-md border px-1 py-1.5 transition-all duration-300",
+                          "group relative flex shrink-0 items-center justify-center rounded-md border px-1.5 py-1.5 transition-all duration-300",
                           "bg-secondary text-foreground",
                           recentlyAdded === globalIdx
                             ? "border-[#06b6d4]/60 ring-1 ring-[#06b6d4]/40"
                             : "border-border/50"
                         )}
-                        style={
-                          recentlyAdded === globalIdx
+                        style={{
+                          width: `${100 / perRow}%`,
+                          minWidth: 28,
+                          ...(recentlyAdded === globalIdx
                             ? { boxShadow: `0 0 6px 1px ${TEAL}22` }
-                            : undefined
-                        }
+                            : {}),
+                        }}
                       >
-                        <span className="truncate font-mono text-[10px] font-medium">
+                        <span className="whitespace-nowrap font-mono text-[9px] font-medium">
                           {chord}
                         </span>
                         <button
@@ -258,7 +260,7 @@ export function ChordPalette({
                       {isBarline && (
                         <div className="mx-0.5 w-px shrink-0 self-stretch bg-transparent" />
                       )}
-                      <div className="flex-1" />
+                      <div style={{ width: `${100 / perRow}%`, minWidth: 28 }} />
                     </Fragment>
                   )
                 })}
@@ -471,7 +473,7 @@ function DiatonicButton({
       </span>
       <span
         className={cn(
-          "mt-0.5 truncate text-[10px] font-medium leading-none transition-colors",
+          "mt-0.5 whitespace-nowrap text-[9px] font-medium leading-none transition-colors",
           flash ? "text-foreground" : "text-muted-foreground"
         )}
       >
