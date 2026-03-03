@@ -563,7 +563,7 @@ actual update method name (may be `updateSectionField` or similar) and use that.
 
 ---
 
-### [ ] T8 — Wire BlockContext to projectStore + selectionStore
+### [x] T8 — Wire BlockContext to projectStore + selectionStore
 
 **Files:** `src/components/left-panel/BlockContext.tsx`
 
@@ -660,12 +660,12 @@ a rendered arrangement grid that reflects real project data — not demo data.
 
 ### Structural (code wiring)
 
-- [ ] Chord chart input → `project.chordChartRaw` → `InputSection.tsx`
-- [ ] Style controls → `project.{genre,energy,groove,swingPct,dynamics}` → `StyleControlsSection.tsx`
-- [ ] Arrangement grid sections → `projectStore.sections` → `ArrangementView.tsx`
-- [ ] Arrangement grid blocks → `projectStore.blocks` → `ArrangementView.tsx`
-- [ ] Transport controls → `useAudio().play/pause/stop` → `TransportBar.tsx`
-- [ ] Project name → `project.name` → `TopBar.tsx`
+- [x] Chord chart input → `project.chordChartRaw` → `InputSection.tsx`
+- [x] Style controls → `project.{genre,energy,groove,swingPct,dynamics}` → `StyleControlsSection.tsx`
+- [x] Arrangement grid sections → `projectStore.sections` → `ArrangementView.tsx`
+- [x] Arrangement grid blocks → `projectStore.blocks` → `ArrangementView.tsx`
+- [x] Transport controls → `useAudio().play/pause/stop` → `TransportBar.tsx`
+- [x] Project name → `project.name` → `TopBar.tsx`
 
 ### Behavioral (end-to-end demo)
 
@@ -679,5 +679,5 @@ a rendered arrangement grid that reflects real project data — not demo data.
 
 ### Durable (survives compaction)
 
-- [ ] Component state — source: Zustand stores (in-memory, persisted via Supabase on saveProject)
-- [ ] Project data — source: Supabase DB via `useProject().loadProject()`
+- [x] Component state — source: Zustand stores (in-memory, persisted via Supabase on saveProject)
+- [x] Project data — source: Supabase DB via `useProject().loadProject()`

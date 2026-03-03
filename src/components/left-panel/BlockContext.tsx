@@ -1,6 +1,8 @@
 import { useState } from "react"
 import { cn } from "@/lib/utils"
 import type { Instrument } from "@/components/sequencer-block"
+import { useProjectStore } from "@/store/project-store"
+import { useSelectionStore } from "@/store/selection-store"
 
 /* ------------------------------------------------------------------ */
 /*  Instrument palette (matches sequencer-block.tsx)                    */
@@ -175,11 +177,25 @@ export function BlockContext({
   endBar = 12,
   onClose,
 }: BlockContextProps) {
+  const { blocks } = useProjectStore()
+  const { blockId } = useSelectionStore()
+
+  /* Derive live block from store */
+  const liveBlock = blocks.find((b) => b.id === blockId)
+
+  /* Use live block data if available, otherwise fall back to props */
+  const resolvedStartBar = liveBlock?.startBar ?? startBar
+  const resolvedEndBar = liveBlock?.endBar ?? endBar
+
   const color = INSTRUMENT_COLORS[instrument]
   const label = INSTRUMENT_LABELS[instrument]
 
+  /* Volume/pan: local state for MVP (cosmetic only) */
   const [volume, setVolume] = useState(0) // dB, range -24 to +6
   const [pan, setPan] = useState(0) // -100 to 100, 0 = center
+
+  /* Chord override: local state only — Block type has no chordOverride field */
+  // TODO: wire when Block type gets a chordOverride field
   const [chordOverride, setChordOverride] = useState(false)
   const [chordText, setChordText] = useState("Cmaj7 | Dm7 | G7 | Cmaj7")
 
@@ -228,7 +244,7 @@ export function BlockContext({
           <span className="text-sm font-medium text-[#e4e4e7]">{label}</span>
         </div>
         <p className="mt-0.5 text-xs text-[#a1a1aa]">
-          Bars {startBar} &ndash; {endBar}
+          Bars {resolvedStartBar} &ndash; {resolvedEndBar}
         </p>
 
         {/* VOLUME */}
