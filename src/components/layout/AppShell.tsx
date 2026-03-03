@@ -9,14 +9,23 @@ import { TransportBar } from '@/components/transport/TransportBar';
 import { MixerDrawer } from '@/components/mixer/MixerDrawer';
 import { useKeyboardShortcuts } from '@/hooks/useKeyboardShortcuts';
 import { useUiStore } from '@/store/ui-store';
+import { useSelectionStore } from '@/store/selection-store';
 import { useProject } from '@/hooks/useProject';
 
 export function AppShell() {
   useKeyboardShortcuts();
 
   const { unsavedChanges, generationState } = useUiStore();
+  const selectionLevel = useSelectionStore((s) => s.level);
   const { saveProject } = useProject();
   const [panelContext, setPanelContext] = useState<PanelContext>({ mode: 'default' });
+
+  /* Sync panel context when selection is cleared (e.g. Escape key) */
+  useEffect(() => {
+    if (selectionLevel === 'song' && panelContext.mode !== 'default') {
+      setPanelContext({ mode: 'default' });
+    }
+  }, [selectionLevel, panelContext.mode]);
 
   useEffect(() => {
     const interval = setInterval(() => {
