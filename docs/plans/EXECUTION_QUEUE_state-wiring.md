@@ -607,7 +607,7 @@ npm run build
 
 ---
 
-### [ ] T9 — Export INSTRUMENT_COLORS from sequencer-block.tsx
+### [x] T9 — Export INSTRUMENT_COLORS from sequencer-block.tsx
 
 **Files:** `src/components/sequencer-block.tsx`
 

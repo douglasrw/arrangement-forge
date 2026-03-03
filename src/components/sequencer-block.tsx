@@ -4,7 +4,7 @@ export type Instrument = "drums" | "bass" | "piano" | "guitar" | "strings"
 
 export type BlockState = "default" | "hover" | "selected"
 
-const INSTRUMENT_COLORS: Record<Instrument, string> = {
+export const INSTRUMENT_COLORS: Record<Instrument, string> = {
   drums: "#06b6d4",
   bass: "#34d399",
   piano: "#fbbf24",
