@@ -1,22 +1,42 @@
-// ScopeBadge.tsx — Context scope indicator for AI Assistant chat messages.
+import { cn } from "@/lib/utils"
 
-interface ScopeBadgeProps {
-  scope: 'setup' | 'song' | 'section' | 'block';
-  target?: string; // section name or "Bass bar 7"
+type Scope = "song" | "section" | "block"
+
+const SCOPE_STYLES: Record<Scope, { bg: string; text: string; label: string }> = {
+  song: {
+    bg: "bg-[#3f3f46]/60",
+    text: "text-[#a1a1aa]",
+    label: "Song",
+  },
+  section: {
+    bg: "bg-[#14b8a6]/10",
+    text: "text-[#2dd4bf]",
+    label: "Section",
+  },
+  block: {
+    bg: "bg-[#f59e0b]/10",
+    text: "text-[#fbbf24]",
+    label: "Block",
+  },
 }
 
-const SCOPE_COLORS: Record<ScopeBadgeProps['scope'], string> = {
-  setup: 'badge-accent',
-  song: 'badge-primary',
-  section: 'badge-secondary',
-  block: 'badge-info',
-};
+interface ScopeBadgeProps {
+  scope: Scope
+  className?: string
+}
 
-export function ScopeBadge({ scope, target }: ScopeBadgeProps) {
-  const label = target ?? scope.charAt(0).toUpperCase() + scope.slice(1);
+export function ScopeBadge({ scope, className }: ScopeBadgeProps) {
+  const s = SCOPE_STYLES[scope]
   return (
-    <span className={`badge badge-sm ${SCOPE_COLORS[scope]} text-xs font-mono`}>
-      {label}
+    <span
+      className={cn(
+        "inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-medium uppercase tracking-wider",
+        s.bg,
+        s.text,
+        className
+      )}
+    >
+      {s.label}
     </span>
-  );
+  )
 }

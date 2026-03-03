@@ -85,7 +85,9 @@ export function AiAssistant() {
     <div className="flex flex-col border-t border-base-300 pt-3 mt-3 gap-2">
       <div className="flex items-center justify-between px-1">
         <span className="text-xs font-semibold text-base-content/40 uppercase tracking-wider">AI Assistant</span>
-        <ScopeBadge scope={scope} target={target} />
+        {(scope === 'song' || scope === 'section' || scope === 'block') && (
+          <ScopeBadge scope={scope} />
+        )}
       </div>
 
       {/* Chat history */}

@@ -1,99 +1,271 @@
-// SectionContext.tsx — Section-level inspector. Full implementation in T21.
+import { useState } from "react"
+import { cn } from "@/lib/utils"
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select"
 
-import { useSelectionStore } from '@/store/selection-store';
-import { useProjectStore } from '@/store/project-store';
-import { useUndoStore } from '@/store/undo-store';
-import { StyleControls } from './StyleControls';
-import { resolveStyle, isInherited } from '@/lib/style-cascade';
+/* ------------------------------------------------------------------ */
+/*  Reusable slider — same pattern as StyleControlsSection             */
+/* ------------------------------------------------------------------ */
+interface SliderDef {
+  label: string
+  value: number
+  display: string
+  min: number
+  max: number
+}
 
-export function SectionContext() {
-  const { sectionId } = useSelectionStore();
-  const { sections, project, blocks, updateSection } = useProjectStore();
-  const { pushUndo } = useUndoStore();
+const INITIAL_SLIDERS: SliderDef[] = [
+  { label: "Energy", value: 45, display: "Med", min: 0, max: 100 },
+  { label: "Groove", value: 35, display: "Laid", min: 0, max: 100 },
+  { label: "Swing %", value: 65, display: "65%", min: 0, max: 100 },
+  { label: "Dynamics", value: 30, display: "p", min: 0, max: 100 },
+]
 
-  const section = sections.find((s) => s.id === sectionId);
-  if (!section || !project) return null;
-
-  const totalBars = sections.reduce((sum, s) => sum + s.barCount, 0);
-
-  function handleStyleChange(field: string, value: number | string | null) {
-    const overrideField = field === 'energy' ? 'energyOverride'
-      : field === 'groove' ? 'grooveOverride'
-      : field === 'swingPct' ? 'swingPctOverride'
-      : field === 'dynamics' ? 'dynamicsOverride'
-      : null;
-    if (!overrideField) return;
-
-    const before = JSON.stringify({ sections, blocks });
-    updateSection(section!.id, { [overrideField]: value });
-    const after = JSON.stringify({ sections: useProjectStore.getState().sections, blocks });
-    pushUndo(`Change ${field} for ${section!.name}`, before, after);
+function getDisplayValue(label: string, value: number): string {
+  if (label === "Swing %") return `${value}%`
+  if (label === "Dynamics") {
+    if (value <= 20) return "pp"
+    if (value <= 40) return "p"
+    if (value <= 60) return "mp"
+    if (value <= 80) return "f"
+    return "ff"
   }
+  if (value <= 20) return "Low"
+  if (value <= 40) return "Laid"
+  if (value <= 60) return "Med"
+  if (value <= 80) return "High"
+  return "Max"
+}
 
-  function handleReset(field: string) {
-    handleStyleChange(field, null);
+/* ------------------------------------------------------------------ */
+/*  SectionContext                                                      */
+/* ------------------------------------------------------------------ */
+interface SectionContextProps {
+  sectionName?: string
+  sectionBars?: number
+  onClose?: () => void
+}
+
+export function SectionContext({
+  sectionName = "Verse",
+  sectionBars = 16,
+  onClose,
+}: SectionContextProps) {
+  const [name, setName] = useState(sectionName)
+  const [bars, setBars] = useState(sectionBars)
+  const [isOverriding, setIsOverriding] = useState(false)
+  const [sliders, setSliders] = useState(INITIAL_SLIDERS)
+
+  function handleSliderChange(index: number, newValue: number) {
+    setSliders((prev) =>
+      prev.map((s, i) =>
+        i === index
+          ? { ...s, value: newValue, display: getDisplayValue(s.label, newValue) }
+          : s
+      )
+    )
   }
-
-  const resolved = {
-    energy: resolveStyle(project, section, null, 'energy'),
-    groove: resolveStyle(project, section, null, 'groove'),
-    swingPct: resolveStyle(project, section, null, 'swingPct'),
-    dynamics: resolveStyle(project, section, null, 'dynamics'),
-  };
 
   return (
-    <div className="flex flex-col gap-4 py-2">
-      {/* Section name */}
-      <div className="flex flex-col gap-1 px-1">
-        <label className="text-xs text-base-content/50">Section Name</label>
+    <div className="flex flex-col gap-0">
+      {/* Header with back button */}
+      <button
+        type="button"
+        onClick={onClose}
+        className="flex items-center gap-1.5 px-4 py-3 text-xs text-muted-foreground transition-colors hover:text-foreground"
+      >
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m15 18-6-6 6-6"/></svg>
+        <span>Back to panels</span>
+      </button>
+
+      <div className="border-t border-border px-4 pb-4 pt-4">
+        {/* Section badge */}
+        <div className="mb-4 flex items-center gap-2">
+          <div className="flex size-6 items-center justify-center rounded bg-[#27272a]">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#a1a1aa" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18"/></svg>
+          </div>
+          <span className="text-xs font-semibold uppercase tracking-wider text-foreground">
+            Section Inspector
+          </span>
+        </div>
+
+        {/* Section name */}
+        <label htmlFor="section-name-input" className="text-[10px] font-medium uppercase tracking-widest text-[#71717a]">
+          Section Name
+        </label>
         <input
+          id="section-name-input"
           type="text"
-          className="input input-xs input-bordered"
-          value={section.name}
-          onChange={(e) => updateSection(section.id, { name: e.target.value })}
+          value={name}
+          onChange={(e) => setName(e.target.value)}
+          className={cn(
+            "mt-1.5 w-full rounded-lg border border-[#3f3f46] bg-[#27272a] px-3 py-1.5",
+            "text-sm font-medium text-[#f4f4f5]",
+            "focus:border-[#0891b2]/50 focus:outline-none focus:ring-1 focus:ring-[#0891b2]/30"
+          )}
         />
-      </div>
 
-      {/* Bar count */}
-      <div className="flex flex-col gap-1 px-1">
-        <label className="text-xs text-base-content/50">Bar Count</label>
-        <input
-          type="number"
-          className="input input-xs input-bordered w-24"
-          min={1}
-          max={64}
-          value={section.barCount}
-          onChange={(e) => updateSection(section.id, { barCount: Math.max(1, parseInt(e.target.value) || 1) })}
-        />
-        <span className="text-[10px] text-base-content/25">Total: {totalBars} bars</span>
-      </div>
+        {/* Length */}
+        <label className="mt-4 block text-[10px] font-medium uppercase tracking-widest text-[#71717a]">
+          Length
+        </label>
+        <div className="mt-1.5 flex items-center gap-2">
+          <button
+            type="button"
+            onClick={() => setBars((b) => Math.max(1, b - 4))}
+            className="flex size-7 items-center justify-center rounded-lg bg-[#3f3f46] text-sm font-medium text-[#a1a1aa] transition-colors hover:bg-[#52525b] hover:text-[#f4f4f5]"
+          >
+            {'\u2212'}
+          </button>
+          <span className="min-w-16 text-center font-mono text-sm text-[#f4f4f5]">
+            {bars} bars
+          </span>
+          <button
+            type="button"
+            onClick={() => setBars((b) => Math.min(64, b + 4))}
+            className="flex size-7 items-center justify-center rounded-lg bg-[#3f3f46] text-sm font-medium text-[#a1a1aa] transition-colors hover:bg-[#52525b] hover:text-[#f4f4f5]"
+          >
+            +
+          </button>
+        </div>
 
-      {/* Style overrides */}
-      <div className="flex flex-col gap-2 px-1">
-        <span className="text-xs font-semibold text-base-content/40 uppercase tracking-wider">
-          Style Overrides
-        </span>
-        <StyleControls
-          genre={project.genre}
-          subStyle={project.subStyle}
-          energy={resolved.energy.value}
-          groove={resolved.groove.value}
-          swingPct={resolved.swingPct.value}
-          dynamics={resolved.dynamics.value}
-          energyInherited={isInherited(section, null, 'energy', 'section')}
-          grooveInherited={isInherited(section, null, 'groove', 'section')}
-          swingInherited={isInherited(section, null, 'swingPct', 'section')}
-          dynamicsInherited={isInherited(section, null, 'dynamics', 'section')}
-          onChange={handleStyleChange}
-          onReset={handleReset}
-        />
-      </div>
+        {/* Style overrides */}
+        <label className="mt-4 block text-[10px] font-medium uppercase tracking-widest text-[#71717a]">
+          Style
+        </label>
 
-      <div className="px-1 pt-2">
-        <button className="btn btn-outline btn-sm w-full text-xs">
-          Regenerate {section.name}
+        {!isOverriding ? (
+          <div className="mt-1.5 flex items-center justify-between">
+            <span className="text-xs italic text-[#71717a]">
+              Inherits from song
+            </span>
+            <button
+              type="button"
+              onClick={() => setIsOverriding(true)}
+              className="text-xs text-[#0891b2] transition-colors hover:text-[#22d3ee]"
+            >
+              Override
+            </button>
+          </div>
+        ) : (
+          <div className="mt-1.5 flex items-center justify-between">
+            <span className="text-xs font-medium text-foreground">
+              Section override
+            </span>
+            <button
+              type="button"
+              onClick={() => setIsOverriding(false)}
+              className="text-xs text-[#71717a] transition-colors hover:text-foreground"
+            >
+              Clear
+            </button>
+          </div>
+        )}
+
+        {/* Inherited / overridden controls */}
+        <div
+          className={cn(
+            "mt-3 flex flex-col gap-3 transition-opacity duration-200",
+            !isOverriding && "pointer-events-none opacity-40"
+          )}
+        >
+          {/* Genre / Sub-style */}
+          <div className="flex gap-2">
+            <div className="flex flex-1 flex-col gap-1">
+              <label htmlFor="section-genre-select" className="text-[10px] font-medium uppercase tracking-widest text-[#71717a]">
+                Genre
+              </label>
+              <Select defaultValue="jazz">
+                <SelectTrigger id="section-genre-select" className="h-7 w-full border-[#3f3f46] bg-[#27272a] text-[11px] text-foreground">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="jazz">Jazz</SelectItem>
+                  <SelectItem value="rock">Rock</SelectItem>
+                  <SelectItem value="pop">Pop</SelectItem>
+                  <SelectItem value="electronic">Electronic</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="flex flex-1 flex-col gap-1">
+              <label htmlFor="section-substyle-select" className="text-[10px] font-medium uppercase tracking-widest text-[#71717a]">
+                Sub-style
+              </label>
+              <Select defaultValue="swing">
+                <SelectTrigger id="section-substyle-select" className="h-7 w-full border-[#3f3f46] bg-[#27272a] text-[11px] text-foreground">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="swing">Swing</SelectItem>
+                  <SelectItem value="bebop">Bebop</SelectItem>
+                  <SelectItem value="bossa">Bossa Nova</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+
+          {/* Sliders */}
+          <div className="flex flex-col gap-2">
+            {sliders.map((slider, i) => (
+              <div key={slider.label} className="flex flex-col gap-0.5">
+                <div className="flex items-center justify-between">
+                  <span className="text-[10px] font-medium text-[#71717a]">
+                    {slider.label}
+                  </span>
+                  <span className="text-[10px] font-semibold text-foreground">
+                    {slider.display}
+                  </span>
+                </div>
+                <div className="group relative h-1 w-full cursor-pointer rounded-full bg-[#27272a]">
+                  <div
+                    className="absolute inset-y-0 left-0 rounded-full"
+                    style={{
+                      width: `${slider.value}%`,
+                      background: "#0891b2",
+                    }}
+                  />
+                  <input
+                    type="range"
+                    id={`section-slider-${slider.label}`}
+                    min={slider.min}
+                    max={slider.max}
+                    value={slider.value}
+                    onChange={(e) =>
+                      handleSliderChange(i, Number(e.target.value))
+                    }
+                    className={cn(
+                      "absolute inset-0 h-full w-full cursor-pointer appearance-none bg-transparent",
+                      "[&::-webkit-slider-thumb]:h-2.5 [&::-webkit-slider-thumb]:w-2.5",
+                      "[&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:rounded-full",
+                      "[&::-webkit-slider-thumb]:border [&::-webkit-slider-thumb]:border-[#0891b2]",
+                      "[&::-webkit-slider-thumb]:bg-foreground [&::-webkit-slider-thumb]:shadow-sm",
+                      "[&::-webkit-slider-thumb]:opacity-0 [&::-webkit-slider-thumb]:transition-opacity",
+                      "group-hover:[&::-webkit-slider-thumb]:opacity-100",
+                      "[&::-moz-range-thumb]:h-2.5 [&::-moz-range-thumb]:w-2.5",
+                      "[&::-moz-range-thumb]:appearance-none [&::-moz-range-thumb]:rounded-full",
+                      "[&::-moz-range-thumb]:border [&::-moz-range-thumb]:border-[#0891b2]",
+                      "[&::-moz-range-thumb]:bg-foreground [&::-moz-range-thumb]:shadow-sm"
+                    )}
+                  />
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Delete Section */}
+        <button
+          type="button"
+          className="mt-6 text-xs text-[#71717a] transition-colors hover:text-red-400"
+        >
+          Delete Section
         </button>
       </div>
     </div>
-  );
+  )
 }

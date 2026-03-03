@@ -209,13 +209,13 @@ export default function LibraryPage() {
       {/* Delete confirmation */}
       <ConfirmDialog
         open={deleteTarget !== null}
+        onClose={() => setDeleteTarget(null)}
+        onConfirm={() => deleteTarget && handleDelete(deleteTarget)}
         title="Delete Project"
-        message={`Delete "${deleteTarget?.name}"? This cannot be undone.`}
+        body={`Delete "${deleteTarget?.name}"? This cannot be undone.`}
         confirmLabel="Delete"
         cancelLabel="Cancel"
-        danger
-        onConfirm={() => deleteTarget && handleDelete(deleteTarget)}
-        onCancel={() => setDeleteTarget(null)}
+        variant="danger"
       />
     </div>
   );

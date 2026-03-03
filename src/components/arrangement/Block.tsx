@@ -111,12 +111,12 @@ export function Block({ block, instrument, stemId, barWidth }: Props) {
 
       <ConfirmDialog
         open={deleteOpen}
-        title="Delete Block?"
-        message={`Delete this ${instrument} block?`}
-        confirmLabel="Delete"
-        danger
+        onClose={() => setDeleteOpen(false)}
         onConfirm={handleDelete}
-        onCancel={() => setDeleteOpen(false)}
+        title="Delete Block?"
+        body={`Delete this ${instrument} block?`}
+        confirmLabel="Delete"
+        variant="danger"
       />
     </>
   );

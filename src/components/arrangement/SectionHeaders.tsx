@@ -144,12 +144,12 @@ export function SectionHeaders() {
 
       <ConfirmDialog
         open={deleteTarget !== null}
-        title="Delete Section?"
-        message={`Delete "${sections.find(s => s.id === deleteTarget)?.name}"? All blocks in this section will be removed.`}
-        confirmLabel="Delete"
-        danger
+        onClose={() => setDeleteTarget(null)}
         onConfirm={() => deleteTarget && handleDelete(deleteTarget)}
-        onCancel={() => setDeleteTarget(null)}
+        title="Delete Section?"
+        body={`Delete "${sections.find(s => s.id === deleteTarget)?.name}"? All blocks in this section will be removed.`}
+        confirmLabel="Delete"
+        variant="danger"
       />
     </div>
   );
