@@ -86,19 +86,19 @@ export default function LibraryPage() {
   }, [projects, search, sortKey]);
 
   return (
-    <div className="min-h-screen bg-base-100">
+    <div className="min-h-screen bg-background">
       {/* Header */}
-      <div className="bg-base-200 border-b border-base-300 px-8 py-4 flex items-center justify-between">
-        <h1 className="text-xl font-bold text-base-content">My Library</h1>
+      <div className="bg-card border-b border-border px-8 py-4 flex items-center justify-between">
+        <h1 className="text-xl font-bold text-foreground">My Library</h1>
         <div className="flex items-center gap-2">
           <button
-            className="btn btn-sm btn-ghost text-base-content/50"
+            className="rounded px-3 py-1.5 text-sm text-muted-foreground hover:text-foreground hover:bg-secondary transition-colors"
             onClick={() => navigate('/settings')}
           >
             Settings
           </button>
           <button
-            className="btn btn-sm btn-primary"
+            className="rounded px-3 py-1.5 text-sm font-medium bg-primary text-primary-foreground hover:bg-primary/80 transition-colors disabled:opacity-50"
             onClick={handleCreate}
             disabled={creating}
           >
@@ -112,26 +112,30 @@ export default function LibraryPage() {
       <div className="px-8 py-6 flex flex-col gap-6 max-w-6xl">
         {/* Search + Sort */}
         <div className="flex gap-3 items-center">
+          <label htmlFor="library-search" className="sr-only">Search projects</label>
           <input
+            id="library-search"
             type="search"
-            className="input input-sm input-bordered w-64"
+            className="rounded border border-border bg-card px-3 py-1.5 text-sm text-foreground placeholder:text-muted-foreground w-64 focus:outline-none focus:ring-1 focus:ring-ring"
             placeholder="Search by name, genre, key..."
             value={searchInput}
             onChange={(e) => setSearchInput(e.target.value)}
           />
+          <label htmlFor="library-sort" className="sr-only">Sort projects</label>
           <select
-            className="select select-sm select-bordered"
+            id="library-sort"
+            className="rounded border border-border bg-card px-3 py-1.5 text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-ring"
             value={sortKey}
             onChange={(e) => setSortKey(e.target.value as SortKey)}
           >
             <option value="updatedAt">Last Edited</option>
-            <option value="name-asc">Name A–Z</option>
-            <option value="name-desc">Name Z–A</option>
+            <option value="name-asc">Name A-Z</option>
+            <option value="name-desc">Name Z-A</option>
             <option value="genre">Genre</option>
             <option value="key">Key</option>
             <option value="tempo">Tempo</option>
           </select>
-          <span className="text-xs text-base-content/40">
+          <span className="text-xs text-muted-foreground">
             {filtered.length} project{filtered.length !== 1 ? 's' : ''}
           </span>
         </div>
@@ -146,9 +150,13 @@ export default function LibraryPage() {
         {/* Empty state */}
         {!loading && projects.length === 0 && (
           <div className="flex flex-col items-center gap-4 py-24 text-center">
-            <p className="text-base-content/50 text-lg">No projects yet.</p>
-            <p className="text-base-content/30 text-sm">Create your first arrangement!</p>
-            <button className="btn btn-primary" onClick={handleCreate} disabled={creating}>
+            <p className="text-muted-foreground text-lg">No projects yet.</p>
+            <p className="text-muted-foreground/50 text-sm">Create your first arrangement!</p>
+            <button
+              className="rounded px-4 py-2 text-sm font-medium bg-primary text-primary-foreground hover:bg-primary/80 transition-colors disabled:opacity-50"
+              onClick={handleCreate}
+              disabled={creating}
+            >
               {creating ? <span className="loading loading-spinner loading-sm" /> : '+ New Project'}
             </button>
           </div>
@@ -156,7 +164,7 @@ export default function LibraryPage() {
 
         {/* No search results */}
         {!loading && projects.length > 0 && filtered.length === 0 && (
-          <div className="flex flex-col items-center py-16 text-base-content/40">
+          <div className="flex flex-col items-center py-16 text-muted-foreground">
             <p>No projects match "{search}"</p>
           </div>
         )}
@@ -167,16 +175,16 @@ export default function LibraryPage() {
             {filtered.map((project) => (
               <div
                 key={project.id}
-                className="card bg-base-200 border border-base-300 hover:border-primary/50 cursor-pointer transition-colors"
+                className="rounded-lg bg-card border border-border hover:border-primary/50 cursor-pointer transition-colors"
                 onClick={() => navigate(`/project/${project.id}`)}
               >
-                <div className="card-body p-4 gap-2">
+                <div className="p-4 flex flex-col gap-2">
                   <div className="flex items-start justify-between gap-2">
-                    <h3 className="font-semibold text-base-content text-sm leading-tight line-clamp-2 flex-1">
+                    <h3 className="font-semibold text-foreground text-sm leading-tight line-clamp-2 flex-1">
                       {project.name}
                     </h3>
                     <button
-                      className="btn btn-ghost btn-xs text-base-content/30 hover:text-error shrink-0"
+                      className="rounded p-0.5 text-muted-foreground/50 hover:text-destructive shrink-0 transition-colors"
                       onClick={(e) => {
                         e.stopPropagation();
                         setDeleteTarget(project);
@@ -188,15 +196,15 @@ export default function LibraryPage() {
                   </div>
 
                   <div className="flex flex-wrap gap-1 mt-1">
-                    <span className="badge badge-sm badge-ghost">{project.genre}</span>
-                    <span className="badge badge-sm badge-ghost">{project.key}</span>
-                    <span className="badge badge-sm badge-ghost">{project.tempo} BPM</span>
+                    <span className="rounded px-1.5 py-0.5 text-[10px] font-medium bg-secondary text-secondary-foreground">{project.genre}</span>
+                    <span className="rounded px-1.5 py-0.5 text-[10px] font-medium bg-secondary text-secondary-foreground">{project.key}</span>
+                    <span className="rounded px-1.5 py-0.5 text-[10px] font-medium bg-secondary text-secondary-foreground">{project.tempo} BPM</span>
                     {project.hasArrangement && (
-                      <span className="badge badge-sm badge-primary">Generated</span>
+                      <span className="rounded px-1.5 py-0.5 text-[10px] font-medium bg-primary/20 text-primary">Generated</span>
                     )}
                   </div>
 
-                  <p className="text-xs text-base-content/30 mt-1">
+                  <p className="text-xs text-muted-foreground/60 mt-1">
                     {formatDate(project.updatedAt)}
                   </p>
                 </div>

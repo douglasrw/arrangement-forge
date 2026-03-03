@@ -1,3 +1,4 @@
+import { useRef, useState, useLayoutEffect } from "react"
 import { cn } from "@/lib/utils"
 import { SequencerBlock, INSTRUMENT_COLORS } from "@/components/sequencer-block"
 import { useProjectStore } from "@/store/project-store"
@@ -13,10 +14,10 @@ import type { Instrument } from "@/components/sequencer-block"
 /* ------------------------------------------------------------------ */
 const BAR_W = 40
 
-const SECTION_H = 28
+const SECTION_H = 44
 const RULER_H = 24
-const LANE_H = 56
 const CHORD_H = 32
+const MIN_LANE_H = 40
 
 /* ------------------------------------------------------------------ */
 /*  Empty state                                                        */
@@ -66,21 +67,25 @@ function GutterRow({
   color,
   height,
   even,
+  flex,
 }: {
   label: string
   color?: string
-  height: number
+  height?: number
   even?: boolean
+  flex?: boolean
 }) {
   const isChord = label === "CHORDS"
   return (
     <div
       className={cn(
         "flex items-center gap-1.5 border-b border-[#27272a] px-2",
-        isChord ? "border-t border-t-[#3f3f46]/50" : ""
+        isChord ? "border-t border-t-[#3f3f46]/50" : "",
+        flex ? "flex-1" : ""
       )}
       style={{
-        height,
+        ...(height != null ? { height } : {}),
+        ...(flex ? { minHeight: MIN_LANE_H } : {}),
         backgroundColor: even ? "rgba(9,9,11,0.6)" : "#18181b",
       }}
     >
@@ -134,6 +139,10 @@ export function ArrangementView({
   const { transportState } = useAudio()
   const key = project?.key ?? "C"
 
+  /* Measure container to compute dynamic lane heights */
+  const containerRef = useRef<HTMLDivElement>(null)
+  const [laneH, setLaneH] = useState(80)
+
   if (generationState !== "complete") {
     return <EmptyState onGenerate={() => setGenerationState("complete")} />
   }
@@ -156,7 +165,8 @@ export function ArrangementView({
       label: stem.instrument.toUpperCase(),
     }))
 
-  const totalHeight = SECTION_H + RULER_H + INSTRUMENT_CONFIG.length * LANE_H + CHORD_H
+  const laneCount = INSTRUMENT_CONFIG.length || 1
+  const totalHeight = SECTION_H + RULER_H + laneCount * laneH + CHORD_H
 
   /* Playhead position from audio engine */
   const playheadBar = transportState.currentBar
@@ -175,14 +185,14 @@ export function ArrangementView({
           className="border-b border-[#27272a] bg-[#18181b]/80"
           style={{ height: RULER_H }}
         />
-        {/* Instrument rows */}
+        {/* Instrument rows — flex to fill */}
         {INSTRUMENT_CONFIG.map((inst, i) => (
           <GutterRow
             key={inst.id}
             label={inst.label}
             color={inst.color}
-            height={LANE_H}
             even={i % 2 === 1}
+            flex
           />
         ))}
         {/* Chord row */}
@@ -190,7 +200,16 @@ export function ArrangementView({
       </div>
 
       {/* ---- Scrollable grid ---- */}
-      <div className="flex-1 overflow-x-auto overflow-y-hidden">
+      <div
+        ref={containerRef}
+        className="flex flex-1 flex-col overflow-x-auto overflow-y-hidden"
+      >
+        <LaneHeightMeasurer
+          containerRef={containerRef}
+          laneCount={laneCount}
+          onLaneHeight={setLaneH}
+        />
+
         <div className="relative" style={{ width: GRID_W, height: totalHeight }}>
 
           {/* == Section headers row == */}
@@ -221,14 +240,19 @@ export function ArrangementView({
                     }
                   }}
                   className={cn(
-                    "flex items-center border-l-2 border-r border-r-[#3f3f46]/50 pl-2 text-left text-xs font-medium transition-colors",
+                    "flex flex-col justify-center border-l-2 border-r border-r-[#3f3f46]/50 pl-2 text-left transition-colors",
                     isActive
                       ? "border-l-[#0891b2] bg-[#0891b2]/10 text-[#f4f4f5]"
                       : "border-l-[#52525b] bg-[#27272a]/40 text-[#d4d4d8] hover:bg-[#27272a]/60"
                   )}
                   style={{ width: w, height: SECTION_H }}
                 >
-                  {sec.name}
+                  <span className="text-xs font-semibold leading-tight truncate">
+                    {sec.name}
+                  </span>
+                  <span className="text-[10px] leading-tight text-[#71717a]">
+                    {sec.barCount} bar{sec.barCount !== 1 ? "s" : ""}
+                  </span>
                 </button>
               )
             })}
@@ -264,12 +288,15 @@ export function ArrangementView({
                         : "rgba(63,63,70,0.4)",
                     }}
                   />
-                  {/* Number every 4 bars */}
-                  {isMajor && (
-                    <span className="absolute left-1 top-0.5 font-mono text-[10px] text-[#52525b]">
-                      {barNum}
-                    </span>
-                  )}
+                  {/* Bar number — show every bar */}
+                  <span
+                    className={cn(
+                      "absolute left-1 top-0.5 font-mono text-[10px]",
+                      isMajor ? "font-semibold text-[#71717a]" : "text-[#52525b]"
+                    )}
+                  >
+                    {barNum}
+                  </span>
                 </div>
               )
             })}
@@ -277,7 +304,7 @@ export function ArrangementView({
 
           {/* == Stem lane rows == */}
           {INSTRUMENT_CONFIG.map((inst, laneIdx) => {
-            const top = SECTION_H + RULER_H + laneIdx * LANE_H
+            const top = SECTION_H + RULER_H + laneIdx * laneH
             const isEven = laneIdx % 2 === 1
             const laneBlocks = blocks.filter((b) => b.stemId === inst.id)
 
@@ -287,7 +314,7 @@ export function ArrangementView({
                 className="absolute left-0 border-b border-[#27272a]"
                 style={{
                   top,
-                  height: LANE_H,
+                  height: laneH,
                   width: GRID_W,
                   backgroundColor: isEven
                     ? "rgba(9,9,11,0.6)"
@@ -355,7 +382,7 @@ export function ArrangementView({
           <div
             className="absolute left-0 border-t border-[#3f3f46]/50"
             style={{
-              top: SECTION_H + RULER_H + INSTRUMENT_CONFIG.length * LANE_H,
+              top: SECTION_H + RULER_H + INSTRUMENT_CONFIG.length * laneH,
               height: CHORD_H,
               width: GRID_W,
               backgroundColor: "#0a0a0c",
@@ -410,4 +437,38 @@ export function ArrangementView({
       </div>
     </div>
   )
+}
+
+/* ------------------------------------------------------------------ */
+/*  Lane height measurer (observes container resize)                   */
+/* ------------------------------------------------------------------ */
+function LaneHeightMeasurer({
+  containerRef,
+  laneCount,
+  onLaneHeight,
+}: {
+  containerRef: React.RefObject<HTMLDivElement | null>
+  laneCount: number
+  onLaneHeight: (h: number) => void
+}) {
+  useLayoutEffect(() => {
+    const el = containerRef.current
+    if (!el) return
+
+    function measure() {
+      const containerH = el!.clientHeight
+      const fixedH = SECTION_H + RULER_H + CHORD_H
+      const availableH = containerH - fixedH
+      const computed = Math.max(MIN_LANE_H, Math.floor(availableH / laneCount))
+      onLaneHeight(computed)
+    }
+
+    measure()
+
+    const ro = new ResizeObserver(measure)
+    ro.observe(el)
+    return () => ro.disconnect()
+  }, [containerRef, laneCount, onLaneHeight])
+
+  return null
 }
