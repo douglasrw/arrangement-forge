@@ -14,7 +14,7 @@ import { useProject } from '@/hooks/useProject';
 export function AppShell() {
   useKeyboardShortcuts();
 
-  const { unsavedChanges } = useUiStore();
+  const { unsavedChanges, generationState } = useUiStore();
   const { saveProject } = useProject();
   const [panelContext, setPanelContext] = useState<PanelContext>({ mode: 'default' });
 
@@ -44,8 +44,8 @@ export function AppShell() {
               setPanelContext(info ? { mode: 'section', ...info } : { mode: 'default' })
             }
           />
-          <TransportBar />
-          <MixerDrawer />
+          {generationState === 'complete' && <TransportBar />}
+          {generationState === 'complete' && <MixerDrawer />}
         </div>
       </div>
 
