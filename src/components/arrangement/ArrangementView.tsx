@@ -1,66 +1,22 @@
-import { useState } from "react"
 import { cn } from "@/lib/utils"
-import { SequencerBlock, type Instrument } from "@/components/sequencer-block"
+import { SequencerBlock, INSTRUMENT_COLORS } from "@/components/sequencer-block"
+import { useProjectStore } from "@/store/project-store"
+import { useSelectionStore } from "@/store/selection-store"
+import { useUiStore } from "@/store/ui-store"
+import { useAudio } from "@/hooks/useAudio"
+import { formatChord } from "@/lib/chords"
+import { useShallow } from "zustand/react/shallow"
+import type { Instrument } from "@/components/sequencer-block"
 
 /* ------------------------------------------------------------------ */
 /*  Constants                                                          */
 /* ------------------------------------------------------------------ */
 const BAR_W = 40
-const TOTAL_BARS = 40
-const GRID_W = TOTAL_BARS * BAR_W // 1600px
 
 const SECTION_H = 28
 const RULER_H = 24
 const LANE_H = 56
 const CHORD_H = 32
-
-const INSTRUMENTS: { id: Instrument; color: string; label: string }[] = [
-  { id: "drums", color: "#06b6d4", label: "DRUMS" },
-  { id: "bass", color: "#34d399", label: "BASS" },
-  { id: "piano", color: "#fbbf24", label: "PIANO" },
-  { id: "guitar", color: "#a78bfa", label: "GUITAR" },
-  { id: "strings", color: "#14b8a6", label: "STRINGS" },
-]
-
-const SECTIONS = [
-  { name: "Intro", bars: 8 },
-  { name: "Verse", bars: 16 },
-  { name: "Chorus", bars: 16 },
-]
-
-/* Block placement data: [startBar (1-indexed), endBar (inclusive)] */
-const BLOCK_DATA: Record<Instrument, { start: number; end: number; style: string }[]> = {
-  drums: [{ start: 1, end: 40, style: "Jazz brush swing" }],
-  bass: [
-    { start: 1, end: 8, style: "Walking bass" },
-    { start: 9, end: 24, style: "Fingerstyle groove" },
-    { start: 25, end: 40, style: "Bowed sustain" },
-  ],
-  piano: [
-    { start: 1, end: 19, style: "Rhodes chord stab" },
-    { start: 21, end: 40, style: "Comping pattern" },
-  ],
-  guitar: [
-    { start: 9, end: 16, style: "Clean arpeggio" },
-    { start: 25, end: 32, style: "Muted strum" },
-  ],
-  strings: [{ start: 17, end: 40, style: "Legato sustain" }],
-}
-
-const CHORDS = [
-  { bar: 1, name: "Cmaj7" },
-  { bar: 5, name: "Am7" },
-  { bar: 9, name: "Dm7" },
-  { bar: 13, name: "G7" },
-  { bar: 17, name: "Cmaj7" },
-  { bar: 21, name: "Am7" },
-  { bar: 25, name: "Dm7" },
-  { bar: 29, name: "G7" },
-  { bar: 33, name: "Cmaj7" },
-  { bar: 37, name: "Am7" },
-]
-
-const PLAYHEAD_BAR = 5
 
 /* ------------------------------------------------------------------ */
 /*  Empty state                                                        */
@@ -164,17 +120,46 @@ export function ArrangementView({
   onBlockSelect,
   onSectionSelect,
 }: ArrangementViewProps) {
-  const [generationState, setGenerationState] = useState<
-    "idle" | "complete"
-  >("complete")
-  const [selectedBlock, setSelectedBlock] = useState<string | null>(null)
-  const [selectedSection, setSelectedSection] = useState<string | null>(null)
+  const { sections, blocks, stems, chords, project } = useProjectStore(
+    useShallow((s) => ({
+      sections: s.sections,
+      blocks: s.blocks,
+      stems: s.stems,
+      chords: s.chords,
+      project: s.project,
+    }))
+  )
+  const { generationState, chordDisplayMode, setGenerationState } = useUiStore()
+  const { sectionId: selectedSectionId, blockId: selectedBlockId, selectSection, selectBlock, selectSong } = useSelectionStore()
+  const { transportState } = useAudio()
+  const key = project?.key ?? "C"
 
   if (generationState !== "complete") {
     return <EmptyState onGenerate={() => setGenerationState("complete")} />
   }
 
-  const totalHeight = SECTION_H + RULER_H + INSTRUMENTS.length * LANE_H + CHORD_H
+  /* Sort sections by sortOrder */
+  const sortedSections = [...sections].sort((a, b) => a.sortOrder - b.sortOrder)
+
+  /* Compute total bars from real sections */
+  const totalBars = sortedSections.reduce((sum, s) => sum + s.barCount, 0)
+  const GRID_W = totalBars * BAR_W
+
+  /* Build instrument config from stems */
+  const INSTRUMENT_CONFIG = stems
+    .slice()
+    .sort((a, b) => a.sortOrder - b.sortOrder)
+    .map((stem) => ({
+      id: stem.id,
+      instrument: stem.instrument,
+      color: INSTRUMENT_COLORS[stem.instrument] ?? "#a1a1aa",
+      label: stem.instrument.toUpperCase(),
+    }))
+
+  const totalHeight = SECTION_H + RULER_H + INSTRUMENT_CONFIG.length * LANE_H + CHORD_H
+
+  /* Playhead position from audio engine */
+  const playheadBar = transportState.currentBar
 
   return (
     <div className="flex flex-1 overflow-hidden bg-[#0a0a0c]">
@@ -191,7 +176,7 @@ export function ArrangementView({
           style={{ height: RULER_H }}
         />
         {/* Instrument rows */}
-        {INSTRUMENTS.map((inst, i) => (
+        {INSTRUMENT_CONFIG.map((inst, i) => (
           <GutterRow
             key={inst.id}
             label={inst.label}
@@ -213,25 +198,26 @@ export function ArrangementView({
             className="absolute left-0 top-0 flex"
             style={{ height: SECTION_H, width: GRID_W }}
           >
-            {SECTIONS.map((sec) => {
-              const w = sec.bars * BAR_W
-              const isActive = selectedSection === sec.name
+            {sortedSections.map((sec) => {
+              const w = sec.barCount * BAR_W
+              const isActive = sec.id === selectedSectionId
               return (
                 <button
                   type="button"
-                  key={sec.name}
+                  key={sec.id}
                   onClick={() => {
-                    const isDeselecting = selectedSection === sec.name
-                    setSelectedSection(isDeselecting ? null : sec.name)
-                    setSelectedBlock(null)
-                    onBlockSelect?.(null)
+                    const isDeselecting = sec.id === selectedSectionId
                     if (isDeselecting) {
+                      selectSong()
+                      onBlockSelect?.(null)
                       onSectionSelect?.(null)
                     } else {
+                      selectSection(sec.id)
                       onSectionSelect?.({
                         sectionName: sec.name,
-                        sectionBars: sec.bars,
+                        sectionBars: sec.barCount,
                       })
+                      onBlockSelect?.(null)
                     }
                   }}
                   className={cn(
@@ -253,7 +239,7 @@ export function ArrangementView({
             className="absolute left-0 flex bg-[#18181b]/80"
             style={{ top: SECTION_H, height: RULER_H, width: GRID_W }}
           >
-            {Array.from({ length: TOTAL_BARS }).map((_, i) => {
+            {Array.from({ length: totalBars }).map((_, i) => {
               const barNum = i + 1
               const isMajor = (barNum - 1) % 4 === 0
               return (
@@ -290,10 +276,10 @@ export function ArrangementView({
           </div>
 
           {/* == Stem lane rows == */}
-          {INSTRUMENTS.map((inst, laneIdx) => {
+          {INSTRUMENT_CONFIG.map((inst, laneIdx) => {
             const top = SECTION_H + RULER_H + laneIdx * LANE_H
             const isEven = laneIdx % 2 === 1
-            const blocks = BLOCK_DATA[inst.id]
+            const laneBlocks = blocks.filter((b) => b.stemId === inst.id)
 
             return (
               <div
@@ -309,7 +295,7 @@ export function ArrangementView({
                 }}
               >
                 {/* Vertical grid lines */}
-                {Array.from({ length: TOTAL_BARS }).map((_, i) => {
+                {Array.from({ length: totalBars }).map((_, i) => {
                   const barNum = i + 1
                   const isMajor = (barNum - 1) % 4 === 0
                   return (
@@ -327,32 +313,32 @@ export function ArrangementView({
                 })}
 
                 {/* Blocks */}
-                {blocks.map((block) => {
-                  const blockId = `${inst.id}-${block.start}-${block.end}`
-                  const left = (block.start - 1) * BAR_W
-                  const width = (block.end - block.start + 1) * BAR_W
+                {laneBlocks.map((block) => {
+                  const left = (block.startBar - 1) * BAR_W
+                  const width = (block.endBar - block.startBar + 1) * BAR_W
+                  const isSelected = block.id === selectedBlockId
                   return (
                     <div
-                      key={blockId}
+                      key={block.id}
                       className="absolute top-1 bottom-1"
                       style={{ left, width }}
                     >
                       <SequencerBlock
-                        instrument={inst.id}
-                        styleName={block.style}
-                        state={selectedBlock === blockId ? "selected" : "default"}
+                        instrument={inst.instrument}
+                        styleName={block.style ?? "Default"}
+                        state={isSelected ? "selected" : "default"}
                         onClick={() => {
-                          const isDeselecting = selectedBlock === blockId
-                          setSelectedBlock(isDeselecting ? null : blockId)
-                          setSelectedSection(null)
+                          const isDeselecting = block.id === selectedBlockId
                           if (isDeselecting) {
+                            selectSong()
                             onBlockSelect?.(null)
                           } else {
+                            selectBlock(block.id, inst.id)
                             onBlockSelect?.({
-                              instrument: inst.id,
-                              styleName: block.style,
-                              startBar: block.start,
-                              endBar: block.end,
+                              instrument: inst.instrument,
+                              styleName: block.style ?? "Default",
+                              startBar: block.startBar,
+                              endBar: block.endBar,
                             })
                           }
                         }}
@@ -369,32 +355,35 @@ export function ArrangementView({
           <div
             className="absolute left-0 border-t border-[#3f3f46]/50"
             style={{
-              top: SECTION_H + RULER_H + INSTRUMENTS.length * LANE_H,
+              top: SECTION_H + RULER_H + INSTRUMENT_CONFIG.length * LANE_H,
               height: CHORD_H,
               width: GRID_W,
               backgroundColor: "#0a0a0c",
             }}
           >
             {/* Vertical ticks at each chord */}
-            {CHORDS.map((chord) => (
-              <div
-                key={`${chord.name}-${chord.bar}`}
-                className="absolute top-0 flex h-full flex-col items-start"
-                style={{ left: (chord.bar - 1) * BAR_W }}
-              >
-                <div className="h-2 w-px bg-[#52525b]" />
-                <span className="mt-0.5 pl-1 font-mono text-[10px] text-[#a1a1aa]">
-                  {chord.name}
-                </span>
-              </div>
-            ))}
+            {chords.map((chord) => {
+              const displayText = formatChord(chord, key, chordDisplayMode)
+              return (
+                <div
+                  key={`${chord.id}-${chord.barNumber}`}
+                  className="absolute top-0 flex h-full flex-col items-start"
+                  style={{ left: (chord.barNumber - 1) * BAR_W }}
+                >
+                  <div className="h-2 w-px bg-[#52525b]" />
+                  <span className="mt-0.5 pl-1 font-mono text-[10px] text-[#a1a1aa]">
+                    {displayText}
+                  </span>
+                </div>
+              )
+            })}
           </div>
 
           {/* == Playhead == */}
           <div
             className="pointer-events-none absolute top-0 z-20"
             style={{
-              left: (PLAYHEAD_BAR - 1) * BAR_W,
+              left: (playheadBar - 1) * BAR_W,
               height: totalHeight,
             }}
           >

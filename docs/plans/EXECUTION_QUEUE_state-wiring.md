@@ -263,7 +263,7 @@ npm run build
 
 ---
 
-### [ ] T4 — Wire ArrangementView to projectStore + selectionStore + uiStore
+### [x] T4 — Wire ArrangementView to projectStore + selectionStore + uiStore
 
 **Files:** `src/components/arrangement/ArrangementView.tsx`
 
