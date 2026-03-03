@@ -512,7 +512,7 @@ npm run build
 
 ---
 
-### [ ] T7 — Wire SectionContext to projectStore + selectionStore
+### [x] T7 — Wire SectionContext to projectStore + selectionStore
 
 **Files:** `src/components/left-panel/SectionContext.tsx`
 

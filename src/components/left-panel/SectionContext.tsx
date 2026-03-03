@@ -1,4 +1,4 @@
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { cn } from "@/lib/utils"
 import {
   Select,
@@ -7,6 +7,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
+import { useProjectStore } from "@/store/project-store"
+import { useSelectionStore } from "@/store/selection-store"
 
 /* ------------------------------------------------------------------ */
 /*  Reusable slider — same pattern as StyleControlsSection             */
@@ -56,8 +58,23 @@ export function SectionContext({
   sectionBars = 16,
   onClose,
 }: SectionContextProps) {
-  const [name, setName] = useState(sectionName)
-  const [bars, setBars] = useState(sectionBars)
+  const { sections, updateSection } = useProjectStore()
+  const { sectionId } = useSelectionStore()
+
+  /* Derive live section from store using sectionId */
+  const liveSection = sections.find((s) => s.id === sectionId)
+  const currentName = liveSection?.name ?? sectionName
+  const currentBars = liveSection?.barCount ?? sectionBars
+
+  /* Local draft for the name input */
+  const [nameDraft, setNameDraft] = useState(currentName)
+
+  /* Sync draft when the live section changes from outside */
+  useEffect(() => {
+    setNameDraft(currentName)
+  }, [currentName])
+
+  /* Style override toggle — cosmetic only for MVP */
   const [isOverriding, setIsOverriding] = useState(false)
   const [sliders, setSliders] = useState(INITIAL_SLIDERS)
 
@@ -69,6 +86,20 @@ export function SectionContext({
           : s
       )
     )
+  }
+
+  function commitName(newName: string) {
+    const name = newName.trim() || "Untitled Section"
+    setNameDraft(name)
+    if (liveSection) {
+      updateSection(liveSection.id, { name })
+    }
+  }
+
+  function adjustBars(delta: number) {
+    if (!liveSection) return
+    const newBarCount = Math.min(64, Math.max(1, currentBars + delta))
+    updateSection(liveSection.id, { barCount: newBarCount })
   }
 
   return (
@@ -101,8 +132,13 @@ export function SectionContext({
         <input
           id="section-name-input"
           type="text"
-          value={name}
-          onChange={(e) => setName(e.target.value)}
+          value={nameDraft}
+          onChange={(e) => setNameDraft(e.target.value)}
+          onBlur={() => commitName(nameDraft)}
+          onKeyDown={(e) => {
+            if (e.key === "Enter") commitName(nameDraft)
+            if (e.key === "Escape") setNameDraft(currentName)
+          }}
           className={cn(
             "mt-1.5 w-full rounded-lg border border-[#3f3f46] bg-[#27272a] px-3 py-1.5",
             "text-sm font-medium text-[#f4f4f5]",
@@ -117,24 +153,24 @@ export function SectionContext({
         <div className="mt-1.5 flex items-center gap-2">
           <button
             type="button"
-            onClick={() => setBars((b) => Math.max(1, b - 4))}
+            onClick={() => adjustBars(-4)}
             className="flex size-7 items-center justify-center rounded-lg bg-[#3f3f46] text-sm font-medium text-[#a1a1aa] transition-colors hover:bg-[#52525b] hover:text-[#f4f4f5]"
           >
             {'\u2212'}
           </button>
           <span className="min-w-16 text-center font-mono text-sm text-[#f4f4f5]">
-            {bars} bars
+            {currentBars} bars
           </span>
           <button
             type="button"
-            onClick={() => setBars((b) => Math.min(64, b + 4))}
+            onClick={() => adjustBars(4)}
             className="flex size-7 items-center justify-center rounded-lg bg-[#3f3f46] text-sm font-medium text-[#a1a1aa] transition-colors hover:bg-[#52525b] hover:text-[#f4f4f5]"
           >
             +
           </button>
         </div>
 
-        {/* Style overrides */}
+        {/* Style overrides — cosmetic only for MVP */}
         <label className="mt-4 block text-[10px] font-medium uppercase tracking-widest text-[#71717a]">
           Style
         </label>
