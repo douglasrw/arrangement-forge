@@ -18,7 +18,8 @@ const SECTION_H = 44
 const RULER_H = 24
 const CHORD_H = 32
 const MIN_LANE_H = 56
-const FIXED_H = SECTION_H + RULER_H + CHORD_H // non-lane vertical space
+const BORDER_PX = 8 // lane border-b (5×1px) + chord border-t (1px) + rounding
+const FIXED_H = SECTION_H + RULER_H + CHORD_H + BORDER_PX
 
 /* ------------------------------------------------------------------ */
 /*  Empty state                                                        */
