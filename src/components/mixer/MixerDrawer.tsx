@@ -158,48 +158,25 @@ export function MixerDrawer() {
   )
 
   return (
-    <>
-      {/* Toggle button — sits in the transport bar area */}
-      {!open && (
-        <button
-          type="button"
-          onClick={() => setOpen(true)}
-          className={cn(
-            "fixed bottom-14 right-4 z-40 rounded-lg border border-[#27272a] bg-[#18181b] px-3 py-1.5",
-            "text-xs font-medium text-[#a1a1aa] transition-colors hover:border-[#3f3f46] hover:text-[#e4e4e7]"
-          )}
-        >
-          Mixer
-        </button>
-      )}
-
-      {/* Drawer panel */}
-      <div
-        className={cn(
-          "fixed inset-x-0 bottom-12 z-50 transition-transform duration-300 ease-out",
-          open ? "translate-y-0" : "translate-y-full"
-        )}
+    <div className="shrink-0 border-t border-[#3f3f46]/50 bg-[#18181b]">
+      {/* Header strip — always visible, acts as toggle */}
+      <button
+        type="button"
+        onClick={() => setOpen(!open)}
+        className="flex w-full items-center justify-between px-4 py-1.5"
       >
-        <div className="border-t border-[#3f3f46]/50 bg-[#18181b]" style={{ height: 220 }}>
-          {/* Drag handle */}
-          <div className="flex justify-center py-2">
-            <div className="h-1 w-8 rounded-full bg-[#52525b]" />
-          </div>
+        <span className="text-xs font-medium uppercase tracking-widest text-[#71717a]">
+          Mixer
+        </span>
+        {open ? (
+          <X className="size-3.5 text-[#71717a]" />
+        ) : (
+          <div className="h-1 w-8 rounded-full bg-[#52525b]" />
+        )}
+      </button>
 
-          {/* Header strip */}
-          <div className="flex items-center justify-between px-4 pb-2">
-            <span className="text-xs font-medium uppercase tracking-widest text-[#71717a]">
-              Mixer
-            </span>
-            <button
-              type="button"
-              onClick={() => setOpen(false)}
-              className="flex size-6 items-center justify-center rounded text-[#71717a] transition-colors hover:text-[#e4e4e7]"
-              aria-label="Close mixer"
-            >
-              <X className="size-3.5" />
-            </button>
-          </div>
+      {open && (
+        <div>
 
           {/* Channel strip row */}
           <div className="flex h-[160px] px-2">
@@ -293,7 +270,7 @@ export function MixerDrawer() {
             </div>
           </div>
         </div>
-      </div>
-    </>
+      )}
+    </div>
   )
 }

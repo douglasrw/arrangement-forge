@@ -53,8 +53,8 @@ export function AppShell() {
               setPanelContext(info ? { mode: 'section', ...info } : { mode: 'default' })
             }
           />
-          {generationState === 'complete' && <TransportBar />}
           {generationState === 'complete' && <MixerDrawer />}
+          {generationState === 'complete' && <TransportBar />}
         </div>
       </div>
 
