@@ -98,25 +98,30 @@ export function ArrangementView({
 
   /* Measure container height → compute dynamic lane height */
   const containerRef = useRef<HTMLDivElement>(null)
+  const scrollRef = useRef<HTMLDivElement>(null)
   const [laneH, setLaneH] = useState(MIN_LANE_H)
+  const [scrollableW, setScrollableW] = useState(0)
 
-  const recalcLaneH = useCallback(() => {
+  const recalcLayout = useCallback(() => {
     const el = containerRef.current
     if (!el) return
     const available = el.clientHeight - FIXED_H
     const stemCount = stems.length || 5
     const perLane = Math.floor(available / stemCount)
     setLaneH(Math.max(MIN_LANE_H, perLane))
+
+    const scrollEl = scrollRef.current
+    if (scrollEl) setScrollableW(scrollEl.clientWidth)
   }, [stems.length])
 
   useEffect(() => {
-    recalcLaneH()
+    recalcLayout()
     const el = containerRef.current
     if (!el) return
-    const ro = new ResizeObserver(recalcLaneH)
+    const ro = new ResizeObserver(recalcLayout)
     ro.observe(el)
     return () => ro.disconnect()
-  }, [recalcLaneH])
+  }, [recalcLayout])
 
   if (generationState !== "complete") {
     return <EmptyState onGenerate={() => setGenerationState("complete")} />
@@ -125,9 +130,12 @@ export function ArrangementView({
   /* Sort sections by sortOrder */
   const sortedSections = [...sections].sort((a, b) => a.sortOrder - b.sortOrder)
 
-  /* Compute total bars from real sections */
+  /* Compute total bars and effective bar width (expand to fill viewport) */
   const totalBars = sortedSections.reduce((sum, s) => sum + s.barCount, 0)
-  const GRID_W = totalBars * BAR_W
+  const effectiveBarW = totalBars > 0 && scrollableW > 0
+    ? Math.max(BAR_W, Math.floor(scrollableW / totalBars))
+    : BAR_W
+  const GRID_W = totalBars * effectiveBarW
 
   /* Build instrument config from stems */
   const INSTRUMENT_CONFIG = stems
@@ -191,7 +199,7 @@ export function ArrangementView({
       </div>
 
       {/* ---- Scrollable grid ---- */}
-      <div className="flex-1 overflow-x-auto overflow-y-hidden">
+      <div ref={scrollRef} className="flex-1 overflow-x-auto overflow-y-hidden">
         {/* Fixed-height content column */}
         <div className="relative flex flex-col" style={{ width: GRID_W }}>
 
@@ -201,7 +209,7 @@ export function ArrangementView({
             style={{ height: SECTION_H }}
           >
             {sortedSections.map((sec) => {
-              const w = sec.barCount * BAR_W
+              const w = sec.barCount * effectiveBarW
               const isActive = sec.id === selectedSectionId
               return (
                 <button
@@ -253,7 +261,7 @@ export function ArrangementView({
                   key={barNum}
                   className="relative border-r"
                   style={{
-                    width: BAR_W,
+                    width: effectiveBarW,
                     height: RULER_H,
                     borderColor: isMajor
                       ? "rgba(82,82,91,0.6)"
@@ -309,7 +317,7 @@ export function ArrangementView({
                       key={barNum}
                       className="absolute top-0 h-full w-px"
                       style={{
-                        left: i * BAR_W,
+                        left: i * effectiveBarW,
                         backgroundColor: isMajor
                           ? "rgba(63,63,70,0.3)"
                           : "rgba(39,39,42,0.3)",
@@ -320,8 +328,8 @@ export function ArrangementView({
 
                 {/* Blocks */}
                 {laneBlocks.map((block) => {
-                  const left = (block.startBar - 1) * BAR_W
-                  const width = (block.endBar - block.startBar + 1) * BAR_W
+                  const left = (block.startBar - 1) * effectiveBarW
+                  const width = (block.endBar - block.startBar + 1) * effectiveBarW
                   const isSelected = block.id === selectedBlockId
                   return (
                     <div
@@ -373,7 +381,7 @@ export function ArrangementView({
                 <div
                   key={`${chord.id}-${chord.barNumber}`}
                   className="absolute top-0 flex h-full flex-col items-start"
-                  style={{ left: (chord.barNumber - 1) * BAR_W }}
+                  style={{ left: (chord.barNumber - 1) * effectiveBarW }}
                 >
                   <div className="h-2 w-px bg-[#52525b]" />
                   <span className="mt-0.5 pl-1 font-mono text-[10px] text-[#a1a1aa]">
@@ -388,7 +396,7 @@ export function ArrangementView({
           <div
             className="pointer-events-none absolute inset-y-0 z-20"
             style={{
-              left: (playheadBar - 1) * BAR_W,
+              left: (playheadBar - 1) * effectiveBarW,
             }}
           >
             {/* Triangle handle */}

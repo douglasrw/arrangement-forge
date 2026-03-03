@@ -34,6 +34,9 @@ export function parseChordChart(raw: string, key: string): ChordChartParseResult
   let prevChord: ChordEntry | null = null;
 
   for (const line of lines) {
+    // Skip section header lines like [Verse 1], [Chorus], [Bridge], etc.
+    if (/^\[.*\]$/.test(line)) continue;
+
     // Tokenize: pipes are bar separators; within each segment, spaces separate bars
     const segments = line.includes('|') ? line.split('|') : [line];
 
