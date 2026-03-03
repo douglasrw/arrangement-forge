@@ -448,7 +448,7 @@ npm run build
 
 ---
 
-### [ ] T6 — Wire StyleControlsSection to projectStore
+### [x] T6 — Wire StyleControlsSection to projectStore
 
 **Files:** `src/components/left-panel/StyleControlsSection.tsx`
 

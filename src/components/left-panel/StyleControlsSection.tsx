@@ -1,4 +1,3 @@
-import { useState } from "react"
 import { cn } from "@/lib/utils"
 import {
   Select,
@@ -7,21 +6,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
-
-interface SliderRow {
-  label: string
-  value: number
-  display: string
-  min: number
-  max: number
-}
-
-const INITIAL_SLIDERS: SliderRow[] = [
-  { label: "Energy", value: 45, display: "Med", min: 0, max: 100 },
-  { label: "Groove", value: 35, display: "Laid", min: 0, max: 100 },
-  { label: "Swing %", value: 65, display: "65%", min: 0, max: 100 },
-  { label: "Dynamics", value: 30, display: "p", min: 0, max: 100 },
-]
+import { useProjectStore } from "@/store/project-store"
+import { GENRE_SUBSTYLES } from "@/lib/genre-config"
 
 function getDisplayValue(label: string, value: number): string {
   if (label === "Swing %") return `${value}%`
@@ -40,16 +26,29 @@ function getDisplayValue(label: string, value: number): string {
 }
 
 export function StyleControlsSection() {
-  const [sliders, setSliders] = useState(INITIAL_SLIDERS)
+  const { project, updateProject } = useProjectStore()
 
-  function handleSliderChange(index: number, newValue: number) {
-    setSliders((prev) =>
-      prev.map((s, i) =>
-        i === index
-          ? { ...s, value: newValue, display: getDisplayValue(s.label, newValue) }
-          : s
-      )
-    )
+  const genre = project?.genre ?? "Jazz"
+  const subStyle = project?.subStyle ?? ""
+  const energy = project?.energy ?? 50
+  const groove = project?.groove ?? 50
+  const swingPct = project?.swingPct ?? 0
+  const dynamics = project?.dynamics ?? 50
+
+  const subStyleOptions = GENRE_SUBSTYLES[genre] ?? []
+
+  const sliders = [
+    { label: "Energy", value: energy, min: 0, max: 100 },
+    { label: "Groove", value: groove, min: 0, max: 100 },
+    { label: "Swing %", value: swingPct, min: 0, max: 100 },
+    { label: "Dynamics", value: dynamics, min: 0, max: 100 },
+  ]
+
+  function handleSliderChange(label: string, newValue: number) {
+    if (label === "Energy") updateProject({ energy: newValue })
+    else if (label === "Groove") updateProject({ groove: newValue })
+    else if (label === "Swing %") updateProject({ swingPct: newValue })
+    else if (label === "Dynamics") updateProject({ dynamics: newValue })
   }
 
   return (
@@ -60,17 +59,17 @@ export function StyleControlsSection() {
           <label htmlFor="genre-select" className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground">
             Genre
           </label>
-          <Select defaultValue="jazz">
+          <Select
+            value={genre}
+            onValueChange={(v) => updateProject({ genre: v, subStyle: (GENRE_SUBSTYLES[v] ?? [])[0] ?? "" })}
+          >
             <SelectTrigger id="genre-select" className="h-8 w-full border-border bg-secondary text-xs text-foreground">
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="jazz">Jazz</SelectItem>
-              <SelectItem value="rock">Rock</SelectItem>
-              <SelectItem value="pop">Pop</SelectItem>
-              <SelectItem value="electronic">Electronic</SelectItem>
-              <SelectItem value="classical">Classical</SelectItem>
-              <SelectItem value="rnb">R&B</SelectItem>
+              {Object.keys(GENRE_SUBSTYLES).map((g) => (
+                <SelectItem key={g} value={g}>{g}</SelectItem>
+              ))}
             </SelectContent>
           </Select>
         </div>
@@ -78,16 +77,17 @@ export function StyleControlsSection() {
           <label htmlFor="substyle-select" className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground">
             Sub-style
           </label>
-          <Select defaultValue="swing">
+          <Select
+            value={subStyle}
+            onValueChange={(v) => updateProject({ subStyle: v })}
+          >
             <SelectTrigger id="substyle-select" className="h-8 w-full border-border bg-secondary text-xs text-foreground">
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="swing">Swing</SelectItem>
-              <SelectItem value="bebop">Bebop</SelectItem>
-              <SelectItem value="bossa">Bossa Nova</SelectItem>
-              <SelectItem value="fusion">Fusion</SelectItem>
-              <SelectItem value="smooth">Smooth</SelectItem>
+              {subStyleOptions.map((s) => (
+                <SelectItem key={s} value={s}>{s}</SelectItem>
+              ))}
             </SelectContent>
           </Select>
         </div>
@@ -95,14 +95,14 @@ export function StyleControlsSection() {
 
       {/* Sliders */}
       <div className="flex flex-col gap-2.5">
-        {sliders.map((slider, i) => (
+        {sliders.map((slider) => (
           <div key={slider.label} className="flex flex-col gap-1">
             <div className="flex items-center justify-between">
               <span className="text-[11px] font-medium text-muted-foreground">
                 {slider.label}
               </span>
               <span className="text-[11px] font-semibold text-foreground">
-                {slider.display}
+                {getDisplayValue(slider.label, slider.value)}
               </span>
             </div>
             {/* Custom slider with teal accent fill */}
@@ -120,7 +120,7 @@ export function StyleControlsSection() {
                 min={slider.min}
                 max={slider.max}
                 value={slider.value}
-                onChange={(e) => handleSliderChange(i, Number(e.target.value))}
+                onChange={(e) => handleSliderChange(slider.label, Number(e.target.value))}
                 className={cn(
                   "absolute inset-0 h-full w-full cursor-pointer appearance-none bg-transparent",
                   "[&::-webkit-slider-thumb]:h-3 [&::-webkit-slider-thumb]:w-3",
