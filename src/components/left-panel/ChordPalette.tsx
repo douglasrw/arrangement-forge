@@ -33,10 +33,12 @@ const TEAL = "#06b6d4"
 
 interface ChordPaletteProps {
   className?: string
+  initialChords?: string[]
+  onChordsChange?: (chordText: string) => void
 }
 
-export function ChordPalette({ className }: ChordPaletteProps) {
-  const [chords, setChords] = useState<string[]>(["Cmaj7", "Dm7", "G7", "Cmaj7"])
+export function ChordPalette({ className, initialChords, onChordsChange }: ChordPaletteProps) {
+  const [chords, setChords] = useState<string[]>(initialChords ?? [])
   const [recentlyAdded, setRecentlyAdded] = useState<number | null>(null)
   const [builderOpen, setBuilderOpen] = useState(false)
   const [builderRoot, setBuilderRoot] = useState<RootNote | null>(null)
@@ -44,6 +46,18 @@ export function ChordPalette({ className }: ChordPaletteProps) {
   const [manualMode, setManualMode] = useState(false)
   const [manualText, setManualText] = useState("")
   const glowTimeout = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const isInitialRender = useRef(true)
+  const onChordsChangeRef = useRef(onChordsChange)
+  onChordsChangeRef.current = onChordsChange
+
+  /* Sync chord changes back to parent */
+  useEffect(() => {
+    if (isInitialRender.current) {
+      isInitialRender.current = false
+      return
+    }
+    onChordsChangeRef.current?.(chords.join(" | "))
+  }, [chords])
 
   const addChord = useCallback((name: string) => {
     setChords((prev) => {

@@ -5,11 +5,11 @@ import { useProjectStore } from "@/store/project-store"
 import { useGenerate } from "@/hooks/useGenerate"
 import { useUiStore } from "@/store/ui-store"
 
-const INPUT_TABS = ["Text", "Upload", "Image"] as const
+const INPUT_TABS = ["Chord", "Text", "Upload"] as const
 type InputTab = (typeof INPUT_TABS)[number]
 
 export function InputSection() {
-  const [activeTab, setActiveTab] = useState<InputTab>("Text")
+  const [activeTab, setActiveTab] = useState<InputTab>("Chord")
 
   const { project, updateProject } = useProjectStore()
   const { runGeneration } = useGenerate()
@@ -40,8 +40,38 @@ export function InputSection() {
         ))}
       </div>
 
-      {/* Chord Palette (Text tab) */}
-      {activeTab === "Text" && <ChordPalette />}
+      {/* Chord Palette (Chord tab) */}
+      {activeTab === "Chord" && (
+        <ChordPalette
+          initialChords={chordChartRaw ? chordChartRaw.split(/[|\n]/).map(s => s.trim()).filter(Boolean) : []}
+          onChordsChange={(text) => updateProject({ chordChartRaw: text })}
+        />
+      )}
+
+      {/* Text tab — raw chord chart textarea */}
+      {activeTab === "Text" && (
+        <div className="flex flex-col gap-1.5">
+          <label
+            htmlFor="chord-chart-raw-input"
+            className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground"
+          >
+            Chord Chart
+          </label>
+          <textarea
+            id="chord-chart-raw-input"
+            value={chordChartRaw}
+            onChange={(e) => updateProject({ chordChartRaw: e.target.value })}
+            rows={4}
+            placeholder={"[Verse]\nCmaj7 | Dm7 | G7 | Cmaj7\n\n[Chorus]\nF | G | Am | C"}
+            className={cn(
+              "w-full resize-none rounded-md border border-border bg-secondary px-3 py-2",
+              "font-mono text-xs leading-relaxed text-foreground",
+              "placeholder:text-muted-foreground",
+              "focus:border-[#0891b2] focus:outline-none focus:ring-1 focus:ring-[#0891b2]/50"
+            )}
+          />
+        </div>
+      )}
 
       {/* Upload tab placeholder */}
       {activeTab === "Upload" && (
@@ -49,36 +79,6 @@ export function InputSection() {
           File upload — Coming soon
         </p>
       )}
-
-      {/* Image tab placeholder */}
-      {activeTab === "Image" && (
-        <p className="rounded-md border border-border bg-secondary/50 px-3 py-4 text-center text-xs text-muted-foreground">
-          Image OCR — Coming soon
-        </p>
-      )}
-
-      {/* Chord chart raw text field (hidden textarea for store sync) */}
-      <div className="flex flex-col gap-1.5">
-        <label
-          htmlFor="chord-chart-raw-input"
-          className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground"
-        >
-          Chord Chart
-        </label>
-        <textarea
-          id="chord-chart-raw-input"
-          value={chordChartRaw}
-          onChange={(e) => updateProject({ chordChartRaw: e.target.value })}
-          rows={3}
-          placeholder="e.g. Cmaj7 | Am7 | Dm7 | G7"
-          className={cn(
-            "w-full resize-none rounded-md border border-border bg-secondary px-3 py-2",
-            "font-mono text-xs leading-relaxed text-foreground",
-            "placeholder:text-muted-foreground",
-            "focus:border-[#0891b2] focus:outline-none focus:ring-1 focus:ring-[#0891b2]/50"
-          )}
-        />
-      </div>
 
       {/* Description / generation hints field */}
       <div className="flex flex-col gap-1.5">
