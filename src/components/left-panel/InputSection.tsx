@@ -17,6 +17,8 @@ export function InputSection() {
 
   const chordChartRaw = project?.chordChartRaw ?? ""
   const generationHints = project?.generationHints ?? ""
+  const projectKey = project?.key ?? "C"
+  const timeSignature = project?.timeSignature ?? "4/4"
   const isGenerating = generationState === "generating"
 
   return (
@@ -45,6 +47,8 @@ export function InputSection() {
         <ChordPalette
           initialChords={chordChartRaw ? chordChartRaw.split(/[|\n]/).map(s => s.trim()).filter(Boolean) : []}
           onChordsChange={(text) => updateProject({ chordChartRaw: text })}
+          projectKey={projectKey}
+          timeSignature={timeSignature}
         />
       )}
 

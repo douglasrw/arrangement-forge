@@ -1,8 +1,11 @@
-import { useState, useCallback, useRef, useEffect } from "react"
+import { useState, useCallback, useRef, useEffect, useMemo, Fragment } from "react"
 import { cn } from "@/lib/utils"
-import { X, Plus, ArrowRight, ChevronDown } from "lucide-react"
+import { X, Plus, ArrowRight } from "lucide-react"
+import { degreeToNote } from "@/lib/chords"
 
-/* Root notes and qualities */
+/* ------------------------------------------------------------------ */
+/*  Root notes and qualities for custom chord builder                  */
+/* ------------------------------------------------------------------ */
 
 const ROOT_NOTES = [
   "C", "C#", "D", "Eb", "E", "F", "F#", "G", "Ab", "A", "Bb", "B",
@@ -14,30 +17,75 @@ const QUALITIES = [
 ] as const
 type Quality = (typeof QUALITIES)[number]
 
+/* ------------------------------------------------------------------ */
+/*  Diatonic triads from key                                           */
+/* ------------------------------------------------------------------ */
+
+const DIATONIC_DEGREES = [
+  { degree: "I", suffix: "", label: "I" },
+  { degree: "ii", suffix: "m", label: "ii" },
+  { degree: "iii", suffix: "m", label: "iii" },
+  { degree: "IV", suffix: "", label: "IV" },
+  { degree: "V", suffix: "", label: "V" },
+  { degree: "vi", suffix: "m", label: "vi" },
+  { degree: "vii", suffix: "dim", label: "vii\u00B0" },
+] as const
+
 interface DiatonicChord {
   numeral: string
   name: string
 }
 
-const DIATONIC_BB: DiatonicChord[] = [
-  { numeral: "I", name: "Bbmaj7" },
-  { numeral: "ii", name: "Cm7" },
-  { numeral: "iii", name: "Dm7" },
-  { numeral: "IV", name: "Ebmaj7" },
-  { numeral: "V", name: "F7" },
-  { numeral: "vi", name: "Gm7" },
-  { numeral: "vii\u00B0", name: "Adim" },
-]
+function diatonicChordsForKey(key: string): DiatonicChord[] {
+  return DIATONIC_DEGREES.map((d) => ({
+    numeral: d.label,
+    name: degreeToNote(d.degree, key) + d.suffix,
+  }))
+}
+
+/* ------------------------------------------------------------------ */
+/*  Time-signature helpers                                             */
+/* ------------------------------------------------------------------ */
+
+function parseTimeSig(timeSig: string): number {
+  const parts = timeSig.split("/")
+  return parseInt(parts[0], 10) || 4
+}
+
+/** How many chord cells per row, based on time signature numerator */
+function chordsPerRow(beatsPerBar: number): number {
+  if (beatsPerBar <= 2) return 8    // 2/4 → 8 (4 bars)
+  if (beatsPerBar <= 4) return 8    // 3/4 → 6, 4/4 → 8
+  return beatsPerBar * 2            // 6/8 → 12, etc.
+}
+
+// 3/4 is special: 6 per row not 8
+function getChordsPerRow(beatsPerBar: number): number {
+  if (beatsPerBar === 3) return 6
+  return chordsPerRow(beatsPerBar)
+}
 
 const TEAL = "#06b6d4"
+
+/* ------------------------------------------------------------------ */
+/*  ChordPalette                                                       */
+/* ------------------------------------------------------------------ */
 
 interface ChordPaletteProps {
   className?: string
   initialChords?: string[]
   onChordsChange?: (chordText: string) => void
+  projectKey?: string
+  timeSignature?: string
 }
 
-export function ChordPalette({ className, initialChords, onChordsChange }: ChordPaletteProps) {
+export function ChordPalette({
+  className,
+  initialChords,
+  onChordsChange,
+  projectKey = "C",
+  timeSignature = "4/4",
+}: ChordPaletteProps) {
   const [chords, setChords] = useState<string[]>(initialChords ?? [])
   const [recentlyAdded, setRecentlyAdded] = useState<number | null>(null)
   const [builderOpen, setBuilderOpen] = useState(false)
@@ -49,6 +97,10 @@ export function ChordPalette({ className, initialChords, onChordsChange }: Chord
   const isInitialRender = useRef(true)
   const onChordsChangeRef = useRef(onChordsChange)
   onChordsChangeRef.current = onChordsChange
+
+  const beatsPerBar = parseTimeSig(timeSignature)
+  const perRow = getChordsPerRow(beatsPerBar)
+  const diatonicChords = useMemo(() => diatonicChordsForKey(projectKey), [projectKey])
 
   /* Sync chord changes back to parent */
   useEffect(() => {
@@ -101,7 +153,7 @@ export function ChordPalette({ className, initialChords, onChordsChange }: Chord
     setManualMode(false)
   }, [manualText])
 
-  /* Manual textarea mode */
+  /* ---- Manual textarea mode ---- */
 
   if (manualMode) {
     return (
@@ -127,83 +179,109 @@ export function ChordPalette({ className, initialChords, onChordsChange }: Chord
           onClick={applyManualText}
           className="mt-2 text-[11px] font-medium text-[#0891b2] transition-colors hover:text-[#06b6d4]"
         >
-          Apply & switch to palette
+          Apply &amp; switch to palette
         </button>
       </div>
     )
   }
 
-  /* Visual palette mode (progressive disclosure) */
+  /* ---- Visual palette mode ---- */
+
+  /* Split chords into rows for the grid display */
+  const rows: string[][] = []
+  for (let i = 0; i < chords.length; i += perRow) {
+    rows.push(chords.slice(i, i + perRow))
+  }
 
   return (
     <div className={cn("flex flex-col gap-3 rounded-xl border border-border/50 bg-card p-4", className)}>
 
-      {/* Row 1: Progression chips */}
+      {/* Row 1: Progression grid */}
       <div className="flex flex-col gap-1.5">
         <label className="text-[10px] font-medium uppercase tracking-widest text-muted-foreground">
           Progression
         </label>
-        <div className="flex flex-wrap items-center gap-1.5">
-          {chords.map((chord, i) => (
-            <span
-              key={`${chord}-${i}`}
-              className={cn(
-                "inline-flex shrink-0 items-center gap-1.5 rounded-full px-3 py-1 text-[11px] font-medium transition-all duration-300",
-                "bg-secondary text-foreground",
-                recentlyAdded === i && "ring-1 ring-[#06b6d4]/60"
-              )}
-              style={
-                recentlyAdded === i
-                  ? { boxShadow: `0 0 8px 1px ${TEAL}33` }
-                  : undefined
-              }
-            >
-              <span className="font-mono">{chord}</span>
-              <button
-                type="button"
-                onClick={() => removeChord(i)}
-                className="rounded-full text-muted-foreground transition-colors hover:text-foreground"
-                aria-label={`Remove ${chord}`}
-              >
-                <X className="size-3" />
-              </button>
-            </span>
-          ))}
-          <button
-            type="button"
-            onClick={() => {
-              if (!builderOpen) setBuilderOpen(true)
-            }}
-            className={cn(
-              "inline-flex size-6 shrink-0 items-center justify-center rounded-full border border-dashed border-border",
-              "text-muted-foreground transition-colors hover:border-[#0891b2] hover:text-[#0891b2]"
-            )}
-            aria-label="Add chord"
-          >
-            <Plus className="size-3" />
-          </button>
-        </div>
-      </div>
 
-      {/* Row 2: Diatonic quick-add */}
-      <div className="flex flex-col gap-1.5">
-        <div className="flex items-center gap-2">
-          <span className="text-[10px] font-medium uppercase tracking-widest text-muted-foreground">
-            {"Key of B\u266D"}
-          </span>
-          <ChevronDown className="size-3 text-muted-foreground" />
-        </div>
-        <div className="-mx-1 flex overflow-x-auto px-1 pb-1" style={{ scrollbarWidth: "none" }}>
-          <div className="flex gap-1">
-            {DIATONIC_BB.map((dc) => (
-              <DiatonicButton
-                key={dc.numeral}
-                numeral={dc.numeral}
-                name={dc.name}
-                onAdd={() => addChord(dc.name)}
-              />
+        {chords.length === 0 ? (
+          <p className="py-2 text-center text-[11px] text-muted-foreground/60">
+            Click chords below to build your progression
+          </p>
+        ) : (
+          <div className="flex flex-col gap-1">
+            {rows.map((row, rowIdx) => (
+              <div key={rowIdx} className="flex items-stretch gap-0">
+                {row.map((chord, colIdx) => {
+                  const globalIdx = rowIdx * perRow + colIdx
+                  const isBarline = colIdx > 0 && colIdx % beatsPerBar === 0
+                  return (
+                    <Fragment key={globalIdx}>
+                      {/* Barline indicator */}
+                      {isBarline && (
+                        <div className="mx-0.5 w-px shrink-0 self-stretch bg-[#52525b]" />
+                      )}
+                      {/* Chord cell — equal width */}
+                      <div
+                        className={cn(
+                          "group relative flex min-w-0 flex-1 items-center justify-center rounded-md border px-1 py-1.5 transition-all duration-300",
+                          "bg-secondary text-foreground",
+                          recentlyAdded === globalIdx
+                            ? "border-[#06b6d4]/60 ring-1 ring-[#06b6d4]/40"
+                            : "border-border/50"
+                        )}
+                        style={
+                          recentlyAdded === globalIdx
+                            ? { boxShadow: `0 0 6px 1px ${TEAL}22` }
+                            : undefined
+                        }
+                      >
+                        <span className="truncate font-mono text-[10px] font-medium">
+                          {chord}
+                        </span>
+                        <button
+                          type="button"
+                          onClick={() => removeChord(globalIdx)}
+                          className="absolute -right-1 -top-1 flex size-3.5 items-center justify-center rounded-full bg-[#3f3f46] text-muted-foreground opacity-0 transition-opacity hover:bg-[#52525b] hover:text-foreground group-hover:opacity-100"
+                          aria-label={`Remove ${chord}`}
+                        >
+                          <X className="size-2" />
+                        </button>
+                      </div>
+                    </Fragment>
+                  )
+                })}
+                {/* Fill remaining cells in partial rows for alignment */}
+                {row.length < perRow && Array.from({ length: perRow - row.length }).map((_, i) => {
+                  const fillColIdx = row.length + i
+                  const isBarline = fillColIdx > 0 && fillColIdx % beatsPerBar === 0
+                  return (
+                    <Fragment key={`empty-${i}`}>
+                      {isBarline && (
+                        <div className="mx-0.5 w-px shrink-0 self-stretch bg-transparent" />
+                      )}
+                      <div className="flex-1" />
+                    </Fragment>
+                  )
+                })}
+              </div>
             ))}
           </div>
+        )}
+      </div>
+
+      {/* Row 2: Diatonic quick-add (derived from project key) */}
+      <div className="flex flex-col gap-1.5">
+        <span className="text-[10px] font-medium uppercase tracking-widest text-muted-foreground">
+          Key of {projectKey}
+        </span>
+        <div className="grid grid-cols-7 gap-1">
+          {diatonicChords.map((dc) => (
+            <DiatonicButton
+              key={dc.numeral}
+              numeral={dc.numeral}
+              name={dc.name}
+              onAdd={() => addChord(dc.name)}
+            />
+          ))}
         </div>
       </div>
 
@@ -349,7 +427,9 @@ export function ChordPalette({ className, initialChords, onChordsChange }: Chord
   )
 }
 
-/* Diatonic button with teal glow */
+/* ------------------------------------------------------------------ */
+/*  Diatonic button with teal glow                                     */
+/* ------------------------------------------------------------------ */
 
 function DiatonicButton({
   numeral,
@@ -375,7 +455,7 @@ function DiatonicButton({
       type="button"
       onClick={handleClick}
       className={cn(
-        "flex w-14 shrink-0 flex-col items-center rounded-lg border px-1 py-1.5 transition-all duration-200",
+        "flex flex-col items-center rounded-lg border px-1 py-1.5 transition-all duration-200",
         flash
           ? "border-[#06b6d4] bg-[#06b6d4]/15 shadow-[0_0_8px_1px_rgba(6,182,212,0.25)]"
           : "border-border bg-secondary hover:border-muted-foreground/30 hover:bg-secondary/80"
@@ -391,7 +471,7 @@ function DiatonicButton({
       </span>
       <span
         className={cn(
-          "mt-0.5 text-[10px] font-medium leading-none transition-colors",
+          "mt-0.5 truncate text-[10px] font-medium leading-none transition-colors",
           flash ? "text-foreground" : "text-muted-foreground"
         )}
       >
