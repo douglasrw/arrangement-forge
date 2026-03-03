@@ -48,12 +48,16 @@ function divideSections(totalBars: number): SectionData[] {
   const SECTION_NAMES = ['Intro', 'Verse', 'Chorus', 'Bridge', 'Outro'];
   const sectionSize = totalBars <= 8 ? totalBars : Math.min(8, Math.ceil(totalBars / 4));
   const sections: SectionData[] = [];
+  const nameCount: Record<string, number> = {};
   let bar = 1;
   let sortOrder = 0;
   while (bar <= totalBars) {
     const count = Math.min(sectionSize, totalBars - bar + 1);
+    const baseName = SECTION_NAMES[sortOrder % SECTION_NAMES.length];
+    nameCount[baseName] = (nameCount[baseName] ?? 0) + 1;
+    const name = nameCount[baseName] > 1 ? `${baseName} ${nameCount[baseName]}` : baseName;
     sections.push({
-      name: SECTION_NAMES[sortOrder % SECTION_NAMES.length],
+      name,
       sort_order: sortOrder,
       bar_count: count,
       start_bar: bar,

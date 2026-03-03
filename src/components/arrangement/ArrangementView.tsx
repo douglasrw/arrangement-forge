@@ -6,6 +6,7 @@ import { useUiStore } from "@/store/ui-store"
 import { useAudio } from "@/hooks/useAudio"
 import { formatChord } from "@/lib/chords"
 import { useShallow } from "zustand/react/shallow"
+import { useRef, useState, useEffect, useCallback } from "react"
 import type { Instrument } from "@/components/sequencer-block"
 
 /* ------------------------------------------------------------------ */
@@ -16,7 +17,8 @@ const BAR_W = 40
 const SECTION_H = 44
 const RULER_H = 24
 const CHORD_H = 32
-const MIN_LANE_H = 40
+const MIN_LANE_H = 56
+const FIXED_H = SECTION_H + RULER_H + CHORD_H // non-lane vertical space
 
 /* ------------------------------------------------------------------ */
 /*  Empty state                                                        */
@@ -93,6 +95,28 @@ export function ArrangementView({
   const key = project?.key ?? "C"
   const hasAnyBlockSelected = selectedBlockId !== null
 
+  /* Measure container height → compute dynamic lane height */
+  const containerRef = useRef<HTMLDivElement>(null)
+  const [laneH, setLaneH] = useState(MIN_LANE_H)
+
+  const recalcLaneH = useCallback(() => {
+    const el = containerRef.current
+    if (!el) return
+    const available = el.clientHeight - FIXED_H
+    const stemCount = stems.length || 5
+    const perLane = Math.floor(available / stemCount)
+    setLaneH(Math.max(MIN_LANE_H, perLane))
+  }, [stems.length])
+
+  useEffect(() => {
+    recalcLaneH()
+    const el = containerRef.current
+    if (!el) return
+    const ro = new ResizeObserver(recalcLaneH)
+    ro.observe(el)
+    return () => ro.disconnect()
+  }, [recalcLaneH])
+
   if (generationState !== "complete") {
     return <EmptyState onGenerate={() => setGenerationState("complete")} />
   }
@@ -119,9 +143,9 @@ export function ArrangementView({
   const playheadBar = transportState.currentBar
 
   return (
-    <div className="flex flex-1 overflow-hidden bg-[#0a0a0c]">
-      {/* ---- Left gutter (non-scrolling) ---- */}
-      <div className="flex w-20 shrink-0 flex-col border-r border-[#27272a] bg-[#18181b]">
+    <div ref={containerRef} className="flex flex-1 min-h-0 overflow-hidden bg-[#0a0a0c]">
+      {/* ---- Left gutter (non-scrolling, content-sized) ---- */}
+      <div className="flex w-20 shrink-0 flex-col border-r border-[#27272a] bg-[#0a0a0c]">
         {/* Section header spacer */}
         <div
           className="shrink-0 border-b border-[#27272a] bg-[#18181b]"
@@ -132,15 +156,15 @@ export function ArrangementView({
           className="shrink-0 border-b border-[#27272a] bg-[#18181b]/80"
           style={{ height: RULER_H }}
         />
-        {/* Instrument rows — flex-1 to fill, matches grid lanes */}
+        {/* Instrument rows — fixed height, matches grid lanes */}
         {INSTRUMENT_CONFIG.map((inst, i) => {
           const isEven = i % 2 === 1
           return (
             <div
               key={inst.id}
-              className="flex flex-1 items-center gap-1.5 border-b border-[#27272a] px-2"
+              className="flex shrink-0 items-center gap-1.5 border-b border-[#27272a] px-2"
               style={{
-                minHeight: MIN_LANE_H,
+                height: laneH,
                 backgroundColor: isEven ? "rgba(9,9,11,0.6)" : "#18181b",
               }}
             >
@@ -167,8 +191,8 @@ export function ArrangementView({
 
       {/* ---- Scrollable grid ---- */}
       <div className="flex-1 overflow-x-auto overflow-y-hidden">
-        {/* Flex column fills height; each lane gets flex-1 */}
-        <div className="relative flex h-full flex-col" style={{ width: GRID_W }}>
+        {/* Fixed-height content column */}
+        <div className="relative flex flex-col" style={{ width: GRID_W }}>
 
           {/* == Section headers row == */}
           <div
@@ -260,7 +284,7 @@ export function ArrangementView({
             })}
           </div>
 
-          {/* == Stem lane rows (flex-1 each, fill remaining space) == */}
+          {/* == Stem lane rows (fixed height) == */}
           {INSTRUMENT_CONFIG.map((inst, laneIdx) => {
             const isEven = laneIdx % 2 === 1
             const laneBlocks = blocks.filter((b) => b.stemId === inst.id)
@@ -268,9 +292,9 @@ export function ArrangementView({
             return (
               <div
                 key={inst.id}
-                className="relative flex-1 border-b border-[#27272a]"
+                className="relative shrink-0 border-b border-[#27272a]"
                 style={{
-                  minHeight: MIN_LANE_H,
+                  height: laneH,
                   backgroundColor: isEven
                     ? "rgba(9,9,11,0.6)"
                     : "#18181b",

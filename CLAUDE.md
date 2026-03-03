@@ -109,6 +109,10 @@ These are absolute requirements. Every agent must follow all of them.
 - **Must** use `ConfirmDialog` from `src/components/shared/ConfirmDialog.tsx` for destructive actions
 - **Must** use the Supabase JS client for all database operations — no custom REST endpoints
 - **Must** use the `forge` theme color tokens (DaisyUI semantic classes like `bg-base-100`, `text-primary`, `btn-primary`) — never hardcode hex colors in components
+- **Must** verify UI tasks with visual assertions (Playwright screenshots or DOM measurements), not just `npm run build`. TypeScript compilation proves syntax, not visual correctness. Every acceptance criterion for a UI task needs an executable verification step.
+- **Must** verify headless Playwright can authenticate and reach the target page BEFORE starting any UI automation task. If auth fails, fix it first. See `e2e/auth-helper.ts` for the login utility.
+- **Must** capture before/after screenshots of the user's exact project (not a different test project) when fixing UI issues.
+- **Must not** iterate more than once on a UI fix that the user says is wrong. After one failed fix: STOP, get a screenshot from the user, write executable Playwright assertions encoding the target state, then make one surgical fix in a fresh context. The fix-break-fix spiral on visual work is the most destructive anti-pattern in this project's history.
 
 ---
 

@@ -44,7 +44,7 @@ export function AppShell() {
           onContextClose={() => setPanelContext({ mode: 'default' })}
         />
 
-        <div className="flex flex-col flex-1 min-w-0">
+        <div className="flex flex-col flex-1 min-w-0 min-h-0 overflow-hidden">
           <ArrangementView
             onBlockSelect={(info) =>
               setPanelContext(info ? { mode: 'block', ...info } : { mode: 'default' })
