@@ -218,7 +218,6 @@ export function ArrangementView({
                         sectionName: sec.name,
                         sectionBars: sec.barCount,
                       })
-                      onBlockSelect?.(null)
                     }
                   }}
                   className={cn(
