@@ -116,7 +116,7 @@ Build must still pass.
 
 ---
 
-### [ ] T2 — Wire TopBar to projectStore + uiStore
+### [x] T2 — Wire TopBar to projectStore + uiStore
 
 **Files:** `src/components/layout/TopBar.tsx`
 
