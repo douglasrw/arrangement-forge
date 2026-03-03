@@ -390,7 +390,7 @@ generationState check from Step 2.
 
 ---
 
-### [ ] T5 — Wire InputSection to projectStore + useGenerate
+### [x] T5 — Wire InputSection to projectStore + useGenerate
 
 **Files:** `src/components/left-panel/InputSection.tsx`
 
