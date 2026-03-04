@@ -362,24 +362,34 @@ export function generate(request: GenerationRequest): GenerationResponse {
         });
       }
     } else {
-      // --- NON-DRUM STEMS: one block spanning all bars (existing behavior) ---
-      const firstChord = request.chords[0];
-      blocks.push({
-        stem_instrument: stem.instrument,
-        section_name: sections[0].name,
-        start_bar: 1,
-        end_bar: totalBars,
-        chord_degree: firstChord?.degree ?? null,
-        chord_quality: firstChord?.quality ?? null,
-        style: getStyle(stem.instrument, request.genre),
-        midi_data: generateMidiForBlock(
-          stem.instrument,
-          totalBars,
-          request.chords,
-          request.key,
-          request.genre
-        ),
-      });
+      // --- PITCHED STEMS: one block per section (mirrors drum loop) ---
+      for (let sIdx = 0; sIdx < sections.length; sIdx++) {
+        const section = sections[sIdx];
+        const sectionChords = request.chords.slice(
+          section.start_bar - 1,
+          section.start_bar - 1 + section.bar_count
+        );
+        const firstChord = sectionChords[0];
+
+        blocks.push({
+          stem_instrument: stem.instrument,
+          section_name: section.name,
+          start_bar: section.start_bar,
+          end_bar: section.start_bar + section.bar_count - 1,
+          chord_degree: firstChord?.degree ?? null,
+          chord_quality: firstChord?.quality ?? null,
+          style: getStyle(stem.instrument, request.genre),
+          midi_data: generateMidiForBlock(
+            stem.instrument,
+            section.bar_count,
+            sectionChords,
+            request.key,
+            request.genre,
+            undefined, // no DrumContext for pitched instruments
+            section.start_bar
+          ),
+        });
+      }
     }
   }
 
