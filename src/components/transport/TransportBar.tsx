@@ -90,7 +90,7 @@ export function TransportBar() {
   const timeStr = `${mins}:${String(secs).padStart(2, "0")}`
 
   return (
-    <footer className="flex h-12 w-full shrink-0 items-center justify-center gap-4 border-t border-border/50 bg-card/95 px-4 backdrop-blur-sm">
+    <footer className="flex h-12 w-full shrink-0 items-center justify-center gap-4 border-t border-border bg-card px-4">
       {/* ---- LEFT: Playback pill group ---- */}
       <div className="flex items-center gap-1 rounded-xl bg-secondary p-1">
         {/* Skip to start */}

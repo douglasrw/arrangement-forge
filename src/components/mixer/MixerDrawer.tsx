@@ -9,11 +9,11 @@ import type { DrumKitLike } from "@/audio/drum-kit"
 /*  Instrument palette (matches sequencer-block.tsx)                   */
 /* ------------------------------------------------------------------ */
 const INSTRUMENTS = [
-  { key: "drums", label: "DRUMS", color: "#06b6d4", defaultDb: -3 },
-  { key: "bass", label: "BASS", color: "#34d399", defaultDb: -2 },
-  { key: "piano", label: "PIANO", color: "#fbbf24", defaultDb: -5 },
-  { key: "guitar", label: "GUITAR", color: "#a78bfa", defaultDb: -4 },
-  { key: "strings", label: "STRINGS", color: "#14b8a6", defaultDb: -6 },
+  { key: "drums", label: "DRUMS", color: "var(--instrument-drums)", defaultDb: -3 },
+  { key: "bass", label: "BASS", color: "var(--instrument-bass)", defaultDb: -2 },
+  { key: "piano", label: "PIANO", color: "var(--instrument-piano)", defaultDb: -5 },
+  { key: "guitar", label: "GUITAR", color: "var(--instrument-guitar)", defaultDb: -4 },
+  { key: "strings", label: "STRINGS", color: "var(--instrument-strings)", defaultDb: -6 },
 ] as const
 
 type InstrumentKey = (typeof INSTRUMENTS)[number]["key"]
@@ -133,7 +133,7 @@ function LevelMeter({ fill }: { fill: number }) {
               className="absolute inset-x-0 bottom-0 rounded-full"
               style={{
                 height: `${h}%`,
-                background: "linear-gradient(to top, #14b8a6, #fbbf24 70%, #ef4444 95%)",
+                background: "linear-gradient(to top, var(--meter-green), var(--meter-yellow) 70%, var(--meter-red) 95%)",
               }}
             />
           </div>
@@ -236,7 +236,7 @@ export function MixerDrawer() {
   )
 
   return (
-    <div className="shrink-0 border-t border-border/50 bg-card">
+    <div className="shrink-0 border-t border-border bg-card">
       {/* Header strip — always visible, acts as toggle */}
       <button
         type="button"
@@ -300,8 +300,8 @@ export function MixerDrawer() {
                       className={cn(
                         "rounded px-1.5 py-0.5 text-[10px] font-bold transition-colors",
                         ch.muted
-                          ? "bg-[#f59e0b]/80 text-card"
-                          : "bg-input text-muted-foreground hover:bg-zinc-600"
+                          ? "bg-warning/80 text-card"
+                          : "bg-input text-muted-foreground hover:bg-secondary"
                       )}
                     >
                       M
@@ -312,8 +312,8 @@ export function MixerDrawer() {
                       className={cn(
                         "rounded px-1.5 py-0.5 text-[10px] font-bold transition-colors",
                         ch.solo
-                          ? "bg-[#14b8a6]/80 text-card"
-                          : "bg-input text-muted-foreground hover:bg-zinc-600"
+                          ? "bg-instrument-strings/80 text-card"
+                          : "bg-input text-muted-foreground hover:bg-secondary"
                       )}
                     >
                       S
@@ -338,7 +338,7 @@ export function MixerDrawer() {
             {/* Master channel */}
             <div
               className="flex flex-[1.3] flex-col items-center gap-1.5 rounded-r-md bg-secondary/60 pt-1"
-              style={{ borderTop: "2px solid #71717a" }}
+              style={{ borderTop: "2px solid var(--muted-foreground)" }}
             >
               {/* Label */}
               <span className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">
@@ -354,7 +354,7 @@ export function MixerDrawer() {
                 <VerticalFader
                   value={channels.master.volume}
                   onChange={(v) => updateChannel("master", "volume", v)}
-                  thumbColor="#e4e4e7"
+                  thumbColor="var(--master-thumb)"
                 />
               </div>
 
