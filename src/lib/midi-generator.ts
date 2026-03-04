@@ -17,7 +17,7 @@ import { buildDrumMidi } from './drum-patterns';
 
 // ---------- Drum Context (passed to buildDrumMidi) ----------
 
-interface DrumContext {
+export interface DrumContext {
   substyle: string;
   energy: number;
   dynamics: number;
@@ -301,7 +301,7 @@ function buildStringsNotes(
 
 // ---------- Block Generation ----------
 
-function generateMidiForBlock(
+export function generateMidiForBlock(
   instrument: string,
   barCount: number,
   chordsForBlock: ChordEntry[],

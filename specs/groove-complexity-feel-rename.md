@@ -446,7 +446,7 @@ Open the app in the browser. Navigate to an existing project.
 
 ---
 
-### [ ] T5 — Reactive slider → playback: regenerate MIDI on style changes
+### [x] T5 — Reactive slider → playback: regenerate MIDI on style changes
 
 **Files:** `src/hooks/useGenerate.ts`, `src/hooks/useAudio.ts`
 **Depends on:** T2, T3, T4

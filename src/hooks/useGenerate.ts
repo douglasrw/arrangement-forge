@@ -1,13 +1,14 @@
 // useGenerate.ts — Generation flow: build request, call generator, populate stores, save.
+// Also provides regenerateMidi() for reactive slider → playback updates.
 
-import { useCallback } from 'react';
+import { useCallback, useEffect, useRef } from 'react';
 import { useProjectStore } from '@/store/project-store';
 import { useUiStore } from '@/store/ui-store';
 import { useUndoStore } from '@/store/undo-store';
 import { useProject } from '@/hooks/useProject';
-import { generate } from '@/lib/midi-generator';
+import { generate, generateMidiForBlock } from '@/lib/midi-generator';
 import { parseChordChart } from '@/lib/chord-chart-parser';
-import type { GenerationRequest, Section, Stem, Block, Chord, InstrumentType } from '@/types';
+import type { GenerationRequest, Section, Stem, Block, Chord, InstrumentType, ChordEntry } from '@/types';
 
 export function useGenerate() {
   const { project, stems, sections, blocks, chords, setArrangement, updateProject } = useProjectStore();
@@ -155,5 +156,93 @@ export function useGenerate() {
     pushUndo, saveArrangement,
   ]);
 
-  return { runGeneration };
+  /** Regenerate MIDI data for all existing blocks using current style params.
+   * Does NOT create new sections/stems/blocks — only updates midiData on existing blocks.
+   * Used for reactive slider → playback updates. */
+  const regenerateMidi = useCallback(() => {
+    if (!project || !project.hasArrangement) return;
+    if (blocks.length === 0 || sections.length === 0 || stems.length === 0) return;
+
+    const beatsPerBar = parseInt(project.timeSignature.split('/')[0]) || 4;
+
+    const updatedBlocks = blocks.map((block) => {
+      const section = sections.find((s) => s.id === block.sectionId);
+      const stem = stems.find((s) => s.id === block.stemId);
+      if (!section || !stem) return block;
+
+      // Resolve cascaded style values
+      const energy = section.energyOverride ?? project.energy;
+      const groove = section.grooveOverride ?? project.groove;
+      const feel = section.feelOverride ?? project.feel;
+      const swingPct = section.swingPctOverride ?? project.swingPct;
+      const dynamics = section.dynamicsOverride ?? project.dynamics;
+
+      const barCount = block.endBar - block.startBar + 1;
+
+      // Build chord entries for this block's bar range
+      const blockChords: ChordEntry[] = chords
+        .filter((c) => c.barNumber >= block.startBar && c.barNumber <= block.endBar)
+        .map((c) => ({
+          bar_number: c.barNumber,
+          degree: c.degree,
+          quality: c.quality,
+          bass_degree: c.bassDegree,
+        }));
+
+      // Regenerate MIDI for this block
+      const newMidi = generateMidiForBlock(
+        stem.instrument,
+        barCount,
+        blockChords,
+        project.key,
+        project.genre,
+        stem.instrument === 'drums' ? {
+          substyle: project.subStyle,
+          energy,
+          dynamics,
+          swingPct,
+          groove,
+          feel: feel ?? 50,
+          beatsPerBar,
+          sectionType: section.name.replace(/\s*\d+$/, ''),
+          sectionIndex: section.sortOrder,
+          isLastSection: section.sortOrder === sections.length - 1,
+          totalBarsInSection: section.barCount,
+          barNumberGlobal: block.startBar,
+        } : undefined
+      );
+
+      return { ...block, midiData: newMidi };
+    });
+
+    // Update blocks in store — this triggers useAudio's loadArrangement effect
+    setArrangement({ stems, sections, blocks: updatedBlocks, chords });
+  }, [project, blocks, sections, stems, chords, setArrangement]);
+
+  // Reactive MIDI regeneration on style slider changes
+  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const isInitialRender = useRef(true);
+
+  useEffect(() => {
+    // Only react if arrangement exists
+    if (!project?.hasArrangement || blocks.length === 0) return;
+
+    // Skip the initial render (don't regenerate on page load)
+    if (isInitialRender.current) {
+      isInitialRender.current = false;
+      return;
+    }
+
+    if (debounceRef.current) clearTimeout(debounceRef.current);
+    debounceRef.current = setTimeout(() => {
+      regenerateMidi();
+    }, 300);
+
+    return () => {
+      if (debounceRef.current) clearTimeout(debounceRef.current);
+    };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [project?.energy, project?.groove, project?.feel, project?.swingPct, project?.dynamics]);
+
+  return { runGeneration, regenerateMidi };
 }
