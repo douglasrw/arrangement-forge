@@ -306,7 +306,7 @@ Block chords: 2 voicings × 3 notes = 6 MidiNoteData per bar.
 
 ---
 
-### [ ] T3 — Guitar pattern library
+### [x] T3 — Guitar pattern library
 
 **Files:** `src/lib/guitar-patterns.ts` (new), `src/lib/guitar-patterns.test.ts` (new)
 **Depends on:** T1 (for exported helpers in midi-generator.ts)
