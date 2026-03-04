@@ -167,7 +167,7 @@ Grep for "feelOverride" in src/lib/style-cascade.ts — should appear in resolve
 
 ---
 
-### [ ] T2 — Wire `feel` through generation pipeline + rename humanization function
+### [x] T2 — Wire `feel` through generation pipeline + rename humanization function
 
 **Files:** `src/lib/midi-generator.ts`, `src/lib/drum-patterns.ts`, `src/hooks/useGenerate.ts`, `src/lib/drum-patterns.test.ts`, `src/lib/midi-generator.test.ts`
 **Depends on:** T1

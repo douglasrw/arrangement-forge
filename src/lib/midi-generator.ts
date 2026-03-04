@@ -13,6 +13,24 @@ import type {
   MidiNoteData,
 } from '@/types';
 import { degreeToNote } from './chords';
+import { buildDrumMidi } from './drum-patterns';
+
+// ---------- Drum Context (passed to buildDrumMidi) ----------
+
+interface DrumContext {
+  substyle: string;
+  energy: number;
+  dynamics: number;
+  swingPct: number | null;
+  groove: number;
+  feel: number;
+  beatsPerBar: number;
+  sectionType: string;
+  sectionIndex: number;
+  isLastSection: boolean;
+  totalBarsInSection: number;
+  barNumberGlobal: number; // 1-based global start bar of this block
+}
 
 // ---------- Section Creation ----------
 
@@ -79,7 +97,7 @@ const GENRE_STYLES: Record<string, Record<string, string>> = {
     strings: 'sustained_pad',
   },
   Blues: {
-    drums: 'funk_pocket',
+    drums: 'blues_shuffle',
     bass: 'fingerstyle',
     piano: 'block_chords',
     guitar: 'rhythm_strum',
@@ -100,10 +118,38 @@ const GENRE_STYLES: Record<string, Record<string, string>> = {
     strings: 'sustained_pad',
   },
   Latin: {
-    drums: 'jazz_brush_swing',
+    drums: 'bossa_nova',
     bass: 'fingerstyle',
     piano: 'arpeggiated',
     guitar: 'fingerpick_arpeggios',
+    strings: 'sustained_pad',
+  },
+  Country: {
+    drums: 'country_shuffle',
+    bass: 'fingerstyle',
+    piano: 'block_chords',
+    guitar: 'fingerpick_arpeggios',
+    strings: 'sustained_pad',
+  },
+  Gospel: {
+    drums: 'gospel_drive',
+    bass: 'fingerstyle',
+    piano: 'block_chords',
+    guitar: 'rhythm_strum',
+    strings: 'sustained_pad',
+  },
+  'R&B': {
+    drums: 'rnb_groove',
+    bass: 'fingerstyle',
+    piano: 'jazz_comp',
+    guitar: 'rhythm_strum',
+    strings: 'sustained_pad',
+  },
+  Pop: {
+    drums: 'pop_four_on_floor',
+    bass: 'pick',
+    piano: 'block_chords',
+    guitar: 'rhythm_strum',
     strings: 'sustained_pad',
   },
 };
@@ -152,54 +198,6 @@ function getChordTones(degree: string | null, quality: string | null, key: strin
 
 // ---------- MIDI Generation Per Instrument ----------
 
-function buildJazzDrumBar(barOffset: number): MidiNoteData[] {
-  // Ride on every beat, snare on 2 and 4
-  const notes: MidiNoteData[] = [];
-  for (let beat = 0; beat < 4; beat++) {
-    notes.push({ note: 'D#3', time: barOffset + beat, duration: 0.2, velocity: beat % 2 === 0 ? 70 : 60 });
-  }
-  notes.push({ note: 'D2', time: barOffset + 1, duration: 0.2, velocity: 80 });
-  notes.push({ note: 'D2', time: barOffset + 3, duration: 0.2, velocity: 80 });
-  if (barOffset === 0) {
-    notes.push({ note: 'C2', time: barOffset, duration: 0.3, velocity: 90 });
-  }
-  return notes;
-}
-
-function buildRockDrumBar(barOffset: number): MidiNoteData[] {
-  const notes: MidiNoteData[] = [];
-  // Kick on 1 and 3
-  notes.push({ note: 'C2', time: barOffset + 0, duration: 0.25, velocity: 100 });
-  notes.push({ note: 'C2', time: barOffset + 2, duration: 0.25, velocity: 90 });
-  // Snare on 2 and 4
-  notes.push({ note: 'D2', time: barOffset + 1, duration: 0.2, velocity: 90 });
-  notes.push({ note: 'D2', time: barOffset + 3, duration: 0.2, velocity: 90 });
-  // Hats on every 8th
-  for (let i = 0; i < 8; i++) {
-    notes.push({ note: 'F#2', time: barOffset + i * 0.5, duration: 0.1, velocity: i % 2 === 0 ? 70 : 50 });
-  }
-  return notes;
-}
-
-function buildFunkDrumBar(barOffset: number): MidiNoteData[] {
-  const notes: MidiNoteData[] = [];
-  notes.push({ note: 'C2', time: barOffset + 0, duration: 0.2, velocity: 100 });
-  notes.push({ note: 'C2', time: barOffset + 2.5, duration: 0.2, velocity: 80 });
-  notes.push({ note: 'D2', time: barOffset + 1, duration: 0.2, velocity: 85 });
-  notes.push({ note: 'D2', time: barOffset + 3, duration: 0.2, velocity: 85 });
-  notes.push({ note: 'D2', time: barOffset + 3.5, duration: 0.1, velocity: 50 });
-  for (let i = 0; i < 16; i++) {
-    notes.push({ note: 'F#2', time: barOffset + i * 0.25, duration: 0.05, velocity: i % 4 === 0 ? 70 : 45 });
-  }
-  return notes;
-}
-
-function buildDrumBar(genre: string, barOffset: number): MidiNoteData[] {
-  if (genre === 'Rock' || genre === 'Blues') return buildRockDrumBar(barOffset);
-  if (genre === 'Funk' || genre === 'R&B') return buildFunkDrumBar(barOffset);
-  return buildJazzDrumBar(barOffset); // Jazz, Latin, Gospel, Country, Pop default
-}
-
 function buildBassNotes(
   chord: ChordEntry,
   key: string,
@@ -213,7 +211,7 @@ function buildBassNotes(
   const fifth = tones[2] ?? root;
 
   if (genre === 'Jazz' || genre === 'Blues') {
-    // Walking bass: root → 3rd → 5th → chromatic approach
+    // Walking bass: root -> 3rd -> 5th -> chromatic approach
     const approach = noteToMidi(degreeToNote(chord.degree, key), 2);
     return [
       { note: root, time: barOffset + 0, duration: 0.9, velocity: 85 },
@@ -308,7 +306,8 @@ function generateMidiForBlock(
   barCount: number,
   chordsForBlock: ChordEntry[],
   key: string,
-  genre: string
+  genre: string,
+  drumContext?: DrumContext
 ): MidiNoteData[] {
   const notes: MidiNoteData[] = [];
 
@@ -322,21 +321,75 @@ function generateMidiForBlock(
   for (let i = 0; i < barCount; i++) {
     const chord = chordsForBlock[i] ?? chordsForBlock[chordsForBlock.length - 1];
     if (!chord) continue;
-    const barOffset = i * 4; // beats per bar = 4 (simplified; time sig handled by engine)
 
     switch (instrument) {
-      case 'drums':
-        notes.push(...buildDrumBar(genre, barOffset));
+      case 'drums': {
+        if (!drumContext) {
+          // Fallback: basic drum pattern (should not happen in practice)
+          const barNotes = buildDrumMidi({
+            genre,
+            substyle: '',
+            barCount: 1,
+            beatsPerBar: 4,
+            energy: 50,
+            dynamics: 50,
+            swingPct: null,
+            groove: 0,
+            feel: 0,
+            sectionType: 'Verse',
+            sectionIndex: 0,
+            isLastSection: true,
+            barNumberInSection: i,
+            barNumberGlobal: i + 1,
+            totalBarsInSection: barCount,
+          });
+          const barOffset = i * 4;
+          notes.push(...barNotes.map((n) => ({
+            ...n,
+            time: n.time + barOffset,
+          })));
+          break;
+        }
+        const barNotes = buildDrumMidi({
+          genre,
+          substyle: drumContext.substyle,
+          barCount: 1,
+          beatsPerBar: drumContext.beatsPerBar,
+          energy: drumContext.energy,
+          dynamics: drumContext.dynamics,
+          swingPct: drumContext.swingPct,
+          groove: drumContext.groove,
+          feel: drumContext.feel,
+          sectionType: drumContext.sectionType,
+          sectionIndex: drumContext.sectionIndex,
+          isLastSection: drumContext.isLastSection,
+          barNumberInSection: i,
+          barNumberGlobal: drumContext.barNumberGlobal + i,
+          totalBarsInSection: drumContext.totalBarsInSection,
+        });
+        // Offset notes by bar position within block
+        const barOffset = i * drumContext.beatsPerBar;
+        notes.push(...barNotes.map((n) => ({
+          ...n,
+          time: n.time + barOffset,
+        })));
         break;
-      case 'bass':
+      }
+      case 'bass': {
+        const barOffset = i * 4;
         notes.push(...buildBassNotes(chord, key, genre, barOffset));
         break;
-      case 'piano':
+      }
+      case 'piano': {
+        const barOffset = i * 4;
         notes.push(...buildPianoNotes(chord, key, genre, barOffset));
         break;
-      case 'guitar':
+      }
+      case 'guitar': {
+        const barOffset = i * 4;
         notes.push(...buildGuitarNotes(chord, key, genre, barOffset));
         break;
+      }
     }
   }
 
@@ -354,27 +407,70 @@ export function generate(request: GenerationRequest): GenerationResponse {
     sort_order: i,
   }));
 
+  // Parse beatsPerBar from time signature
+  const [numStr] = request.time_signature.split('/');
+  const beatsPerBar = parseInt(numStr ?? '4', 10);
+
   const blocks: BlockData[] = [];
   for (const stem of stems) {
-    for (const section of sections) {
-      const sectionChords = request.chords.slice(
-        section.start_bar - 1,
-        section.start_bar - 1 + section.bar_count
-      );
-      const firstChord = sectionChords[0];
+    if (stem.instrument === 'drums') {
+      // --- DRUM STEM: one block per section with full context ---
+      for (let sIdx = 0; sIdx < sections.length; sIdx++) {
+        const section = sections[sIdx];
+        const isLastSection = sIdx === sections.length - 1;
+        const sectionChords = request.chords.slice(
+          section.start_bar - 1,
+          section.start_bar - 1 + section.bar_count
+        );
 
+        const drumContext: DrumContext = {
+          substyle: request.sub_style,
+          energy: request.energy,
+          dynamics: request.dynamics,
+          swingPct: request.swing_pct,
+          groove: request.groove,
+          feel: request.feel ?? 50,
+          beatsPerBar,
+          sectionType: section.name.replace(/\s*\d+$/, ''), // "Verse 2" -> "Verse"
+          sectionIndex: sIdx,
+          isLastSection,
+          totalBarsInSection: section.bar_count,
+          barNumberGlobal: section.start_bar,
+        };
+
+        blocks.push({
+          stem_instrument: stem.instrument,
+          section_name: section.name,
+          start_bar: section.start_bar,
+          end_bar: section.start_bar + section.bar_count - 1,
+          chord_degree: sectionChords[0]?.degree ?? null,
+          chord_quality: sectionChords[0]?.quality ?? null,
+          style: getStyle(stem.instrument, request.genre),
+          midi_data: generateMidiForBlock(
+            stem.instrument,
+            section.bar_count,
+            sectionChords,
+            request.key,
+            request.genre,
+            drumContext
+          ),
+        });
+      }
+    } else {
+      // --- NON-DRUM STEMS: one block spanning all bars (existing behavior) ---
+      const firstChord = request.chords[0];
       blocks.push({
         stem_instrument: stem.instrument,
-        section_name: section.name,
-        start_bar: section.start_bar,
-        end_bar: section.start_bar + section.bar_count - 1,
+        section_name: sections[0].name,
+        start_bar: 1,
+        end_bar: totalBars,
         chord_degree: firstChord?.degree ?? null,
         chord_quality: firstChord?.quality ?? null,
         style: getStyle(stem.instrument, request.genre),
         midi_data: generateMidiForBlock(
           stem.instrument,
-          section.bar_count,
-          sectionChords,
+          totalBars,
+          request.chords,
           request.key,
           request.genre
         ),
