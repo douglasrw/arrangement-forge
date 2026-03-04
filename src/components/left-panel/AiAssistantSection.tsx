@@ -16,12 +16,12 @@ type Message = {
 }
 
 const SCOPE_COLORS: Record<string, string> = {
-  Song: "#0891b2",
-  "Verse 1": "#06b6d4",
-  "Guitar bar 13": "#a78bfa",
-  Drums: "#06b6d4",
-  Bass: "#34d399",
-  Piano: "#fbbf24",
+  Song: "var(--ring)",
+  "Verse 1": "var(--instrument-drums)",
+  "Guitar bar 13": "var(--instrument-guitar)",
+  Drums: "var(--instrument-drums)",
+  Bass: "var(--instrument-bass)",
+  Piano: "var(--instrument-piano)",
 }
 
 const INITIAL_MESSAGES: Message[] = [

@@ -5,11 +5,11 @@ export type Instrument = "drums" | "bass" | "piano" | "guitar" | "strings"
 export type BlockState = "default" | "hover" | "selected"
 
 export const INSTRUMENT_COLORS: Record<Instrument, string> = {
-  drums: "#06b6d4",
-  bass: "#34d399",
-  piano: "#fbbf24",
-  guitar: "#a78bfa",
-  strings: "#14b8a6",
+  drums: "var(--instrument-drums)",
+  bass: "var(--instrument-bass)",
+  piano: "var(--instrument-piano)",
+  guitar: "var(--instrument-guitar)",
+  strings: "var(--instrument-strings)",
 }
 
 interface SequencerBlockProps {
@@ -44,8 +44,8 @@ export function SequencerBlock({
       )}
       style={{
         background: isSelected
-          ? `linear-gradient(to bottom, ${color}33 0%, ${color}0d 100%), #141416`
-          : `linear-gradient(to bottom, ${color}26 0%, transparent 100%), #111113`,
+          ? `linear-gradient(to bottom, ${color}33 0%, ${color}0d 100%), var(--surface-raised)`
+          : `linear-gradient(to bottom, ${color}26 0%, transparent 100%), var(--sidebar)`,
         border: isSelected ? `2px solid ${color}` : undefined,
         borderTop: isSelected ? undefined : `2px solid ${color}99`,
         borderRight: isSelected ? undefined : `none`,

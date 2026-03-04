@@ -1,6 +1,7 @@
 // AppShell.tsx — Three-zone layout for the editor page.
 
 import { useState, useEffect } from 'react';
+import { ChevronRight } from 'lucide-react';
 import { TopBar } from './TopBar';
 import { StatusBar } from './StatusBar';
 import { LeftPanel, type PanelContext } from '@/components/left-panel/LeftPanel';
@@ -30,6 +31,8 @@ export function AppShell() {
   const unsavedChanges = useUiStore((s) => s.unsavedChanges);
   const generationState = useUiStore((s) => s.generationState);
   const systemStatus = useUiStore((s) => s.systemStatus);
+  const leftPanelCollapsed = useUiStore((s) => s.leftPanelCollapsed);
+  const toggleLeftPanel = useUiStore((s) => s.toggleLeftPanel);
 
   /* Derive StatusBar status from uiStore */
   const derivedStatus: AppStatus =
@@ -51,10 +54,24 @@ export function AppShell() {
       <TopBar />
 
       <div className="flex flex-1 min-h-0">
-        <LeftPanel
-          context={panelContext}
-          onContextClose={() => setPanelContext({ mode: 'default' })}
-        />
+        {leftPanelCollapsed ? (
+          <div className="flex h-full w-10 shrink-0 flex-col border-r border-border bg-sidebar">
+            <button
+              type="button"
+              onClick={toggleLeftPanel}
+              className="flex flex-1 items-center justify-center text-muted-foreground transition-colors hover:text-foreground"
+              aria-label="Expand sidebar"
+            >
+              <ChevronRight className="size-4" />
+            </button>
+          </div>
+        ) : (
+          <LeftPanel
+            context={panelContext}
+            onCollapse={toggleLeftPanel}
+            onContextClose={() => setPanelContext({ mode: 'default' })}
+          />
+        )}
 
         <div className="flex flex-col flex-1 min-w-0 min-h-0 overflow-hidden">
           <ArrangementView

@@ -9,6 +9,7 @@ interface UiStore {
   systemStatus: SystemStatus;
   errorMessage: string | null;
   mixerExpanded: boolean;
+  leftPanelCollapsed: boolean;
   zoomIndex: number;
   unsavedChanges: boolean;
   lastSavedAt: string | null;
@@ -19,6 +20,7 @@ interface UiStore {
   setGenerationState: (state: GenerationState) => void;
   setSystemStatus: (status: SystemStatus, errorMsg?: string) => void;
   toggleMixer: () => void;
+  toggleLeftPanel: () => void;
   zoomIn: () => void;
   zoomOut: () => void;
   zoomFitAll: () => void;
@@ -35,6 +37,7 @@ export const useUiStore = create<UiStore>()((set) => ({
   systemStatus: 'ready',
   errorMessage: null,
   mixerExpanded: false,
+  leftPanelCollapsed: false,
   zoomIndex: 0,
   unsavedChanges: false,
   lastSavedAt: null,
@@ -49,6 +52,8 @@ export const useUiStore = create<UiStore>()((set) => ({
     set({ systemStatus: status, errorMessage: errorMsg ?? null }),
 
   toggleMixer: () => set((state) => ({ mixerExpanded: !state.mixerExpanded })),
+
+  toggleLeftPanel: () => set((state) => ({ leftPanelCollapsed: !state.leftPanelCollapsed })),
 
   zoomIn: () =>
     set((state) => ({ zoomIndex: Math.min(state.zoomIndex + 1, ZOOM_STEPS.length - 1) })),

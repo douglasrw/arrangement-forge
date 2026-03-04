@@ -65,7 +65,7 @@ function getChordsPerRow(beatsPerBar: number): number {
   return chordsPerRow(beatsPerBar)
 }
 
-const TEAL = "#06b6d4"
+const TEAL = "var(--primary)"
 
 /* ------------------------------------------------------------------ */
 /*  ChordPalette                                                       */

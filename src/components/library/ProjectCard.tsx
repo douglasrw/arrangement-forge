@@ -1,11 +1,11 @@
 import { cn } from "@/lib/utils"
 
 const INSTRUMENT_COLORS = [
-  "#06b6d4", // drums
-  "#34d399", // bass
-  "#fbbf24", // piano
-  "#a78bfa", // guitar
-  "#14b8a6", // strings
+  "var(--instrument-drums)",
+  "var(--instrument-bass)",
+  "var(--instrument-piano)",
+  "var(--instrument-guitar)",
+  "var(--instrument-strings)",
 ]
 
 export interface ProjectData {
