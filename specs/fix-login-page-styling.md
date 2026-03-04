@@ -1,70 +1,93 @@
 # Fix Login Page Styling
 
-## Problem Statement
-The login page renders with broken/missing styling. The component uses DaisyUI classes (`bg-base-100`, `bg-base-200`, `card`, `card-body`, `tabs`, `tabs-boxed`, `tab`, `tab-active`, `input`, `input-bordered`, `btn`, `btn-primary`, `btn-outline`, `form-control`, `label`, `label-text`, `alert`, `alert-error`, `divider`, `loading`) that no longer resolve — DaisyUI was removed from the project. All interactive elements (tabs, inputs, buttons) lack visible borders, spacing, and interactive states. The page is functional but looks unfinished.
+**Priority:** P1 — visually broken
+**Status:** OPEN (previous fix incomplete — page still renders as unstyled HTML)
 
-## Before Screenshot
-`/tmp/screenshot-before.png` — captured March 2026, identical rendering on VPS Playwright and MacBook Chrome.
+## Problem Statement
+
+The login page is visually broken. A previous remediation pass replaced some DaisyUI class names but the page still renders as if unstyled. The Playwright audit (March 2026) captured these specific defects:
+
+1. **"Sign In" / "Sign Up" tabs** have NO spacing — they read as a single run "Sign InSign Up"
+2. **"Email" label and placeholder** overlap — reads as "Emailyou@example.com"
+3. **"Password" label and bullet dots** overlap — reads as "Password••••••••"
+4. **Input fields** have NO visible borders or backgrounds — completely invisible against the card
+5. **"Sign In" button** has NO background color — just floating text
+6. **"or" divider** has NO horizontal lines — just the word "or" floating
+7. **Google OAuth button** has NO background or border — just "G Continue with Google" floating
+8. **Card container** has NO visible border or shadow — blends into the page background
+9. **Overall:** the form looks like raw unstyled HTML, not a professional dark-themed app
+
+## Root Cause Hypothesis
+
+The previous spec prescribed correct class replacements, but either (a) the fix was never applied, (b) the classes were applied but globals.css token definitions are missing/broken for these utilities, or (c) Tailwind is not generating the utility classes for the forge tokens. The implementing agent must diagnose which case applies before making changes.
 
 ## Acceptance Criteria
 
+### 0. Diagnosis
+- [ ] Verify that `src/styles/globals.css` defines all required CSS custom properties (`--card`, `--border`, `--input`, `--primary`, `--primary-foreground`, `--muted-foreground`, `--background`, `--secondary`, `--ring`, `--destructive`)
+- [ ] Verify that these properties are registered in the `@theme inline` block so Tailwind generates utility classes
+- [ ] Inspect the current `LoginPage.tsx` to identify which DaisyUI classes remain and which forge classes were applied but aren't rendering
+- [ ] Fix any globals.css or Tailwind config issues first — they affect ALL pages
+
 ### 1. Card container
-- Replace `bg-base-100` on outer div with `bg-background`
-- Replace `bg-base-200` on card div with `bg-card`
-- Remove `card` and `card-body` DaisyUI classes
-- Add `border border-border rounded-lg p-6` to the card div for a visible border and padding
-- Add `shadow-xl` (already present, keep it)
+- [ ] Card has visible border: `bg-card border border-border rounded-lg p-6 shadow-xl`
+- [ ] Card is visually distinct from page background (`bg-card` #18181b against `bg-background` #09090b)
+- [ ] Inner content has `flex flex-col gap-6` for vertical rhythm
 
-### 2. Subtitle text
-- Replace `text-base-content/50` with `text-muted-foreground`
+### 2. Sign In / Sign Up tabs
+- [ ] Tab container: `flex gap-2 bg-secondary rounded-lg p-1` (per DESIGN_SYSTEM.md Tabs section)
+- [ ] Active tab: `bg-primary text-primary-foreground rounded-md px-4 py-1.5 text-sm font-medium`
+- [ ] Inactive tab: `text-muted-foreground hover:text-foreground rounded-md px-4 py-1.5 text-sm`
+- [ ] Visual gap between "Sign In" and "Sign Up" — must NOT read as one word
 
-### 3. Sign In / Sign Up tabs
-- Replace `tabs tabs-boxed bg-base-300` container with `flex gap-2 bg-secondary rounded-lg p-1`
-- Replace `tab flex-1` on each button with `flex-1 py-1.5 px-3 rounded-md text-sm font-medium transition-colors`
-- Active tab state: `bg-primary text-primary-foreground` (instead of `tab-active`)
-- Inactive tab state: `text-muted-foreground hover:text-foreground`
-- This fixes the "jammed together" issue by introducing proper flex layout with gap
+### 3. Form labels
+- [ ] Labels use `text-xs text-muted-foreground` (per DESIGN_SYSTEM.md Labels)
+- [ ] `gap-1.5` between label and input (per DESIGN_SYSTEM.md Form field gap)
+- [ ] Labels do NOT overlap input text or placeholder — they are above, with clear separation
 
-### 4. Form labels
-- Replace `label py-0` with just a plain element (no DaisyUI `label` class)
-- Replace `label-text text-xs text-base-content/70` with `text-xs text-muted-foreground`
-- Remove the inner `<span>` wrapper — make `<label>` the direct text container
-- Remove `form-control gap-1` and replace with `flex flex-col gap-1.5`
-- This fixes the "labels overlap inputs" issue by removing DaisyUI's `label` positioning
+### 4. Input fields
+- [ ] Inputs have visible borders: `w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring`
+- [ ] Border (#3f3f46) is visible against card background (#18181b)
+- [ ] Placeholder text is dimmer than label text (muted-foreground)
 
-### 5. Input fields
-- Replace `input input-bordered input-sm` with `w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring`
-- This gives inputs a visible `border-input` border (#3f3f46) against the card background (#18181b)
+### 5. Error alert
+- [ ] Error message: `rounded-md border border-destructive/50 bg-destructive/10 px-3 py-2 text-sm text-destructive`
 
-### 6. Error alert
-- Replace `alert alert-error py-2 text-sm` with `rounded-md border border-destructive/50 bg-destructive/10 px-3 py-2 text-sm text-destructive`
+### 6. Submit button (Sign In / Create Account)
+- [ ] Button has visible primary background: `w-full rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90 transition-colors disabled:opacity-50`
+- [ ] Loading spinner uses CSS-only: `h-4 w-4 rounded-full border-2 border-primary-foreground border-t-transparent animate-spin` (NOT DaisyUI `loading` class)
 
-### 7. Submit button (Sign In / Create Account)
-- Replace `btn btn-primary btn-sm` with `w-full rounded-md bg-primary px-3 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90 transition-colors disabled:opacity-50`
-- Loading spinner: replace `loading loading-spinner loading-xs` with an inline SVG spinner or simple text "..." (DaisyUI `loading` class no longer works)
+### 7. "or" divider
+- [ ] Horizontal lines visible on both sides of "or" text
+- [ ] Pattern: flex container with `h-px bg-border flex-1` on each side, `text-xs text-muted-foreground px-3` for "or"
 
-### 8. "or" divider
-- Replace `divider text-xs text-base-content/40 my-0` with a manual flex divider:
-  ```
-  flex items-center gap-3 text-xs text-muted-foreground
-  ```
-  With `<div className="flex-1 h-px bg-border" />` on each side of the "or" text
+### 8. Google OAuth button
+- [ ] Outline button style: `w-full flex items-center justify-center gap-2 rounded-md border border-border bg-background px-4 py-2 text-sm text-foreground hover:bg-secondary transition-colors disabled:opacity-50`
 
-### 9. Google OAuth button
-- Replace `btn btn-outline btn-sm gap-2` with `w-full flex items-center justify-center gap-2 rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground hover:bg-secondary transition-colors disabled:opacity-50`
+### 9. All form elements labeled
+- [ ] Every `<input>` has a unique `id` and corresponding `<label htmlFor={id}>`
 
-### 10. Overall card spacing
-- Replace `gap-6` (from `card-body gap-6`) with `flex flex-col gap-6` on the inner container (since `card-body` flex behavior is gone)
+## Design Reference
+
+- **DESIGN_SYSTEM.md** sections: Color Tokens, Inputs, Buttons (Primary, Outline), Tabs, Dividers, Alerts, Cards
+- **Layout:** Centered content pattern (`flex items-center justify-center min-h-screen`) with `bg-background` page background
 
 ## Constraints
-- Must use forge theme tokens only (`bg-card`, `border-border`, `bg-primary`, `text-foreground`, `text-muted-foreground`, `bg-secondary`, `border-input`, `ring-ring`, `bg-background`, `text-primary-foreground`, `text-destructive`, `bg-destructive`)
-- Must not use DaisyUI classes (all must be removed)
-- Must not hardcode hex colors
-- All inputs must retain their `id` + `<label htmlFor>` pairing (existing CLAUDE.md rule)
-- Single file change
+
+- Must use forge theme tokens only — no DaisyUI classes, no hardcoded hex colors
+- Single file change: `src/pages/LoginPage.tsx` (unless globals.css diagnosis reveals missing tokens)
+- Must preserve all functional behavior (auth flow, error handling, tab switching)
 
 ## Files to Modify
+
 - `/data/projects/arrangement-forge/src/pages/LoginPage.tsx`
+- `/data/projects/arrangement-forge/src/styles/globals.css` (only if diagnosis reveals missing tokens)
 
 ## Visual Verification
-Agent must take `/screenshot before` and `/screenshot after` per the Visual Verification Protocol.
+
+Agent must take a Playwright screenshot of `http://localhost:5173/login` before and after changes. The after screenshot must show:
+- Visible card with border against dark background
+- Two distinct tab buttons with gap between them
+- Input fields with visible borders
+- Buttons with visible backgrounds
+- Divider lines flanking "or"
