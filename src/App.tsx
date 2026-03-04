@@ -9,8 +9,8 @@ import SettingsPage from '@/pages/SettingsPage';
 
 function LoadingScreen() {
   return (
-    <div className="min-h-screen bg-base-100 flex items-center justify-center">
-      <span className="loading loading-spinner loading-lg text-primary" />
+    <div className="min-h-screen bg-background flex items-center justify-center">
+      <div className="h-8 w-8 rounded-full border-2 border-primary border-t-transparent animate-spin" />
     </div>
   );
 }
@@ -30,7 +30,7 @@ const router = createBrowserRouter([
   { path: '/settings', element: <AuthGuard><SettingsPage /></AuthGuard> },
 ]);
 
-export default function App() {
+export function App() {
   const { initAuth } = useAuth();
 
   useEffect(() => {

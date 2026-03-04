@@ -29,13 +29,13 @@ export function ChordLane() {
   }
 
   return (
-    <div className="flex h-6 bg-base-200/50 border-t border-base-300 border-b border-base-300">
+    <div className="flex h-6 bg-secondary/50 border-t border-border border-b border-border">
       {/* Gutter */}
       <div
         style={{ width: GUTTER_WIDTH, position: 'sticky', left: 0, zIndex: 2 }}
-        className="shrink-0 bg-base-200 border-r border-base-300 flex items-center justify-center"
+        className="shrink-0 bg-secondary border-r border-border flex items-center justify-center"
       >
-        <span className="text-[9px] text-base-content/30 font-mono uppercase tracking-wider">Chords</span>
+        <span className="text-[9px] text-muted-foreground/30 font-mono uppercase tracking-wider">Chords</span>
       </div>
 
       {/* Chord cells */}
@@ -62,11 +62,11 @@ export function ChordLane() {
               key={b}
               style={{ flex: 1 }}
               className={`flex items-center justify-center border-r cursor-default overflow-hidden
-                ${sectionStart ? 'border-base-content/15' : 'border-base-content/8'}
+                ${sectionStart ? 'border-foreground/15' : 'border-foreground/8'}
               `}
               title={tooltip}
             >
-              <span className="text-[10px] font-bold text-base-content/50 truncate px-0.5">
+              <span className="text-[10px] font-bold text-muted-foreground truncate px-0.5">
                 {label}
               </span>
             </div>

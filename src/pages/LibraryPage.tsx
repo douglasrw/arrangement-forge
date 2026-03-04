@@ -103,7 +103,7 @@ export default function LibraryPage() {
             disabled={creating}
           >
             {creating
-              ? <span className="loading loading-spinner loading-xs" />
+              ? <span className="inline-block h-3 w-3 rounded-full border-2 border-primary-foreground border-t-transparent animate-spin" />
               : '+ New Project'}
           </button>
         </div>
@@ -143,7 +143,7 @@ export default function LibraryPage() {
         {/* Loading */}
         {loading && (
           <div className="flex justify-center py-16">
-            <span className="loading loading-spinner loading-lg text-primary" />
+            <div className="h-8 w-8 rounded-full border-2 border-primary border-t-transparent animate-spin" />
           </div>
         )}
 
@@ -157,7 +157,7 @@ export default function LibraryPage() {
               onClick={handleCreate}
               disabled={creating}
             >
-              {creating ? <span className="loading loading-spinner loading-sm" /> : '+ New Project'}
+              {creating ? <span className="inline-block h-3 w-3 rounded-full border-2 border-primary-foreground border-t-transparent animate-spin" /> : '+ New Project'}
             </button>
           </div>
         )}

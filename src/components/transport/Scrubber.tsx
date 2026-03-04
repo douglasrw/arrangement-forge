@@ -15,7 +15,7 @@ export function Scrubber({ value, max, onChange }: Props) {
       step={0.1}
       value={value}
       onChange={(e) => onChange(parseFloat(e.target.value))}
-      className="range range-xs range-primary flex-1"
+      className="h-1 flex-1 appearance-none rounded-full bg-secondary accent-primary"
       style={{ cursor: 'pointer' }}
     />
   );
