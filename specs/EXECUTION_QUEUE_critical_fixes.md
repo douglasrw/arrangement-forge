@@ -821,7 +821,7 @@ Behavioral:
 
 ---
 
-### [ ] T6 -- Delete dead code (useMobile.ts)
+### [x] T6 -- Delete dead code (useMobile.ts)
 
 **Files:** `src/hooks/useMobile.ts` (delete)
 **Depends on:** none
