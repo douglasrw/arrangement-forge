@@ -10,6 +10,8 @@ import { MixerDrawer } from '@/components/mixer/MixerDrawer';
 import { useKeyboardShortcuts } from '@/hooks/useKeyboardShortcuts';
 import { useAutoSave } from '@/hooks/useAutoSave';
 import { useSelectionStore } from '@/store/selection-store';
+import { useUiStore } from '@/store/ui-store';
+import type { AppStatus } from './StatusBar';
 
 export function AppShell() {
   useKeyboardShortcuts();
@@ -24,6 +26,18 @@ export function AppShell() {
 
   const selectionLevel = useSelectionStore((s) => s.level);
   const [panelContext, setPanelContext] = useState<PanelContext>({ mode: 'default' });
+
+  const unsavedChanges = useUiStore((s) => s.unsavedChanges);
+  const generationState = useUiStore((s) => s.generationState);
+  const systemStatus = useUiStore((s) => s.systemStatus);
+
+  /* Derive StatusBar status from uiStore */
+  const derivedStatus: AppStatus =
+    systemStatus === 'error' ? 'error' :
+    generationState === 'generating' ? 'generating' :
+    systemStatus === 'saving' ? 'saving' :
+    unsavedChanges ? 'unsaved' :
+    'saved';
 
   /* Sync panel context when selection is cleared (e.g. Escape key) */
   useEffect(() => {
@@ -56,7 +70,7 @@ export function AppShell() {
         </div>
       </div>
 
-      <StatusBar />
+      <StatusBar status={derivedStatus} />
     </div>
   );
 }

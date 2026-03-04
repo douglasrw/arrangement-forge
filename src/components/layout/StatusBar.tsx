@@ -1,6 +1,6 @@
 import { cn } from "@/lib/utils"
 
-export type AppStatus = "saved" | "generating" | "error"
+export type AppStatus = "saved" | "unsaved" | "saving" | "generating" | "error"
 
 const STATUS_CONFIG: Record<
   AppStatus,
@@ -9,6 +9,14 @@ const STATUS_CONFIG: Record<
   saved: {
     dot: "bg-[#22c55e]",
     label: "Saved",
+  },
+  unsaved: {
+    dot: "bg-[#fbbf24]",
+    label: "Unsaved changes",
+  },
+  saving: {
+    dot: "bg-[#3b82f6] animate-pulse",
+    label: "Saving\u2026",
   },
   generating: {
     dot: "bg-[#fbbf24] animate-pulse",

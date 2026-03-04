@@ -477,7 +477,7 @@ on the arrangement area).
 
 ---
 
-### [ ] T4 -- Wire StatusBar to actual system status
+### [x] T4 -- Wire StatusBar to actual system status
 
 **Files:** `src/components/layout/StatusBar.tsx`, `src/components/layout/AppShell.tsx`
 **Depends on:** none
