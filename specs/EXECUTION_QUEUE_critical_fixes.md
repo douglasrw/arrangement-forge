@@ -399,7 +399,7 @@ Open the app at http://localhost:5173. Generate an arrangement if none exists.
 
 ---
 
-### [ ] T3 -- Connect MixerDrawer to uiStore.mixerExpanded
+### [x] T3 -- Connect MixerDrawer to uiStore.mixerExpanded
 
 **Files:** `src/components/mixer/MixerDrawer.tsx`
 **Depends on:** none

@@ -2,6 +2,7 @@ import { useState, useCallback } from "react"
 import { cn } from "@/lib/utils"
 import { X, ChevronDown, ChevronUp } from "lucide-react"
 import { useAudio } from "@/hooks/useAudio"
+import { useUiStore } from "@/store/ui-store"
 import type { DrumKitLike } from "@/audio/drum-kit"
 
 /* ------------------------------------------------------------------ */
@@ -205,7 +206,8 @@ function DrumSubMix({ drumKit }: { drumKit: DrumKitLike | null }) {
 /*  Mixer Drawer                                                       */
 /* ------------------------------------------------------------------ */
 export function MixerDrawer() {
-  const [open, setOpen] = useState(true)
+  const open = useUiStore((s) => s.mixerExpanded)
+  const toggleMixer = useUiStore((s) => s.toggleMixer)
   const [drumSubOpen, setDrumSubOpen] = useState(false)
   const [channels, setChannels] = useState(DEFAULT_CHANNELS)
   const { engine, transportState } = useAudio()
@@ -238,7 +240,7 @@ export function MixerDrawer() {
       {/* Header strip — always visible, acts as toggle */}
       <button
         type="button"
-        onClick={() => setOpen(!open)}
+        onClick={toggleMixer}
         className="flex w-full items-center justify-between px-4 py-1.5"
       >
         <span className="text-xs font-medium uppercase tracking-widest text-[#71717a]">
