@@ -127,7 +127,7 @@ function ChordDisplayToggle({
 }) {
   return (
     <div
-      className="flex h-7 items-center overflow-hidden rounded-md border border-border/30"
+      className="flex gap-1 rounded-lg bg-secondary p-1"
       role="radiogroup"
       aria-label="Chord display mode"
     >
@@ -137,25 +137,24 @@ function ChordDisplayToggle({
         aria-checked={mode === "letter"}
         onClick={() => mode !== "letter" && onToggle()}
         className={cn(
-          "px-2 py-0.5 text-xs font-medium transition-colors",
+          "rounded-md px-4 py-1.5 text-sm font-medium transition-colors",
           mode === "letter"
-            ? "bg-ring/20 text-ring"
-            : "bg-secondary/50 text-muted-foreground hover:text-foreground"
+            ? "bg-primary text-primary-foreground"
+            : "text-muted-foreground hover:text-foreground"
         )}
       >
         A
       </button>
-      <div className="h-full w-px bg-border/30" />
       <button
         type="button"
         role="radio"
         aria-checked={mode === "roman"}
         onClick={() => mode !== "roman" && onToggle()}
         className={cn(
-          "px-2 py-0.5 text-xs font-medium transition-colors",
+          "rounded-md px-4 py-1.5 text-sm font-medium transition-colors",
           mode === "roman"
-            ? "bg-ring/20 text-ring"
-            : "bg-secondary/50 text-muted-foreground hover:text-foreground"
+            ? "bg-primary text-primary-foreground"
+            : "text-muted-foreground hover:text-foreground"
         )}
       >
         I
@@ -264,7 +263,7 @@ export function TopBar() {
             <div
               className={cn(
                 "size-1.5 rounded-full transition-colors",
-                !unsavedChanges ? "bg-[#4ade80]" : "bg-[#fbbf24]"
+                !unsavedChanges ? "bg-status-ready" : "bg-status-unsaved"
               )}
             />
             {/* Tooltip */}

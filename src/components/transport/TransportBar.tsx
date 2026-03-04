@@ -120,7 +120,7 @@ export function TransportBar() {
           className={cn(
             "flex size-9 items-center justify-center rounded-lg transition-all",
             isPlaying
-              ? "bg-[#14b8a6] text-background shadow-[0_0_12px_rgba(6,182,212,0.4)]"
+              ? "bg-instrument-strings text-background shadow-[0_0_12px_rgba(6,182,212,0.4)]"
               : "bg-input text-zinc-200 hover:bg-zinc-600"
           )}
           aria-label={isPlaying ? "Pause" : "Play"}
@@ -211,7 +211,7 @@ export function TransportBar() {
           className={cn(
             "flex size-7 items-center justify-center rounded-md transition-colors",
             loopActive
-              ? "bg-[#14b8a6]/15 text-[#5eead4]"
+              ? "bg-instrument-strings/15 text-playhead-light"
               : "text-zinc-500 hover:text-muted-foreground"
           )}
           aria-label="Toggle loop"
@@ -227,7 +227,7 @@ export function TransportBar() {
           className={cn(
             "flex size-7 items-center justify-center rounded-md transition-colors",
             metronomeActive
-              ? "bg-[#14b8a6]/15 text-[#5eead4]"
+              ? "bg-instrument-strings/15 text-playhead-light"
               : "text-zinc-500 hover:text-muted-foreground"
           )}
           aria-label="Toggle metronome"

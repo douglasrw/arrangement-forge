@@ -21,6 +21,44 @@
   --color-input: var(--input);
   --color-ring: var(--ring);
   --color-sidebar: var(--sidebar);
+
+  /* Status indicators */
+  --color-status-ready: var(--status-ready);
+  --color-status-saving: var(--status-saving);
+  --color-status-unsaved: var(--status-unsaved);
+  --color-status-error: var(--status-error);
+
+  /* Scope badges */
+  --color-scope-song: var(--scope-song);
+  --color-scope-section: var(--scope-section);
+  --color-scope-block: var(--scope-block);
+
+  /* Playhead */
+  --color-playhead: var(--playhead);
+  --color-playhead-light: var(--playhead-light);
+
+  /* Instrument identity */
+  --color-instrument-drums: var(--instrument-drums);
+  --color-instrument-bass: var(--instrument-bass);
+  --color-instrument-piano: var(--instrument-piano);
+  --color-instrument-guitar: var(--instrument-guitar);
+  --color-instrument-strings: var(--instrument-strings);
+
+  /* Warning (confirm dialogs, etc.) */
+  --color-warning: var(--warning);
+  --color-confirm-danger: var(--confirm-danger);
+
+  /* Mixer meter gradient */
+  --color-meter-green: var(--meter-green);
+  --color-meter-yellow: var(--meter-yellow);
+  --color-meter-red: var(--meter-red);
+
+  /* Master fader thumb */
+  --color-master-thumb: var(--master-thumb);
+
+  /* Surface variants */
+  --color-surface-sunken: var(--surface-sunken);
+  --color-surface-raised: var(--surface-raised);
 }
 
 :root {
@@ -52,6 +90,37 @@
   --instrument-piano: #fbbf24;
   --instrument-guitar: #a78bfa;
   --instrument-strings: #14b8a6;
+
+  /* Status indicators */
+  --status-ready: #22c55e;
+  --status-saving: #3b82f6;
+  --status-unsaved: #fbbf24;
+  --status-error: #fbbf24;
+
+  /* Scope badges */
+  --scope-song: #0891b2;
+  --scope-section: #f59e0b;
+  --scope-block: #ea580c;
+
+  /* Playhead */
+  --playhead: #2dd4bf;
+  --playhead-light: #5eead4;
+
+  /* Warning (confirm dialogs, etc.) */
+  --warning: #fbbf24;
+  --confirm-danger: #f87171;
+
+  /* Mixer meter gradient */
+  --meter-green: #14b8a6;
+  --meter-yellow: #fbbf24;
+  --meter-red: #ef4444;
+
+  /* Master fader thumb */
+  --master-thumb: #e4e4e7;
+
+  /* Surface variants */
+  --surface-sunken: #0a0a0c;
+  --surface-raised: #141416;
 }
 
 html, body {

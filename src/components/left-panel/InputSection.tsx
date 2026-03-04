@@ -114,10 +114,10 @@ export function InputSection() {
         onClick={() => void runGeneration(false)}
         disabled={isGenerating || !chordChartRaw.trim()}
         className={cn(
-          "w-full rounded-xl py-2.5 text-sm font-semibold transition-colors",
+          "w-full rounded-md px-4 py-2 text-sm font-medium transition-colors",
           isGenerating || !chordChartRaw.trim()
-            ? "cursor-not-allowed bg-secondary text-muted-foreground"
-            : "bg-[#14b8a6] text-background shadow-[0_0_20px_rgba(6,182,212,0.3)] hover:bg-[#2dd4bf]"
+            ? "cursor-not-allowed opacity-50 bg-primary text-primary-foreground"
+            : "bg-primary text-primary-foreground hover:bg-primary/90"
         )}
       >
         {isGenerating ? "Generating..." : "Generate"}

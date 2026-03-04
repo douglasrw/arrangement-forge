@@ -53,7 +53,7 @@ function EmptyState({ onGenerate }: { onGenerate: () => void }) {
       <button
         type="button"
         onClick={onGenerate}
-        className="mt-2 rounded-xl bg-[#14b8a6] px-8 py-3 text-sm font-semibold text-background shadow-[0_0_20px_rgba(6,182,212,0.3)] transition-colors hover:bg-[#2dd4bf]"
+        className="mt-2 rounded-xl bg-instrument-strings px-8 py-3 text-sm font-semibold text-background shadow-[0_0_20px_rgba(6,182,212,0.3)] transition-colors hover:bg-playhead"
       >
         Generate
       </button>
@@ -144,7 +144,7 @@ export function ArrangementView({
     .map((stem) => ({
       id: stem.id,
       instrument: stem.instrument,
-      color: INSTRUMENT_COLORS[stem.instrument] ?? "#a1a1aa",
+      color: INSTRUMENT_COLORS[stem.instrument] ?? "var(--muted-foreground)",
       label: stem.instrument.toUpperCase(),
     }))
 
@@ -174,7 +174,7 @@ export function ArrangementView({
               className="flex shrink-0 items-center gap-1.5 border-b border-secondary px-2"
               style={{
                 height: laneH,
-                backgroundColor: isEven ? "rgba(9,9,11,0.6)" : "#18181b",
+                backgroundColor: isEven ? "color-mix(in srgb, var(--background) 60%, transparent)" : "var(--card)",
               }}
             >
               <div
@@ -190,7 +190,7 @@ export function ArrangementView({
         {/* Chord row */}
         <div
           className="flex shrink-0 items-center gap-1.5 border-b border-secondary border-t border-t-border/50 px-2"
-          style={{ height: CHORD_H, backgroundColor: "#18181b" }}
+          style={{ height: CHORD_H, backgroundColor: "var(--card)" }}
         >
           <span className="text-[10px] font-medium uppercase tracking-[0.1em] text-zinc-600">
             CHORDS
@@ -280,8 +280,8 @@ export function ArrangementView({
                     style={{
                       height: isMajor ? 10 : 5,
                       backgroundColor: isMajor
-                        ? "#52525b"
-                        : "rgba(63,63,70,0.4)",
+                        ? "var(--muted-foreground)"
+                        : "color-mix(in srgb, var(--border) 40%, transparent)",
                     }}
                   />
                   {/* Bar number — show every bar */}
@@ -310,8 +310,8 @@ export function ArrangementView({
                 style={{
                   height: laneH,
                   backgroundColor: isEven
-                    ? "rgba(9,9,11,0.6)"
-                    : "#18181b",
+                    ? "color-mix(in srgb, var(--background) 60%, transparent)"
+                    : "var(--card)",
                 }}
               >
                 {/* Vertical grid lines */}
@@ -377,7 +377,7 @@ export function ArrangementView({
             className="relative shrink-0 border-t border-border/50"
             style={{
               height: CHORD_H,
-              backgroundColor: "#0a0a0c",
+              backgroundColor: "var(--surface-sunken)",
             }}
           >
             {/* Vertical ticks at each chord */}
@@ -413,14 +413,14 @@ export function ArrangementView({
               <svg width="12" height="8" viewBox="0 0 12 8">
                 <polygon
                   points="0,0 12,0 6,8"
-                  fill="#2dd4bf"
+                  fill="var(--playhead)"
                   fillOpacity={0.9}
                 />
               </svg>
             </div>
             {/* Line */}
             <div
-              className="absolute left-[5px] top-0 h-full w-[2px] bg-[#2dd4bf]/80"
+              className="absolute left-[5px] top-0 h-full w-[2px] bg-playhead/80"
               style={{ marginLeft: -1 }}
             />
           </div>

@@ -7,19 +7,19 @@ const STATUS_CONFIG: Record<
   { dot: string; label: string }
 > = {
   saved: {
-    dot: "bg-[#22c55e]",
+    dot: "bg-status-ready",
     label: "Saved",
   },
   unsaved: {
-    dot: "bg-[#fbbf24]",
+    dot: "bg-status-unsaved",
     label: "Unsaved changes",
   },
   saving: {
-    dot: "bg-[#3b82f6] animate-pulse",
+    dot: "bg-status-saving animate-pulse",
     label: "Saving\u2026",
   },
   generating: {
-    dot: "bg-[#fbbf24] animate-pulse",
+    dot: "bg-status-unsaved animate-pulse",
     label: "Generating\u2026",
   },
   error: {

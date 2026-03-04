@@ -57,7 +57,7 @@ export function ConfirmDialog({
               height="32"
               viewBox="0 0 24 24"
               fill="none"
-              className="text-[#fbbf24]"
+              className="text-warning"
             >
               <path
                 d="M12 2L1 21h22L12 2z"
@@ -109,8 +109,8 @@ export function ConfirmDialog({
             className={cn(
               "flex-1 rounded-xl border py-2.5 text-sm font-medium transition-colors",
               variant === "danger"
-                ? "border-destructive/30 bg-destructive/10 text-[#f87171] hover:bg-destructive/20"
-                : "border-[#fbbf24]/30 bg-[#fbbf24]/10 text-[#fbbf24] hover:bg-[#fbbf24]/20"
+                ? "border-destructive/30 bg-destructive/10 text-confirm-danger hover:bg-destructive/20"
+                : "border-warning/30 bg-warning/10 text-warning hover:bg-warning/20"
             )}
           >
             {confirmLabel}

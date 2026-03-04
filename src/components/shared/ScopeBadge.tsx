@@ -9,13 +9,13 @@ const SCOPE_STYLES: Record<Scope, { bg: string; text: string; label: string }> =
     label: "Song",
   },
   section: {
-    bg: "bg-[#14b8a6]/10",
-    text: "text-[#2dd4bf]",
+    bg: "bg-instrument-strings/10",
+    text: "text-playhead",
     label: "Section",
   },
   block: {
-    bg: "bg-[#f59e0b]/10",
-    text: "text-[#fbbf24]",
+    bg: "bg-scope-section/10",
+    text: "text-warning",
     label: "Block",
   },
 }

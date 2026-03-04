@@ -115,18 +115,15 @@ export function StyleControlsSection() {
               <span className="text-[11px] font-medium text-muted-foreground">
                 {slider.label}
               </span>
-              <span className="text-[11px] font-semibold text-foreground">
+              <span className="shrink-0 whitespace-nowrap text-[11px] font-semibold text-foreground">
                 {getDisplayValue(slider.label, slider.value)}
               </span>
             </div>
             {/* Custom slider with teal accent fill */}
             <div className="group relative h-1.5 w-full cursor-pointer rounded-full bg-secondary">
               <div
-                className="absolute inset-y-0 left-0 rounded-full"
-                style={{
-                  width: `${slider.value}%`,
-                  background: "#0891b2",
-                }}
+                className="absolute inset-y-0 left-0 rounded-full bg-ring"
+                style={{ width: `${slider.value}%` }}
               />
               <input
                 type="range"
