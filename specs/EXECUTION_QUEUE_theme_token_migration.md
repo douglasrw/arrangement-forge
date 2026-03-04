@@ -792,25 +792,25 @@ After all tasks pass, verify the *system-level behavior* matches the original in
 
 For each claim in the original intent, point to the line of code that makes it true:
 
-- [ ] No `#09090b` hex literals remain in any component file's className or class string -> Verify with: `grep -rn "#09090b" src/components/ src/pages/` returns zero className matches (inline style and JS fallback matches are acceptable)
-- [ ] No `#18181b` hex literals remain in component classNames -> Verify with: `grep -rn "#18181b" src/components/` shows only inline `style={}` occurrences, not className
-- [ ] No `#27272a` hex literals remain in component classNames -> Verify with: `grep -rn "#27272a" src/components/` shows only inline `style={}` or linear-gradient occurrences
-- [ ] No `#3f3f46` hex literals remain in component classNames -> Verify with: `grep -rn "#3f3f46" src/components/` shows zero className matches
-- [ ] No `#a1a1aa` hex literals remain in component classNames -> Verify with: `grep -rn "#a1a1aa" src/components/` shows only JS fallback / SVG stroke occurrences
-- [ ] No `#0891b2` hex literals remain in component classNames -> Verify with: `grep -rn "#0891b2" src/components/` shows only inline `style={}` occurrences
-- [ ] `src/styles/globals.css` `:root` block is unchanged -> The theme definition was not modified during this migration
+- [x] No `#09090b` hex literals remain in any component file's className or class string -> Verify with: `grep -rn "#09090b" src/components/ src/pages/` returns zero className matches (inline style and JS fallback matches are acceptable)
+- [x] No `#18181b` hex literals remain in component classNames -> Verify with: `grep -rn "#18181b" src/components/` shows only inline `style={}` occurrences, not className
+- [x] No `#27272a` hex literals remain in component classNames -> Verify with: `grep -rn "#27272a" src/components/` shows only inline `style={}` or linear-gradient occurrences
+- [x] No `#3f3f46` hex literals remain in component classNames -> Verify with: `grep -rn "#3f3f46" src/components/` shows zero className matches
+- [x] No `#a1a1aa` hex literals remain in component classNames -> Verify with: `grep -rn "#a1a1aa" src/components/` shows only JS fallback / SVG stroke occurrences
+- [x] No `#0891b2` hex literals remain in component classNames -> Verify with: `grep -rn "#0891b2" src/components/` shows only inline `style={}` occurrences
+- [x] `src/styles/globals.css` `:root` block is unchanged -> The theme definition was not modified during this migration
 
 ### Behavioral (end-to-end demo)
 
 **Demo scenario:** A skeptical observer verifies the app looks identical after migration.
 
-- [ ] Step: Open the app in a browser at http://localhost:5173. Navigate to the Library page.
+- [x] Step: Open the app in a browser at http://localhost:5173. Navigate to the Library page.
   - Expect: Project cards display with correct dark theme. Genre badges are teal. Instrument density bars have correct colors.
-- [ ] Step: Click a project to open the Editor. Look at the full editor layout (arrangement grid, mixer, transport bar, left panel).
+- [x] Step: Click a project to open the Editor. Look at the full editor layout (arrangement grid, mixer, transport bar, left panel).
   - Expect: All UI elements have the same dark theme styling as before the migration. No white backgrounds, no missing colors, no broken borders. The arrangement grid has properly colored section headers, stem lanes, and chord lane.
-- [ ] Step: Click a section header, then a block. Inspect the left panel contexts (SectionContext, BlockContext).
+- [x] Step: Click a section header, then a block. Inspect the left panel contexts (SectionContext, BlockContext).
   - Expect: Labels, inputs, sliders, buttons all styled correctly. Teal accents on toggle switches, focus rings, and override links. Instrument-colored elements (dots, sliders) still use their distinct colors.
-- [ ] Step: Open the ConfirmDialog by attempting to delete a project from the Library page.
+- [x] Step: Open the ConfirmDialog by attempting to delete a project from the Library page.
   - Expect: Dark overlay, card with warning icon, gray cancel button, red delete button -- all identical to before.
 
 Theme Token Migration is complete when all tests pass AND both intent trace checks pass.
