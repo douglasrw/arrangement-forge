@@ -15,6 +15,8 @@ interface ProjectStore {
   chatMessages: AiChatMessage[];
   /** Flag set by regenerateDrumsOnly(), read and cleared by useAudio */
   drumOnlyUpdate: boolean;
+  /** Flag set by setAllInstrumentBlocks(), read and cleared by useAudio */
+  allInstrumentsUpdate: boolean;
 
   setProject: (project: Project) => void;
   updateProject: (partial: Partial<Project>) => void;
@@ -27,6 +29,9 @@ interface ProjectStore {
   /** Set arrangement with drum-only update flag for hot-swap path */
   setDrumBlocks: (updatedBlocks: Block[]) => void;
   clearDrumOnlyUpdate: () => void;
+  /** Set arrangement blocks with all-instruments update flag for per-instrument hot-swap */
+  setAllInstrumentBlocks: (updatedBlocks: Block[]) => void;
+  clearAllInstrumentsUpdate: () => void;
   clearArrangement: () => void;
 
   updateStem: (stemId: string, partial: Partial<Stem>) => void;
@@ -61,6 +66,7 @@ export const useProjectStore = create<ProjectStore>()((set, get) => ({
   chords: [],
   chatMessages: [],
   drumOnlyUpdate: false,
+  allInstrumentsUpdate: false,
 
   setProject: (project) => set({ project }),
 
@@ -76,6 +82,11 @@ export const useProjectStore = create<ProjectStore>()((set, get) => ({
     set({ blocks: updatedBlocks, drumOnlyUpdate: true }),
 
   clearDrumOnlyUpdate: () => set({ drumOnlyUpdate: false }),
+
+  setAllInstrumentBlocks: (updatedBlocks) =>
+    set({ blocks: updatedBlocks, allInstrumentsUpdate: true }),
+
+  clearAllInstrumentsUpdate: () => set({ allInstrumentsUpdate: false }),
 
   clearArrangement: () => set({ stems: [], sections: [], blocks: [], chords: [] }),
 

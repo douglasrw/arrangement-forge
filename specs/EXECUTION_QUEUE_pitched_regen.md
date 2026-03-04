@@ -214,7 +214,7 @@ of 1. The blocks should have section_name values matching 'Intro', 'Verse',
 
 ---
 
-### [ ] T2 — Add store action for all-instrument hot-swap updates
+### [x] T2 — Add store action for all-instrument hot-swap updates
 
 **Files:** `src/store/project-store.ts`
 **Depends on:** T1
