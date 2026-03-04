@@ -2,6 +2,7 @@ import { create } from 'zustand';
 import type { Project, Stem, Section, Block, Chord, AiChatMessage } from '@/types';
 import { useUndoStore } from './undo-store';
 import { useUiStore } from './ui-store';
+import { snapshotArrangement } from '@/lib/undo-helpers';
 
 const genId = () => crypto.randomUUID();
 
@@ -50,10 +51,6 @@ interface ProjectStore {
   getBlocksForStem: (stemId: string) => Block[];
   getBlocksForSection: (sectionId: string) => Block[];
   getSectionAtBar: (bar: number) => Section | undefined;
-}
-
-function snapshotBlocks(blocks: Block[]): string {
-  return JSON.stringify(blocks);
 }
 
 export const useProjectStore = create<ProjectStore>()((set, get) => ({
@@ -151,16 +148,13 @@ export const useProjectStore = create<ProjectStore>()((set, get) => ({
     if (!original) return;
     if (atBar <= original.startBar || atBar > original.endBar) return;
 
-    const before = snapshotBlocks(blocks);
+    const before = snapshotArrangement(get());
     const block1: Block = { ...original, endBar: atBar - 1 };
     const block2: Block = { ...original, id: genId(), startBar: atBar };
     const newBlocks = blocks.map((b) => (b.id === blockId ? block1 : b)).concat(block2);
     set({ blocks: newBlocks });
-    useUndoStore.getState().pushUndo(
-      `Split block at bar ${atBar}`,
-      before,
-      snapshotBlocks(newBlocks)
-    );
+    const after = snapshotArrangement(get());
+    useUndoStore.getState().pushUndo(`Split block at bar ${atBar}`, before, after);
     useUiStore.getState().markDirty();
   },
 
@@ -172,28 +166,21 @@ export const useProjectStore = create<ProjectStore>()((set, get) => ({
     if (b1.stemId !== b2.stemId || b1.sectionId !== b2.sectionId) return;
     if (b1.endBar + 1 !== b2.startBar) return;
 
-    const before = snapshotBlocks(blocks);
+    const before = snapshotArrangement(get());
     const merged: Block = { ...b1, endBar: b2.endBar };
     const newBlocks = blocks.filter((b) => b.id !== blockId1 && b.id !== blockId2).concat(merged);
     set({ blocks: newBlocks });
-    useUndoStore.getState().pushUndo(
-      `Merge blocks (bars ${b1.startBar}-${b2.endBar})`,
-      before,
-      snapshotBlocks(newBlocks)
-    );
+    const after = snapshotArrangement(get());
+    useUndoStore.getState().pushUndo(`Merge blocks (bars ${b1.startBar}-${b2.endBar})`, before, after);
     useUiStore.getState().markDirty();
   },
 
   deleteBlock: (blockId) => {
-    const { blocks } = get();
-    const before = snapshotBlocks(blocks);
-    const newBlocks = blocks.filter((b) => b.id !== blockId);
+    const before = snapshotArrangement(get());
+    const newBlocks = get().blocks.filter((b) => b.id !== blockId);
     set({ blocks: newBlocks });
-    useUndoStore.getState().pushUndo(
-      `Delete block`,
-      before,
-      snapshotBlocks(newBlocks)
-    );
+    const after = snapshotArrangement(get());
+    useUndoStore.getState().pushUndo('Delete block', before, after);
     useUiStore.getState().markDirty();
   },
 
