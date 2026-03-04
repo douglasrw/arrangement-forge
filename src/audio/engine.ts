@@ -4,12 +4,13 @@
 
 import * as Tone from 'tone';
 import type { Block, Stem, Section, InstrumentType, TransportState, CountInSetting } from '@/types';
+import type { DrumKitLike } from '@/audio/drum-kit';
 import { TransportController } from './transport';
 import { Metronome } from './metronome';
 import { getSampler } from './sampler-cache';
 
 export class AudioEngine {
-  private instruments = new Map<InstrumentType, Tone.Sampler>();
+  private instruments = new Map<InstrumentType, Tone.Sampler | DrumKitLike>();
   private channelGains = new Map<InstrumentType, Tone.Gain>();
   private channelPanners = new Map<InstrumentType, Tone.Panner>();
   private stemMuted = new Map<InstrumentType, boolean>();
@@ -94,6 +95,13 @@ export class AudioEngine {
   setPan(instrument: InstrumentType, pan: number): void {
     const panner = this.channelPanners.get(instrument);
     if (panner) panner.pan.value = pan;
+  }
+
+  /** Get the DrumKit instance if loaded, for sub-mix control */
+  getDrumKit(): DrumKitLike | null {
+    const drums = this.instruments.get('drums');
+    if (drums && 'getVoiceGroups' in drums) return drums as DrumKitLike;
+    return null;
   }
 
   setMute(instrument: InstrumentType, muted: boolean): void {
@@ -200,6 +208,8 @@ export class AudioEngine {
 
       const totalBars = sections.reduce((sum, s) => sum + s.barCount, 0);
       const totalSeconds = this.transportController.getTotalDuration(totalBars);
+      Tone.getTransport().loop = true;
+      Tone.getTransport().loopStart = 0;
       Tone.getTransport().loopEnd = totalSeconds;
 
       // Schedule metronome clicks (checks enabled at trigger time)

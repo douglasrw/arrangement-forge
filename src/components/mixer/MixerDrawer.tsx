@@ -1,6 +1,8 @@
 import { useState, useCallback } from "react"
 import { cn } from "@/lib/utils"
-import { X } from "lucide-react"
+import { X, ChevronDown, ChevronUp } from "lucide-react"
+import { useAudio } from "@/hooks/useAudio"
+import type { DrumKitLike } from "@/audio/drum-kit"
 
 /* ------------------------------------------------------------------ */
 /*  Instrument palette (matches sequencer-block.tsx)                   */
@@ -141,11 +143,75 @@ function LevelMeter({ fill }: { fill: number }) {
 }
 
 /* ------------------------------------------------------------------ */
+/*  Drum Sub-Mix Strip                                                 */
+/* ------------------------------------------------------------------ */
+const DRUM_GROUPS = [
+  { name: "kick", label: "Kick" },
+  { name: "snare", label: "Snare" },
+  { name: "hihat", label: "Hi-Hat" },
+  { name: "cymbals", label: "Cymbals" },
+  { name: "toms", label: "Toms" },
+]
+
+function DrumSubMix({ drumKit }: { drumKit: DrumKitLike | null }) {
+  // Local state for sub-mix levels (0-100, maps to gain 0-3)
+  const [levels, setLevels] = useState<Record<string, number>>({
+    kick: 50,
+    snare: 50,
+    hihat: 50,
+    cymbals: 50,
+    toms: 50,
+  })
+
+  const handleChange = useCallback(
+    (groupName: string, value: number) => {
+      setLevels((prev) => ({ ...prev, [groupName]: value }))
+      // Map 0-100 slider to 0-3 gain range (50 = 1.0 = unity)
+      const gain = (value / 50) * 1.0
+      drumKit?.setVoiceGroupGain(groupName, gain)
+    },
+    [drumKit]
+  )
+
+  return (
+    <div className="flex flex-wrap gap-x-4 gap-y-1 px-4 pb-2 pt-1">
+      {DRUM_GROUPS.map((group) => (
+        <div key={group.name} className="flex items-center gap-2" style={{ minWidth: 140 }}>
+          <label
+            htmlFor={`drum-sub-${group.name}`}
+            className="w-14 text-right text-[10px] font-medium text-[#a1a1aa]"
+          >
+            {group.label}
+          </label>
+          <input
+            id={`drum-sub-${group.name}`}
+            type="range"
+            min={0}
+            max={100}
+            value={levels[group.name]}
+            onChange={(e) => handleChange(group.name, Number(e.target.value))}
+            className="h-1 w-20 cursor-pointer appearance-none rounded-full bg-[#3f3f46] accent-[#06b6d4] [&::-webkit-slider-thumb]:size-2.5 [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-[#06b6d4]"
+          />
+          <span className="w-6 text-right font-mono text-[9px] text-[#52525b]">
+            {levels[group.name]}
+          </span>
+        </div>
+      ))}
+    </div>
+  )
+}
+
+/* ------------------------------------------------------------------ */
 /*  Mixer Drawer                                                       */
 /* ------------------------------------------------------------------ */
 export function MixerDrawer() {
-  const [open, setOpen] = useState(false)
+  const [open, setOpen] = useState(true)
+  const [drumSubOpen, setDrumSubOpen] = useState(false)
   const [channels, setChannels] = useState(DEFAULT_CHANNELS)
+  const { engine, transportState } = useAudio()
+
+  const drumKit = engine.getDrumKit()
+  const isPlaying = transportState.playbackState === "playing"
 
   const updateChannel = useCallback(
     (key: InstrumentKey | "master", field: keyof ChannelState, value: boolean | number) => {
@@ -183,19 +249,36 @@ export function MixerDrawer() {
             {/* Instrument channels */}
             {INSTRUMENTS.map((inst) => {
               const ch = channels[inst.key]
+              const isDrums = inst.key === "drums"
               return (
                 <div
                   key={inst.key}
                   className="flex flex-1 flex-col items-center gap-1.5 border-r border-[#27272a] pt-1"
                   style={{ borderTopWidth: 2, borderTopColor: inst.color, borderTopStyle: "solid" }}
                 >
-                  {/* Name */}
-                  <span
-                    className="text-[10px] font-semibold uppercase"
-                    style={{ color: inst.color, letterSpacing: "0.1em" }}
-                  >
-                    {inst.label}
-                  </span>
+                  {/* Name — drums label is clickable to toggle sub-mix */}
+                  {isDrums ? (
+                    <button
+                      type="button"
+                      onClick={() => setDrumSubOpen((v) => !v)}
+                      className="flex items-center gap-0.5 text-[10px] font-semibold uppercase"
+                      style={{ color: inst.color, letterSpacing: "0.1em" }}
+                    >
+                      {inst.label}
+                      {drumSubOpen ? (
+                        <ChevronUp className="size-2.5" />
+                      ) : (
+                        <ChevronDown className="size-2.5" />
+                      )}
+                    </button>
+                  ) : (
+                    <span
+                      className="text-[10px] font-semibold uppercase"
+                      style={{ color: inst.color, letterSpacing: "0.1em" }}
+                    >
+                      {inst.label}
+                    </span>
+                  )}
 
                   {/* M/S buttons */}
                   <div className="flex gap-1">
@@ -255,7 +338,7 @@ export function MixerDrawer() {
 
               {/* Fader + level meters side by side */}
               <div className="flex items-end gap-2">
-                <LevelMeter fill={channels.master.volume * 0.9} />
+                <LevelMeter fill={isPlaying ? channels.master.volume * 0.9 : 0} />
                 <VerticalFader
                   value={channels.master.volume}
                   onChange={(v) => updateChannel("master", "volume", v)}
@@ -269,6 +352,27 @@ export function MixerDrawer() {
               </span>
             </div>
           </div>
+
+          {/* Drum sub-mix strip — collapsible below main mixer */}
+          {drumSubOpen && (
+            <div className="border-t border-[#27272a] bg-[#1a1a1f]">
+              <div className="flex items-center gap-2 px-4 pt-1.5">
+                <span className="text-[10px] font-semibold uppercase tracking-wider text-[#06b6d4]">
+                  Drum Kit Mix
+                </span>
+                <div className="flex-1 border-t border-[#27272a]" />
+                <button
+                  type="button"
+                  onClick={() => setDrumSubOpen(false)}
+                  className="text-[#52525b] hover:text-[#71717a]"
+                  aria-label="Close drum sub-mix"
+                >
+                  <X className="size-3" />
+                </button>
+              </div>
+              <DrumSubMix drumKit={drumKit} />
+            </div>
+          )}
         </div>
       )}
     </div>

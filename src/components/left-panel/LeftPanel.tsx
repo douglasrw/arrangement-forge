@@ -96,7 +96,7 @@ export function LeftPanel({
   return (
     <aside
       className={cn(
-        "flex h-full w-[280px] shrink-0 flex-col bg-sidebar",
+        "flex h-full w-[320px] shrink-0 flex-col bg-sidebar",
         className
       )}
     >

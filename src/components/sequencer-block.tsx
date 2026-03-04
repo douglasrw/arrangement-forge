@@ -12,14 +12,6 @@ export const INSTRUMENT_COLORS: Record<Instrument, string> = {
   strings: "#14b8a6",
 }
 
-const INSTRUMENT_LABELS: Record<Instrument, string> = {
-  drums: "Drums",
-  bass: "Bass",
-  piano: "Piano",
-  guitar: "Guitar",
-  strings: "Strings",
-}
-
 interface SequencerBlockProps {
   instrument: Instrument
   styleName?: string
@@ -32,14 +24,12 @@ interface SequencerBlockProps {
 
 export function SequencerBlock({
   instrument,
-  styleName = "Jazz brush swing",
   state = "default",
   dimmed = false,
   onClick,
   className,
 }: SequencerBlockProps) {
   const color = INSTRUMENT_COLORS[instrument]
-  const label = INSTRUMENT_LABELS[instrument]
   const isSelected = state === "selected"
 
   return (
@@ -80,18 +70,6 @@ export function SequencerBlock({
         }
       }}
     >
-      {/* Instrument badge */}
-      <span
-        className="mb-1 text-[10px] font-semibold uppercase tracking-widest"
-        style={{ color }}
-      >
-        {label}
-      </span>
-
-      {/* Style name */}
-      <span className="truncate text-xs text-muted-foreground">
-        {styleName}
-      </span>
     </button>
   )
 }

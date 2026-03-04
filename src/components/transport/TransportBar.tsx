@@ -4,8 +4,9 @@ import {
   Square,
   Play,
   Pause,
-  Circle,
   Repeat,
+  SkipBack,
+  SkipForward,
 } from "lucide-react"
 import { useAudio } from "@/hooks/useAudio"
 import { useProjectStore } from "@/store/project-store"
@@ -36,8 +37,8 @@ function MetronomeIcon({ className }: { className?: string }) {
 /*  Transport Bar                                                      */
 /* ------------------------------------------------------------------ */
 export function TransportBar() {
-  const { transportState, play, pause, stop } = useAudio()
-  const { project, updateProject } = useProjectStore()
+  const { transportState, play, pause, stop, seek } = useAudio()
+  const { project, sections, updateProject } = useProjectStore()
 
   const isPlaying = transportState.playbackState === "playing"
   const bar = transportState.currentBar
@@ -89,9 +90,19 @@ export function TransportBar() {
   const timeStr = `${mins}:${String(secs).padStart(2, "0")}`
 
   return (
-    <footer className="flex h-12 w-full shrink-0 items-center justify-between border-t border-[#3f3f46]/50 bg-[#18181b]/95 px-4 backdrop-blur-sm">
+    <footer className="flex h-12 w-full shrink-0 items-center justify-center gap-4 border-t border-[#3f3f46]/50 bg-[#18181b]/95 px-4 backdrop-blur-sm">
       {/* ---- LEFT: Playback pill group ---- */}
       <div className="flex items-center gap-1 rounded-xl bg-[#27272a] p-1">
+        {/* Skip to start */}
+        <button
+          type="button"
+          onClick={() => seek(1)}
+          className="flex size-8 items-center justify-center rounded-lg text-[#a1a1aa] transition-colors hover:text-[#f4f4f5]"
+          aria-label="Skip to start"
+        >
+          <SkipBack className="size-3.5" />
+        </button>
+
         {/* Stop */}
         <button
           type="button"
@@ -121,19 +132,22 @@ export function TransportBar() {
           )}
         </button>
 
-        {/* Record (disabled MVP) */}
+        {/* Skip to end */}
         <button
           type="button"
-          disabled
-          className="flex size-8 items-center justify-center rounded-lg text-[#ef4444]/40"
-          aria-label="Record (disabled)"
+          onClick={() => {
+            const totalBars = sections.reduce((sum, s) => sum + s.barCount, 0)
+            seek(totalBars)
+          }}
+          className="flex size-8 items-center justify-center rounded-lg text-[#a1a1aa] transition-colors hover:text-[#f4f4f5]"
+          aria-label="Skip to end"
         >
-          <Circle className="size-3.5 fill-current" />
+          <SkipForward className="size-3.5" />
         </button>
       </div>
 
       {/* ---- CENTER: Position + BPM + Time Sig ---- */}
-      <div className="flex flex-1 items-center justify-center gap-3">
+      <div className="flex items-center gap-3">
         {/* Bar | Beat counter */}
         <div className="flex items-center gap-0 rounded-lg bg-[#27272a] px-3 py-1 font-mono text-sm">
           <span className="text-[#e4e4e7]">{bar}</span>
@@ -177,7 +191,7 @@ export function TransportBar() {
                 setBpmDraft(String(bpm))
                 setEditingBpm(true)
               }}
-              className="rounded-md px-1 py-0.5 font-mono text-sm text-[#e4e4e7] transition-colors hover:bg-[#27272a]"
+              className="rounded-md px-1 py-0.5 font-mono text-sm text-[#e4e4e7] transition-colors hover:bg-[#27272a] hover:underline"
             >
               {bpm}
             </button>

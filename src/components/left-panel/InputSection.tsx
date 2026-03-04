@@ -49,6 +49,7 @@ export function InputSection() {
           onChordsChange={(text) => updateProject({ chordChartRaw: text })}
           projectKey={projectKey}
           timeSignature={timeSignature}
+          onTimeSignatureChange={(ts) => updateProject({ timeSignature: ts })}
         />
       )}
 

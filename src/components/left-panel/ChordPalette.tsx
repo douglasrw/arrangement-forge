@@ -77,6 +77,7 @@ interface ChordPaletteProps {
   onChordsChange?: (chordText: string) => void
   projectKey?: string
   timeSignature?: string
+  onTimeSignatureChange?: (ts: string) => void
 }
 
 export function ChordPalette({
@@ -85,6 +86,7 @@ export function ChordPalette({
   onChordsChange,
   projectKey = "C",
   timeSignature = "4/4",
+  onTimeSignatureChange,
 }: ChordPaletteProps) {
   const [chords, setChords] = useState<string[]>(initialChords ?? [])
   const [recentlyAdded, setRecentlyAdded] = useState<number | null>(null)
@@ -272,9 +274,25 @@ export function ChordPalette({
 
       {/* Row 2: Diatonic quick-add (derived from project key) */}
       <div className="flex flex-col gap-1.5">
-        <span className="text-[10px] font-medium uppercase tracking-widest text-muted-foreground">
-          Key of {projectKey}
-        </span>
+        <div className="flex items-center justify-between">
+          <span className="text-[10px] font-medium uppercase tracking-widest text-muted-foreground">
+            Key of {projectKey}
+          </span>
+          <div className="flex items-center gap-1">
+            <label htmlFor="time-sig-select" className="sr-only">Time signature</label>
+            <select
+              id="time-sig-select"
+              value={timeSignature}
+              onChange={(e) => onTimeSignatureChange?.(e.target.value)}
+              className="rounded bg-secondary px-1.5 py-0.5 text-[10px] font-medium text-muted-foreground border border-border/50 focus:border-[#0891b2] focus:outline-none"
+            >
+              <option value="4/4">4/4</option>
+              <option value="3/4">3/4</option>
+              <option value="6/8">6/8</option>
+              <option value="2/4">2/4</option>
+            </select>
+          </div>
+        </div>
         <div className="grid grid-cols-7 gap-1">
           {diatonicChords.map((dc) => (
             <DiatonicButton

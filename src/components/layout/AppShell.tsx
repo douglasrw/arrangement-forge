@@ -15,7 +15,14 @@ import { useProject } from '@/hooks/useProject';
 export function AppShell() {
   useKeyboardShortcuts();
 
-  const { unsavedChanges, generationState } = useUiStore();
+  /* Kill any rogue scroll offset on mount */
+  useEffect(() => {
+    window.scrollTo(0, 0);
+    document.documentElement.scrollTop = 0;
+    document.body.scrollTop = 0;
+  }, []);
+
+  const { unsavedChanges } = useUiStore();
   const selectionLevel = useSelectionStore((s) => s.level);
   const { saveProject } = useProject();
   const [panelContext, setPanelContext] = useState<PanelContext>({ mode: 'default' });
@@ -53,8 +60,8 @@ export function AppShell() {
               setPanelContext(info ? { mode: 'section', ...info } : { mode: 'default' })
             }
           />
-          {generationState === 'complete' && <MixerDrawer />}
-          {generationState === 'complete' && <TransportBar />}
+          <MixerDrawer />
+          <TransportBar />
         </div>
       </div>
 

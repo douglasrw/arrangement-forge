@@ -92,7 +92,7 @@ export function ArrangementView({
   )
   const { generationState, chordDisplayMode, setGenerationState } = useUiStore()
   const { sectionId: selectedSectionId, blockId: selectedBlockId, selectSection, selectBlock, selectSong } = useSelectionStore()
-  const { transportState } = useAudio()
+  const { transportState, seek } = useAudio()
   const key = project?.key ?? "C"
   const hasAnyBlockSelected = selectedBlockId !== null
 
@@ -148,8 +148,8 @@ export function ArrangementView({
       label: stem.instrument.toUpperCase(),
     }))
 
-  /* Playhead position from audio engine */
-  const playheadBar = transportState.currentBar
+  /* Playhead position from audio engine — clamp to song bounds */
+  const playheadBar = Math.max(1, Math.min(transportState.currentBar, totalBars || 1))
 
   return (
     <div ref={containerRef} className="flex flex-1 min-h-0 overflow-hidden bg-[#0a0a0c]">
@@ -250,8 +250,14 @@ export function ArrangementView({
 
           {/* == Bar ruler row == */}
           <div
-            className="flex shrink-0 bg-[#18181b]/80"
+            className="flex shrink-0 cursor-pointer bg-[#18181b]/80"
             style={{ height: RULER_H }}
+            onClick={(e) => {
+              const rect = e.currentTarget.getBoundingClientRect()
+              const x = e.clientX - rect.left + (scrollRef.current?.scrollLeft ?? 0)
+              const clickedBar = Math.max(1, Math.min(totalBars, Math.floor(x / effectiveBarW) + 1))
+              seek(clickedBar)
+            }}
           >
             {Array.from({ length: totalBars }).map((_, i) => {
               const barNum = i + 1
