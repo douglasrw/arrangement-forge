@@ -29,7 +29,7 @@ export function useAudio() {
   const engine = getEngine();
   const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
-  const { project, blocks, stems, sections } = useProjectStore();
+  const { project, blocks, stems, sections, drumOnlyUpdate, clearDrumOnlyUpdate } = useProjectStore();
   const { setSystemStatus } = useUiStore();
 
   const initEngine = useCallback(async () => {
@@ -40,6 +40,17 @@ export function useAudio() {
   // Auto-load arrangement into audio engine when data changes
   useEffect(() => {
     if (!engine.isInitialized || stems.length === 0 || !project) return;
+
+    // Drum-only update: hot-swap drum notes without full reload
+    if (drumOnlyUpdate) {
+      clearDrumOnlyUpdate();
+      try {
+        engine.hotSwapInstrument('drums', blocks, stems, sections);
+      } catch (err) {
+        console.error('Failed to hot-swap drum instrument:', err);
+      }
+      return;
+    }
 
     let cancelled = false;
 
@@ -58,7 +69,7 @@ export function useAudio() {
     load();
 
     return () => { cancelled = true; };
-  }, [engine, isReady, blocks, stems, sections, project, setSystemStatus]);
+  }, [engine, isReady, blocks, stems, sections, project, drumOnlyUpdate, clearDrumOnlyUpdate, setSystemStatus]);
 
   // Poll transport state at ~30fps for smooth playhead updates
   // Use engine.isInitialized instead of local isReady so ALL useAudio consumers get updates

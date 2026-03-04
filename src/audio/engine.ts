@@ -15,6 +15,8 @@ export class AudioEngine {
   private channelPanners = new Map<InstrumentType, Tone.Panner>();
   private stemMuted = new Map<InstrumentType, boolean>();
   private stemSoloed = new Map<InstrumentType, boolean>();
+  /** Scheduled Tone.js event IDs per instrument for selective cancellation */
+  private scheduledEventIds = new Map<InstrumentType, number[]>();
   private masterGain: Tone.Gain | null = null;
   private metronome: Metronome;
   private transportController: TransportController;
@@ -175,6 +177,9 @@ export class AudioEngine {
 
       this.applyMuteState();
 
+      // Clear all tracked event IDs
+      this.scheduledEventIds.clear();
+
       const tempo = Tone.getTransport().bpm.value;
       const secondsPerBeat = 60 / tempo;
 
@@ -191,7 +196,7 @@ export class AudioEngine {
           const noteDuration = note.duration * secondsPerBeat;
           const velocity = note.velocity / 127;
 
-          Tone.getTransport().schedule((t) => {
+          const eventId = Tone.getTransport().schedule((t) => {
             try {
               instrument.triggerAttackRelease(
                 note.note,
@@ -203,6 +208,11 @@ export class AudioEngine {
               // Ignore scheduling errors
             }
           }, noteTime);
+
+          // Track event ID per instrument
+          const ids = this.scheduledEventIds.get(stem.instrument) ?? [];
+          ids.push(eventId);
+          this.scheduledEventIds.set(stem.instrument, ids);
         }
       }
 
@@ -217,6 +227,69 @@ export class AudioEngine {
     } finally {
       this._isLoading = false;
     }
+  }
+
+  /** Hot-swap one instrument's scheduled notes without stopping playback.
+   * Cancels all pending events for the given instrument and re-schedules
+   * from the updated blocks. Transport position and other instruments are unaffected. */
+  hotSwapInstrument(
+    instrument: InstrumentType,
+    updatedBlocks: Block[],
+    stems: Stem[],
+    _sections: Section[]
+  ): void {
+    if (!this._initialized) return;
+
+    const sampler = this.instruments.get(instrument);
+    if (!sampler) return;
+
+    // Cancel all scheduled events for this instrument
+    const existingIds = this.scheduledEventIds.get(instrument) ?? [];
+    for (const id of existingIds) {
+      Tone.getTransport().clear(id);
+    }
+
+    // Release any currently sounding notes for this instrument
+    sampler.releaseAll();
+
+    // Re-schedule notes from the updated blocks for this instrument only
+    const tempo = Tone.getTransport().bpm.value;
+    const secondsPerBeat = 60 / tempo;
+    const newIds: number[] = [];
+
+    // Filter blocks to only those belonging to the target instrument
+    const instrumentBlocks = updatedBlocks.filter((block) => {
+      const stem = stems.find((s) => s.id === block.stemId);
+      return stem?.instrument === instrument;
+    });
+
+    for (const block of instrumentBlocks) {
+      const blockStartSeconds = this.transportController.getTimeAtBar(block.startBar);
+
+      for (const note of block.midiData) {
+        const noteTime = blockStartSeconds + note.time * secondsPerBeat;
+        const noteDuration = note.duration * secondsPerBeat;
+        const velocity = note.velocity / 127;
+
+        const eventId = Tone.getTransport().schedule((t) => {
+          try {
+            sampler.triggerAttackRelease(
+              note.note,
+              noteDuration,
+              t,
+              velocity
+            );
+          } catch {
+            // Ignore scheduling errors
+          }
+        }, noteTime);
+
+        newIds.push(eventId);
+      }
+    }
+
+    // Store the new event IDs for this instrument
+    this.scheduledEventIds.set(instrument, newIds);
   }
 
   getTransportState(): TransportState {
