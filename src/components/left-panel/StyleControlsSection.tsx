@@ -115,7 +115,7 @@ export function StyleControlsSection() {
               <span className="text-[11px] font-medium text-muted-foreground">
                 {slider.label}
               </span>
-              <span className="shrink-0 whitespace-nowrap text-[11px] font-semibold text-foreground">
+              <span className="min-w-[3.5rem] shrink-0 whitespace-nowrap text-right text-[11px] font-semibold text-foreground">
                 {getDisplayValue(slider.label, slider.value)}
               </span>
             </div>

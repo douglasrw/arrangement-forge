@@ -280,7 +280,7 @@ export function SectionContext({
                   <span className="text-[10px] font-medium text-zinc-500">
                     {slider.label}
                   </span>
-                  <span className="text-[10px] font-semibold text-foreground">
+                  <span className="min-w-[3.5rem] shrink-0 whitespace-nowrap text-right text-[10px] font-semibold text-foreground">
                     {slider.display}
                   </span>
                 </div>
@@ -289,7 +289,7 @@ export function SectionContext({
                     className="absolute inset-y-0 left-0 rounded-full"
                     style={{
                       width: `${slider.value}%`,
-                      background: "#0891b2",
+                      background: "var(--ring)",
                     }}
                   />
                   <input
