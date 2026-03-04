@@ -40,14 +40,14 @@ Download the file into the local `uploads/` folder.
 
 ## Project Overview
 
-Arrangement Forge is an AI-powered SaaS for musicians to create professional backing tracks. The MVP targets solo practice: musician + laptop + backing track. The core paradigm is a bar-level block sequencer (not a piano-roll or DAW). See [ARCHITECTURE.md](ARCHITECTURE.md) for the full technical specification, [TASKS.md](TASKS.md) for the 26 agent-executable task specs, and [SHAKEDOWN.md](SHAKEDOWN.md) for the UI design decisions.
+Arrangement Forge is an AI-powered SaaS for musicians to create professional backing tracks. The MVP targets solo practice: musician + laptop + backing track. The core paradigm is a bar-level block sequencer (not a piano-roll or DAW). See [ARCHITECTURE.md](ARCHITECTURE.md) for the full technical specification.
 
 ## How to Use This File
 
 Every implementation agent must read three documents before starting work:
 1. **This file (CLAUDE.md)** — constraints, conventions, and guardrails
 2. **ARCHITECTURE.md** — data model, project structure, API contracts, audio engine
-3. **Your assigned task in TASKS.md** — specific requirements, files to create, dependencies
+3. **Your assigned execution queue in `specs/`** — specific requirements, files to create, dependencies
 
 ---
 
