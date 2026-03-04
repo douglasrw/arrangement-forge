@@ -8,6 +8,7 @@ import { useUndoStore } from '@/store/undo-store';
 import { useProject } from '@/hooks/useProject';
 import { generate, generateMidiForBlock } from '@/lib/midi-generator';
 import { parseChordChart } from '@/lib/chord-chart-parser';
+import { snapshotArrangement } from '@/lib/undo-helpers';
 import type { GenerationRequest, Section, Stem, Block, Chord, InstrumentType, ChordEntry } from '@/types';
 
 export function useGenerate() {
@@ -19,11 +20,10 @@ export function useGenerate() {
   const runGeneration = useCallback(async (isRegeneration = false) => {
     if (!project) return;
 
-    // Snapshot for undo if regenerating
-    if (isRegeneration) {
-      const before = JSON.stringify({ stems, sections, blocks, chords });
-      pushUndo('Full regeneration', before, '');
-    }
+    // Capture pre-generation state for undo (only used if isRegeneration)
+    const before = isRegeneration
+      ? snapshotArrangement({ stems, sections, blocks, chords })
+      : null;
 
     setGenerationState('generating');
     setSystemStatus('generating');
@@ -125,18 +125,12 @@ export function useGenerate() {
         generatedTempo: project.tempo,
       });
 
-      // Finalize undo entry after generation
-      if (isRegeneration) {
-        const after = JSON.stringify({ stems: newStems, sections: newSections, blocks: newBlocks, chords: newChords });
-        const undoStack = useUndoStore.getState().undoStack;
-        const lastEntry = undoStack[undoStack.length - 1];
-        if (lastEntry && lastEntry.stateAfter === '') {
-          useUndoStore.getState().pushUndo(
-            'Full regeneration',
-            lastEntry.stateBefore,
-            after
-          );
-        }
+      // Push single undo entry after generation completes
+      if (isRegeneration && before) {
+        const after = snapshotArrangement({
+          stems: newStems, sections: newSections, blocks: newBlocks, chords: newChords,
+        });
+        pushUndo('Full regeneration', before, after);
       }
 
       setGenerationState('complete');

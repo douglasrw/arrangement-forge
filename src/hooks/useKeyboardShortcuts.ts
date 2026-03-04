@@ -6,6 +6,7 @@ import { useSelectionStore } from '@/store/selection-store';
 import { useProjectStore } from '@/store/project-store';
 import { useUndoStore } from '@/store/undo-store';
 import { useProject } from '@/hooks/useProject';
+import { parseSnapshot } from '@/lib/undo-helpers';
 
 function isInputFocused(): boolean {
   const el = document.activeElement;
@@ -42,10 +43,10 @@ export function useKeyboardShortcuts() {
         if (canUndo() && generationState !== 'generating') {
           const entry = undo();
           if (entry) {
-            try {
-              const state = JSON.parse(entry.stateBefore);
-              if (state.blocks) useProjectStore.getState().setArrangement(state);
-            } catch { /* invalid snapshot */ }
+            const snapshot = parseSnapshot(entry.stateBefore);
+            if (snapshot) {
+              useProjectStore.getState().setArrangement(snapshot);
+            }
           }
         }
         return;
@@ -57,10 +58,10 @@ export function useKeyboardShortcuts() {
         if (canRedo() && generationState !== 'generating') {
           const entry = redo();
           if (entry) {
-            try {
-              const state = JSON.parse(entry.stateAfter);
-              if (state.blocks) useProjectStore.getState().setArrangement(state);
-            } catch { /* invalid snapshot */ }
+            const snapshot = parseSnapshot(entry.stateAfter);
+            if (snapshot) {
+              useProjectStore.getState().setArrangement(snapshot);
+            }
           }
         }
         return;
@@ -119,18 +120,12 @@ export function useKeyboardShortcuts() {
 
       if ((e.key === 'Delete' || e.key === 'Backspace') && blockId) {
         e.preventDefault();
-        const before = JSON.stringify({ blocks: useProjectStore.getState().blocks });
         deleteBlock(blockId);
-        const after = JSON.stringify({ blocks: useProjectStore.getState().blocks });
-        useUndoStore.getState().pushUndo('Delete block', before, after);
         return;
       }
 
       if ((e.key === 'd' || e.key === 'D') && blockId) {
-        const before = JSON.stringify({ blocks: useProjectStore.getState().blocks });
         duplicateBlock(blockId);
-        const after = JSON.stringify({ blocks: useProjectStore.getState().blocks });
-        useUndoStore.getState().pushUndo('Duplicate block', before, after);
         return;
       }
     }

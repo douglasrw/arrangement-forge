@@ -368,7 +368,7 @@ All existing tests still pass. New undo-push tests all pass. The undo stack has 
 
 ---
 
-### [ ] T3 -- Fix Undo/Redo Handler + Fix Generation Undo + Remove Double-Undo Bugs
+### [x] T3 -- Fix Undo/Redo Handler + Fix Generation Undo + Remove Double-Undo Bugs
 
 **Files:** `src/hooks/useKeyboardShortcuts.ts` (modify), `src/hooks/useGenerate.ts` (modify)
 **Depends on:** T2
