@@ -3,7 +3,7 @@ import { cn } from "@/lib/utils"
 import { Settings } from "lucide-react"
 import { useProjectStore } from "@/store/project-store"
 import { useUiStore } from "@/store/ui-store"
-import { useProject } from "@/hooks/useProject"
+import { useAuth } from "@/hooks/useAuth"
 import { ALL_KEYS } from "@/lib/chords"
 
 /* ------------------------------------------------------------------ */
@@ -170,7 +170,7 @@ function ChordDisplayToggle({
 export function TopBar() {
   const { project, updateProject } = useProjectStore()
   const { unsavedChanges, chordDisplayMode, toggleChordDisplay } = useUiStore()
-  const { saveProject } = useProject()
+  const { signOut } = useAuth()
 
   const projectName = project?.name ?? "Untitled Project"
   const key = project?.key ?? "C"
@@ -342,8 +342,8 @@ export function TopBar() {
               <button
                 type="button"
                 onClick={() => {
-                  void saveProject()
                   setMenuOpen(false)
+                  void signOut()
                 }}
                 className="flex w-full items-center rounded-lg px-3 py-2 text-sm text-foreground/80 transition-colors hover:bg-secondary"
               >
