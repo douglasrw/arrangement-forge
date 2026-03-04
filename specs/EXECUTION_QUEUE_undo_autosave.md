@@ -671,7 +671,7 @@ Tests pass. Confirm in `AppShell.tsx`:
 
 ---
 
-### [ ] T5 -- Integration Verification + Edge Case Tests
+### [x] T5 -- Integration Verification + Edge Case Tests
 
 **Files:** `src/store/project-store.test.ts` (modify)
 **Depends on:** T2, T3, T4
