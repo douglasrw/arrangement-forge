@@ -8,12 +8,12 @@ import { ArrangementView } from '@/components/arrangement/ArrangementView';
 import { TransportBar } from '@/components/transport/TransportBar';
 import { MixerDrawer } from '@/components/mixer/MixerDrawer';
 import { useKeyboardShortcuts } from '@/hooks/useKeyboardShortcuts';
-import { useUiStore } from '@/store/ui-store';
+import { useAutoSave } from '@/hooks/useAutoSave';
 import { useSelectionStore } from '@/store/selection-store';
-import { useProject } from '@/hooks/useProject';
 
 export function AppShell() {
   useKeyboardShortcuts();
+  useAutoSave();
 
   /* Kill any rogue scroll offset on mount */
   useEffect(() => {
@@ -22,9 +22,7 @@ export function AppShell() {
     document.body.scrollTop = 0;
   }, []);
 
-  const { unsavedChanges } = useUiStore();
   const selectionLevel = useSelectionStore((s) => s.level);
-  const { saveProject } = useProject();
   const [panelContext, setPanelContext] = useState<PanelContext>({ mode: 'default' });
 
   /* Sync panel context when selection is cleared (e.g. Escape key) */
@@ -33,13 +31,6 @@ export function AppShell() {
       setPanelContext({ mode: 'default' });
     }
   }, [selectionLevel, panelContext.mode]);
-
-  useEffect(() => {
-    const interval = setInterval(() => {
-      if (unsavedChanges) saveProject();
-    }, 60_000);
-    return () => clearInterval(interval);
-  }, [unsavedChanges, saveProject]);
 
   return (
     <div className="flex flex-col h-screen bg-[#09090b] overflow-hidden">

@@ -512,7 +512,7 @@ All existing tests pass. Manually verify (if possible in the running app):
 
 ---
 
-### [ ] T4 -- Auto-Save with Debounce + beforeunload Guard
+### [x] T4 -- Auto-Save with Debounce + beforeunload Guard
 
 **Files:** `src/hooks/useAutoSave.ts` (new), `src/hooks/useAutoSave.test.ts` (new), `src/components/layout/AppShell.tsx` (modify)
 **Depends on:** T1 (uses `useUiStore` patterns; independent of T2/T3 but sequenced after for context)
