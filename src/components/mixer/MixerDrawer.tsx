@@ -215,12 +215,22 @@ export function MixerDrawer() {
 
   const updateChannel = useCallback(
     (key: InstrumentKey | "master", field: keyof ChannelState, value: boolean | number) => {
-      setChannels((prev) => ({
-        ...prev,
-        [key]: { ...prev[key], [field]: value },
-      }))
+      setChannels((prev) => {
+        const next = { ...prev, [key]: { ...prev[key], [field]: value } }
+
+        // Wire through to audio engine
+        if (key === "master") {
+          if (field === "volume") engine.setMasterVolume((value as number) / 80)
+        } else {
+          if (field === "muted") engine.setMute(key, value as boolean)
+          if (field === "solo") engine.setSolo(key, value as boolean)
+          if (field === "volume") engine.setVolume(key, (value as number) / 80)
+        }
+
+        return next
+      })
     },
-    []
+    [engine]
   )
 
   return (

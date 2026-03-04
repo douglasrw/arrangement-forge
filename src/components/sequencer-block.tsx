@@ -37,7 +37,7 @@ export function SequencerBlock({
       type="button"
       onClick={onClick}
       className={cn(
-        "group relative flex min-w-[140px] flex-col justify-center overflow-hidden rounded-md px-3 py-2.5",
+        "group relative flex min-w-0 flex-col justify-center overflow-hidden rounded-sm px-3 py-2.5",
         "cursor-pointer select-none text-left transition-all duration-200",
         "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-1 focus-visible:ring-offset-background",
         className,
@@ -48,9 +48,9 @@ export function SequencerBlock({
           : `linear-gradient(to bottom, ${color}26 0%, transparent 100%), #111113`,
         border: isSelected ? `2px solid ${color}` : undefined,
         borderTop: isSelected ? undefined : `2px solid ${color}99`,
-        borderRight: isSelected ? undefined : `1px solid transparent`,
-        borderBottom: isSelected ? undefined : `1px solid #27272a`,
-        borderLeft: isSelected ? undefined : `1px solid transparent`,
+        borderRight: isSelected ? undefined : `none`,
+        borderBottom: isSelected ? undefined : `none`,
+        borderLeft: isSelected ? undefined : `none`,
         boxShadow: isSelected
           ? `0 0 20px 3px ${color}40, 0 0 6px 1px ${color}30, inset 0 0 12px ${color}10`
           : "none",
