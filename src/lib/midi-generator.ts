@@ -14,6 +14,10 @@ import type {
 } from '@/types';
 import { degreeToNote } from './chords';
 import { buildDrumMidi } from './drum-patterns';
+import { getBassPattern, buildBassFromPattern } from './bass-patterns';
+import { getPianoPattern, buildPianoFromPattern } from './piano-patterns';
+import { getGuitarPattern, buildGuitarFromPattern } from './guitar-patterns';
+import { buildStringsFromPattern } from './strings-patterns';
 
 // ---------- Drum Context (passed to buildDrumMidi) ----------
 
@@ -196,109 +200,6 @@ export function getChordTones(degree: string | null, quality: string | null, key
   });
 }
 
-// ---------- MIDI Generation Per Instrument ----------
-
-function buildBassNotes(
-  chord: ChordEntry,
-  key: string,
-  genre: string,
-  barOffset: number
-): MidiNoteData[] {
-  if (!chord.degree) return [{ note: 'C2', time: barOffset, duration: 3.8, velocity: 70 }];
-  const tones = getChordTones(chord.degree, chord.quality, key, 2);
-  const root = tones[0] ?? 'C2';
-  const third = tones[1] ?? root;
-  const fifth = tones[2] ?? root;
-
-  if (genre === 'Jazz' || genre === 'Blues') {
-    // Walking bass: root -> 3rd -> 5th -> chromatic approach
-    const approach = noteToMidi(degreeToNote(chord.degree, key), 2);
-    return [
-      { note: root, time: barOffset + 0, duration: 0.9, velocity: 85 },
-      { note: third, time: barOffset + 1, duration: 0.9, velocity: 75 },
-      { note: fifth, time: barOffset + 2, duration: 0.9, velocity: 80 },
-      { note: approach, time: barOffset + 3, duration: 0.9, velocity: 70 },
-    ];
-  }
-  // Default: root on beat 1, root on beat 3
-  return [
-    { note: root, time: barOffset + 0, duration: 1.8, velocity: 85 },
-    { note: root, time: barOffset + 2, duration: 1.8, velocity: 75 },
-  ];
-}
-
-function buildPianoNotes(
-  chord: ChordEntry,
-  key: string,
-  genre: string,
-  barOffset: number
-): MidiNoteData[] {
-  if (!chord.degree) return [];
-  const tones = getChordTones(chord.degree, chord.quality, key, 4);
-  if (tones.length === 0) return [];
-
-  if (genre === 'Jazz') {
-    // Off-beat jazz comping: beats 1.5 and 3
-    return [
-      ...tones.map((n) => ({ note: n, time: barOffset + 1.5, duration: 0.8, velocity: 70 })),
-      ...tones.map((n) => ({ note: n, time: barOffset + 3, duration: 0.8, velocity: 65 })),
-    ];
-  }
-  // Default: chord on beat 1 and beat 3
-  return [
-    ...tones.map((n) => ({ note: n, time: barOffset + 0, duration: 1.8, velocity: 75 })),
-    ...tones.map((n) => ({ note: n, time: barOffset + 2, duration: 1.8, velocity: 70 })),
-  ];
-}
-
-function buildGuitarNotes(
-  chord: ChordEntry,
-  key: string,
-  genre: string,
-  barOffset: number
-): MidiNoteData[] {
-  if (!chord.degree) return [];
-  const tones = getChordTones(chord.degree, chord.quality, key, 3);
-  if (tones.length === 0) return [];
-
-  if (genre === 'Funk') {
-    // Muted funk: 16th note chops on upbeats
-    return [0.5, 1.5, 2.5, 3.5].flatMap((beat) =>
-      tones.map((n) => ({ note: n, time: barOffset + beat, duration: 0.2, velocity: 65 }))
-    );
-  }
-  if (genre === 'Jazz') {
-    // Arpeggiated: one note per beat
-    return tones.slice(0, 4).map((n, i) => ({
-      note: n,
-      time: barOffset + i,
-      duration: 0.9,
-      velocity: 65,
-    }));
-  }
-  // Default strum: beats 1, 2, 3, 4
-  return [0, 1, 2, 3].flatMap((beat) =>
-    tones.map((n) => ({ note: n, time: barOffset + beat, duration: 0.85, velocity: 70 }))
-  );
-}
-
-function buildStringsNotes(
-  chord: ChordEntry,
-  key: string,
-  barOffset: number,
-  barCount: number
-): MidiNoteData[] {
-  if (!chord.degree) return [];
-  const tones = getChordTones(chord.degree, chord.quality, key, 4);
-  const padTones = tones.slice(0, 2); // root + third for pad
-  return padTones.map((n) => ({
-    note: n,
-    time: barOffset,
-    duration: barCount * 4 - 0.1,
-    velocity: 60,
-  }));
-}
-
 // ---------- Block Generation ----------
 
 export function generateMidiForBlock(
@@ -307,20 +208,17 @@ export function generateMidiForBlock(
   chordsForBlock: ChordEntry[],
   key: string,
   genre: string,
-  drumContext?: DrumContext
+  drumContext?: DrumContext,
+  startBar: number = 1
 ): MidiNoteData[] {
   const notes: MidiNoteData[] = [];
-
-  if (instrument === 'strings') {
-    // Strings hold over entire block
-    const first = chordsForBlock[0];
-    if (first) notes.push(...buildStringsNotes(first, key, 0, barCount));
-    return notes;
-  }
 
   for (let i = 0; i < barCount; i++) {
     const chord = chordsForBlock[i] ?? chordsForBlock[chordsForBlock.length - 1];
     if (!chord) continue;
+
+    const barOffset = i * 4;
+    const barNumberGlobal = startBar + i;
 
     switch (instrument) {
       case 'drums': {
@@ -343,7 +241,6 @@ export function generateMidiForBlock(
             barNumberGlobal: i + 1,
             totalBarsInSection: barCount,
           });
-          const barOffset = i * 4;
           notes.push(...barNotes.map((n) => ({
             ...n,
             time: n.time + barOffset,
@@ -368,26 +265,34 @@ export function generateMidiForBlock(
           totalBarsInSection: drumContext.totalBarsInSection,
         });
         // Offset notes by bar position within block
-        const barOffset = i * drumContext.beatsPerBar;
+        const drumBarOffset = i * drumContext.beatsPerBar;
         notes.push(...barNotes.map((n) => ({
           ...n,
-          time: n.time + barOffset,
+          time: n.time + drumBarOffset,
         })));
         break;
       }
       case 'bass': {
-        const barOffset = i * 4;
-        notes.push(...buildBassNotes(chord, key, genre, barOffset));
+        const style = getStyle('bass', genre);
+        const pattern = getBassPattern(style);
+        notes.push(...buildBassFromPattern(pattern, chord, key, barNumberGlobal, barOffset));
         break;
       }
       case 'piano': {
-        const barOffset = i * 4;
-        notes.push(...buildPianoNotes(chord, key, genre, barOffset));
+        const style = getStyle('piano', genre);
+        const pattern = getPianoPattern(style);
+        notes.push(...buildPianoFromPattern(pattern, chord, key, barNumberGlobal, barOffset));
         break;
       }
       case 'guitar': {
-        const barOffset = i * 4;
-        notes.push(...buildGuitarNotes(chord, key, genre, barOffset));
+        const style = getStyle('guitar', genre);
+        const pattern = getGuitarPattern(style);
+        notes.push(...buildGuitarFromPattern(pattern, chord, key, barNumberGlobal, barOffset));
+        break;
+      }
+      case 'strings': {
+        const energy = drumContext?.energy ?? 50;
+        notes.push(...buildStringsFromPattern(chord, key, barNumberGlobal, barOffset, energy));
         break;
       }
     }

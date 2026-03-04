@@ -431,7 +431,7 @@ Sustained pad: 3 notes, duration > 3.5. Tremolo: 16 notes, durations < 0.5.
 
 ---
 
-### [ ] T5 — Wire patterns into generateMidiForBlock()
+### [x] T5 — Wire patterns into generateMidiForBlock()
 
 **Files:** `src/lib/midi-generator.ts` (modify)
 **Depends on:** T1, T2, T3, T4
