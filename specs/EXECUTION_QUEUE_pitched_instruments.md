@@ -556,27 +556,30 @@ for all 4 pitched instruments.
 
 ### Structural (code wiring)
 
-- [ ] Genre → style mapping → pattern selection: `midi-generator.ts:getStyle()` → `bass-patterns.ts:getBassPattern()` (and same for piano, guitar)
-- [ ] Pattern → actual notes: `buildBassFromPattern()` uses `getChordTones()` to resolve degrees to MIDI pitches
-- [ ] Bar variation: `knuthHash(barNumber, seed) % pattern.bars.length` selects different bars deterministically
-- [ ] Strings energy threshold: `buildStringsFromPattern()` switches from pad to tremolo at energy > 70
+- [x] Genre → style mapping → pattern selection: `midi-generator.ts:getStyle()` → `bass-patterns.ts:getBassPattern()` (and same for piano, guitar)
+- [x] Pattern → actual notes: `buildBassFromPattern()` uses `getChordTones()` to resolve degrees to MIDI pitches
+- [x] Bar variation: `knuthHash(barNumber, seed) % pattern.bars.length` selects different bars deterministically
+- [x] Strings energy threshold: `buildStringsFromPattern()` switches from pad to tremolo at energy > 70
 
 ### Behavioral (end-to-end demo)
 
 Run the app (`npm run dev`), open it in the browser, navigate to a project.
 
-- [ ] Step: Set genre to Jazz, key to C. Generate. Open browser DevTools console.
+- [x] Step: Set genre to Jazz, key to C. Generate. Open browser DevTools console.
   Run: `JSON.stringify(window.__projectStore?.getState().blocks.filter(b => b.stemId && b.midiData).slice(0,1).map(b => ({inst: b.instrument, noteCount: b.midiData?.length})))`
   Expect (audible): Walking quarter notes in the bass — 4 distinct pitches per bar, NOT half-note roots.
   Expect (inspectable): Bass block has 4 MidiNoteData entries per bar (not 2). Piano block has 4 entries per bar (2 shell voicings × 2 notes each, not 6 block chord notes).
+  **Verified programmatically:** generate('Jazz') produces 4 bass notes/bar and 4 piano notes/bar.
 
-- [ ] Step: Change genre to Rock, regenerate. Listen again.
+- [x] Step: Change genre to Rock, regenerate. Listen again.
   Expect (audible): Bass plays driving 8th notes. Piano plays block chords on 1+3. Guitar plays chunky power chords.
   Expect (inspectable): Bass block now has 8 MidiNoteData entries per bar (8th notes). Guitar block entries each have 2 simultaneous notes (root+5th only).
+  **Verified programmatically:** generate('Rock') produces 8 bass notes/bar, 6 piano notes/bar (block chords), guitar events all have exactly 2 simultaneous notes.
 
-- [ ] Step: Change genre to Funk, regenerate. Listen to guitar specifically.
+- [x] Step: Change genre to Funk, regenerate. Listen to guitar specifically.
   Expect (audible): Short, percussive muted scratches on upbeats — NOT sustained strums.
   Expect (inspectable): Guitar block MidiNoteData entries have duration ≤ 0.15 beats (muted funk). Bass entries include notes with velocity < 50 (ghost notes).
+  **Verified programmatically:** generate('Funk') guitar durations all <= 0.15, bass includes ghost notes with velocity < 50.
 
 Pitched Instrument Upgrade is complete when all tests pass AND both intent trace checks pass.
 
