@@ -1,0 +1,43 @@
+#!/usr/bin/env bash
+# Auto-discovery pre-commit runner.
+# Runs every *.sh script in scripts/checks/ against staged files.
+# Each check receives the list of staged files as arguments.
+# If any check exits non-zero, the commit is blocked.
+#
+# To add a new check: drop a .sh file in scripts/checks/
+# No config changes needed — it runs automatically.
+
+set -euo pipefail
+
+CHECKS_DIR="$(dirname "$0")/checks"
+FAILED=0
+FAILED_CHECKS=()
+
+if [ ! -d "$CHECKS_DIR" ]; then
+  echo "No checks directory found at $CHECKS_DIR"
+  exit 0
+fi
+
+for check in "$CHECKS_DIR"/*.sh; do
+  [ -f "$check" ] || continue
+
+  CHECK_NAME=$(basename "$check" .sh)
+
+  if ! bash "$check" "$@"; then
+    FAILED=$((FAILED + 1))
+    FAILED_CHECKS+=("$CHECK_NAME")
+  fi
+done
+
+if [ "$FAILED" -gt 0 ]; then
+  echo ""
+  echo "========================================="
+  echo "COMMIT BLOCKED: $FAILED check(s) failed:"
+  for name in "${FAILED_CHECKS[@]}"; do
+    echo "  - $name"
+  done
+  echo "========================================="
+  exit 1
+fi
+
+exit 0
