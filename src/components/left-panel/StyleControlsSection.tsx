@@ -139,13 +139,13 @@ export function StyleControlsSection() {
                   "absolute inset-0 h-full w-full cursor-pointer appearance-none bg-transparent",
                   "[&::-webkit-slider-thumb]:h-3 [&::-webkit-slider-thumb]:w-3",
                   "[&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:rounded-full",
-                  "[&::-webkit-slider-thumb]:border [&::-webkit-slider-thumb]:border-[#0891b2]",
+                  "[&::-webkit-slider-thumb]:border [&::-webkit-slider-thumb]:border-ring",
                   "[&::-webkit-slider-thumb]:bg-foreground [&::-webkit-slider-thumb]:shadow-sm",
                   "[&::-webkit-slider-thumb]:opacity-0 [&::-webkit-slider-thumb]:transition-opacity",
                   "group-hover:[&::-webkit-slider-thumb]:opacity-100",
                   "[&::-moz-range-thumb]:h-3 [&::-moz-range-thumb]:w-3",
                   "[&::-moz-range-thumb]:appearance-none [&::-moz-range-thumb]:rounded-full",
-                  "[&::-moz-range-thumb]:border [&::-moz-range-thumb]:border-[#0891b2]",
+                  "[&::-moz-range-thumb]:border [&::-moz-range-thumb]:border-ring",
                   "[&::-moz-range-thumb]:bg-foreground [&::-moz-range-thumb]:shadow-sm"
                 )}
               />

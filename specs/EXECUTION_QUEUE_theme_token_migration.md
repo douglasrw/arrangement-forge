@@ -370,7 +370,7 @@ Everything must look identical to before the migration.
 
 ---
 
-### [ ] T3 -- Inspector/context components: SectionContext, BlockContext, StyleControlsSection, InputSection
+### [x] T3 -- Inspector/context components: SectionContext, BlockContext, StyleControlsSection, InputSection
 
 **Files:** `src/components/left-panel/SectionContext.tsx`, `src/components/left-panel/BlockContext.tsx`, `src/components/left-panel/StyleControlsSection.tsx`, `src/components/left-panel/InputSection.tsx`
 **Depends on:** none

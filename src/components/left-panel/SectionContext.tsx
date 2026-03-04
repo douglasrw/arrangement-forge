@@ -144,7 +144,7 @@ export function SectionContext({
       <div className="border-t border-border px-4 pb-4 pt-4">
         {/* Section badge */}
         <div className="mb-4 flex items-center gap-2">
-          <div className="flex size-6 items-center justify-center rounded bg-[#27272a]">
+          <div className="flex size-6 items-center justify-center rounded bg-secondary">
             <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#a1a1aa" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18"/></svg>
           </div>
           <span className="text-xs font-semibold uppercase tracking-wider text-foreground">
@@ -153,7 +153,7 @@ export function SectionContext({
         </div>
 
         {/* Section name */}
-        <label htmlFor="section-name-input" className="text-[10px] font-medium uppercase tracking-widest text-[#71717a]">
+        <label htmlFor="section-name-input" className="text-[10px] font-medium uppercase tracking-widest text-zinc-500">
           Section Name
         </label>
         <input
@@ -167,50 +167,50 @@ export function SectionContext({
             if (e.key === "Escape") setNameDraft(currentName)
           }}
           className={cn(
-            "mt-1.5 w-full rounded-lg border border-[#3f3f46] bg-[#27272a] px-3 py-1.5",
-            "text-sm font-medium text-[#f4f4f5]",
-            "focus:border-[#0891b2]/50 focus:outline-none focus:ring-1 focus:ring-[#0891b2]/30"
+            "mt-1.5 w-full rounded-lg border border-border bg-secondary px-3 py-1.5",
+            "text-sm font-medium text-zinc-100",
+            "focus:border-ring/50 focus:outline-none focus:ring-1 focus:ring-ring/30"
           )}
         />
 
         {/* Length */}
-        <label className="mt-4 block text-[10px] font-medium uppercase tracking-widest text-[#71717a]">
+        <label className="mt-4 block text-[10px] font-medium uppercase tracking-widest text-zinc-500">
           Length
         </label>
         <div className="mt-1.5 flex items-center gap-2">
           <button
             type="button"
             onClick={() => adjustBars(-4)}
-            className="flex size-7 items-center justify-center rounded-lg bg-[#3f3f46] text-sm font-medium text-[#a1a1aa] transition-colors hover:bg-[#52525b] hover:text-[#f4f4f5]"
+            className="flex size-7 items-center justify-center rounded-lg bg-input text-sm font-medium text-muted-foreground transition-colors hover:bg-zinc-600 hover:text-zinc-100"
           >
             {'\u2212'}
           </button>
-          <span className="min-w-16 text-center font-mono text-sm text-[#f4f4f5]">
+          <span className="min-w-16 text-center font-mono text-sm text-zinc-100">
             {currentBars} bars
           </span>
           <button
             type="button"
             onClick={() => adjustBars(4)}
-            className="flex size-7 items-center justify-center rounded-lg bg-[#3f3f46] text-sm font-medium text-[#a1a1aa] transition-colors hover:bg-[#52525b] hover:text-[#f4f4f5]"
+            className="flex size-7 items-center justify-center rounded-lg bg-input text-sm font-medium text-muted-foreground transition-colors hover:bg-zinc-600 hover:text-zinc-100"
           >
             +
           </button>
         </div>
 
         {/* Style overrides — cosmetic only for MVP */}
-        <label className="mt-4 block text-[10px] font-medium uppercase tracking-widest text-[#71717a]">
+        <label className="mt-4 block text-[10px] font-medium uppercase tracking-widest text-zinc-500">
           Style
         </label>
 
         {!isOverriding ? (
           <div className="mt-1.5 flex items-center justify-between">
-            <span className="text-xs italic text-[#71717a]">
+            <span className="text-xs italic text-zinc-500">
               Inherits from song
             </span>
             <button
               type="button"
               onClick={() => setIsOverriding(true)}
-              className="text-xs text-[#0891b2] transition-colors hover:text-[#22d3ee]"
+              className="text-xs text-ring transition-colors hover:text-primary"
             >
               Override
             </button>
@@ -223,7 +223,7 @@ export function SectionContext({
             <button
               type="button"
               onClick={() => setIsOverriding(false)}
-              className="text-xs text-[#71717a] transition-colors hover:text-foreground"
+              className="text-xs text-zinc-500 transition-colors hover:text-foreground"
             >
               Clear
             </button>
@@ -240,11 +240,11 @@ export function SectionContext({
           {/* Genre / Sub-style */}
           <div className="flex gap-2">
             <div className="flex flex-1 flex-col gap-1">
-              <label htmlFor="section-genre-select" className="text-[10px] font-medium uppercase tracking-widest text-[#71717a]">
+              <label htmlFor="section-genre-select" className="text-[10px] font-medium uppercase tracking-widest text-zinc-500">
                 Genre
               </label>
               <Select defaultValue="jazz">
-                <SelectTrigger id="section-genre-select" className="h-7 w-full border-[#3f3f46] bg-[#27272a] text-[11px] text-foreground">
+                <SelectTrigger id="section-genre-select" className="h-7 w-full border-border bg-secondary text-[11px] text-foreground">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
@@ -256,11 +256,11 @@ export function SectionContext({
               </Select>
             </div>
             <div className="flex flex-1 flex-col gap-1">
-              <label htmlFor="section-substyle-select" className="text-[10px] font-medium uppercase tracking-widest text-[#71717a]">
+              <label htmlFor="section-substyle-select" className="text-[10px] font-medium uppercase tracking-widest text-zinc-500">
                 Sub-style
               </label>
               <Select defaultValue="swing">
-                <SelectTrigger id="section-substyle-select" className="h-7 w-full border-[#3f3f46] bg-[#27272a] text-[11px] text-foreground">
+                <SelectTrigger id="section-substyle-select" className="h-7 w-full border-border bg-secondary text-[11px] text-foreground">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
@@ -277,14 +277,14 @@ export function SectionContext({
             {sliders.map((slider, i) => (
               <div key={slider.label} className="flex flex-col gap-0.5">
                 <div className="flex items-center justify-between">
-                  <span className="text-[10px] font-medium text-[#71717a]">
+                  <span className="text-[10px] font-medium text-zinc-500">
                     {slider.label}
                   </span>
                   <span className="text-[10px] font-semibold text-foreground">
                     {slider.display}
                   </span>
                 </div>
-                <div className="group relative h-1 w-full cursor-pointer rounded-full bg-[#27272a]">
+                <div className="group relative h-1 w-full cursor-pointer rounded-full bg-secondary">
                   <div
                     className="absolute inset-y-0 left-0 rounded-full"
                     style={{
@@ -305,13 +305,13 @@ export function SectionContext({
                       "absolute inset-0 h-full w-full cursor-pointer appearance-none bg-transparent",
                       "[&::-webkit-slider-thumb]:h-2.5 [&::-webkit-slider-thumb]:w-2.5",
                       "[&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:rounded-full",
-                      "[&::-webkit-slider-thumb]:border [&::-webkit-slider-thumb]:border-[#0891b2]",
+                      "[&::-webkit-slider-thumb]:border [&::-webkit-slider-thumb]:border-ring",
                       "[&::-webkit-slider-thumb]:bg-foreground [&::-webkit-slider-thumb]:shadow-sm",
                       "[&::-webkit-slider-thumb]:opacity-0 [&::-webkit-slider-thumb]:transition-opacity",
                       "group-hover:[&::-webkit-slider-thumb]:opacity-100",
                       "[&::-moz-range-thumb]:h-2.5 [&::-moz-range-thumb]:w-2.5",
                       "[&::-moz-range-thumb]:appearance-none [&::-moz-range-thumb]:rounded-full",
-                      "[&::-moz-range-thumb]:border [&::-moz-range-thumb]:border-[#0891b2]",
+                      "[&::-moz-range-thumb]:border [&::-moz-range-thumb]:border-ring",
                       "[&::-moz-range-thumb]:bg-foreground [&::-moz-range-thumb]:shadow-sm"
                     )}
                   />
@@ -325,7 +325,7 @@ export function SectionContext({
         <button
           type="button"
           onClick={() => setConfirmDeleteOpen(true)}
-          className="mt-6 text-xs text-[#71717a] transition-colors hover:text-red-400"
+          className="mt-6 text-xs text-zinc-500 transition-colors hover:text-red-400"
         >
           Delete Section
         </button>

@@ -33,7 +33,7 @@ export function InputSection() {
             className={cn(
               "flex-1 rounded-[5px] px-2 py-1.5 text-xs font-medium transition-colors",
               activeTab === tab
-                ? "bg-[#0891b2] text-foreground shadow-sm"
+                ? "bg-ring text-foreground shadow-sm"
                 : "text-muted-foreground hover:text-foreground"
             )}
           >
@@ -72,7 +72,7 @@ export function InputSection() {
               "w-full resize-none rounded-md border border-border bg-secondary px-3 py-2",
               "font-mono text-xs leading-relaxed text-foreground",
               "placeholder:text-muted-foreground",
-              "focus:border-[#0891b2] focus:outline-none focus:ring-1 focus:ring-[#0891b2]/50"
+              "focus:border-ring focus:outline-none focus:ring-1 focus:ring-ring/50"
             )}
           />
         </div>
@@ -103,7 +103,7 @@ export function InputSection() {
             "w-full resize-none rounded-md border border-border bg-secondary px-3 py-2",
             "text-xs leading-relaxed text-foreground",
             "placeholder:text-muted-foreground",
-            "focus:border-[#0891b2] focus:outline-none focus:ring-1 focus:ring-[#0891b2]/50"
+            "focus:border-ring focus:outline-none focus:ring-1 focus:ring-ring/50"
           )}
         />
       </div>
@@ -116,8 +116,8 @@ export function InputSection() {
         className={cn(
           "w-full rounded-xl py-2.5 text-sm font-semibold transition-colors",
           isGenerating || !chordChartRaw.trim()
-            ? "cursor-not-allowed bg-[#27272a] text-muted-foreground"
-            : "bg-[#14b8a6] text-[#09090b] shadow-[0_0_20px_rgba(6,182,212,0.3)] hover:bg-[#2dd4bf]"
+            ? "cursor-not-allowed bg-secondary text-muted-foreground"
+            : "bg-[#14b8a6] text-background shadow-[0_0_20px_rgba(6,182,212,0.3)] hover:bg-[#2dd4bf]"
         )}
       >
         {isGenerating ? "Generating..." : "Generate"}

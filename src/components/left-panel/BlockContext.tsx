@@ -50,7 +50,7 @@ function InstrumentSlider({
 
   return (
     <div className="flex items-center gap-2">
-      <div className="group relative h-1.5 flex-1 cursor-pointer rounded-full bg-[#3f3f46]">
+      <div className="group relative h-1.5 flex-1 cursor-pointer rounded-full bg-input">
         {/* Fill */}
         {centered ? (
           <div
@@ -99,14 +99,14 @@ function InstrumentSlider({
           }
         `}</style>
       </div>
-      <span className="w-12 text-right font-mono text-xs text-[#a1a1aa]">
+      <span className="w-12 text-right font-mono text-xs text-muted-foreground">
         {readout}
       </span>
       {onReset && (
         <button
           type="button"
           onClick={onReset}
-          className="text-[#52525b] transition-colors hover:text-[#d4d4d8]"
+          className="text-zinc-600 transition-colors hover:text-zinc-300"
           aria-label="Reset"
         >
           <svg
@@ -146,12 +146,12 @@ function ToggleSwitch({
       onClick={onToggle}
       className={cn(
         "relative inline-flex h-4 w-7 shrink-0 cursor-pointer rounded-full transition-colors duration-200",
-        on ? "bg-[#0891b2]" : "bg-[#3f3f46]"
+        on ? "bg-ring" : "bg-input"
       )}
     >
       <span
         className={cn(
-          "pointer-events-none inline-block size-3 rounded-full bg-[#f4f4f5] shadow-sm transition-transform duration-200",
+          "pointer-events-none inline-block size-3 rounded-full bg-zinc-100 shadow-sm transition-transform duration-200",
           on ? "translate-x-3.5" : "translate-x-0.5"
         )}
         style={{ marginTop: "2px" }}
@@ -257,14 +257,14 @@ export function BlockContext({
             className="size-2.5 rounded-sm"
             style={{ backgroundColor: color }}
           />
-          <span className="text-sm font-medium text-[#e4e4e7]">{label}</span>
+          <span className="text-sm font-medium text-zinc-200">{label}</span>
         </div>
-        <p className="mt-0.5 text-xs text-[#a1a1aa]">
+        <p className="mt-0.5 text-xs text-muted-foreground">
           Bars {resolvedStartBar} &ndash; {resolvedEndBar}
         </p>
 
         {/* VOLUME */}
-        <label htmlFor="block-volume-slider" className="mt-4 block text-[10px] font-medium uppercase tracking-widest text-[#71717a]">
+        <label htmlFor="block-volume-slider" className="mt-4 block text-[10px] font-medium uppercase tracking-widest text-zinc-500">
           Volume
         </label>
         <div className="mt-1.5">
@@ -280,7 +280,7 @@ export function BlockContext({
         </div>
 
         {/* PAN */}
-        <label htmlFor="block-pan-slider" className="mt-4 block text-[10px] font-medium uppercase tracking-widest text-[#71717a]">
+        <label htmlFor="block-pan-slider" className="mt-4 block text-[10px] font-medium uppercase tracking-widest text-zinc-500">
           Pan
         </label>
         <div className="mt-1.5">
@@ -298,7 +298,7 @@ export function BlockContext({
 
         {/* CHORDS */}
         <div className="mt-4 flex items-center justify-between">
-          <label className="text-[10px] font-medium uppercase tracking-widest text-[#71717a]">
+          <label className="text-[10px] font-medium uppercase tracking-widest text-zinc-500">
             Chords
           </label>
           <ToggleSwitch
@@ -307,7 +307,7 @@ export function BlockContext({
           />
         </div>
         {!chordOverride ? (
-          <p className="mt-1.5 text-xs text-[#71717a]">
+          <p className="mt-1.5 text-xs text-zinc-500">
             Using section chords
           </p>
         ) : (
@@ -317,9 +317,9 @@ export function BlockContext({
             onChange={(e) => setChordText(e.target.value)}
             rows={3}
             className={cn(
-              "mt-1.5 w-full resize-none rounded-lg border border-[#3f3f46] bg-[#27272a] px-3 py-2",
-              "font-mono text-xs text-[#f4f4f5]",
-              "focus:border-[#0891b2]/50 focus:outline-none focus:ring-1 focus:ring-[#0891b2]/30"
+              "mt-1.5 w-full resize-none rounded-lg border border-border bg-secondary px-3 py-2",
+              "font-mono text-xs text-zinc-100",
+              "focus:border-ring/50 focus:outline-none focus:ring-1 focus:ring-ring/30"
             )}
           />
         )}
@@ -328,14 +328,14 @@ export function BlockContext({
         <button
           type="button"
           onClick={handleDuplicateBlock}
-          className="mt-4 w-full rounded-lg bg-[#3f3f46] py-1.5 text-xs font-medium text-[#d4d4d8] transition-colors hover:bg-[#52525b] hover:text-[#f4f4f5]"
+          className="mt-4 w-full rounded-lg bg-input py-1.5 text-xs font-medium text-zinc-300 transition-colors hover:bg-zinc-600 hover:text-zinc-100"
         >
           Duplicate Block
         </button>
         <button
           type="button"
           onClick={() => setConfirmDeleteOpen(true)}
-          className="mt-2 text-xs text-[#71717a] transition-colors hover:text-red-400"
+          className="mt-2 text-xs text-zinc-500 transition-colors hover:text-red-400"
         >
           Delete Block
         </button>
