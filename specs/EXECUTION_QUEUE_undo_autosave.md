@@ -885,14 +885,14 @@ After all tasks pass, verify the *system-level behavior* matches the original in
 
 ### Structural (code wiring)
 
-- [ ] Every destructive mutation in `project-store.ts` (`updateBlock`, `splitBlock`, `mergeBlocks`, `deleteBlock`, `duplicateBlock`, `addSection`, `updateSection`, `removeSection`, `reorderSections`, `updateChord`) calls `snapshotArrangement(get())` before and after mutation, then calls `pushUndo()` with both snapshots.
-- [ ] Non-undo operations (`updateProject`, `updateStem`, `addStem`, `reorderStems`, `setDrumBlocks`, `clearDrumOnlyUpdate`, `setProject`, `setArrangement`, `clearArrangement`) do NOT call `pushUndo()`.
-- [ ] `useKeyboardShortcuts.ts` undo handler calls `parseSnapshot(entry.stateBefore)` and passes the result to `setArrangement()`. No inline `JSON.parse` + `if (state.blocks)` remains.
-- [ ] `useKeyboardShortcuts.ts` keyboard Delete and Duplicate handlers call only `deleteBlock()`/`duplicateBlock()` -- no `pushUndo()` calls remain in this file.
-- [ ] `useGenerate.ts` `runGeneration()` with `isRegeneration` captures `before` snapshot via `snapshotArrangement()` before generation starts, then pushes a single `pushUndo()` after generation completes with the `after` snapshot. No two-step push. No empty `stateAfter`.
-- [ ] `useAutoSave.ts` registers a `beforeunload` event listener that calls `e.preventDefault()` when `unsavedChanges` is true.
-- [ ] `useAutoSave.ts` sets a 30-second debounce timer that calls `saveProject()` when `unsavedChanges` is true and `generationState` is not `'generating'`.
-- [ ] `AppShell.tsx` calls `useAutoSave()`. No `setInterval` auto-save remains.
+- [x] Every destructive mutation in `project-store.ts` (`updateBlock`, `splitBlock`, `mergeBlocks`, `deleteBlock`, `duplicateBlock`, `addSection`, `updateSection`, `removeSection`, `reorderSections`, `updateChord`) calls `snapshotArrangement(get())` before and after mutation, then calls `pushUndo()` with both snapshots.
+- [x] Non-undo operations (`updateProject`, `updateStem`, `addStem`, `reorderStems`, `setDrumBlocks`, `clearDrumOnlyUpdate`, `setProject`, `setArrangement`, `clearArrangement`) do NOT call `pushUndo()`.
+- [x] `useKeyboardShortcuts.ts` undo handler calls `parseSnapshot(entry.stateBefore)` and passes the result to `setArrangement()`. No inline `JSON.parse` + `if (state.blocks)` remains.
+- [x] `useKeyboardShortcuts.ts` keyboard Delete and Duplicate handlers call only `deleteBlock()`/`duplicateBlock()` -- no `pushUndo()` calls remain in this file.
+- [x] `useGenerate.ts` `runGeneration()` with `isRegeneration` captures `before` snapshot via `snapshotArrangement()` before generation starts, then pushes a single `pushUndo()` after generation completes with the `after` snapshot. No two-step push. No empty `stateAfter`.
+- [x] `useAutoSave.ts` registers a `beforeunload` event listener that calls `e.preventDefault()` when `unsavedChanges` is true.
+- [x] `useAutoSave.ts` sets a 30-second debounce timer that calls `saveProject()` when `unsavedChanges` is true and `generationState` is not `'generating'`.
+- [x] `AppShell.tsx` calls `useAutoSave()`. No `setInterval` auto-save remains.
 
 ### Behavioral (end-to-end demo)
 
@@ -900,18 +900,23 @@ After all tasks pass, verify the *system-level behavior* matches the original in
 
 - [ ] Step: Open the app. Generate an arrangement. Split a block by clicking the split tool and clicking on a block. Press Cmd+Z.
   - Expect: The split is undone. The block returns to its original bar range. One undo entry was consumed.
+  - **Status: requires manual browser verification (dev server not running)**
 
 - [ ] Step: Press Cmd+Shift+Z.
   - Expect: The split is re-applied. Two blocks appear at the split point.
+  - **Status: requires manual browser verification**
 
 - [ ] Step: Select a block. Press Delete. Press Cmd+Z.
   - Expect: The deleted block reappears. Exactly one undo entry was consumed (not two).
+  - **Status: requires manual browser verification**
 
 - [ ] Step: Make any edit (e.g., update a chord). Attempt to close the browser tab.
   - Expect: The browser shows a "Leave site?" native confirmation dialog.
+  - **Status: requires manual browser verification**
 
 - [ ] Step: Press "Stay" (or cancel). Press Cmd+S to save. Attempt to close the tab again.
   - Expect: No confirmation dialog -- the tab closes immediately.
+  - **Status: requires manual browser verification**
 
 Undo/Redo + Auto-Save is complete when all tests pass AND both intent trace checks pass.
 
