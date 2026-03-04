@@ -778,50 +778,84 @@ export function applySwing(
  * Medium (34-66): standard pattern as written
  * High (67-100): add open hats, ghost notes; increase velocity 10% */
 export function applyEnergy(pattern: DrumHit[], energy: number): DrumHit[] {
+  // Pure intensity: how hard the drummer hits
+  // Low: softer (85% velocity), Mid: no change, High: louder (110% velocity)
   if (energy <= 33) {
-    // Low energy: remove 16th-note hats, ghost notes, open hats
-    return pattern
-      .filter((h) => {
-        // Remove 16th-note hi-hats (times at 0.25 intervals but not 0.5)
-        if (h.note === 'F#2') {
-          const frac = h.time % 0.5;
-          if (Math.abs(frac - 0.25) < 0.01) return false; // 16th-note position
-        }
-        // Remove ghost notes (very soft snare)
-        if (h.note === 'D2' && h.velocity < 40) return false;
-        // Remove open hats
-        if (h.note === 'A#2') return false;
-        return true;
-      })
-      .map((h) => ({ ...h, velocity: Math.round(h.velocity * 0.85) }));
+    return pattern.map((h) => ({
+      ...h,
+      velocity: Math.round(h.velocity * 0.85),
+    }));
   }
-
   if (energy >= 67) {
-    // High energy: boost velocities, keep everything including ghost notes
-    const boosted = pattern.map((h) => ({
+    return pattern.map((h) => ({
       ...h,
       velocity: Math.min(110, Math.round(h.velocity * 1.1)),
     }));
+  }
+  return pattern.map((h) => ({ ...h }));
+}
 
-    // Add syncopated kick if not already present
-    const hasKickOnAndOf3 = boosted.some(
-      (h) => h.note === 'C2' && Math.abs(h.time - 2.5) < 0.1
-    );
-    if (!hasKickOnAndOf3) {
-      boosted.push({
-        note: 'C2',
-        time: 2.5,
-        duration: 0.2,
-        velocity: 68,
-        probability: 0.5,
-      });
-    }
-
-    return boosted;
+/** Adjust pattern density based on groove (complexity).
+ * groove 0-30: simple backbone (kick-snare-hat only, no ghost notes, no 16ths)
+ * groove 31-69: standard — pattern as written
+ * groove 70-100: busy — add ghost notes, syncopated kick, 16th hats */
+export function applyGroove(hits: DrumHit[], groove: number): DrumHit[] {
+  if (groove <= 30) {
+    // Strip to backbone: remove embellishments
+    return hits.filter((h) => {
+      // Remove 16th-note hi-hats (F#2 at 0.25 intervals not on 0.5)
+      if (h.note === 'F#2') {
+        const frac = h.time % 0.5;
+        if (Math.abs(frac - 0.25) < 0.01) return false;
+      }
+      // Remove ghost notes (soft snare)
+      if (h.note === 'D2' && h.velocity < 40) return false;
+      // Remove open hi-hats
+      if (h.note === 'A#2') return false;
+      // Remove ride bell (A#3) — keep ride bow only
+      if (h.note === 'A#3') return false;
+      return true;
+    });
   }
 
-  // Medium energy: return as-is
-  return pattern.map((h) => ({ ...h }));
+  if (groove >= 70) {
+    // Busy: add embellishments
+    const busy = hits.map((h) => ({ ...h }));
+
+    // Add ghost snare on the "and" of beat 2 (time 1.5) if not present
+    const hasGhost = busy.some(
+      (h) => h.note === 'D2' && h.velocity < 40 && Math.abs(h.time - 1.5) < 0.1
+    );
+    if (!hasGhost) {
+      busy.push({ note: 'D2', time: 1.5, duration: 0.125, velocity: 30 });
+    }
+
+    // Add syncopated kick on "and" of beat 3 (time 2.5) if not present
+    const hasKickAndOf3 = busy.some(
+      (h) => h.note === 'C2' && Math.abs(h.time - 2.5) < 0.1
+    );
+    if (!hasKickAndOf3) {
+      busy.push({ note: 'C2', time: 2.5, duration: 0.25, velocity: 75 });
+    }
+
+    // At very high groove (85+), add 16th hi-hat fills in empty spots
+    if (groove >= 85) {
+      for (let beat = 0; beat < 4; beat++) {
+        const sixteenthTime = beat + 0.25;
+        const has16th = busy.some(
+          (h) => h.note === 'F#2' && Math.abs(h.time - sixteenthTime) < 0.05
+        );
+        if (!has16th) {
+          busy.push({ note: 'F#2', time: sixteenthTime, duration: 0.125, velocity: 40 });
+        }
+      }
+    }
+
+    return busy;
+  }
+
+  // Mid groove: pattern as written
+  return hits.map((h) => ({ ...h }));
 }
 
 /** Scale velocity range based on dynamics value.
@@ -955,7 +989,10 @@ export function buildDrumMidi(params: {
     return prob < h.probability;
   });
 
-  // Apply expression transforms (order matters)
+  // Apply complexity (note density)
+  hits = applyGroove(hits, params.groove);
+
+  // Apply expression transforms
   hits = applyEnergy(hits, params.energy);
   hits = applyDynamics(hits, params.dynamics);
 

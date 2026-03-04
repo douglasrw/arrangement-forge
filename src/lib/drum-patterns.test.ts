@@ -3,6 +3,7 @@ import {
   buildDrumMidi,
   applySwing,
   applyEnergy,
+  applyGroove,
   applyDynamics,
   applyFeel,
   knuthHash,
@@ -77,12 +78,12 @@ describe('drum-patterns', () => {
     }
   });
 
-  // ---- Energy Scaling ----
+  // ---- Groove Complexity (note density) ----
 
-  it('energy scaling: count notes at energy=20 < count at energy=80', () => {
-    const lowNotes = buildDrumMidi(makeParams({ energy: 20, dynamics: 50, groove: 0 }));
-    const highNotes = buildDrumMidi(makeParams({ energy: 80, dynamics: 50, groove: 0 }));
-    expect(lowNotes.length).toBeLessThan(highNotes.length);
+  it('groove complexity: count notes at groove=0 < count at groove=100', () => {
+    const simpleNotes = buildDrumMidi(makeParams({ groove: 0, feel: 0, energy: 50, dynamics: 50 }));
+    const busyNotes = buildDrumMidi(makeParams({ groove: 100, feel: 0, energy: 50, dynamics: 50 }));
+    expect(simpleNotes.length).toBeLessThan(busyNotes.length);
   });
 
   // ---- Swing ----
@@ -223,13 +224,13 @@ describe('drum-patterns', () => {
   it('no two consecutive bars have identical note arrays', () => {
     const bar1 = buildDrumMidi(makeParams({
       barNumberGlobal: 1,
-      groove: 0,
+      groove: 50,
       energy: 50,
       dynamics: 50,
     }));
     const bar2 = buildDrumMidi(makeParams({
       barNumberGlobal: 2,
-      groove: 0,
+      groove: 50,
       energy: 50,
       dynamics: 50,
     }));
@@ -288,7 +289,7 @@ describe('drum-patterns', () => {
       const notes = buildDrumMidi(makeParams({
         genre: 'Funk',
         barNumberGlobal: 1,
-        groove: 0,
+        groove: 50,
         energy: 50,
         dynamics: 50,
         sectionIndex: 0,
@@ -394,7 +395,7 @@ describe('drum-patterns', () => {
       const notes = buildDrumMidi(makeParams({
         genre: 'R&B',
         barNumberGlobal: 1,
-        groove: 0,
+        groove: 50,
         energy: 50,
         dynamics: 50,
         sectionIndex: 0,
@@ -471,15 +472,88 @@ describe('drum-patterns', () => {
   });
 
   describe('applyEnergy', () => {
-    it('low energy removes 16th hats and ghost notes', () => {
+    it('low energy reduces velocity but keeps same note count', () => {
       const input = [
-        { note: 'F#2', time: 0.25, duration: 0.05, velocity: 45 }, // 16th hat - removed
-        { note: 'F#2', time: 0.5,  duration: 0.1,  velocity: 55 }, // 8th hat - kept
-        { note: 'D2',  time: 0.5,  duration: 0.1,  velocity: 30 }, // ghost - removed
-        { note: 'D2',  time: 1,    duration: 0.2,  velocity: 90 }, // backbeat - kept
+        { note: 'F#2', time: 0.25, duration: 0.05, velocity: 45 },
+        { note: 'F#2', time: 0.5,  duration: 0.1,  velocity: 55 },
+        { note: 'D2',  time: 0.5,  duration: 0.1,  velocity: 30 },
+        { note: 'D2',  time: 1,    duration: 0.2,  velocity: 90 },
       ];
       const result = applyEnergy(input, 20);
+      expect(result.length).toBe(4); // same count — intensity only
+      for (let i = 0; i < result.length; i++) {
+        expect(result[i].velocity).toBeLessThanOrEqual(input[i].velocity);
+      }
+    });
+
+    it('high energy boosts velocity but keeps same note count', () => {
+      const input = [
+        { note: 'C2', time: 0, duration: 0.25, velocity: 80 },
+        { note: 'D2', time: 1, duration: 0.2,  velocity: 70 },
+      ];
+      const result = applyEnergy(input, 80);
       expect(result.length).toBe(2);
+      for (let i = 0; i < result.length; i++) {
+        expect(result[i].velocity).toBeGreaterThanOrEqual(input[i].velocity);
+      }
+    });
+
+    it('mid energy returns same velocities', () => {
+      const input = [
+        { note: 'C2', time: 0, duration: 0.25, velocity: 80 },
+      ];
+      const result = applyEnergy(input, 50);
+      expect(result.length).toBe(1);
+      expect(result[0].velocity).toBe(80);
+    });
+  });
+
+  describe('applyGroove (complexity)', () => {
+    it('groove=0 strips ghost notes, 16th hats, and open hats', () => {
+      const input = [
+        { note: 'C2',  time: 0,    duration: 0.25, velocity: 100 }, // kick - kept
+        { note: 'D2',  time: 1,    duration: 0.2,  velocity: 90 },  // backbeat snare - kept
+        { note: 'D2',  time: 1.5,  duration: 0.1,  velocity: 30 },  // ghost snare - removed
+        { note: 'F#2', time: 0,    duration: 0.1,  velocity: 55 },  // 8th hat - kept
+        { note: 'F#2', time: 0.25, duration: 0.05, velocity: 45 },  // 16th hat - removed
+        { note: 'A#2', time: 2,    duration: 0.1,  velocity: 50 },  // open hat - removed
+        { note: 'A#3', time: 3,    duration: 0.1,  velocity: 60 },  // ride bell - removed
+      ];
+      const result = applyGroove(input, 0);
+      expect(result.length).toBe(3); // kick + backbeat + 8th hat
+    });
+
+    it('groove=50 returns same number of notes (mid = pattern as-is)', () => {
+      const input = [
+        { note: 'C2', time: 0, duration: 0.25, velocity: 100 },
+        { note: 'D2', time: 1, duration: 0.2,  velocity: 90 },
+      ];
+      const result = applyGroove(input, 50);
+      expect(result.length).toBe(2);
+    });
+
+    it('groove=100 adds ghost snare and syncopated kick to a simple pattern', () => {
+      const input = [
+        { note: 'C2', time: 0, duration: 0.25, velocity: 100 }, // kick
+        { note: 'D2', time: 1, duration: 0.2,  velocity: 90 },  // snare
+      ];
+      const result = applyGroove(input, 100);
+      // Should have original 2 + ghost snare at 1.5 + syncopated kick at 2.5 + 16th hats
+      expect(result.length).toBeGreaterThan(2);
+      const hasGhost = result.some((h) => h.note === 'D2' && h.velocity < 40);
+      expect(hasGhost).toBe(true);
+      const hasSyncKick = result.some((h) => h.note === 'C2' && Math.abs(h.time - 2.5) < 0.1);
+      expect(hasSyncKick).toBe(true);
+    });
+
+    it('groove=85 adds 16th hi-hat fills', () => {
+      const input = [
+        { note: 'C2', time: 0, duration: 0.25, velocity: 100 },
+        { note: 'D2', time: 1, duration: 0.2,  velocity: 90 },
+      ];
+      const result = applyGroove(input, 85);
+      const sixteenthHats = result.filter((h) => h.note === 'F#2');
+      expect(sixteenthHats.length).toBeGreaterThanOrEqual(1);
     });
   });
 

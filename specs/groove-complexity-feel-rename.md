@@ -222,7 +222,7 @@ Grep src/lib/drum-patterns.ts for "applyFeel" — should return the function def
 
 ---
 
-### [ ] T3 — Implement groove complexity algorithm + refactor energy to intensity-only
+### [x] T3 — Implement groove complexity algorithm + refactor energy to intensity-only
 
 **Files:** `src/lib/drum-patterns.ts`, `src/lib/drum-patterns.test.ts`
 **Depends on:** T2
