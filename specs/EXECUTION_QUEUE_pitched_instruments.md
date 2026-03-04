@@ -216,7 +216,7 @@ All tests pass. Walking pattern produces 4 notes per bar. Slap pattern produces
 
 ---
 
-### [ ] T2 — Piano pattern library
+### [x] T2 — Piano pattern library
 
 **Files:** `src/lib/piano-patterns.ts` (new), `src/lib/piano-patterns.test.ts` (new)
 **Depends on:** T1 (for exported helpers in midi-generator.ts)
