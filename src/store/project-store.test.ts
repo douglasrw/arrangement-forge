@@ -1,6 +1,7 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import { useProjectStore } from './project-store';
-import type { Project, Section, Block, Stem } from '@/types';
+import { useUndoStore } from './undo-store';
+import type { Project, Section, Block, Stem, Chord } from '@/types';
 
 const makeProject = (partial: Partial<Project> = {}): Project => ({
   id: 'p1', userId: 'u1', name: 'Test', key: 'C', tempo: 120,
@@ -28,10 +29,16 @@ const makeStem = (partial: Partial<Stem> = {}): Stem => ({
   volume: 0.8, pan: 0, isMuted: false, isSolo: false, createdAt: '2026-01-01', ...partial,
 });
 
+const makeChord = (partial: Partial<Chord> = {}): Chord => ({
+  id: 'c1', projectId: 'p1', barNumber: 1, degree: 'I', quality: 'maj7', bassDegree: null,
+  ...partial,
+});
+
 beforeEach(() => {
   useProjectStore.setState({
     project: null, stems: [], sections: [], blocks: [], chords: [], chatMessages: [],
   });
+  useUndoStore.setState({ undoStack: [], redoStack: [] });
 });
 
 describe('projectStore', () => {
@@ -146,5 +153,166 @@ describe('projectStore', () => {
     expect(useProjectStore.getState().getSectionAtBar(8)?.id).toBe('s1');
     expect(useProjectStore.getState().getSectionAtBar(9)?.id).toBe('s2');
     expect(useProjectStore.getState().getSectionAtBar(12)?.id).toBe('s2');
+  });
+});
+
+function hasSnapshotKeys(json: string): boolean {
+  const parsed = JSON.parse(json);
+  return (
+    Array.isArray(parsed.stems) &&
+    Array.isArray(parsed.sections) &&
+    Array.isArray(parsed.blocks) &&
+    Array.isArray(parsed.chords)
+  );
+}
+
+describe('undo push coverage', () => {
+  it('splitBlock pushes undo entry with unified snapshot format', () => {
+    useProjectStore.getState().setArrangement({
+      stems: [makeStem()], sections: [makeSection()],
+      blocks: [makeBlock({ startBar: 1, endBar: 8 })], chords: [],
+    });
+    useProjectStore.getState().splitBlock('b1', 5);
+    const stack = useUndoStore.getState().undoStack;
+    expect(stack).toHaveLength(1);
+    expect(hasSnapshotKeys(stack[0].stateBefore)).toBe(true);
+    expect(hasSnapshotKeys(stack[0].stateAfter)).toBe(true);
+  });
+
+  it('mergeBlocks pushes undo entry with unified snapshot format', () => {
+    useProjectStore.getState().setArrangement({
+      stems: [makeStem()], sections: [makeSection()],
+      blocks: [
+        makeBlock({ id: 'b1', startBar: 1, endBar: 4 }),
+        makeBlock({ id: 'b2', startBar: 5, endBar: 8 }),
+      ],
+      chords: [],
+    });
+    useProjectStore.getState().mergeBlocks('b1', 'b2');
+    const stack = useUndoStore.getState().undoStack;
+    expect(stack).toHaveLength(1);
+    expect(hasSnapshotKeys(stack[0].stateBefore)).toBe(true);
+    expect(hasSnapshotKeys(stack[0].stateAfter)).toBe(true);
+  });
+
+  it('deleteBlock pushes undo entry with unified snapshot format', () => {
+    useProjectStore.getState().setArrangement({
+      stems: [makeStem()], sections: [makeSection()],
+      blocks: [makeBlock()], chords: [],
+    });
+    useProjectStore.getState().deleteBlock('b1');
+    const stack = useUndoStore.getState().undoStack;
+    expect(stack).toHaveLength(1);
+    expect(hasSnapshotKeys(stack[0].stateBefore)).toBe(true);
+    expect(hasSnapshotKeys(stack[0].stateAfter)).toBe(true);
+  });
+
+  it('updateBlock pushes undo entry with unified snapshot format', () => {
+    useProjectStore.getState().setArrangement({
+      stems: [makeStem()], sections: [makeSection()],
+      blocks: [makeBlock()], chords: [],
+    });
+    useProjectStore.getState().updateBlock('b1', { style: 'rock_power' });
+    const stack = useUndoStore.getState().undoStack;
+    expect(stack).toHaveLength(1);
+    expect(hasSnapshotKeys(stack[0].stateBefore)).toBe(true);
+    expect(hasSnapshotKeys(stack[0].stateAfter)).toBe(true);
+  });
+
+  it('duplicateBlock pushes undo entry with unified snapshot format', () => {
+    useProjectStore.getState().setArrangement({
+      stems: [makeStem()], sections: [makeSection()],
+      blocks: [makeBlock()], chords: [],
+    });
+    useProjectStore.getState().duplicateBlock('b1');
+    const stack = useUndoStore.getState().undoStack;
+    expect(stack).toHaveLength(1);
+    expect(hasSnapshotKeys(stack[0].stateBefore)).toBe(true);
+    expect(hasSnapshotKeys(stack[0].stateAfter)).toBe(true);
+  });
+
+  it('addSection pushes undo entry with unified snapshot format', () => {
+    useProjectStore.getState().setArrangement({
+      stems: [makeStem()], sections: [], blocks: [], chords: [],
+    });
+    useProjectStore.getState().addSection(makeSection());
+    const stack = useUndoStore.getState().undoStack;
+    expect(stack).toHaveLength(1);
+    expect(hasSnapshotKeys(stack[0].stateBefore)).toBe(true);
+    expect(hasSnapshotKeys(stack[0].stateAfter)).toBe(true);
+  });
+
+  it('updateSection pushes undo entry with unified snapshot format', () => {
+    useProjectStore.getState().setArrangement({
+      stems: [makeStem()], sections: [makeSection()], blocks: [], chords: [],
+    });
+    useProjectStore.getState().updateSection('s1', { name: 'Chorus' });
+    const stack = useUndoStore.getState().undoStack;
+    expect(stack).toHaveLength(1);
+    expect(hasSnapshotKeys(stack[0].stateBefore)).toBe(true);
+    expect(hasSnapshotKeys(stack[0].stateAfter)).toBe(true);
+  });
+
+  it('removeSection pushes undo entry with unified snapshot format', () => {
+    useProjectStore.getState().setArrangement({
+      stems: [makeStem()], sections: [makeSection()],
+      blocks: [makeBlock()], chords: [],
+    });
+    useProjectStore.getState().removeSection('s1');
+    const stack = useUndoStore.getState().undoStack;
+    expect(stack).toHaveLength(1);
+    expect(hasSnapshotKeys(stack[0].stateBefore)).toBe(true);
+    expect(hasSnapshotKeys(stack[0].stateAfter)).toBe(true);
+  });
+
+  it('reorderSections pushes undo entry with unified snapshot format', () => {
+    useProjectStore.getState().setArrangement({
+      stems: [makeStem()],
+      sections: [makeSection({ id: 's1' }), makeSection({ id: 's2', sortOrder: 1 })],
+      blocks: [], chords: [],
+    });
+    useProjectStore.getState().reorderSections(['s2', 's1']);
+    const stack = useUndoStore.getState().undoStack;
+    expect(stack).toHaveLength(1);
+    expect(hasSnapshotKeys(stack[0].stateBefore)).toBe(true);
+    expect(hasSnapshotKeys(stack[0].stateAfter)).toBe(true);
+  });
+
+  it('updateChord pushes undo entry with unified snapshot format', () => {
+    useProjectStore.getState().setArrangement({
+      stems: [makeStem()], sections: [makeSection()], blocks: [makeBlock()],
+      chords: [makeChord({ barNumber: 1 })],
+    });
+    useProjectStore.getState().updateChord(1, { quality: 'min7' });
+    const stack = useUndoStore.getState().undoStack;
+    expect(stack).toHaveLength(1);
+    expect(hasSnapshotKeys(stack[0].stateBefore)).toBe(true);
+    expect(hasSnapshotKeys(stack[0].stateAfter)).toBe(true);
+  });
+
+  // Negative tests: non-undo actions
+  it('updateProject does NOT push undo entry', () => {
+    useProjectStore.getState().setProject(makeProject());
+    useUndoStore.setState({ undoStack: [], redoStack: [] });
+    useProjectStore.getState().updateProject({ name: 'New Name' });
+    expect(useUndoStore.getState().undoStack).toHaveLength(0);
+  });
+
+  it('updateStem does NOT push undo entry', () => {
+    useProjectStore.getState().setArrangement({
+      stems: [makeStem()], sections: [], blocks: [], chords: [],
+    });
+    useUndoStore.setState({ undoStack: [], redoStack: [] });
+    useProjectStore.getState().updateStem('st1', { volume: 0.5 });
+    expect(useUndoStore.getState().undoStack).toHaveLength(0);
+  });
+
+  it('setDrumBlocks does NOT push undo entry', () => {
+    useProjectStore.getState().setArrangement({
+      stems: [makeStem()], sections: [], blocks: [makeBlock()], chords: [],
+    });
+    useUndoStore.setState({ undoStack: [], redoStack: [] });
+    useProjectStore.getState().setDrumBlocks([makeBlock()]);
+    expect(useUndoStore.getState().undoStack).toHaveLength(0);
   });
 });

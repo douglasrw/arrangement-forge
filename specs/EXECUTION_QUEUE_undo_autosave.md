@@ -251,7 +251,7 @@ All 5 tests pass. Inspect `splitBlock`, `mergeBlocks`, `deleteBlock` in `project
 
 ---
 
-### [ ] T2 -- Add Undo Coverage to All Destructive Mutations
+### [x] T2 -- Add Undo Coverage to All Destructive Mutations
 
 **Files:** `src/store/project-store.ts` (modify), `src/store/project-store.test.ts` (modify)
 **Depends on:** T1

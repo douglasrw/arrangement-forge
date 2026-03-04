@@ -104,26 +104,36 @@ export const useProjectStore = create<ProjectStore>()((set, get) => ({
   },
 
   addSection: (section) => {
+    const before = snapshotArrangement(get());
     set((state) => ({ sections: [...state.sections, section] }));
+    const after = snapshotArrangement(get());
+    useUndoStore.getState().pushUndo(`Add section: ${section.name}`, before, after);
     useUiStore.getState().markDirty();
   },
 
   updateSection: (sectionId, partial) => {
+    const before = snapshotArrangement(get());
     set((state) => ({
       sections: state.sections.map((s) => (s.id === sectionId ? { ...s, ...partial } : s)),
     }));
+    const after = snapshotArrangement(get());
+    useUndoStore.getState().pushUndo('Update section', before, after);
     useUiStore.getState().markDirty();
   },
 
   removeSection: (sectionId) => {
+    const before = snapshotArrangement(get());
     set((state) => ({
       sections: state.sections.filter((s) => s.id !== sectionId),
       blocks: state.blocks.filter((b) => b.sectionId !== sectionId),
     }));
+    const after = snapshotArrangement(get());
+    useUndoStore.getState().pushUndo('Remove section', before, after);
     useUiStore.getState().markDirty();
   },
 
   reorderSections: (sectionIds) => {
+    const before = snapshotArrangement(get());
     set((state) => ({
       sections: sectionIds
         .map((id, i) => {
@@ -132,13 +142,18 @@ export const useProjectStore = create<ProjectStore>()((set, get) => ({
         })
         .filter(Boolean) as Section[],
     }));
+    const after = snapshotArrangement(get());
+    useUndoStore.getState().pushUndo('Reorder sections', before, after);
     useUiStore.getState().markDirty();
   },
 
   updateBlock: (blockId, partial) => {
+    const before = snapshotArrangement(get());
     set((state) => ({
       blocks: state.blocks.map((b) => (b.id === blockId ? { ...b, ...partial } : b)),
     }));
+    const after = snapshotArrangement(get());
+    useUndoStore.getState().pushUndo('Update block', before, after);
     useUiStore.getState().markDirty();
   },
 
@@ -188,15 +203,21 @@ export const useProjectStore = create<ProjectStore>()((set, get) => ({
     const { blocks } = get();
     const original = blocks.find((b) => b.id === blockId);
     if (!original) return;
+    const before = snapshotArrangement(get());
     const copy: Block = { ...original, id: genId() };
     set({ blocks: [...blocks, copy] });
+    const after = snapshotArrangement(get());
+    useUndoStore.getState().pushUndo('Duplicate block', before, after);
     useUiStore.getState().markDirty();
   },
 
   updateChord: (barNumber, chord) => {
+    const before = snapshotArrangement(get());
     set((state) => ({
       chords: state.chords.map((c) => (c.barNumber === barNumber ? { ...c, ...chord } : c)),
     }));
+    const after = snapshotArrangement(get());
+    useUndoStore.getState().pushUndo(`Update chord at bar ${barNumber}`, before, after);
     useUiStore.getState().markDirty();
   },
 
