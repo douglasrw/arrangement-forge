@@ -1,46 +1,23 @@
 # Arrangement Forge
 
 ## Repo Locations
-
-This repo exists in two places, synced via git:
-
 - **Local (macOS):** `/Users/dwalseth/data/projects/arrangement-forge`
-- **Server (myserver):** `/data/projects/arrangement-forge` — VPS at 217.77.3.253, SSH host alias `myserver`
-
-When running locally: if the user asks for "files on my server" or similar, they mean files at `/data/projects/arrangement-forge/` on myserver.
-
-## File Transfer Conventions (`put it` / `get it`)
-
-Both local and server repos have an `uploads/` folder (git-ignored) used as a staging area for file transfers between machines.
-
-| Location | Path |
-|----------|------|
-| Local | `/Users/dwalseth/data/projects/arrangement-forge/uploads/` |
-| Server | `/data/projects/arrangement-forge/uploads/` |
-
-### "put it" — Upload a file to the server
-
-1. Copy the file into the local `uploads/` folder (if it isn't already there).
-2. `scp` it to the server's `uploads/` folder.
-
-### "get it" — Download a file from the server
-
-- **No path specified:** Look in the server's `uploads/` folder.
-- **Path specified:** Treat the path as relative to `/` on the server (i.e. an absolute path).
-
-Download the file into the local `uploads/` folder.
-
-### General rules
-
-- "it" refers to whatever file was just discussed or produced in the conversation.
-- If ambiguous, ask which file.
-- Use `scp` with the `myserver` SSH alias for all transfers.
+- **Server (myserver):** `/data/projects/arrangement-forge`
 
 ---
 
 ## Project Overview
 
 Arrangement Forge is an AI-powered SaaS for musicians to create professional backing tracks. The MVP targets solo practice: musician + laptop + backing track. The core paradigm is a bar-level block sequencer (not a piano-roll or DAW). See [ARCHITECTURE.md](ARCHITECTURE.md) for the full technical specification.
+
+## Quick Reference
+
+| Task | Command |
+|------|---------|
+| Dev server | `npm run dev` (port 5173, access via MacBook tunnel) |
+| Build check | `npm run build` |
+| Unit tests | `npx vitest run` |
+| Type check | `npx tsc --noEmit` |
 
 ## How to Use This File
 
@@ -79,13 +56,8 @@ Every implementation agent must read three documents before starting work:
 - **Chord storage:** Roman numerals internally. Letter names computed at display time from key + degree.
 - **Block spans:** `start_bar` and `end_bar` are inclusive.
 - **Null = inherited:** Any `_override` field that is `null` means "inherit from parent level."
-
----
-
-## Component Patterns
-
 - Use DaisyUI component classes (`btn`, `card`, `dropdown`, `modal`, `badge`, `tab`, etc.) with the custom `forge` dark theme
-- Must reference T24 design system (`tailwind.config.ts` theme tokens + `globals.css` patterns) for all visual styling decisions
+- Reference design system (`tailwind.config.ts` theme tokens + `globals.css` patterns) for all visual styling decisions
 - No custom CSS framework — only Tailwind utilities + DaisyUI classes
 - Zustand for global state, React `useState` for component-local UI only
 - No prop drilling beyond 2 levels — use stores
@@ -109,10 +81,10 @@ These are absolute requirements. Every agent must follow all of them.
 - **Must** use `ConfirmDialog` from `src/components/shared/ConfirmDialog.tsx` for destructive actions
 - **Must** use the Supabase JS client for all database operations — no custom REST endpoints
 - **Must** use the `forge` theme color tokens (DaisyUI semantic classes like `bg-base-100`, `text-primary`, `btn-primary`) — never hardcode hex colors in components
-- **Must** verify UI tasks with visual assertions (Playwright screenshots or DOM measurements), not just `npm run build`. TypeScript compilation proves syntax, not visual correctness. Every acceptance criterion for a UI task needs an executable verification step.
-- **Must** verify headless Playwright can authenticate and reach the target page BEFORE starting any UI automation task. If auth fails, fix it first. See `e2e/auth-helper.ts` for the login utility.
-- **Must** capture before/after screenshots of the user's exact project (not a different test project) when fixing UI issues.
-- **Must not** iterate more than once on a UI fix that the user says is wrong. After one failed fix: STOP, get a screenshot from the user, write executable Playwright assertions encoding the target state, then make one surgical fix in a fresh context. The fix-break-fix spiral on visual work is the most destructive anti-pattern in this project's history.
+- **Must** verify UI tasks with Playwright visual assertions (screenshots + DOM checks), not just `npm run build`
+- **Must not** iterate more than once on a UI fix without a screenshot. After one failure: STOP, get screenshot, write Playwright assertions, fresh context.
+- **Must** give every `<input>` and `<textarea>` a unique `id` attribute and a corresponding `<label htmlFor={id}>`. No unlabeled form fields.
+- **Must** include `SET search_path = public` in any Supabase `SECURITY DEFINER` function and use fully qualified table names (e.g., `public.profiles`). Without this, trigger functions fail silently.
 
 ---
 
@@ -133,8 +105,6 @@ These are hard prohibitions. Violating any of these requires stopping and escala
 - **Must not** create README.md or documentation files
 - **Must not** use the DaisyUI `wireframe` theme — it was used during prototyping only. Production uses the custom `forge` theme (T24).
 - **Must not** send `user_id` from the client in Supabase inserts — use `DEFAULT auth.uid()` on the column so Postgres sets it from the JWT. Sending from client breaks RLS policies.
-- **Must** give every `<input>` and `<textarea>` a unique `id` attribute and a corresponding `<label htmlFor={id}>`. No unlabeled form fields.
-- **Must** include `SET search_path = public` in any Supabase `SECURITY DEFINER` function and use fully qualified table names (e.g., `public.profiles`). Without this, trigger functions fail silently.
 
 ---
 
@@ -150,6 +120,33 @@ Soft rules. Follow these unless there's a clear reason not to.
 - Prefer computed/derived values over duplicated state
 - Keep components under 200 lines — extract sub-components if larger
 - Keep functions under 50 lines
+
+---
+
+## Pre-Commit Checks (Automated Enforcement)
+
+Binary CLAUDE.md rules are enforced by pre-commit hooks. Commits that violate these rules are **automatically blocked** — no bypass is possible (`--no-verify` is denied in `.claude/settings.json`).
+
+**How it works:** `husky` runs `lint-staged` on every commit. Lint-staged passes staged `.ts/.tsx` files to `scripts/run-checks.sh`, which auto-discovers and runs every `.sh` script in `scripts/checks/`.
+
+**Active checks:**
+
+| Check | CLAUDE.md Rule |
+|-------|---------------|
+| `no-hardcoded-colors` | Must use forge theme tokens, never hardcode hex |
+| `no-browser-dialogs` | Must not use `confirm()`/`alert()`/`prompt()` |
+| `no-default-exports` | Named exports only (except `src/pages/`) |
+| `no-css-in-js` | Must not use styled-components, emotion, CSS modules |
+| `no-barrel-reexports` | No `export *` except `src/types/index.ts` |
+| `no-class-components` | Functional components only |
+| `no-wireframe-theme` | Must not reference wireframe theme |
+| `no-client-user-id` | Must not send user_id from client in Supabase inserts |
+
+**Disabled (needs rewrite):** `no-unlabeled-inputs.sh.disabled` — single-line grep can't handle multi-line JSX props. Rule remains enforced as prose only.
+
+**To add a new check:** Drop a `.sh` file in `scripts/checks/`. No config changes needed. The script receives staged file paths as `$@` and should exit non-zero to block the commit. **Always validate new checks against the real codebase** (`bash scripts/run-checks.sh src/**/*.tsx`) before committing — see the "Enforcement Without Validation" anti-pattern.
+
+**Existing tech debt:** ~16 files have pre-existing hardcoded hex colors. Touching these files for any reason will trigger the color check. Fix the hex colors in your changes, or remediate the whole file.
 
 ---
 

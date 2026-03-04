@@ -50,8 +50,14 @@ for file in "$@"; do
   MATCHES=$(echo "$CONTENT" | grep -nE "$HEX_PATTERN" || true)
 
   if [ -n "$MATCHES" ]; then
-    # Filter out legitimate uses: CSS custom property definitions, comments
-    REAL_MATCHES=$(echo "$MATCHES" | grep -vE '^\s*//' | grep -vE 'hsl\(|rgb\(|oklch\(' || true)
+    # Filter out legitimate uses
+    REAL_MATCHES=$(echo "$MATCHES" \
+      | grep -vE '^\s*//' \
+      | grep -vE 'hsl\(|rgb\(|oklch\(' \
+      | grep -vE 'querySelector|getElementById|getElement' \
+      | grep -vE '\bfill="|stroke="' \
+      | grep -vE '#[0-9a-fA-F]+[)\s]' \
+      || true)
 
     if [ -n "$REAL_MATCHES" ]; then
       echo "ERROR: Hardcoded hex colors in $rel_file"

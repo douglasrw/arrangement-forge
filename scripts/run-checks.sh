@@ -6,6 +6,11 @@
 #
 # To add a new check: drop a .sh file in scripts/checks/
 # No config changes needed — it runs automatically.
+#
+# IMPORTANT: Always validate new checks against the real codebase before committing:
+#   bash scripts/run-checks.sh src/**/*.tsx
+# Synthetic test files miss multi-line JSX, edge cases, and existing tech debt.
+# See: "Enforcement Without Validation" anti-pattern.
 
 set -euo pipefail
 
