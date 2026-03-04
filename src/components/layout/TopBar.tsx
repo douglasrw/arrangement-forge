@@ -218,8 +218,8 @@ export function TopBar() {
       {/* ---- LEFT: Monogram + editable name + save dot ---- */}
       <div className="flex items-center gap-3">
         {/* AF monogram */}
-        <div className="flex size-7 items-center justify-center rounded-sm bg-[#0891b2]/10">
-          <span className="text-[11px] font-bold leading-none text-[#06b6d4]">
+        <div className="flex size-7 items-center justify-center rounded-sm bg-ring/10">
+          <span className="text-[11px] font-bold leading-none text-primary">
             AF
           </span>
         </div>
@@ -243,7 +243,7 @@ export function TopBar() {
                   }
                 }}
                 placeholder="Untitled Project"
-                className="h-6 w-40 rounded-[5px] border border-border bg-secondary px-2 text-sm font-medium text-foreground outline-none focus:border-[#0891b2]"
+                className="h-6 w-40 rounded-[5px] border border-border bg-secondary px-2 text-sm font-medium text-foreground outline-none focus:border-ring"
               />
             </>
           ) : (

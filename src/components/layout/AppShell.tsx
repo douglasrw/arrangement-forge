@@ -47,7 +47,7 @@ export function AppShell() {
   }, [selectionLevel, panelContext.mode]);
 
   return (
-    <div className="flex flex-col h-screen bg-[#09090b] overflow-hidden">
+    <div className="flex flex-col h-screen bg-background overflow-hidden">
       <TopBar />
 
       <div className="flex flex-1 min-h-0">

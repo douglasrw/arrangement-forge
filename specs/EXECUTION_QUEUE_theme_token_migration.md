@@ -190,7 +190,7 @@ No file overlaps between tasks -- each file is edited by exactly one task.
 
 ---
 
-### [ ] T1 -- Layout components: AppShell, TopBar, StatusBar
+### [x] T1 -- Layout components: AppShell, TopBar, StatusBar
 
 **Files:** `src/components/layout/AppShell.tsx`, `src/components/layout/TopBar.tsx`, `src/components/layout/StatusBar.tsx`
 **Depends on:** none
