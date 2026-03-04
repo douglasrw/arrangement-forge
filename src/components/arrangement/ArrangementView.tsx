@@ -123,6 +123,17 @@ export function ArrangementView({
     return () => ro.disconnect()
   }, [recalcLayout])
 
+  /* Clamp scroll position when content shrinks (e.g. section deleted) */
+  const totalBarsForClamp = sections.reduce((sum, s) => sum + s.barCount, 0)
+  useEffect(() => {
+    const el = scrollRef.current
+    if (!el) return
+    const maxScroll = el.scrollWidth - el.clientWidth
+    if (maxScroll >= 0 && el.scrollLeft > maxScroll) {
+      el.scrollLeft = Math.max(0, maxScroll)
+    }
+  }, [totalBarsForClamp])
+
   if (generationState !== "complete") {
     return <EmptyState onGenerate={() => setGenerationState("complete")} />
   }

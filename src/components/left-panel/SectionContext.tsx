@@ -76,7 +76,7 @@ export function SectionContext({
   onClose,
 }: SectionContextProps) {
   const { sections, updateSection, removeSection } = useProjectStore()
-  const { sectionId } = useSelectionStore()
+  const { sectionId, selectSong } = useSelectionStore()
 
   /* Derive live section from store using sectionId */
   const liveSection = sections.find((s) => s.id === sectionId)
@@ -124,6 +124,7 @@ export function SectionContext({
 
   function handleDeleteSection() {
     if (!liveSection) return
+    selectSong()          // clear selection synchronously before mutation
     removeSection(liveSection.id)
     setConfirmDeleteOpen(false)
     onClose?.()

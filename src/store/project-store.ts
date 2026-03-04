@@ -2,6 +2,7 @@ import { create } from 'zustand';
 import type { Project, Stem, Section, Block, Chord, AiChatMessage } from '@/types';
 import { useUndoStore } from './undo-store';
 import { useUiStore } from './ui-store';
+import { useSelectionStore } from './selection-store';
 import { snapshotArrangement } from '@/lib/undo-helpers';
 
 const genId = () => crypto.randomUUID();
@@ -134,6 +135,9 @@ export const useProjectStore = create<ProjectStore>()((set, get) => ({
 
   removeSection: (sectionId) => {
     const before = snapshotArrangement(get());
+    // Defense-in-depth: clear selection if it points at the deleted section
+    const sel = useSelectionStore.getState();
+    if (sel.sectionId === sectionId) sel.selectSong();
     set((state) => ({
       sections: state.sections.filter((s) => s.id !== sectionId),
       blocks: state.blocks.filter((b) => b.sectionId !== sectionId),
