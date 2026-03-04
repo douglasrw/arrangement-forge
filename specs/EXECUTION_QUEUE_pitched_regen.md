@@ -514,7 +514,7 @@ Behavioral:
 
 ---
 
-### [ ] T4 — Tests for per-section generation and store actions
+### [x] T4 — Tests for per-section generation and store actions
 
 **Files:** `src/lib/midi-generator.test.ts`, `src/store/project-store.test.ts`
 **Depends on:** T1, T2

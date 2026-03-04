@@ -105,4 +105,82 @@ describe('generate', () => {
     const result = generate({ ...baseRequest, chords: [] });
     expect(result.sections.length).toBeGreaterThan(0);
   });
+
+  it('creates per-section blocks for pitched instruments (not a single block)', () => {
+    const chords = Array.from({ length: 12 }, (_, i) => ({
+      bar_number: i + 1,
+      degree: i % 2 === 0 ? 'I' : 'V',
+      quality: 'maj7',
+      bass_degree: null,
+    }));
+    const result = generate({ ...baseRequest, chords, stems: ['drums', 'bass', 'piano', 'guitar', 'strings'] });
+    const sections = result.sections; // 12-bar: Intro(4), Verse(4), Chorus(4)
+    expect(sections).toHaveLength(3);
+
+    for (const instrument of ['bass', 'piano', 'guitar', 'strings']) {
+      const blocks = result.blocks.filter((b) => b.stem_instrument === instrument);
+      expect(blocks).toHaveLength(sections.length);
+
+      // Each block should match a section's bar range
+      for (let i = 0; i < sections.length; i++) {
+        const section = sections[i];
+        const block = blocks.find((b) => b.section_name === section.name);
+        expect(block).toBeDefined();
+        expect(block!.start_bar).toBe(section.start_bar);
+        expect(block!.end_bar).toBe(section.start_bar + section.bar_count - 1);
+      }
+    }
+  });
+
+  it('pitched instrument blocks have correct section_name (not always first section)', () => {
+    const chords = Array.from({ length: 12 }, (_, i) => ({
+      bar_number: i + 1,
+      degree: 'I',
+      quality: 'maj7',
+      bass_degree: null,
+    }));
+    const result = generate({ ...baseRequest, chords, stems: ['bass'] });
+    const bassBlocks = result.blocks.filter((b) => b.stem_instrument === 'bass');
+    const sectionNames = bassBlocks.map((b) => b.section_name);
+    expect(sectionNames).toEqual(['Intro', 'Verse', 'Chorus']);
+  });
+
+  it('pitched blocks MIDI data has correct bar count per section', () => {
+    const chords = Array.from({ length: 16 }, (_, i) => ({
+      bar_number: i + 1,
+      degree: 'I',
+      quality: 'maj7',
+      bass_degree: null,
+    }));
+    const result = generate({ ...baseRequest, chords, stems: ['bass'] });
+    const sections = result.sections; // 16-bar: Intro(4), Verse(8), Chorus(4)
+    const bassBlocks = result.blocks.filter((b) => b.stem_instrument === 'bass');
+
+    // Each block's MIDI note count should be proportional to its section's bar count.
+    // Walking bass produces ~4 notes per bar, so a 4-bar section should have ~16 notes
+    // and an 8-bar section should have ~32 notes.
+    for (const block of bassBlocks) {
+      const section = sections.find((s) => s.name === block.section_name);
+      expect(section).toBeDefined();
+      const barCount = block.end_bar - block.start_bar + 1;
+      expect(barCount).toBe(section!.bar_count);
+      // Each bar generates at least 1 note for bass
+      expect(block.midi_data.length).toBeGreaterThanOrEqual(barCount);
+    }
+  });
+
+  it('drum and pitched instruments produce same number of blocks (one per section)', () => {
+    const chords = Array.from({ length: 12 }, (_, i) => ({
+      bar_number: i + 1,
+      degree: 'I',
+      quality: null,
+      bass_degree: null,
+    }));
+    const result = generate({ ...baseRequest, chords, stems: ['drums', 'bass', 'piano'] });
+    const drumBlocks = result.blocks.filter((b) => b.stem_instrument === 'drums');
+    const bassBlocks = result.blocks.filter((b) => b.stem_instrument === 'bass');
+    const pianoBlocks = result.blocks.filter((b) => b.stem_instrument === 'piano');
+    expect(drumBlocks).toHaveLength(bassBlocks.length);
+    expect(drumBlocks).toHaveLength(pianoBlocks.length);
+  });
 });
