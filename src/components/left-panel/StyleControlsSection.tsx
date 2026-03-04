@@ -18,6 +18,21 @@ function getDisplayValue(label: string, value: number): string {
     if (value <= 80) return "f"
     return "ff"
   }
+  if (label === "Groove") {
+    if (value <= 20) return "Simple"
+    if (value <= 40) return "Basic"
+    if (value <= 60) return "Standard"
+    if (value <= 80) return "Busy"
+    return "Complex"
+  }
+  if (label === "Feel") {
+    if (value <= 20) return "Tight"
+    if (value <= 40) return "Steady"
+    if (value <= 60) return "Natural"
+    if (value <= 80) return "Loose"
+    return "Sloppy"
+  }
+  // Energy (default)
   if (value <= 20) return "Low"
   if (value <= 40) return "Laid"
   if (value <= 60) return "Med"
@@ -32,23 +47,22 @@ export function StyleControlsSection() {
   const subStyle = project?.subStyle ?? ""
   const energy = project?.energy ?? 50
   const groove = project?.groove ?? 50
+  const feel = project?.feel ?? 50
   const swingPct = project?.swingPct ?? 0
   const dynamics = project?.dynamics ?? 50
 
   const subStyleOptions = GENRE_SUBSTYLES[genre] ?? []
 
   const sliders = [
-    { label: "Energy", value: energy, min: 0, max: 100 },
-    { label: "Groove", value: groove, min: 0, max: 100 },
-    { label: "Swing %", value: swingPct, min: 0, max: 100 },
-    { label: "Dynamics", value: dynamics, min: 0, max: 100 },
+    { label: "Energy", value: energy, field: "energy", min: 0, max: 100 },
+    { label: "Groove", value: groove, field: "groove", min: 0, max: 100 },
+    { label: "Feel", value: feel, field: "feel", min: 0, max: 100 },
+    { label: "Swing %", value: swingPct, field: "swingPct", min: 0, max: 100 },
+    { label: "Dynamics", value: dynamics, field: "dynamics", min: 0, max: 100 },
   ]
 
-  function handleSliderChange(label: string, newValue: number) {
-    if (label === "Energy") updateProject({ energy: newValue })
-    else if (label === "Groove") updateProject({ groove: newValue })
-    else if (label === "Swing %") updateProject({ swingPct: newValue })
-    else if (label === "Dynamics") updateProject({ dynamics: newValue })
+  function handleSliderChange(field: string, newValue: number) {
+    updateProject({ [field]: newValue })
   }
 
   return (
@@ -120,7 +134,7 @@ export function StyleControlsSection() {
                 min={slider.min}
                 max={slider.max}
                 value={slider.value}
-                onChange={(e) => handleSliderChange(slider.label, Number(e.target.value))}
+                onChange={(e) => handleSliderChange(slider.field, Number(e.target.value))}
                 className={cn(
                   "absolute inset-0 h-full w-full cursor-pointer appearance-none bg-transparent",
                   "[&::-webkit-slider-thumb]:h-3 [&::-webkit-slider-thumb]:w-3",

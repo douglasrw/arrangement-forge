@@ -381,7 +381,7 @@ All applyGroove tests pass. All applyEnergy tests pass (intensity-only). All bui
 
 ---
 
-### [ ] T4 — Update UI: Feel and Groove slider labels + display values
+### [x] T4 — Update UI: Feel and Groove slider labels + display values
 
 **Files:** `src/components/left-panel/StyleControlsSection.tsx`, `src/components/left-panel/SectionContext.tsx`
 **Depends on:** T1

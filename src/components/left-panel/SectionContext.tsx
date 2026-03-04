@@ -23,7 +23,8 @@ interface SliderDef {
 
 const INITIAL_SLIDERS: SliderDef[] = [
   { label: "Energy", value: 45, display: "Med", min: 0, max: 100 },
-  { label: "Groove", value: 35, display: "Laid", min: 0, max: 100 },
+  { label: "Groove", value: 50, display: "Standard", min: 0, max: 100 },
+  { label: "Feel", value: 50, display: "Natural", min: 0, max: 100 },
   { label: "Swing %", value: 65, display: "65%", min: 0, max: 100 },
   { label: "Dynamics", value: 30, display: "p", min: 0, max: 100 },
 ]
@@ -37,6 +38,21 @@ function getDisplayValue(label: string, value: number): string {
     if (value <= 80) return "f"
     return "ff"
   }
+  if (label === "Groove") {
+    if (value <= 20) return "Simple"
+    if (value <= 40) return "Basic"
+    if (value <= 60) return "Standard"
+    if (value <= 80) return "Busy"
+    return "Complex"
+  }
+  if (label === "Feel") {
+    if (value <= 20) return "Tight"
+    if (value <= 40) return "Steady"
+    if (value <= 60) return "Natural"
+    if (value <= 80) return "Loose"
+    return "Sloppy"
+  }
+  // Energy (default)
   if (value <= 20) return "Low"
   if (value <= 40) return "Laid"
   if (value <= 60) return "Med"
