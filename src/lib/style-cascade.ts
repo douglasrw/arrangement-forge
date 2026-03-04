@@ -4,7 +4,7 @@
 
 import type { Project, Section, Block } from '@/types';
 
-export type CascadeField = 'energy' | 'groove' | 'swingPct' | 'dynamics';
+export type CascadeField = 'energy' | 'groove' | 'feel' | 'swingPct' | 'dynamics';
 export type CascadeSource = 'project' | 'section' | 'block';
 
 export interface CascadeResult {
@@ -40,6 +40,9 @@ export function resolveStyle(
   if (field === 'groove' && section.grooveOverride != null) {
     return { value: section.grooveOverride, source: 'section' };
   }
+  if (field === 'feel' && section.feelOverride != null) {
+    return { value: section.feelOverride, source: 'section' };
+  }
   if (field === 'swingPct' && section.swingPctOverride != null) {
     return { value: section.swingPctOverride, source: 'section' };
   }
@@ -48,7 +51,7 @@ export function resolveStyle(
   }
 
   // Project default
-  const projectValue = project[field as keyof Pick<Project, 'energy' | 'groove' | 'swingPct' | 'dynamics'>];
+  const projectValue = project[field as keyof Pick<Project, 'energy' | 'groove' | 'feel' | 'swingPct' | 'dynamics'>];
   return { value: (projectValue ?? 0) as number, source: 'project' };
 }
 
@@ -66,12 +69,13 @@ export function isInherited(
     if (!block) return true;
     if (field === 'energy') return block.energyOverride == null;
     if (field === 'dynamics') return block.dynamicsOverride == null;
-    return true; // groove/swingPct cannot be overridden at block level
+    return true; // groove/feel/swingPct cannot be overridden at block level
   }
 
   // level === 'section'
   if (field === 'energy') return section.energyOverride == null;
   if (field === 'groove') return section.grooveOverride == null;
+  if (field === 'feel') return section.feelOverride == null;
   if (field === 'swingPct') return section.swingPctOverride == null;
   if (field === 'dynamics') return section.dynamicsOverride == null;
   return true;

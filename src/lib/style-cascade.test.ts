@@ -13,6 +13,7 @@ const project: Project = {
   subStyle: 'Swing',
   energy: 60,
   groove: 70,
+  feel: 55,
   swingPct: 65,
   dynamics: 50,
   generationHints: '',
@@ -33,6 +34,7 @@ const section: Section = {
   startBar: 1,
   energyOverride: null,
   grooveOverride: null,
+  feelOverride: null,
   swingPctOverride: null,
   dynamicsOverride: null,
   createdAt: '2026-01-01',
@@ -84,6 +86,15 @@ describe('resolveStyle', () => {
     expect(resolveStyle(project, s, block, 'groove')).toEqual({ value: 85, source: 'section' });
   });
 
+  it('feel cannot be overridden at block level — falls to project', () => {
+    expect(resolveStyle(project, section, block, 'feel')).toEqual({ value: 55, source: 'project' });
+  });
+
+  it('feel uses section override if set', () => {
+    const s = { ...section, feelOverride: 40 };
+    expect(resolveStyle(project, s, block, 'feel')).toEqual({ value: 40, source: 'section' });
+  });
+
   it('swingPct uses project value with null section override', () => {
     expect(resolveStyle(project, section, null, 'swingPct')).toEqual({ value: 65, source: 'project' });
   });
@@ -110,6 +121,19 @@ describe('isInherited', () => {
 
   it('block groove always inherited (not overridable)', () => {
     expect(isInherited(section, block, 'groove', 'block')).toBe(true);
+  });
+
+  it('block feel always inherited (not overridable)', () => {
+    expect(isInherited(section, block, 'feel', 'block')).toBe(true);
+  });
+
+  it('section feel is inherited when null override', () => {
+    expect(isInherited(section, null, 'feel', 'section')).toBe(true);
+  });
+
+  it('section feel is not inherited when override is set', () => {
+    const s = { ...section, feelOverride: 40 };
+    expect(isInherited(s, null, 'feel', 'section')).toBe(false);
   });
 
   it('block level with null block is inherited', () => {

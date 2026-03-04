@@ -5,15 +5,15 @@ import type { Project, Section, Block, Stem } from '@/types';
 const makeProject = (partial: Partial<Project> = {}): Project => ({
   id: 'p1', userId: 'u1', name: 'Test', key: 'C', tempo: 120,
   timeSignature: '4/4', genre: 'Jazz', subStyle: 'Swing', energy: 60, groove: 70,
-  swingPct: 65, dynamics: 50, generationHints: '', chordChartRaw: '',
+  feel: 50, swingPct: 65, dynamics: 50, generationHints: '', chordChartRaw: '',
   hasArrangement: false, generatedAt: null, generatedTempo: null,
   createdAt: '2026-01-01', updatedAt: '2026-01-01', ...partial,
 });
 
 const makeSection = (partial: Partial<Section> = {}): Section => ({
   id: 's1', projectId: 'p1', name: 'Verse', sortOrder: 0, barCount: 8, startBar: 1,
-  energyOverride: null, grooveOverride: null, swingPctOverride: null, dynamicsOverride: null,
-  createdAt: '2026-01-01', ...partial,
+  energyOverride: null, grooveOverride: null, feelOverride: null, swingPctOverride: null,
+  dynamicsOverride: null, createdAt: '2026-01-01', ...partial,
 });
 
 const makeBlock = (partial: Partial<Block> = {}): Block => ({

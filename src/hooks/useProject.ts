@@ -168,6 +168,7 @@ export function useProject() {
           sub_style: 'Swing',
           energy: 50,
           groove: 50,
+          feel: 50,
           swing_pct: null,
           dynamics: 50,
           generation_hints: '',

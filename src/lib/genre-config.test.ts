@@ -22,8 +22,8 @@ describe('GENRE_SUBSTYLES', () => {
 });
 
 describe('GENRE_SLIDERS', () => {
-  it('Jazz has all 4 sliders enabled', () => {
-    expect(GENRE_SLIDERS['Jazz']).toEqual({ energy: true, groove: true, swing: true, dynamics: true });
+  it('Jazz has all 5 sliders enabled', () => {
+    expect(GENRE_SLIDERS['Jazz']).toEqual({ energy: true, groove: true, feel: true, swing: true, dynamics: true });
   });
 
   it('Rock has swing disabled', () => {

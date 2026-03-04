@@ -20,7 +20,8 @@ export interface Project {
   genre: string;
   subStyle: string;
   energy: number; // 0-100
-  groove: number; // 0-100
+  groove: number; // 0-100 complexity (pattern busyness)
+  feel: number; // 0-100 humanization (timing looseness)
   swingPct: number | null; // 50-80, null = not applicable
   dynamics: number; // 0-100
   generationHints: string;
@@ -55,6 +56,7 @@ export interface Section {
   startBar: number;
   energyOverride: number | null;
   grooveOverride: number | null;
+  feelOverride: number | null;
   swingPctOverride: number | null;
   dynamicsOverride: number | null;
   createdAt: string;
@@ -113,6 +115,7 @@ export interface GenerationRequest {
   sub_style: string;
   energy: number;
   groove: number;
+  feel: number;
   swing_pct: number | null;
   dynamics: number;
   chords: ChordEntry[];

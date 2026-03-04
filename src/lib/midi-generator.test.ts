@@ -11,6 +11,7 @@ const baseRequest: GenerationRequest = {
   sub_style: 'Swing',
   energy: 50,
   groove: 50,
+  feel: 50,
   swing_pct: 65,
   dynamics: 50,
   chords: [
