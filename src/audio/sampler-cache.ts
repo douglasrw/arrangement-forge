@@ -3,6 +3,7 @@
 
 import * as Tone from "tone";
 import type { InstrumentType } from "@/types";
+import { SampledDrumKit } from "@/audio/sampled-drum-kit";
 
 const CDN_BASE =
   "https://gleitz.github.io/midi-js-soundfonts/FluidR3_GM/";
@@ -12,6 +13,7 @@ const INSTRUMENT_CONFIG: Record<
   InstrumentType,
   | { kind: "cdn"; folder: string; notes: string[] }
   | { kind: "local"; urls: Record<string, string>; baseUrl: string }
+  | { kind: "sampled" }
 > = {
   piano: {
     kind: "cdn",
@@ -34,14 +36,7 @@ const INSTRUMENT_CONFIG: Record<
     notes: ["C2", "C3", "C4", "C5", "C6"],
   },
   drums: {
-    kind: "local",
-    baseUrl: "/samples/drums/",
-    urls: {
-      C2: "kick.mp3",
-      D2: "snare.mp3",
-      "F#2": "hihat.mp3",
-      "D#3": "ride.mp3",
-    },
+    kind: "sampled",
   },
 };
 
@@ -51,6 +46,10 @@ const loading = new Map<InstrumentType, Promise<Tone.Sampler>>();
 function buildSamplerUrls(
   cfg: (typeof INSTRUMENT_CONFIG)[InstrumentType]
 ): { urls: Record<string, string>; baseUrl?: string } {
+  if (cfg.kind === "sampled") {
+    // Sampled drums use SampledDrumKit, not Tone.Sampler URLs
+    return { urls: {} };
+  }
   if (cfg.kind === "local") {
     return { urls: cfg.urls, baseUrl: cfg.baseUrl };
   }
@@ -62,8 +61,16 @@ function buildSamplerUrls(
   return { urls, baseUrl: `${CDN_BASE}${cfg.folder}/` };
 }
 
-function createSampler(type: InstrumentType): Promise<Tone.Sampler> {
+async function createSampler(type: InstrumentType): Promise<Tone.Sampler> {
   const cfg = INSTRUMENT_CONFIG[type];
+
+  // Sampled drums — load OGG samples via SampledDrumKit
+  if (cfg.kind === "sampled") {
+    const kit = new SampledDrumKit();
+    await kit.load();
+    return kit as unknown as Tone.Sampler;
+  }
+
   const { urls, baseUrl } = buildSamplerUrls(cfg);
 
   return new Promise<Tone.Sampler>((resolve, reject) => {
