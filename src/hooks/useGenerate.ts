@@ -12,7 +12,7 @@ import { snapshotArrangement } from '@/lib/undo-helpers';
 import type { GenerationRequest, Section, Stem, Block, Chord, InstrumentType, ChordEntry } from '@/types';
 
 export function useGenerate() {
-  const { project, stems, sections, blocks, chords, setArrangement, setDrumBlocks, updateProject } = useProjectStore();
+  const { project, stems, sections, blocks, chords, setArrangement, setDrumBlocks, setAllInstrumentBlocks, updateProject } = useProjectStore();
   const { setGenerationState, setSystemStatus } = useUiStore();
   const { pushUndo } = useUndoStore();
   const { saveArrangement } = useProject();
@@ -283,6 +283,69 @@ export function useGenerate() {
     useUiStore.getState().markDirty();
   }, [project, blocks, sections, stems, chords, setDrumBlocks]);
 
+  /** Regenerate MIDI data for ALL instrument blocks (drums + pitched).
+   * Uses per-instrument hot-swap path so playback is not interrupted. */
+  const regenerateAllInstruments = useCallback(() => {
+    if (!project || !project.hasArrangement) return;
+    if (blocks.length === 0 || sections.length === 0 || stems.length === 0) return;
+
+    const beatsPerBar = parseInt(project.timeSignature.split('/')[0]) || 4;
+
+    const updatedBlocks = blocks.map((block) => {
+      const section = sections.find((s) => s.id === block.sectionId);
+      const stem = stems.find((s) => s.id === block.stemId);
+      if (!section || !stem) return block;
+
+      // Resolve cascaded style values (section override ?? project default)
+      const energy = section.energyOverride ?? project.energy;
+      const groove = section.grooveOverride ?? project.groove;
+      const feel = section.feelOverride ?? project.feel;
+      const swingPct = section.swingPctOverride ?? project.swingPct;
+      const dynamics = section.dynamicsOverride ?? project.dynamics;
+
+      const barCount = block.endBar - block.startBar + 1;
+
+      // Build chord entries for this block's bar range
+      const blockChords: ChordEntry[] = chords
+        .filter((c) => c.barNumber >= block.startBar && c.barNumber <= block.endBar)
+        .map((c) => ({
+          bar_number: c.barNumber,
+          degree: c.degree,
+          quality: c.quality,
+          bass_degree: c.bassDegree,
+        }));
+
+      // Regenerate MIDI for this block
+      const newMidi = generateMidiForBlock(
+        stem.instrument,
+        barCount,
+        blockChords,
+        project.key,
+        project.genre,
+        stem.instrument === 'drums' ? {
+          substyle: project.subStyle,
+          energy,
+          dynamics,
+          swingPct,
+          groove,
+          feel: feel ?? 50,
+          beatsPerBar,
+          sectionType: section.name.replace(/\s*\d+$/, ''),
+          sectionIndex: section.sortOrder,
+          isLastSection: section.sortOrder === sections.length - 1,
+          totalBarsInSection: section.barCount,
+          barNumberGlobal: block.startBar,
+        } : undefined
+      );
+
+      return { ...block, midiData: newMidi };
+    });
+
+    // Update blocks via all-instruments path — sets allInstrumentsUpdate flag
+    setAllInstrumentBlocks(updatedBlocks);
+    useUiStore.getState().markDirty();
+  }, [project, blocks, sections, stems, chords, setAllInstrumentBlocks]);
+
   // Reactive MIDI regeneration on style slider changes
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const isInitialRender = useRef(true);
@@ -299,7 +362,7 @@ export function useGenerate() {
 
     if (debounceRef.current) clearTimeout(debounceRef.current);
     debounceRef.current = setTimeout(() => {
-      regenerateDrumsOnly();
+      regenerateAllInstruments();
     }, 300);
 
     return () => {
@@ -308,5 +371,5 @@ export function useGenerate() {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [project?.energy, project?.groove, project?.feel, project?.swingPct, project?.dynamics]);
 
-  return { runGeneration, regenerateMidi, regenerateDrumsOnly };
+  return { runGeneration, regenerateMidi, regenerateDrumsOnly, regenerateAllInstruments };
 }

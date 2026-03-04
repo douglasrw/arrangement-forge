@@ -281,7 +281,7 @@ are updated. This will be formally tested in T4.
 
 ---
 
-### [ ] T3 — Wire reactive regeneration to all instruments + hot-swap
+### [x] T3 — Wire reactive regeneration to all instruments + hot-swap
 
 **Files:** `src/hooks/useGenerate.ts`, `src/hooks/useAudio.ts`
 **Depends on:** T2
