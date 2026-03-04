@@ -617,7 +617,7 @@ Open the app at http://localhost:5173 and open a project.
 
 ---
 
-### [ ] T5 -- Fix unlabeled form inputs (accessibility)
+### [x] T5 -- Fix unlabeled form inputs (accessibility)
 
 **Files:** `src/pages/LoginPage.tsx`, `src/pages/SettingsPage.tsx`
 **Depends on:** none

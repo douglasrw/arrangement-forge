@@ -71,10 +71,11 @@ export default function SettingsPage() {
         <form onSubmit={handleSave} className="flex flex-col gap-6">
           {/* Display Name */}
           <div className="form-control gap-2">
-            <label className="label py-0">
+            <label className="label py-0" htmlFor="settings-display-name">
               <span className="label-text font-medium">Display Name</span>
             </label>
             <input
+              id="settings-display-name"
               type="text"
               className="input input-bordered"
               placeholder="Your name"
@@ -90,8 +91,9 @@ export default function SettingsPage() {
               <span className="label-text-alt text-base-content/40">How chords appear in the editor</span>
             </label>
             <div className="flex gap-3">
-              <label className="flex items-center gap-2 cursor-pointer">
+              <label htmlFor="settings-chord-letter" className="flex items-center gap-2 cursor-pointer">
                 <input
+                  id="settings-chord-letter"
                   type="radio"
                   className="radio radio-primary radio-sm"
                   checked={chordMode === 'letter'}
@@ -100,8 +102,9 @@ export default function SettingsPage() {
                 <span className="text-sm">Letter names</span>
                 <span className="text-xs text-base-content/40">(C, Dm7, G7)</span>
               </label>
-              <label className="flex items-center gap-2 cursor-pointer">
+              <label htmlFor="settings-chord-roman" className="flex items-center gap-2 cursor-pointer">
                 <input
+                  id="settings-chord-roman"
                   type="radio"
                   className="radio radio-primary radio-sm"
                   checked={chordMode === 'roman'}
@@ -115,11 +118,12 @@ export default function SettingsPage() {
 
           {/* Default Genre */}
           <div className="form-control gap-2">
-            <label className="label py-0">
+            <label className="label py-0" htmlFor="settings-genre">
               <span className="label-text font-medium">Default Genre</span>
               <span className="label-text-alt text-base-content/40">Pre-selected when creating a new project</span>
             </label>
             <select
+              id="settings-genre"
               className="select select-bordered"
               value={defaultGenre}
               onChange={(e) => setDefaultGenre(e.target.value)}
