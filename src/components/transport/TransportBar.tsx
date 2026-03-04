@@ -90,14 +90,14 @@ export function TransportBar() {
   const timeStr = `${mins}:${String(secs).padStart(2, "0")}`
 
   return (
-    <footer className="flex h-12 w-full shrink-0 items-center justify-center gap-4 border-t border-[#3f3f46]/50 bg-[#18181b]/95 px-4 backdrop-blur-sm">
+    <footer className="flex h-12 w-full shrink-0 items-center justify-center gap-4 border-t border-border/50 bg-card/95 px-4 backdrop-blur-sm">
       {/* ---- LEFT: Playback pill group ---- */}
-      <div className="flex items-center gap-1 rounded-xl bg-[#27272a] p-1">
+      <div className="flex items-center gap-1 rounded-xl bg-secondary p-1">
         {/* Skip to start */}
         <button
           type="button"
           onClick={() => seek(1)}
-          className="flex size-8 items-center justify-center rounded-lg text-[#a1a1aa] transition-colors hover:text-[#f4f4f5]"
+          className="flex size-8 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:text-zinc-100"
           aria-label="Skip to start"
         >
           <SkipBack className="size-3.5" />
@@ -107,7 +107,7 @@ export function TransportBar() {
         <button
           type="button"
           onClick={handleStop}
-          className="flex size-8 items-center justify-center rounded-lg text-[#a1a1aa] transition-colors hover:text-[#f4f4f5]"
+          className="flex size-8 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:text-zinc-100"
           aria-label="Stop"
         >
           <Square className="size-3.5 fill-current" />
@@ -120,8 +120,8 @@ export function TransportBar() {
           className={cn(
             "flex size-9 items-center justify-center rounded-lg transition-all",
             isPlaying
-              ? "bg-[#14b8a6] text-[#09090b] shadow-[0_0_12px_rgba(6,182,212,0.4)]"
-              : "bg-[#3f3f46] text-[#e4e4e7] hover:bg-[#52525b]"
+              ? "bg-[#14b8a6] text-background shadow-[0_0_12px_rgba(6,182,212,0.4)]"
+              : "bg-input text-zinc-200 hover:bg-zinc-600"
           )}
           aria-label={isPlaying ? "Pause" : "Play"}
         >
@@ -139,7 +139,7 @@ export function TransportBar() {
             const totalBars = sections.reduce((sum, s) => sum + s.barCount, 0)
             seek(totalBars)
           }}
-          className="flex size-8 items-center justify-center rounded-lg text-[#a1a1aa] transition-colors hover:text-[#f4f4f5]"
+          className="flex size-8 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:text-zinc-100"
           aria-label="Skip to end"
         >
           <SkipForward className="size-3.5" />
@@ -149,15 +149,15 @@ export function TransportBar() {
       {/* ---- CENTER: Position + BPM + Time Sig ---- */}
       <div className="flex items-center gap-3">
         {/* Bar | Beat counter */}
-        <div className="flex items-center gap-0 rounded-lg bg-[#27272a] px-3 py-1 font-mono text-sm">
-          <span className="text-[#e4e4e7]">{bar}</span>
-          <span className="mx-1.5 text-[#52525b]">|</span>
-          <span className="text-[#e4e4e7]">{beat}</span>
+        <div className="flex items-center gap-0 rounded-lg bg-secondary px-3 py-1 font-mono text-sm">
+          <span className="text-zinc-200">{bar}</span>
+          <span className="mx-1.5 text-zinc-600">|</span>
+          <span className="text-zinc-200">{beat}</span>
         </div>
 
         {/* BPM */}
         <div className="flex items-center gap-1.5">
-          <span className="text-xs text-[#71717a]" aria-hidden="true">
+          <span className="text-xs text-zinc-500" aria-hidden="true">
             {"♩"}
           </span>
           {editingBpm ? (
@@ -178,8 +178,8 @@ export function TransportBar() {
                 }
               }}
               className={cn(
-                "h-6 w-12 rounded-md border border-border bg-[#27272a] px-1.5 text-center font-mono text-sm text-[#e4e4e7] outline-none",
-                "focus:border-[#0891b2]",
+                "h-6 w-12 rounded-md border border-border bg-secondary px-1.5 text-center font-mono text-sm text-zinc-200 outline-none",
+                "focus:border-ring",
                 /* Hide spinner arrows */
                 "[appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
               )}
@@ -191,7 +191,7 @@ export function TransportBar() {
                 setBpmDraft(String(bpm))
                 setEditingBpm(true)
               }}
-              className="rounded-md px-1 py-0.5 font-mono text-sm text-[#e4e4e7] transition-colors hover:bg-[#27272a] hover:underline"
+              className="rounded-md px-1 py-0.5 font-mono text-sm text-zinc-200 transition-colors hover:bg-secondary hover:underline"
             >
               {bpm}
             </button>
@@ -199,7 +199,7 @@ export function TransportBar() {
         </div>
 
         {/* Time signature */}
-        <span className="text-sm text-[#71717a]">{timeSig}</span>
+        <span className="text-sm text-zinc-500">{timeSig}</span>
       </div>
 
       {/* ---- RIGHT: Loop, Metronome, Elapsed ---- */}
@@ -212,7 +212,7 @@ export function TransportBar() {
             "flex size-7 items-center justify-center rounded-md transition-colors",
             loopActive
               ? "bg-[#14b8a6]/15 text-[#5eead4]"
-              : "text-[#71717a] hover:text-[#a1a1aa]"
+              : "text-zinc-500 hover:text-muted-foreground"
           )}
           aria-label="Toggle loop"
           aria-pressed={loopActive}
@@ -228,7 +228,7 @@ export function TransportBar() {
             "flex size-7 items-center justify-center rounded-md transition-colors",
             metronomeActive
               ? "bg-[#14b8a6]/15 text-[#5eead4]"
-              : "text-[#71717a] hover:text-[#a1a1aa]"
+              : "text-zinc-500 hover:text-muted-foreground"
           )}
           aria-label="Toggle metronome"
           aria-pressed={metronomeActive}
@@ -237,7 +237,7 @@ export function TransportBar() {
         </button>
 
         {/* Elapsed time */}
-        <span className="ml-1 min-w-[36px] text-right font-mono text-xs text-[#71717a]">
+        <span className="ml-1 min-w-[36px] text-right font-mono text-xs text-zinc-500">
           {timeStr}
         </span>
       </div>

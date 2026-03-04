@@ -92,7 +92,7 @@ function VerticalFader({
       }}
     >
       {/* Track */}
-      <div className="absolute left-1/2 -translate-x-1/2 rounded-full bg-[#3f3f46]" style={{ width: 4, height: trackHeight }} />
+      <div className="absolute left-1/2 -translate-x-1/2 rounded-full bg-input" style={{ width: 4, height: trackHeight }} />
 
       {/* Fill */}
       <div
@@ -128,7 +128,7 @@ function LevelMeter({ fill }: { fill: number }) {
       {[fill, fill - 5].map((f, i) => {
         const h = Math.max(0, Math.min(100, f))
         return (
-          <div key={i} className="relative w-1 overflow-hidden rounded-full bg-[#27272a]" style={{ height: 80 }}>
+          <div key={i} className="relative w-1 overflow-hidden rounded-full bg-secondary" style={{ height: 80 }}>
             <div
               className="absolute inset-x-0 bottom-0 rounded-full"
               style={{
@@ -180,7 +180,7 @@ function DrumSubMix({ drumKit }: { drumKit: DrumKitLike | null }) {
         <div key={group.name} className="flex items-center gap-2" style={{ minWidth: 140 }}>
           <label
             htmlFor={`drum-sub-${group.name}`}
-            className="w-14 text-right text-[10px] font-medium text-[#a1a1aa]"
+            className="w-14 text-right text-[10px] font-medium text-muted-foreground"
           >
             {group.label}
           </label>
@@ -191,9 +191,9 @@ function DrumSubMix({ drumKit }: { drumKit: DrumKitLike | null }) {
             max={100}
             value={levels[group.name]}
             onChange={(e) => handleChange(group.name, Number(e.target.value))}
-            className="h-1 w-20 cursor-pointer appearance-none rounded-full bg-[#3f3f46] accent-[#06b6d4] [&::-webkit-slider-thumb]:size-2.5 [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-[#06b6d4]"
+            className="h-1 w-20 cursor-pointer appearance-none rounded-full bg-input accent-primary [&::-webkit-slider-thumb]:size-2.5 [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-primary"
           />
-          <span className="w-6 text-right font-mono text-[9px] text-[#52525b]">
+          <span className="w-6 text-right font-mono text-[9px] text-zinc-600">
             {levels[group.name]}
           </span>
         </div>
@@ -236,20 +236,20 @@ export function MixerDrawer() {
   )
 
   return (
-    <div className="shrink-0 border-t border-[#3f3f46]/50 bg-[#18181b]">
+    <div className="shrink-0 border-t border-border/50 bg-card">
       {/* Header strip — always visible, acts as toggle */}
       <button
         type="button"
         onClick={toggleMixer}
         className="flex w-full items-center justify-between px-4 py-1.5"
       >
-        <span className="text-xs font-medium uppercase tracking-widest text-[#71717a]">
+        <span className="text-xs font-medium uppercase tracking-widest text-zinc-500">
           Mixer
         </span>
         {open ? (
-          <X className="size-3.5 text-[#71717a]" />
+          <X className="size-3.5 text-zinc-500" />
         ) : (
-          <div className="h-1 w-8 rounded-full bg-[#52525b]" />
+          <div className="h-1 w-8 rounded-full bg-zinc-600" />
         )}
       </button>
 
@@ -265,7 +265,7 @@ export function MixerDrawer() {
               return (
                 <div
                   key={inst.key}
-                  className="flex flex-1 flex-col items-center gap-1.5 border-r border-[#27272a] pt-1"
+                  className="flex flex-1 flex-col items-center gap-1.5 border-r border-secondary pt-1"
                   style={{ borderTopWidth: 2, borderTopColor: inst.color, borderTopStyle: "solid" }}
                 >
                   {/* Name — drums label is clickable to toggle sub-mix */}
@@ -300,8 +300,8 @@ export function MixerDrawer() {
                       className={cn(
                         "rounded px-1.5 py-0.5 text-[10px] font-bold transition-colors",
                         ch.muted
-                          ? "bg-[#f59e0b]/80 text-[#18181b]"
-                          : "bg-[#3f3f46] text-[#a1a1aa] hover:bg-[#52525b]"
+                          ? "bg-[#f59e0b]/80 text-card"
+                          : "bg-input text-muted-foreground hover:bg-zinc-600"
                       )}
                     >
                       M
@@ -312,8 +312,8 @@ export function MixerDrawer() {
                       className={cn(
                         "rounded px-1.5 py-0.5 text-[10px] font-bold transition-colors",
                         ch.solo
-                          ? "bg-[#14b8a6]/80 text-[#18181b]"
-                          : "bg-[#3f3f46] text-[#a1a1aa] hover:bg-[#52525b]"
+                          ? "bg-[#14b8a6]/80 text-card"
+                          : "bg-input text-muted-foreground hover:bg-zinc-600"
                       )}
                     >
                       S
@@ -328,7 +328,7 @@ export function MixerDrawer() {
                   />
 
                   {/* dB readout */}
-                  <span className="font-mono text-[10px] text-[#71717a]">
+                  <span className="font-mono text-[10px] text-zinc-500">
                     {ch.muted ? "-inf" : volumeToDb(ch.volume)}
                   </span>
                 </div>
@@ -337,11 +337,11 @@ export function MixerDrawer() {
 
             {/* Master channel */}
             <div
-              className="flex flex-[1.3] flex-col items-center gap-1.5 rounded-r-md bg-[#27272a]/60 pt-1"
+              className="flex flex-[1.3] flex-col items-center gap-1.5 rounded-r-md bg-secondary/60 pt-1"
               style={{ borderTop: "2px solid #71717a" }}
             >
               {/* Label */}
-              <span className="text-[10px] font-semibold uppercase tracking-widest text-[#a1a1aa]">
+              <span className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">
                 Master
               </span>
 
@@ -359,7 +359,7 @@ export function MixerDrawer() {
               </div>
 
               {/* dB readout */}
-              <span className="font-mono text-[10px] text-[#a1a1aa]">
+              <span className="font-mono text-[10px] text-muted-foreground">
                 {volumeToDb(channels.master.volume)}
               </span>
             </div>
@@ -367,16 +367,16 @@ export function MixerDrawer() {
 
           {/* Drum sub-mix strip — collapsible below main mixer */}
           {drumSubOpen && (
-            <div className="border-t border-[#27272a] bg-[#1a1a1f]">
+            <div className="border-t border-secondary bg-card">
               <div className="flex items-center gap-2 px-4 pt-1.5">
-                <span className="text-[10px] font-semibold uppercase tracking-wider text-[#06b6d4]">
+                <span className="text-[10px] font-semibold uppercase tracking-wider text-primary">
                   Drum Kit Mix
                 </span>
-                <div className="flex-1 border-t border-[#27272a]" />
+                <div className="flex-1 border-t border-secondary" />
                 <button
                   type="button"
                   onClick={() => setDrumSubOpen(false)}
-                  className="text-[#52525b] hover:text-[#71717a]"
+                  className="text-zinc-600 hover:text-zinc-500"
                   aria-label="Close drum sub-mix"
                 >
                   <X className="size-3" />

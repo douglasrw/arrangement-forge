@@ -513,7 +513,7 @@ All must look identical to before the migration.
 
 ---
 
-### [ ] T4 -- Mixer + Transport: MixerDrawer, TransportBar
+### [x] T4 -- Mixer + Transport: MixerDrawer, TransportBar
 
 **Files:** `src/components/mixer/MixerDrawer.tsx`, `src/components/transport/TransportBar.tsx`
 **Depends on:** none
