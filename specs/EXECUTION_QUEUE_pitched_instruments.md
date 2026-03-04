@@ -369,7 +369,7 @@ Power chords produce 2-note events. Muted funk durations are all ≤ 0.15.
 
 ---
 
-### [ ] T4 — Strings pattern library
+### [x] T4 — Strings pattern library
 
 **Files:** `src/lib/strings-patterns.ts` (new), `src/lib/strings-patterns.test.ts` (new)
 **Depends on:** T1 (for exported helpers in midi-generator.ts)
