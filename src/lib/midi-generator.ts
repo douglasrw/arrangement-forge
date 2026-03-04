@@ -180,12 +180,12 @@ const QUALITY_INTERVALS: Record<string, number[]> = {
   aug: [0, 4, 8],
 };
 
-function noteToMidi(noteName: string, octave: number): string {
+export function noteToMidi(noteName: string, octave: number): string {
   const semitone = NOTE_SEMITONES[noteName] ?? 0;
   return CHROMATIC[semitone] + octave;
 }
 
-function getChordTones(degree: string | null, quality: string | null, key: string, octave: number): string[] {
+export function getChordTones(degree: string | null, quality: string | null, key: string, octave: number): string[] {
   if (!degree) return [];
   const root = degreeToNote(degree, key);
   const intervals = QUALITY_INTERVALS[quality ?? ''] ?? QUALITY_INTERVALS[''];
