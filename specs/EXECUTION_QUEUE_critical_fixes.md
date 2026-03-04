@@ -900,53 +900,53 @@ After all tasks pass, verify the *system-level behavior* matches the original in
 
 ### Structural (code wiring)
 
-- [ ] Sign Out button calls `signOut()` from `useAuth` -> `TopBar.tsx` Sign Out onClick handler
-- [ ] Delete Section button opens `ConfirmDialog` and calls `removeSection()` on confirm -> `SectionContext.tsx` Delete Section onClick + ConfirmDialog
-- [ ] Delete Block button opens `ConfirmDialog` and calls `deleteBlock()` on confirm -> `BlockContext.tsx` Delete Block onClick + ConfirmDialog
-- [ ] Duplicate Block button calls `duplicateBlock()` -> `BlockContext.tsx` Duplicate Block onClick
-- [ ] MixerDrawer reads `mixerExpanded` from `uiStore` (not local state) -> `MixerDrawer.tsx` `useUiStore` selector
-- [ ] MixerDrawer toggle button calls `uiStore.toggleMixer()` -> `MixerDrawer.tsx` header button onClick
-- [ ] StatusBar receives derived status from AppShell -> `AppShell.tsx` passes `status={derivedStatus}` to `<StatusBar>`
-- [ ] StatusBar supports "unsaved" and "saving" states -> `StatusBar.tsx` `AppStatus` type and `STATUS_CONFIG`
-- [ ] LoginPage email input has `id="login-email"` with matching `<label htmlFor>` -> `LoginPage.tsx`
-- [ ] LoginPage password input has `id="login-password"` with matching `<label htmlFor>` -> `LoginPage.tsx`
-- [ ] SettingsPage display name input has `id="settings-display-name"` with matching `<label htmlFor>` -> `SettingsPage.tsx`
-- [ ] SettingsPage radio buttons have `id` and `htmlFor` -> `SettingsPage.tsx`
-- [ ] SettingsPage genre select has `id="settings-genre"` with matching `<label htmlFor>` -> `SettingsPage.tsx`
-- [ ] `src/hooks/useMobile.ts` no longer exists on disk -> file system check
+- [x] Sign Out button calls `signOut()` from `useAuth` -> `TopBar.tsx` Sign Out onClick handler
+- [x] Delete Section button opens `ConfirmDialog` and calls `removeSection()` on confirm -> `SectionContext.tsx` Delete Section onClick + ConfirmDialog
+- [x] Delete Block button opens `ConfirmDialog` and calls `deleteBlock()` on confirm -> `BlockContext.tsx` Delete Block onClick + ConfirmDialog
+- [x] Duplicate Block button calls `duplicateBlock()` -> `BlockContext.tsx` Duplicate Block onClick
+- [x] MixerDrawer reads `mixerExpanded` from `uiStore` (not local state) -> `MixerDrawer.tsx` `useUiStore` selector
+- [x] MixerDrawer toggle button calls `uiStore.toggleMixer()` -> `MixerDrawer.tsx` header button onClick
+- [x] StatusBar receives derived status from AppShell -> `AppShell.tsx` passes `status={derivedStatus}` to `<StatusBar>`
+- [x] StatusBar supports "unsaved" and "saving" states -> `StatusBar.tsx` `AppStatus` type and `STATUS_CONFIG`
+- [x] LoginPage email input has `id="login-email"` with matching `<label htmlFor>` -> `LoginPage.tsx`
+- [x] LoginPage password input has `id="login-password"` with matching `<label htmlFor>` -> `LoginPage.tsx`
+- [x] SettingsPage display name input has `id="settings-display-name"` with matching `<label htmlFor>` -> `SettingsPage.tsx`
+- [x] SettingsPage radio buttons have `id` and `htmlFor` -> `SettingsPage.tsx`
+- [x] SettingsPage genre select has `id="settings-genre"` with matching `<label htmlFor>` -> `SettingsPage.tsx`
+- [x] `src/hooks/useMobile.ts` no longer exists on disk -> file system check
 
 ### Behavioral (end-to-end demo)
 
 **Demo scenario:** A skeptical observer follows these steps on the live app.
 
-- [ ] Step: Click the user avatar in the top-right, then click "Sign out".
+- [x] Step: Click the user avatar in the top-right, then click "Sign out".
   - Expect: The browser navigates to `/login`. The user is logged out.
 
-- [ ] Step: Log in. Open a project. Click a section header in the arrangement view. In the left panel Section Inspector, click "Delete Section".
+- [x] Step: Log in. Open a project. Click a section header in the arrangement view. In the left panel Section Inspector, click "Delete Section".
   - Expect: A confirmation dialog appears with "Delete Section?" title and a red "Delete" button.
 
-- [ ] Step: Click "Delete" in the dialog.
+- [x] Step: Click "Delete" in the dialog.
   - Expect: The section and its blocks disappear from the arrangement view.
 
-- [ ] Step: Click a block in the arrangement view. In the left panel Block Inspector, click "Duplicate Block".
+- [x] Step: Click a block in the arrangement view. In the left panel Block Inspector, click "Duplicate Block".
   - Expect: A new block appears in the arrangement (may overlap the original since it has the same bar range).
 
-- [ ] Step: Click a block. Click "Delete Block" in the Block Inspector.
+- [x] Step: Click a block. Click "Delete Block" in the Block Inspector.
   - Expect: A confirmation dialog appears. Click "Delete". The block disappears.
 
-- [ ] Step: Click on the arrangement area (no input focused). Press the M key.
+- [x] Step: Click on the arrangement area (no input focused). Press the M key.
   - Expect: The mixer drawer at the bottom toggles open or closed. Press M again to toggle back.
 
-- [ ] Step: Edit the project name (click name in top bar, type new name, press Enter).
+- [x] Step: Edit the project name (click name in top bar, type new name, press Enter).
   - Expect: The status bar at the bottom-left changes from green "Saved" to yellow "Unsaved changes".
 
-- [ ] Step: Press Cmd+S (or Ctrl+S).
+- [x] Step: Press Cmd+S (or Ctrl+S).
   - Expect: The status bar returns to green "Saved" after the save completes.
 
-- [ ] Step: Open `/login` page. Click the "Email" label text.
+- [x] Step: Open `/login` page. Click the "Email" label text.
   - Expect: The email input field receives focus.
 
-- [ ] Step: Open `/settings` page. Click the "Display Name" label text.
+- [x] Step: Open `/settings` page. Click the "Display Name" label text.
   - Expect: The display name input field receives focus.
 
 Critical fixes queue is complete when all tests pass AND both intent trace sections are fully checked.
