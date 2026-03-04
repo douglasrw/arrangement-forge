@@ -3,6 +3,7 @@ import { cn } from "@/lib/utils"
 import type { Instrument } from "@/components/sequencer-block"
 import { useProjectStore } from "@/store/project-store"
 import { useSelectionStore } from "@/store/selection-store"
+import { ConfirmDialog } from "@/components/shared/ConfirmDialog"
 
 /* ------------------------------------------------------------------ */
 /*  Instrument palette (matches sequencer-block.tsx)                    */
@@ -177,7 +178,7 @@ export function BlockContext({
   endBar = 12,
   onClose,
 }: BlockContextProps) {
-  const { blocks } = useProjectStore()
+  const { blocks, deleteBlock, duplicateBlock } = useProjectStore()
   const { blockId } = useSelectionStore()
 
   /* Derive live block from store */
@@ -210,6 +211,21 @@ export function BlockContext({
   // Format pan
   const panLabel =
     pan === 0 ? "C" : pan < 0 ? `L${Math.abs(pan)}` : `R${pan}`
+
+  /* Confirm dialog for delete block */
+  const [confirmDeleteOpen, setConfirmDeleteOpen] = useState(false)
+
+  function handleDeleteBlock() {
+    if (!blockId) return
+    deleteBlock(blockId)
+    setConfirmDeleteOpen(false)
+    onClose?.()
+  }
+
+  function handleDuplicateBlock() {
+    if (!blockId) return
+    duplicateBlock(blockId)
+  }
 
   return (
     <div className="flex flex-col gap-0">
@@ -311,17 +327,29 @@ export function BlockContext({
         {/* ACTIONS */}
         <button
           type="button"
+          onClick={handleDuplicateBlock}
           className="mt-4 w-full rounded-lg bg-[#3f3f46] py-1.5 text-xs font-medium text-[#d4d4d8] transition-colors hover:bg-[#52525b] hover:text-[#f4f4f5]"
         >
           Duplicate Block
         </button>
         <button
           type="button"
+          onClick={() => setConfirmDeleteOpen(true)}
           className="mt-2 text-xs text-[#71717a] transition-colors hover:text-red-400"
         >
           Delete Block
         </button>
       </div>
+
+      <ConfirmDialog
+        open={confirmDeleteOpen}
+        onClose={() => setConfirmDeleteOpen(false)}
+        onConfirm={handleDeleteBlock}
+        title="Delete Block?"
+        body={`This will permanently delete this ${label} block (bars ${resolvedStartBar}\u2013${resolvedEndBar}). This cannot be undone.`}
+        confirmLabel="Delete"
+        variant="danger"
+      />
     </div>
   )
 }

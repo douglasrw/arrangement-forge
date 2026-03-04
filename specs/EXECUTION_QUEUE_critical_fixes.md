@@ -163,7 +163,7 @@ be cleared.
 
 ---
 
-### [ ] T2 -- Wire Delete Section, Delete Block, and Duplicate Block buttons
+### [x] T2 -- Wire Delete Section, Delete Block, and Duplicate Block buttons
 
 **Files:** `src/components/left-panel/SectionContext.tsx`, `src/components/left-panel/BlockContext.tsx`
 **Depends on:** none

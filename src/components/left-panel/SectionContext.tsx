@@ -9,6 +9,7 @@ import {
 } from "@/components/ui/select"
 import { useProjectStore } from "@/store/project-store"
 import { useSelectionStore } from "@/store/selection-store"
+import { ConfirmDialog } from "@/components/shared/ConfirmDialog"
 
 /* ------------------------------------------------------------------ */
 /*  Reusable slider — same pattern as StyleControlsSection             */
@@ -74,7 +75,7 @@ export function SectionContext({
   sectionBars = 16,
   onClose,
 }: SectionContextProps) {
-  const { sections, updateSection } = useProjectStore()
+  const { sections, updateSection, removeSection } = useProjectStore()
   const { sectionId } = useSelectionStore()
 
   /* Derive live section from store using sectionId */
@@ -116,6 +117,16 @@ export function SectionContext({
     if (!liveSection) return
     const newBarCount = Math.min(64, Math.max(1, currentBars + delta))
     updateSection(liveSection.id, { barCount: newBarCount })
+  }
+
+  /* Confirm dialog for delete section */
+  const [confirmDeleteOpen, setConfirmDeleteOpen] = useState(false)
+
+  function handleDeleteSection() {
+    if (!liveSection) return
+    removeSection(liveSection.id)
+    setConfirmDeleteOpen(false)
+    onClose?.()
   }
 
   return (
@@ -313,11 +324,22 @@ export function SectionContext({
         {/* Delete Section */}
         <button
           type="button"
+          onClick={() => setConfirmDeleteOpen(true)}
           className="mt-6 text-xs text-[#71717a] transition-colors hover:text-red-400"
         >
           Delete Section
         </button>
       </div>
+
+      <ConfirmDialog
+        open={confirmDeleteOpen}
+        onClose={() => setConfirmDeleteOpen(false)}
+        onConfirm={handleDeleteSection}
+        title="Delete Section?"
+        body={`This will permanently delete "${currentName}" and all its blocks. This cannot be undone.`}
+        confirmLabel="Delete"
+        variant="danger"
+      />
     </div>
   )
 }
