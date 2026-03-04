@@ -26,12 +26,12 @@ const FIXED_H = SECTION_H + RULER_H + CHORD_H + BORDER_PX
 /* ------------------------------------------------------------------ */
 function EmptyState({ onGenerate }: { onGenerate: () => void }) {
   return (
-    <div className="flex flex-1 flex-col items-center justify-center gap-4 bg-[#0a0a0c]">
+    <div className="flex flex-1 flex-col items-center justify-center gap-4 bg-background">
       {/* Waveform icon */}
       <svg
         viewBox="0 0 64 40"
         fill="none"
-        className="size-16 text-[#3f3f46]"
+        className="size-16 text-border"
       >
         <rect x="4" y="14" width="3" height="12" rx="1.5" fill="currentColor" />
         <rect x="10" y="8" width="3" height="24" rx="1.5" fill="currentColor" />
@@ -44,16 +44,16 @@ function EmptyState({ onGenerate }: { onGenerate: () => void }) {
         <rect x="52" y="10" width="3" height="20" rx="1.5" fill="currentColor" />
         <rect x="58" y="14" width="3" height="12" rx="1.5" fill="currentColor" />
       </svg>
-      <h2 className="text-lg font-medium text-[#d4d4d8]">
+      <h2 className="text-lg font-medium text-zinc-300">
         Ready to generate
       </h2>
-      <p className="text-sm text-[#71717a]">
+      <p className="text-sm text-zinc-500">
         Configure your input and click generate to begin
       </p>
       <button
         type="button"
         onClick={onGenerate}
-        className="mt-2 rounded-xl bg-[#14b8a6] px-8 py-3 text-sm font-semibold text-[#09090b] shadow-[0_0_20px_rgba(6,182,212,0.3)] transition-colors hover:bg-[#2dd4bf]"
+        className="mt-2 rounded-xl bg-[#14b8a6] px-8 py-3 text-sm font-semibold text-background shadow-[0_0_20px_rgba(6,182,212,0.3)] transition-colors hover:bg-[#2dd4bf]"
       >
         Generate
       </button>
@@ -152,17 +152,17 @@ export function ArrangementView({
   const playheadBar = Math.max(1, Math.min(transportState.currentBar, totalBars || 1))
 
   return (
-    <div ref={containerRef} className="flex flex-1 min-h-0 overflow-hidden bg-[#0a0a0c]">
+    <div ref={containerRef} className="flex flex-1 min-h-0 overflow-hidden bg-background">
       {/* ---- Left gutter (non-scrolling, content-sized) ---- */}
-      <div className="flex w-20 shrink-0 flex-col border-r border-[#27272a] bg-[#0a0a0c]">
+      <div className="flex w-20 shrink-0 flex-col border-r border-secondary bg-background">
         {/* Section header spacer */}
         <div
-          className="shrink-0 border-b border-[#27272a] bg-[#18181b]"
+          className="shrink-0 border-b border-secondary bg-card"
           style={{ height: SECTION_H }}
         />
         {/* Ruler spacer */}
         <div
-          className="shrink-0 border-b border-[#27272a] bg-[#18181b]/80"
+          className="shrink-0 border-b border-secondary bg-card/80"
           style={{ height: RULER_H }}
         />
         {/* Instrument rows — fixed height, matches grid lanes */}
@@ -171,7 +171,7 @@ export function ArrangementView({
           return (
             <div
               key={inst.id}
-              className="flex shrink-0 items-center gap-1.5 border-b border-[#27272a] px-2"
+              className="flex shrink-0 items-center gap-1.5 border-b border-secondary px-2"
               style={{
                 height: laneH,
                 backgroundColor: isEven ? "rgba(9,9,11,0.6)" : "#18181b",
@@ -181,7 +181,7 @@ export function ArrangementView({
                 className="size-1.5 shrink-0 rounded-full"
                 style={{ backgroundColor: inst.color }}
               />
-              <span className="text-[10px] font-medium uppercase tracking-[0.1em] text-[#a1a1aa]">
+              <span className="text-[10px] font-medium uppercase tracking-[0.1em] text-muted-foreground">
                 {inst.label}
               </span>
             </div>
@@ -189,10 +189,10 @@ export function ArrangementView({
         })}
         {/* Chord row */}
         <div
-          className="flex shrink-0 items-center gap-1.5 border-b border-[#27272a] border-t border-t-[#3f3f46]/50 px-2"
+          className="flex shrink-0 items-center gap-1.5 border-b border-secondary border-t border-t-border/50 px-2"
           style={{ height: CHORD_H, backgroundColor: "#18181b" }}
         >
-          <span className="text-[10px] font-medium uppercase tracking-[0.1em] text-[#52525b]">
+          <span className="text-[10px] font-medium uppercase tracking-[0.1em] text-zinc-600">
             CHORDS
           </span>
         </div>
@@ -230,17 +230,17 @@ export function ArrangementView({
                     }
                   }}
                   className={cn(
-                    "flex flex-col justify-center border-l-2 border-r border-r-[#3f3f46]/50 pl-2 text-left transition-colors",
+                    "flex flex-col justify-center border-l-2 border-r border-r-border/50 pl-2 text-left transition-colors",
                     isActive
-                      ? "border-l-[#0891b2] bg-[#0891b2]/10 text-[#f4f4f5]"
-                      : "border-l-[#52525b] bg-[#27272a]/40 text-[#d4d4d8] hover:bg-[#27272a]/60"
+                      ? "border-l-ring bg-ring/10 text-zinc-100"
+                      : "border-l-zinc-600 bg-secondary/40 text-zinc-300 hover:bg-secondary/60"
                   )}
                   style={{ width: w, height: SECTION_H }}
                 >
                   <span className="text-xs font-semibold leading-tight truncate">
                     {sec.name}
                   </span>
-                  <span className="text-[10px] leading-tight text-[#71717a]">
+                  <span className="text-[10px] leading-tight text-zinc-500">
                     {sec.barCount} bar{sec.barCount !== 1 ? "s" : ""}
                   </span>
                 </button>
@@ -250,7 +250,7 @@ export function ArrangementView({
 
           {/* == Bar ruler row == */}
           <div
-            className="flex shrink-0 cursor-pointer bg-[#18181b]/80"
+            className="flex shrink-0 cursor-pointer bg-card/80"
             style={{ height: RULER_H }}
             onClick={(e) => {
               const rect = e.currentTarget.getBoundingClientRect()
@@ -288,7 +288,7 @@ export function ArrangementView({
                   <span
                     className={cn(
                       "absolute left-1 top-0.5 font-mono text-[10px]",
-                      isMajor ? "font-semibold text-[#71717a]" : "text-[#52525b]"
+                      isMajor ? "font-semibold text-zinc-500" : "text-zinc-600"
                     )}
                   >
                     {barNum}
@@ -306,7 +306,7 @@ export function ArrangementView({
             return (
               <div
                 key={inst.id}
-                className="relative shrink-0 border-b border-[#27272a]"
+                className="relative shrink-0 border-b border-secondary"
                 style={{
                   height: laneH,
                   backgroundColor: isEven
@@ -374,7 +374,7 @@ export function ArrangementView({
 
           {/* == Chord lane == */}
           <div
-            className="relative shrink-0 border-t border-[#3f3f46]/50"
+            className="relative shrink-0 border-t border-border/50"
             style={{
               height: CHORD_H,
               backgroundColor: "#0a0a0c",
@@ -389,8 +389,8 @@ export function ArrangementView({
                   className="absolute top-0 flex h-full flex-col items-start"
                   style={{ left: (chord.barNumber - 1) * effectiveBarW }}
                 >
-                  <div className="h-2 w-px bg-[#52525b]" />
-                  <span className="mt-0.5 pl-1 font-mono text-[10px] text-[#a1a1aa]">
+                  <div className="h-2 w-px bg-zinc-600" />
+                  <span className="mt-0.5 pl-1 font-mono text-[10px] text-muted-foreground">
                     {displayText}
                   </span>
                 </div>

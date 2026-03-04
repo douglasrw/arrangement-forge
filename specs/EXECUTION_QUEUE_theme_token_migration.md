@@ -256,7 +256,7 @@ All text should be the same shade and contrast as before the migration.
 
 ---
 
-### [ ] T2 -- Arrangement components: ArrangementView, SequencerBlock
+### [x] T2 -- Arrangement components: ArrangementView, SequencerBlock
 
 **Files:** `src/components/arrangement/ArrangementView.tsx`, `src/components/sequencer-block.tsx`
 **Depends on:** none
