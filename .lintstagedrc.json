@@ -1,0 +1,3 @@
+{
+  "*.{ts,tsx}": "bash scripts/check-hardcoded-colors.sh"
+}
