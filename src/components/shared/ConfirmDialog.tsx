@@ -39,7 +39,7 @@ export function ConfirmDialog({
   return (
     <div
       ref={overlayRef}
-      className="fixed inset-0 z-50 flex items-center justify-center bg-[#09090b]/80 backdrop-blur-sm"
+      className="fixed inset-0 z-50 flex items-center justify-center bg-background/80 backdrop-blur-sm"
       onClick={(e) => {
         if (e.target === overlayRef.current) onClose()
       }}
@@ -48,7 +48,7 @@ export function ConfirmDialog({
       aria-labelledby="confirm-title"
       aria-describedby="confirm-body"
     >
-      <div className="mx-4 w-full max-w-sm rounded-2xl border border-[#3f3f46]/50 bg-[#18181b] p-6 shadow-2xl shadow-black/60">
+      <div className="mx-4 w-full max-w-sm rounded-2xl border border-border/50 bg-card p-6 shadow-2xl shadow-black/60">
         {/* Warning icon */}
         <div className="mb-3 flex justify-center">
           <div className="flex size-10 items-center justify-center">
@@ -81,7 +81,7 @@ export function ConfirmDialog({
         {/* Title */}
         <h2
           id="confirm-title"
-          className="text-center text-lg font-semibold text-[#f4f4f5]"
+          className="text-center text-lg font-semibold text-zinc-100"
         >
           {title}
         </h2>
@@ -89,7 +89,7 @@ export function ConfirmDialog({
         {/* Body */}
         <p
           id="confirm-body"
-          className="mt-2 text-center text-sm leading-relaxed text-[#a1a1aa]"
+          className="mt-2 text-center text-sm leading-relaxed text-muted-foreground"
         >
           {body}
         </p>
@@ -99,7 +99,7 @@ export function ConfirmDialog({
           <button
             type="button"
             onClick={onClose}
-            className="flex-1 rounded-xl bg-[#3f3f46] py-2.5 text-sm font-medium text-[#e4e4e7] transition-colors hover:bg-[#52525b]"
+            className="flex-1 rounded-xl bg-input py-2.5 text-sm font-medium text-zinc-200 transition-colors hover:bg-zinc-600"
           >
             {cancelLabel}
           </button>
@@ -109,7 +109,7 @@ export function ConfirmDialog({
             className={cn(
               "flex-1 rounded-xl border py-2.5 text-sm font-medium transition-colors",
               variant === "danger"
-                ? "border-[#ef4444]/30 bg-[#ef4444]/10 text-[#f87171] hover:bg-[#ef4444]/20"
+                ? "border-destructive/30 bg-destructive/10 text-[#f87171] hover:bg-destructive/20"
                 : "border-[#fbbf24]/30 bg-[#fbbf24]/10 text-[#fbbf24] hover:bg-[#fbbf24]/20"
             )}
           >

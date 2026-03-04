@@ -172,14 +172,14 @@ export function ChordPalette({
             "w-full resize-none rounded-md border border-border bg-secondary px-3 py-2",
             "font-mono text-xs leading-relaxed text-foreground",
             "placeholder:text-muted-foreground",
-            "focus:border-[#0891b2] focus:outline-none focus:ring-1 focus:ring-[#0891b2]/50",
+            "focus:border-ring focus:outline-none focus:ring-1 focus:ring-ring/50",
             "bg-[length:100%_1.5rem] bg-[linear-gradient(to_bottom,transparent_calc(1.5rem-1px),#27272a33_calc(1.5rem-1px))]"
           )}
         />
         <button
           type="button"
           onClick={applyManualText}
-          className="mt-2 text-[11px] font-medium text-[#0891b2] transition-colors hover:text-[#06b6d4]"
+          className="mt-2 text-[11px] font-medium text-ring transition-colors hover:text-primary"
         >
           Apply &amp; switch to palette
         </button>
@@ -219,7 +219,7 @@ export function ChordPalette({
                     <Fragment key={globalIdx}>
                       {/* Barline indicator */}
                       {isBarline && (
-                        <div className="mx-1 w-0.5 shrink-0 self-stretch rounded-full bg-[#71717a]" />
+                        <div className="mx-1 w-0.5 shrink-0 self-stretch rounded-full bg-zinc-500" />
                       )}
                       {/* Chord cell — equal width, min-width ensures text fits */}
                       <div
@@ -227,7 +227,7 @@ export function ChordPalette({
                           "group relative flex shrink-0 items-center justify-center rounded-md border px-1.5 py-1.5 transition-all duration-300",
                           "bg-secondary text-foreground",
                           recentlyAdded === globalIdx
-                            ? "border-[#06b6d4]/60 ring-1 ring-[#06b6d4]/40"
+                            ? "border-primary/60 ring-1 ring-primary/40"
                             : "border-border/50"
                         )}
                         style={{
@@ -244,7 +244,7 @@ export function ChordPalette({
                         <button
                           type="button"
                           onClick={() => removeChord(globalIdx)}
-                          className="absolute -right-1 -top-1 flex size-3.5 items-center justify-center rounded-full bg-[#3f3f46] text-muted-foreground opacity-0 transition-opacity hover:bg-[#52525b] hover:text-foreground group-hover:opacity-100"
+                          className="absolute -right-1 -top-1 flex size-3.5 items-center justify-center rounded-full bg-input text-muted-foreground opacity-0 transition-opacity hover:bg-zinc-600 hover:text-foreground group-hover:opacity-100"
                           aria-label={`Remove ${chord}`}
                         >
                           <X className="size-2" />
@@ -284,7 +284,7 @@ export function ChordPalette({
               id="time-sig-select"
               value={timeSignature}
               onChange={(e) => onTimeSignatureChange?.(e.target.value)}
-              className="rounded bg-secondary px-1.5 py-0.5 text-[10px] font-medium text-muted-foreground border border-border/50 focus:border-[#0891b2] focus:outline-none"
+              className="rounded bg-secondary px-1.5 py-0.5 text-[10px] font-medium text-muted-foreground border border-border/50 focus:border-ring focus:outline-none"
             >
               <option value="4/4">4/4</option>
               <option value="3/4">3/4</option>
@@ -336,7 +336,7 @@ export function ChordPalette({
                     className={cn(
                       "flex size-8 shrink-0 items-center justify-center rounded-md border text-[11px] font-medium transition-all",
                       builderRoot === note
-                        ? "border-[#06b6d4] bg-[#06b6d4] text-foreground shadow-[0_0_8px_rgba(6,182,212,0.4)]"
+                        ? "border-primary bg-primary text-foreground shadow-[0_0_8px_rgba(6,182,212,0.4)]"
                         : "border-border bg-secondary text-muted-foreground hover:border-muted-foreground/40 hover:text-foreground"
                     )}
                   >
@@ -364,7 +364,7 @@ export function ChordPalette({
                     className={cn(
                       "shrink-0 rounded-md border px-2 py-1 text-[11px] font-medium transition-all",
                       builderQuality === q
-                        ? "border-[#06b6d4] bg-[#06b6d4] text-foreground shadow-[0_0_8px_rgba(6,182,212,0.4)]"
+                        ? "border-primary bg-primary text-foreground shadow-[0_0_8px_rgba(6,182,212,0.4)]"
                         : "border-border bg-secondary text-muted-foreground hover:border-muted-foreground/40 hover:text-foreground"
                     )}
                   >
@@ -388,7 +388,7 @@ export function ChordPalette({
                   onClick={handleAddFromBuilder}
                   className={cn(
                     "ml-auto inline-flex items-center gap-1 rounded-md border px-4 py-1.5 text-[11px] font-medium transition-colors",
-                    "border-[#06b6d4]/30 bg-[#06b6d4]/10 text-[#06b6d4] hover:bg-[#06b6d4]/20"
+                    "border-primary/30 bg-primary/10 text-primary hover:bg-primary/20"
                   )}
                 >
                   Add
@@ -438,7 +438,7 @@ export function ChordPalette({
         <button
           type="button"
           onClick={() => setManualMode(true)}
-          className="text-[10px] text-muted-foreground transition-colors hover:text-[#0891b2]"
+          className="text-[10px] text-muted-foreground transition-colors hover:text-ring"
         >
           Type manually
         </button>
@@ -477,14 +477,14 @@ function DiatonicButton({
       className={cn(
         "flex flex-col items-center rounded-lg border px-1 py-1.5 transition-all duration-200",
         flash
-          ? "border-[#06b6d4] bg-[#06b6d4]/15 shadow-[0_0_8px_1px_rgba(6,182,212,0.25)]"
+          ? "border-primary bg-primary/15 shadow-[0_0_8px_1px_rgba(6,182,212,0.25)]"
           : "border-border bg-secondary hover:border-muted-foreground/30 hover:bg-secondary/80"
       )}
     >
       <span
         className={cn(
           "text-[9px] font-semibold leading-none transition-colors",
-          flash ? "text-[#06b6d4]" : "text-muted-foreground"
+          flash ? "text-primary" : "text-muted-foreground"
         )}
       >
         {numeral}

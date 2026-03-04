@@ -101,7 +101,7 @@ export function AiAssistantSection() {
                 className={cn(
                   "max-w-[90%] rounded-lg px-3 py-2 text-xs leading-relaxed",
                   msg.role === "user"
-                    ? "bg-[#0891b2]/15 text-foreground border border-[#0891b2]/20"
+                    ? "bg-ring/15 text-foreground border border-ring/20"
                     : "bg-card text-card-foreground border border-border"
                 )}
               >
@@ -137,7 +137,7 @@ export function AiAssistantSection() {
           className={cn(
             "flex size-6 shrink-0 items-center justify-center rounded-md transition-colors",
             input.trim()
-              ? "bg-[#0891b2] text-foreground hover:bg-[#0891b2]/80"
+              ? "bg-ring text-foreground hover:bg-ring/80"
               : "bg-secondary text-muted-foreground"
           )}
         >

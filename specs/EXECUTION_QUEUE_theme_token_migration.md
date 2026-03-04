@@ -640,7 +640,7 @@ All must look identical to before the migration.
 
 ---
 
-### [ ] T5 -- Shared components + Pages + ChordPalette + AiAssistant
+### [x] T5 -- Shared components + Pages + ChordPalette + AiAssistant
 
 **Files:** `src/components/shared/ConfirmDialog.tsx`, `src/components/shared/ScopeBadge.tsx`, `src/components/library/ProjectCard.tsx`, `src/components/left-panel/ChordPalette.tsx`, `src/components/left-panel/AiAssistantSection.tsx`
 **Depends on:** none

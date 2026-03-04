@@ -4,8 +4,8 @@ type Scope = "song" | "section" | "block"
 
 const SCOPE_STYLES: Record<Scope, { bg: string; text: string; label: string }> = {
   song: {
-    bg: "bg-[#3f3f46]/60",
-    text: "text-[#a1a1aa]",
+    bg: "bg-input/60",
+    text: "text-muted-foreground",
     label: "Song",
   },
   section: {

@@ -47,7 +47,7 @@ export function ProjectCard({ project, onClick }: ProjectCardProps) {
 
       {/* Row 2: badges */}
       <div className="mt-2 flex gap-1.5">
-        <span className="rounded-md bg-[#0891b2]/10 px-2 py-0.5 text-[10px] font-medium text-[#06b6d4]">
+        <span className="rounded-md bg-ring/10 px-2 py-0.5 text-[10px] font-medium text-primary">
           {project.genre}
         </span>
         <span className="rounded-md bg-zinc-700 px-2 py-0.5 text-[10px] font-medium text-zinc-300">
