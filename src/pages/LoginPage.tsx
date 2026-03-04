@@ -123,7 +123,7 @@ export default function LoginPage() {
 
             <button
               type="submit"
-              className="w-full rounded-md bg-primary px-3 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90 transition-colors disabled:opacity-50"
+              className="w-full rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90 transition-colors disabled:opacity-50"
               disabled={loading}
             >
               {loading
@@ -140,7 +140,7 @@ export default function LoginPage() {
 
           {/* Google OAuth */}
           <button
-            className="w-full flex items-center justify-center gap-2 rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground hover:bg-secondary transition-colors disabled:opacity-50"
+            className="w-full flex items-center justify-center gap-2 rounded-md border border-border bg-background px-4 py-2 text-sm text-foreground hover:bg-secondary transition-colors disabled:opacity-50"
             onClick={handleGoogle}
             disabled={loading}
           >

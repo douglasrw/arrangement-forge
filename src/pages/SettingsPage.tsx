@@ -54,120 +54,144 @@ export default function SettingsPage() {
     }
   }
 
+  const inputClasses =
+    'w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring';
+
+  const selectClasses =
+    'w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-ring';
+
+  const disabledSelectClasses =
+    'w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground opacity-50 cursor-not-allowed';
+
   return (
-    <div className="min-h-screen bg-base-100">
+    <div className="min-h-screen bg-background">
       {/* Header */}
-      <div className="bg-base-200 border-b border-base-300 px-8 py-4 flex items-center gap-4">
+      <div className="bg-card border-b border-border px-8 py-4 flex items-center gap-4">
         <button
-          className="btn btn-sm btn-ghost text-base-content/50"
+          className="text-muted-foreground hover:bg-secondary rounded-md px-4 py-2 text-sm font-medium transition-colors"
           onClick={() => navigate('/library')}
         >
-          ← Back to Library
+          &larr; Back to Library
         </button>
-        <h1 className="text-xl font-bold text-base-content">Settings</h1>
+        <h1 className="text-xl font-semibold text-foreground">Settings</h1>
       </div>
 
-      <div className="max-w-lg px-8 py-8">
+      <div className="max-w-2xl mx-auto px-4 py-8">
         <form onSubmit={handleSave} className="flex flex-col gap-6">
-          {/* Display Name */}
-          <div className="form-control gap-2">
-            <label className="label py-0" htmlFor="settings-display-name">
-              <span className="label-text font-medium">Display Name</span>
-            </label>
-            <input
-              id="settings-display-name"
-              type="text"
-              className="input input-bordered"
-              placeholder="Your name"
-              value={displayName}
-              onChange={(e) => setDisplayName(e.target.value)}
-            />
-          </div>
-
-          {/* Chord Display Mode */}
-          <div className="form-control gap-2">
-            <label className="label py-0">
-              <span className="label-text font-medium">Chord Display Mode</span>
-              <span className="label-text-alt text-base-content/40">How chords appear in the editor</span>
-            </label>
-            <div className="flex gap-3">
-              <label htmlFor="settings-chord-letter" className="flex items-center gap-2 cursor-pointer">
+          {/* Profile card */}
+          <div className="bg-card border border-border rounded-lg p-6">
+            <h2 className="text-lg font-semibold text-foreground mb-4">Profile</h2>
+            <div className="flex flex-col gap-4">
+              {/* Display Name */}
+              <div className="flex flex-col gap-1.5">
+                <label className="text-sm font-medium text-foreground" htmlFor="settings-display-name">
+                  Display Name
+                </label>
                 <input
-                  id="settings-chord-letter"
-                  type="radio"
-                  className="radio radio-primary radio-sm"
-                  checked={chordMode === 'letter'}
-                  onChange={() => setChordMode('letter')}
+                  id="settings-display-name"
+                  type="text"
+                  className={inputClasses}
+                  placeholder="Your name"
+                  value={displayName}
+                  onChange={(e) => setDisplayName(e.target.value)}
                 />
-                <span className="text-sm">Letter names</span>
-                <span className="text-xs text-base-content/40">(C, Dm7, G7)</span>
-              </label>
-              <label htmlFor="settings-chord-roman" className="flex items-center gap-2 cursor-pointer">
-                <input
-                  id="settings-chord-roman"
-                  type="radio"
-                  className="radio radio-primary radio-sm"
-                  checked={chordMode === 'roman'}
-                  onChange={() => setChordMode('roman')}
-                />
-                <span className="text-sm">Roman numerals</span>
-                <span className="text-xs text-base-content/40">(I, ii7, V7)</span>
-              </label>
+              </div>
             </div>
           </div>
 
-          {/* Default Genre */}
-          <div className="form-control gap-2">
-            <label className="label py-0" htmlFor="settings-genre">
-              <span className="label-text font-medium">Default Genre</span>
-              <span className="label-text-alt text-base-content/40">Pre-selected when creating a new project</span>
-            </label>
-            <select
-              id="settings-genre"
-              className="select select-bordered"
-              value={defaultGenre}
-              onChange={(e) => setDefaultGenre(e.target.value)}
-            >
-              <option value="">No default</option>
-              {GENRES.map((g) => (
-                <option key={g} value={g}>{g}</option>
-              ))}
-            </select>
+          {/* Editor Preferences card */}
+          <div className="bg-card border border-border rounded-lg p-6">
+            <h2 className="text-lg font-semibold text-foreground mb-4">Editor Preferences</h2>
+            <div className="flex flex-col gap-4">
+              {/* Chord Display Mode */}
+              <div className="flex flex-col gap-1.5">
+                <span className="text-sm font-medium text-foreground">Chord Display Mode</span>
+                <span className="text-xs text-muted-foreground">How chords appear in the editor</span>
+                <div className="flex gap-4 mt-1">
+                  <label htmlFor="settings-chord-letter" className="flex items-center gap-2 cursor-pointer">
+                    <input
+                      id="settings-chord-letter"
+                      type="radio"
+                      className="h-4 w-4 accent-primary"
+                      checked={chordMode === 'letter'}
+                      onChange={() => setChordMode('letter')}
+                    />
+                    <span className="text-sm text-foreground">Letter names</span>
+                    <span className="text-xs text-muted-foreground">(C, Dm7, G7)</span>
+                  </label>
+                  <label htmlFor="settings-chord-roman" className="flex items-center gap-2 cursor-pointer">
+                    <input
+                      id="settings-chord-roman"
+                      type="radio"
+                      className="h-4 w-4 accent-primary"
+                      checked={chordMode === 'roman'}
+                      onChange={() => setChordMode('roman')}
+                    />
+                    <span className="text-sm text-foreground">Roman numerals</span>
+                    <span className="text-xs text-muted-foreground">(I, ii7, V7)</span>
+                  </label>
+                </div>
+              </div>
+
+              {/* Default Genre */}
+              <div className="flex flex-col gap-1.5">
+                <label className="text-sm font-medium text-foreground" htmlFor="settings-genre">
+                  Default Genre
+                </label>
+                <span className="text-xs text-muted-foreground">Pre-selected when creating a new project</span>
+                <select
+                  id="settings-genre"
+                  className={selectClasses}
+                  value={defaultGenre}
+                  onChange={(e) => setDefaultGenre(e.target.value)}
+                >
+                  <option value="">No default</option>
+                  {GENRES.map((g) => (
+                    <option key={g} value={g}>{g}</option>
+                  ))}
+                </select>
+              </div>
+            </div>
           </div>
 
-          <div className="divider text-xs text-base-content/30">Coming Soon</div>
-
-          {/* Disabled future settings */}
-          <div className="opacity-40 flex flex-col gap-4">
-            <div className="form-control gap-2">
-              <label className="label py-0">
-                <span className="label-text font-medium">Audio Output Device</span>
-              </label>
-              <select className="select select-bordered" disabled>
-                <option>System Default</option>
-              </select>
+          {/* Coming Soon card */}
+          <div className="bg-card border border-border rounded-lg p-6 opacity-60">
+            <div className="flex items-center gap-3 mb-4">
+              <div className="h-px bg-border flex-1" />
+              <span className="text-xs text-muted-foreground">Coming Soon</span>
+              <div className="h-px bg-border flex-1" />
             </div>
-            <div className="form-control gap-2">
-              <label className="label py-0">
-                <span className="label-text font-medium">Auto-Save Interval</span>
-              </label>
-              <select className="select select-bordered" disabled>
-                <option>Every 60 seconds</option>
-              </select>
-            </div>
-            <div className="form-control gap-2">
-              <label className="label py-0">
-                <span className="label-text font-medium">Theme</span>
-              </label>
-              <select className="select select-bordered" disabled>
-                <option>Forge Dark (default)</option>
-              </select>
+            <div className="flex flex-col gap-4">
+              <div className="flex flex-col gap-1.5">
+                <label className="text-sm font-medium text-foreground" htmlFor="settings-audio-output">
+                  Audio Output Device
+                </label>
+                <select id="settings-audio-output" className={disabledSelectClasses} disabled>
+                  <option>System Default</option>
+                </select>
+              </div>
+              <div className="flex flex-col gap-1.5">
+                <label className="text-sm font-medium text-foreground" htmlFor="settings-autosave">
+                  Auto-Save Interval
+                </label>
+                <select id="settings-autosave" className={disabledSelectClasses} disabled>
+                  <option>Every 60 seconds</option>
+                </select>
+              </div>
+              <div className="flex flex-col gap-1.5">
+                <label className="text-sm font-medium text-foreground" htmlFor="settings-theme">
+                  Theme
+                </label>
+                <select id="settings-theme" className={disabledSelectClasses} disabled>
+                  <option>Forge Dark (default)</option>
+                </select>
+              </div>
             </div>
           </div>
 
           {/* Error */}
           {error && (
-            <div className="alert alert-error py-2 text-sm">
+            <div className="rounded-md border border-destructive/50 bg-destructive/10 px-3 py-2 text-sm text-destructive">
               <span>{error}</span>
             </div>
           )}
@@ -176,13 +200,17 @@ export default function SettingsPage() {
           <div className="flex items-center gap-3">
             <button
               type="submit"
-              className="btn btn-primary"
+              className="rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
               disabled={saving}
             >
-              {saving ? <span className="loading loading-spinner loading-sm" /> : 'Save Settings'}
+              {saving ? (
+                <span className="h-4 w-4 rounded-full border-2 border-primary-foreground border-t-transparent animate-spin inline-block" />
+              ) : (
+                'Save Settings'
+              )}
             </button>
             {saved && (
-              <span className="text-success text-sm font-medium">Saved!</span>
+              <span className="text-sm font-medium text-green-400">Saved!</span>
             )}
           </div>
         </form>
