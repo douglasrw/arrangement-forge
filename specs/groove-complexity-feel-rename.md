@@ -621,13 +621,13 @@ All tests must pass. Then perform the behavioral smoke test:
 
 ### Structural (code wiring)
 
-- [ ] "Groove" in types means complexity → `src/types/project.ts` — `groove: number` comment says "complexity"
-- [ ] "Feel" in types means humanization → `src/types/project.ts` — `feel: number` comment says "humanization"
-- [ ] applyGroove does density → `src/lib/drum-patterns.ts:applyGroove` — filters/adds notes based on groove param
-- [ ] applyFeel does micro-timing → `src/lib/drum-patterns.ts:applyFeel` — adds timing offsets based on feel param
-- [ ] applyEnergy is intensity-only → `src/lib/drum-patterns.ts:applyEnergy` — only scales velocity, no note filtering
-- [ ] Pipeline order correct → `src/lib/drum-patterns.ts:buildDrumMidi` — groove→energy→dynamics→swing→feel
-- [ ] Sliders trigger reactive MIDI regen → debounced effect watches `project.energy/groove/feel/swingPct/dynamics`
+- [x] "Groove" in types means complexity → `src/types/project.ts` — `groove: number` comment says "complexity"
+- [x] "Feel" in types means humanization → `src/types/project.ts` — `feel: number` comment says "humanization"
+- [x] applyGroove does density → `src/lib/drum-patterns.ts:applyGroove` — filters/adds notes based on groove param
+- [x] applyFeel does micro-timing → `src/lib/drum-patterns.ts:applyFeel` — adds timing offsets based on feel param
+- [x] applyEnergy is intensity-only → `src/lib/drum-patterns.ts:applyEnergy` — only scales velocity, no note filtering
+- [x] Pipeline order correct → `src/lib/drum-patterns.ts:buildDrumMidi` — groove→energy→dynamics→swing→feel
+- [x] Sliders trigger reactive MIDI regen → debounced effect watches `project.energy/groove/feel/swingPct/dynamics`
 
 ### Behavioral (end-to-end demo)
 
