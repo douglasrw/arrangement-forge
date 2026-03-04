@@ -1,7 +1,7 @@
 // tailwind.config.ts
 // In Tailwind v4, configuration is primarily done in CSS (globals.css).
-// This file exists for tooling compatibility and is referenced by T24.
-// The forge custom theme is defined in src/styles/globals.css via @plugin "daisyui/theme".
+// This file exists for tooling compatibility.
+// The forge custom theme is defined in src/styles/globals.css via CSS custom properties.
 
 import type { Config } from 'tailwindcss';
 

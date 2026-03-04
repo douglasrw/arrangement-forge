@@ -43,29 +43,37 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="min-h-screen bg-base-100 flex items-center justify-center p-4">
-      <div className="card bg-base-200 shadow-xl w-full max-w-sm">
-        <div className="card-body gap-6">
+    <div className="min-h-screen bg-background flex items-center justify-center p-4">
+      <div className="bg-card shadow-xl w-full max-w-sm border border-border rounded-lg p-6">
+        <div className="flex flex-col gap-6">
           {/* Logo */}
           <div className="text-center">
             <h1 className="text-2xl font-bold text-primary tracking-tight">
               Arrangement Forge
             </h1>
-            <p className="text-base-content/50 text-sm mt-1">
+            <p className="text-muted-foreground text-sm mt-1">
               AI-powered backing tracks
             </p>
           </div>
 
           {/* Mode toggle */}
-          <div className="tabs tabs-boxed bg-base-300">
+          <div className="flex gap-2 bg-secondary rounded-lg p-1">
             <button
-              className={`tab flex-1 ${mode === 'signin' ? 'tab-active' : ''}`}
+              className={`flex-1 py-1.5 px-3 rounded-md text-sm font-medium transition-colors ${
+                mode === 'signin'
+                  ? 'bg-primary text-primary-foreground'
+                  : 'text-muted-foreground hover:text-foreground'
+              }`}
               onClick={() => { setMode('signin'); setError(null); }}
             >
               Sign In
             </button>
             <button
-              className={`tab flex-1 ${mode === 'signup' ? 'tab-active' : ''}`}
+              className={`flex-1 py-1.5 px-3 rounded-md text-sm font-medium transition-colors ${
+                mode === 'signup'
+                  ? 'bg-primary text-primary-foreground'
+                  : 'text-muted-foreground hover:text-foreground'
+              }`}
               onClick={() => { setMode('signup'); setError(null); }}
             >
               Sign Up
@@ -74,14 +82,14 @@ export default function LoginPage() {
 
           {/* Email/password form */}
           <form onSubmit={handleSubmit} className="flex flex-col gap-4">
-            <div className="form-control gap-1">
-              <label className="label py-0" htmlFor="login-email">
-                <span className="label-text text-xs text-base-content/70">Email</span>
+            <div className="flex flex-col gap-1.5">
+              <label className="text-xs text-muted-foreground" htmlFor="login-email">
+                Email
               </label>
               <input
                 id="login-email"
                 type="email"
-                className="input input-bordered input-sm"
+                className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
                 placeholder="you@example.com"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
@@ -90,14 +98,14 @@ export default function LoginPage() {
               />
             </div>
 
-            <div className="form-control gap-1">
-              <label className="label py-0" htmlFor="login-password">
-                <span className="label-text text-xs text-base-content/70">Password</span>
+            <div className="flex flex-col gap-1.5">
+              <label className="text-xs text-muted-foreground" htmlFor="login-password">
+                Password
               </label>
               <input
                 id="login-password"
                 type="password"
-                className="input input-bordered input-sm"
+                className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
                 placeholder="••••••••"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
@@ -108,27 +116,31 @@ export default function LoginPage() {
             </div>
 
             {error && (
-              <div className="alert alert-error py-2 text-sm">
+              <div className="rounded-md border border-destructive/50 bg-destructive/10 px-3 py-2 text-sm text-destructive">
                 <span>{error}</span>
               </div>
             )}
 
             <button
               type="submit"
-              className="btn btn-primary btn-sm"
+              className="w-full rounded-md bg-primary px-3 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90 transition-colors disabled:opacity-50"
               disabled={loading}
             >
               {loading
-                ? <span className="loading loading-spinner loading-xs" />
+                ? '...'
                 : mode === 'signin' ? 'Sign In' : 'Create Account'}
             </button>
           </form>
 
-          <div className="divider text-xs text-base-content/40 my-0">or</div>
+          <div className="flex items-center gap-3 text-xs text-muted-foreground">
+            <div className="flex-1 h-px bg-border" />
+            or
+            <div className="flex-1 h-px bg-border" />
+          </div>
 
           {/* Google OAuth */}
           <button
-            className="btn btn-outline btn-sm gap-2"
+            className="w-full flex items-center justify-center gap-2 rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground hover:bg-secondary transition-colors disabled:opacity-50"
             onClick={handleGoogle}
             disabled={loading}
           >

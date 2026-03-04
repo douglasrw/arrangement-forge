@@ -18,6 +18,21 @@ CHECKS_DIR="$(dirname "$0")/checks"
 FAILED=0
 FAILED_CHECKS=()
 
+# Filter out node_modules/ and dist/ — these are tracked but contain
+# third-party code that must not be linted against project conventions.
+FILTERED_FILES=()
+for f in "$@"; do
+  case "$f" in
+    node_modules/*|dist/*) continue ;;
+    *) FILTERED_FILES+=("$f") ;;
+  esac
+done
+
+# Nothing to check after filtering
+if [ ${#FILTERED_FILES[@]} -eq 0 ]; then
+  exit 0
+fi
+
 if [ ! -d "$CHECKS_DIR" ]; then
   echo "No checks directory found at $CHECKS_DIR"
   exit 0
@@ -28,7 +43,7 @@ for check in "$CHECKS_DIR"/*.sh; do
 
   CHECK_NAME=$(basename "$check" .sh)
 
-  if ! bash "$check" "$@"; then
+  if ! bash "$check" "${FILTERED_FILES[@]}"; then
     FAILED=$((FAILED + 1))
     FAILED_CHECKS+=("$CHECK_NAME")
   fi

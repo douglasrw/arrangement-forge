@@ -1,5 +1,53 @@
 // genre-config.ts — Genre, sub-style, and slider visibility configuration.
 
+import type { InstrumentType } from '@/types';
+
+// ---------- Per-Instrument Style Options ----------
+
+export interface StyleOption {
+  id: string;
+  label: string;
+}
+
+export const INSTRUMENT_STYLE_OPTIONS: Record<InstrumentType, StyleOption[]> = {
+  drums: [
+    { id: 'rock_straight', label: 'Rock Straight' },
+    { id: 'jazz_swing', label: 'Jazz Swing' },
+    { id: 'funk_pocket', label: 'Funk Pocket' },
+    { id: 'blues_shuffle', label: 'Blues Shuffle' },
+    { id: 'country_shuffle', label: 'Country Shuffle' },
+    { id: 'gospel_drive', label: 'Gospel Drive' },
+    { id: 'rnb_groove', label: 'R&B Groove' },
+    { id: 'bossa_nova', label: 'Bossa Nova' },
+    { id: 'pop_four_on_floor', label: 'Four on Floor' },
+    { id: 'latin_jazz', label: 'Latin Jazz' },
+    { id: 'fusion_straight', label: 'Fusion Straight' },
+    { id: 'salsa_cascara', label: 'Salsa Cascara' },
+    { id: 'samba', label: 'Samba' },
+  ],
+  bass: [
+    { id: 'walking', label: 'Walking' },
+    { id: 'slap', label: 'Slap' },
+    { id: 'pick', label: 'Pick' },
+    { id: 'fingerstyle', label: 'Fingerstyle' },
+  ],
+  piano: [
+    { id: 'jazz_comp', label: 'Jazz Comping' },
+    { id: 'block_chords', label: 'Block Chords' },
+    { id: 'arpeggiated', label: 'Arpeggiated' },
+  ],
+  guitar: [
+    { id: 'power_chords', label: 'Power Chords' },
+    { id: 'fingerpick_arpeggios', label: 'Fingerpick Arpeggios' },
+    { id: 'rhythm_strum', label: 'Rhythm Strum' },
+    { id: 'muted_funk', label: 'Muted Funk' },
+  ],
+  strings: [
+    { id: 'sustained_pad', label: 'Sustained Pad' },
+    { id: 'tremolo', label: 'Tremolo' },
+  ],
+};
+
 export const GENRE_SUBSTYLES: Record<string, string[]> = {
   Jazz: ['Swing', 'Bebop', 'Cool', 'Modal', 'Free', 'Fusion', 'Latin Jazz'],
   Blues: ['Delta', 'Chicago', 'Texas', 'Jump Blues', 'Electric', 'Boogie'],

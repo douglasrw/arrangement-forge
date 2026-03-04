@@ -45,6 +45,13 @@
   --ring: #0891b2;
   --sidebar: #111113;
   --radius: 0.5rem;
+
+  /* Instrument lane palette */
+  --instrument-drums: #06b6d4;
+  --instrument-bass: #34d399;
+  --instrument-piano: #fbbf24;
+  --instrument-guitar: #a78bfa;
+  --instrument-strings: #14b8a6;
 }
 
 html, body {

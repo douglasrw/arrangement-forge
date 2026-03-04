@@ -4,16 +4,25 @@ import type { Instrument } from "@/components/sequencer-block"
 import { useProjectStore } from "@/store/project-store"
 import { useSelectionStore } from "@/store/selection-store"
 import { ConfirmDialog } from "@/components/shared/ConfirmDialog"
+import { INSTRUMENT_STYLE_OPTIONS } from "@/lib/genre-config"
+import type { InstrumentType } from "@/types"
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select"
 
 /* ------------------------------------------------------------------ */
 /*  Instrument palette (matches sequencer-block.tsx)                    */
 /* ------------------------------------------------------------------ */
 const INSTRUMENT_COLORS: Record<Instrument, string> = {
-  drums: "#06b6d4",
-  bass: "#34d399",
-  piano: "#fbbf24",
-  guitar: "#a78bfa",
-  strings: "#14b8a6",
+  drums: "var(--instrument-drums)",
+  bass: "var(--instrument-bass)",
+  piano: "var(--instrument-piano)",
+  guitar: "var(--instrument-guitar)",
+  strings: "var(--instrument-strings)",
 }
 
 const INSTRUMENT_LABELS: Record<Instrument, string> = {
@@ -178,7 +187,7 @@ export function BlockContext({
   endBar = 12,
   onClose,
 }: BlockContextProps) {
-  const { blocks, deleteBlock, duplicateBlock } = useProjectStore()
+  const { blocks, deleteBlock, duplicateBlock, updateBlock } = useProjectStore()
   const { blockId } = useSelectionStore()
 
   /* Derive live block from store */
@@ -262,6 +271,37 @@ export function BlockContext({
         <p className="mt-0.5 text-xs text-muted-foreground">
           Bars {resolvedStartBar} &ndash; {resolvedEndBar}
         </p>
+
+        {/* PATTERN STYLE */}
+        <label
+          htmlFor="block-pattern-select"
+          className="mt-4 block text-[10px] font-medium uppercase tracking-widest text-zinc-500"
+        >
+          Pattern
+        </label>
+        <div className="mt-1.5">
+          <Select
+            value={liveBlock?.style ?? ""}
+            onValueChange={(value) => {
+              if (blockId) {
+                updateBlock(blockId, { style: value })
+              }
+            }}
+          >
+            <SelectTrigger id="block-pattern-select" className="h-8 text-xs bg-secondary">
+              <SelectValue placeholder="Select pattern" />
+            </SelectTrigger>
+            <SelectContent>
+              {INSTRUMENT_STYLE_OPTIONS[instrument as InstrumentType]?.map(
+                (option) => (
+                  <SelectItem key={option.id} value={option.id}>
+                    {option.label}
+                  </SelectItem>
+                )
+              )}
+            </SelectContent>
+          </Select>
+        </div>
 
         {/* VOLUME */}
         <label htmlFor="block-volume-slider" className="mt-4 block text-[10px] font-medium uppercase tracking-widest text-zinc-500">
