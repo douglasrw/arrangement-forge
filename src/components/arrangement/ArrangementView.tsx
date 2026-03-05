@@ -191,10 +191,11 @@ export function ArrangementView({
               key={inst.id}
               className={cn(
                 "flex shrink-0 items-center gap-1.5 border-b border-secondary px-2 cursor-pointer hover:bg-secondary/60 transition-colors",
-                isSelected && "bg-secondary border-l-2 border-l-primary"
+                isSelected ? "border-l-4 bg-secondary" : "border-l-2"
               )}
               style={{
                 height: laneH,
+                borderLeftColor: inst.color,
                 ...(!isSelected && {
                   backgroundColor: isEven ? "color-mix(in srgb, var(--background) 60%, transparent)" : "var(--card)",
                 }),
@@ -212,8 +213,10 @@ export function ArrangementView({
               }}
             >
               <span
-                className="text-xs font-semibold uppercase tracking-wider"
-                style={{ color: inst.color }}
+                className={cn(
+                  "text-xs font-semibold uppercase tracking-wider",
+                  isSelected ? "text-foreground" : "text-muted-foreground"
+                )}
               >
                 {inst.label}
               </span>
