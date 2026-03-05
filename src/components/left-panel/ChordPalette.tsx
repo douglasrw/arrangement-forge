@@ -57,8 +57,6 @@ function getChordsPerRow(_beatsPerBar: number): number {
   return 7
 }
 
-const TEAL = "var(--primary)"
-
 /* ------------------------------------------------------------------ */
 /*  ChordPalette                                                       */
 /* ------------------------------------------------------------------ */
@@ -214,16 +212,11 @@ export function ChordPalette({
                     <div
                       key={globalIdx}
                       className={cn(
-                        "group relative flex h-8 items-center justify-center rounded-sm border text-xs font-medium transition-all duration-300",
+                        "group relative flex h-8 items-center justify-center rounded-sm text-xs font-medium transition-all duration-300",
                         recentlyAdded === globalIdx
-                          ? "border-primary/60 bg-primary/15 ring-1 ring-primary/40"
-                          : "border-border/50 bg-secondary/50 text-muted-foreground"
+                          ? "bg-primary/20 text-primary ring-1 ring-primary/30"
+                          : "bg-secondary text-muted-foreground"
                       )}
-                      style={
-                        recentlyAdded === globalIdx
-                          ? { boxShadow: `0 0 6px 1px ${TEAL}22` }
-                          : undefined
-                      }
                     >
                       <span className="whitespace-nowrap px-1 text-xs font-medium leading-none">
                         {chord}
@@ -441,10 +434,10 @@ function DiatonicButton({
       type="button"
       onClick={handleClick}
       className={cn(
-        "flex h-8 flex-col items-center justify-center rounded-sm border transition-all duration-200",
+        "flex h-8 flex-col items-center justify-center rounded-sm transition-all duration-200",
         flash
-          ? "border-primary bg-primary/15 shadow-[0_0_8px_1px_rgba(6,182,212,0.25)]"
-          : "border-border/50 bg-secondary/50 hover:border-muted-foreground/30 hover:bg-secondary/80"
+          ? "bg-primary/20 text-primary"
+          : "bg-secondary text-muted-foreground hover:bg-secondary/80"
       )}
     >
       <span
