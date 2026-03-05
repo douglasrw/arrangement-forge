@@ -24,7 +24,7 @@ function KeyDropdown({
         value={value}
         onChange={(e) => onChange(e.target.value)}
         className={cn(
-          "h-7 cursor-pointer appearance-none rounded-md border border-border/30 bg-secondary/50",
+          "h-8 cursor-pointer appearance-none rounded-md border border-border/30 bg-secondary/50",
           "pl-2 pr-6 text-xs text-muted-foreground",
           "focus:border-ring focus:outline-none focus:ring-1 focus:ring-ring"
         )}
@@ -94,7 +94,7 @@ function BpmEditor({
             if (e.key === "Escape") setEditing(false)
           }}
           className={cn(
-            "h-7 w-20 rounded-md border border-border/30 bg-secondary/50",
+            "h-8 w-20 rounded-md border border-border/30 bg-secondary/50",
             "px-2 text-center font-mono text-xs text-muted-foreground",
             "focus:border-ring focus:outline-none focus:ring-1 focus:ring-ring"
           )}
@@ -107,7 +107,7 @@ function BpmEditor({
     <button
       type="button"
       onClick={() => setEditing(true)}
-      className="rounded-md border border-border/30 bg-secondary/50 px-2 py-0.5 text-xs text-muted-foreground transition-colors hover:border-border hover:text-foreground"
+      className="h-8 flex items-center rounded-md border border-border/30 bg-secondary/50 px-2 text-xs text-muted-foreground transition-colors hover:border-border hover:text-foreground"
       title="Click to edit BPM"
     >
       {'\u2669'} {value} bpm
@@ -127,7 +127,7 @@ function ChordDisplayToggle({
 }) {
   return (
     <div
-      className="flex gap-1 rounded-lg bg-secondary p-1"
+      className="h-8 flex items-center gap-1 rounded-lg bg-secondary p-1"
       role="radiogroup"
       aria-label="Chord display mode"
     >
@@ -137,7 +137,7 @@ function ChordDisplayToggle({
         aria-checked={mode === "letter"}
         onClick={() => mode !== "letter" && onToggle()}
         className={cn(
-          "rounded-md px-4 py-1.5 text-sm font-medium transition-colors",
+          "rounded-md px-4 py-1 text-sm font-medium transition-colors",
           mode === "letter"
             ? "bg-primary text-primary-foreground"
             : "text-muted-foreground hover:text-foreground"
@@ -151,7 +151,7 @@ function ChordDisplayToggle({
         aria-checked={mode === "roman"}
         onClick={() => mode !== "roman" && onToggle()}
         className={cn(
-          "rounded-md px-4 py-1.5 text-sm font-medium transition-colors",
+          "rounded-md px-4 py-1 text-sm font-medium transition-colors",
           mode === "roman"
             ? "bg-primary text-primary-foreground"
             : "text-muted-foreground hover:text-foreground"
@@ -284,10 +284,10 @@ export function TopBar() {
           value={tempo}
           onChange={(bpm) => updateProject({ tempo: bpm })}
         />
-        <span className="rounded-md border border-border/30 bg-secondary/50 px-2 py-0.5 text-xs text-muted-foreground">
+        <span className="h-8 flex items-center rounded-md border border-border/30 bg-secondary/50 px-2 text-xs text-muted-foreground">
           {genre}
         </span>
-        <span className="rounded-md border border-border/30 bg-secondary/50 px-2 py-0.5 text-xs text-muted-foreground">
+        <span className="h-8 flex items-center rounded-md border border-border/30 bg-secondary/50 px-2 text-xs text-muted-foreground">
           {timeSig}
         </span>
         <ChordDisplayToggle
