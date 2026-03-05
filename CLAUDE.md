@@ -101,6 +101,8 @@ These are absolute requirements. Every agent must follow all of them.
 - **Must not** iterate more than once on a UI fix without a screenshot. After one failure: STOP, get screenshot, write Playwright assertions, fresh context.
 - **Must** give every `<input>` and `<textarea>` a unique `id` attribute and a corresponding `<label htmlFor={id}>`. No unlabeled form fields.
 - **Must** include `SET search_path = public` in any Supabase `SECURITY DEFINER` function and use fully qualified table names (e.g., `public.profiles`). Without this, trigger functions fail silently.
+- **Must** run accessibility tests (`npx playwright test tests/accessibility.spec.ts`) before shipping UI changes
+- **Must not** use fixed pixel widths (`w-[Npx]`) with `shrink-0` in flex or grid children — causes overflow in variable-width containers. Use `flex-1`, CSS grid columns, or percentage widths.
 
 ---
 
@@ -157,6 +159,7 @@ Binary CLAUDE.md rules are enforced by pre-commit hooks. Commits that violate th
 | `no-class-components` | Functional components only |
 | `no-wireframe-theme` | Must not use DaisyUI (removed) |
 | `no-client-user-id` | Must not send user_id from client in Supabase inserts |
+| `no-fixed-width-shrink` | Never use `w-[Npx]` with `shrink-0` in flex/grid children |
 
 **Disabled (needs rewrite):** `no-unlabeled-inputs.sh.disabled` — single-line grep can't handle multi-line JSX props. Rule remains enforced as prose only.
 

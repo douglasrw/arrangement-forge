@@ -254,6 +254,31 @@ This section will be populated as designs are approved.
 
 ---
 
+## Automated Enforcement
+
+Five layers of mechanical UI quality enforcement prevent regressions:
+
+| Layer | Tool | Enforcement Point | What it catches |
+|-------|------|-------------------|----------------|
+| 1 | `@axe-core/playwright` | Playwright tests | Color contrast (WCAG AA), touch targets, ARIA, labels |
+| 2 | `eslint-plugin-jsx-a11y` | ESLint (pre-commit) | Missing alt/labels, non-keyboard elements, bad ARIA |
+| 3 | `no-fixed-width-shrink.sh` | Pre-commit hook | `w-[Npx] shrink-0` overflow anti-pattern |
+| 4 | Overflow assertions | Playwright tests | `scrollWidth > clientWidth` on all views |
+| 5 | Golden baseline screenshots | Playwright `toHaveScreenshot()` | Any visual regression from approved state |
+
+**Planned:** `eslint-plugin-tailwindcss` when Tailwind v4 support stabilizes ([tracking issue](https://github.com/francoismassart/eslint-plugin-tailwindcss/issues/325)).
+
+### Running enforcement tests
+```
+# Accessibility + overflow + visual regression
+source ~/.secrets.env && PATH="/home/ubuntu/.nvm/versions/node/v22.22.0/bin:$PATH" npx playwright test
+
+# ESLint with jsx-a11y
+npx eslint src/
+```
+
+---
+
 ## Quality Checklist (8-Criterion Gate)
 
 Every UI component must pass these checks before shipping:
@@ -284,3 +309,4 @@ Every UI component must pass these checks before shipping:
 - No generic AI fonts (Inter, Roboto) — use the system font stack
 - No gradients on backgrounds — use flat color tokens
 - No `confirm()`, `alert()`, or `prompt()` — use `ConfirmDialog` or custom UI
+- No `w-[Npx]` with `shrink-0` in flex/grid children (use `flex-1` or CSS grid)
