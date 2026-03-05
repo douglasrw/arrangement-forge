@@ -236,12 +236,12 @@ export function MixerDrawer() {
   )
 
   return (
-    <div className="shrink-0 border-t border-muted-foreground/20 bg-card">
+    <div className="shrink-0 border-t-2 border-border bg-secondary">
       {/* Header strip — always visible, acts as toggle */}
       <button
         type="button"
         onClick={toggleMixer}
-        className="flex w-full items-center justify-between px-4 py-1.5"
+        className="flex w-full items-center justify-between px-4 py-2"
       >
         <span className="text-xs font-medium uppercase tracking-widest text-zinc-500">
           Mixer

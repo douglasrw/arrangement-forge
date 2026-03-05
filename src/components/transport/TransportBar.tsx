@@ -90,27 +90,27 @@ export function TransportBar() {
   const timeStr = `${mins}:${String(secs).padStart(2, "0")}`
 
   return (
-    <footer className="flex h-14 w-full shrink-0 items-center justify-center gap-4 border-t border-muted-foreground/30 bg-card py-3 px-4">
+    <footer className="flex h-16 w-full shrink-0 items-center justify-center gap-6 border-t border-border bg-secondary px-4">
       {/* ---- LEFT: Playback pill group ---- */}
-      <div className="flex items-center gap-1 rounded-lg bg-muted/50 px-3 py-1.5">
+      <div className="flex items-center gap-1 rounded-xl border border-border bg-background px-4 py-2">
         {/* Skip to start */}
         <button
           type="button"
           onClick={() => seek(1)}
-          className="flex size-8 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:text-zinc-100"
+          className="flex size-9 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:text-foreground"
           aria-label="Skip to start"
         >
-          <SkipBack className="size-3.5" />
+          <SkipBack className="size-4" />
         </button>
 
         {/* Stop */}
         <button
           type="button"
           onClick={handleStop}
-          className="flex size-8 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:text-zinc-100"
+          className="flex size-9 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:text-foreground"
           aria-label="Stop"
         >
-          <Square className="size-3.5 fill-current" />
+          <Square className="size-4 fill-current" />
         </button>
 
         {/* Play / Pause */}
@@ -118,17 +118,17 @@ export function TransportBar() {
           type="button"
           onClick={handlePlayPause}
           className={cn(
-            "flex size-9 items-center justify-center rounded-lg transition-all",
+            "flex size-10 items-center justify-center rounded-full transition-all",
             isPlaying
-              ? "bg-instrument-strings text-background shadow-[0_0_12px_rgba(6,182,212,0.4)]"
-              : "bg-input text-zinc-200 hover:bg-zinc-600"
+              ? "bg-primary text-primary-foreground shadow-[0_0_12px_rgba(6,182,212,0.4)]"
+              : "bg-primary text-primary-foreground hover:bg-primary/90"
           )}
           aria-label={isPlaying ? "Pause" : "Play"}
         >
           {isPlaying ? (
-            <Pause className="size-4 fill-current" />
+            <Pause className="size-4.5 fill-current" />
           ) : (
-            <Play className="size-4 fill-current" />
+            <Play className="size-4.5 fill-current" />
           )}
         </button>
 
@@ -139,15 +139,15 @@ export function TransportBar() {
             const totalBars = sections.reduce((sum, s) => sum + s.barCount, 0)
             seek(totalBars)
           }}
-          className="flex size-8 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:text-zinc-100"
+          className="flex size-9 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:text-foreground"
           aria-label="Skip to end"
         >
-          <SkipForward className="size-3.5" />
+          <SkipForward className="size-4" />
         </button>
       </div>
 
       {/* ---- CENTER: Position + BPM + Time Sig ---- */}
-      <div className="flex items-center gap-3 rounded-lg bg-muted/50 px-3 py-1.5">
+      <div className="flex items-center gap-3 rounded-xl border border-border bg-background px-4 py-2">
         {/* Bar | Beat counter */}
         <div className="flex items-center gap-0 rounded-lg bg-secondary px-3 py-1 font-mono text-sm">
           <span className="text-zinc-200">{bar}</span>
@@ -203,7 +203,7 @@ export function TransportBar() {
       </div>
 
       {/* ---- RIGHT: Loop, Metronome, Elapsed ---- */}
-      <div className="flex items-center gap-1.5 rounded-lg bg-muted/50 px-3 py-1.5">
+      <div className="flex items-center gap-1.5 rounded-xl border border-border bg-background px-4 py-2">
         {/* Loop toggle */}
         <button
           type="button"
