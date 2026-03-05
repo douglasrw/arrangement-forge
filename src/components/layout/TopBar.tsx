@@ -71,7 +71,7 @@ function BpmEditor({
     setEditing(false)
     const parsed = parseInt(raw, 10)
     if (!isNaN(parsed)) {
-      const clamped = Math.min(240, Math.max(40, parsed))
+      const clamped = Math.min(300, Math.max(40, parsed))
       onChange(clamped)
     }
   }
@@ -85,7 +85,7 @@ function BpmEditor({
           id="topbar-bpm-input"
           type="number"
           min={40}
-          max={240}
+          max={300}
           value={draft}
           onChange={(e) => setDraft(e.target.value)}
           onBlur={() => commit(draft)}
