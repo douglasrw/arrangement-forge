@@ -53,28 +53,52 @@ export function InputSection() {
         />
       )}
 
-      {/* Text tab — raw chord chart textarea */}
+      {/* Text tab — raw chord chart textarea + description */}
       {activeTab === "Text" && (
-        <div className="flex flex-col gap-1.5">
-          <label
-            htmlFor="chord-chart-raw-input"
-            className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground"
-          >
-            Chord Chart
-          </label>
-          <textarea
-            id="chord-chart-raw-input"
-            value={chordChartRaw}
-            onChange={(e) => updateProject({ chordChartRaw: e.target.value })}
-            rows={4}
-            placeholder={"[Verse]\nCmaj7 | Dm7 | G7 | Cmaj7\n\n[Chorus]\nF | G | Am | C"}
-            className={cn(
-              "w-full resize-none rounded-md border border-border bg-secondary px-3 py-2",
-              "font-mono text-xs leading-relaxed text-foreground",
-              "placeholder:text-muted-foreground",
-              "focus:border-ring focus:outline-none focus:ring-1 focus:ring-ring/50"
-            )}
-          />
+        <div className="flex flex-col gap-3">
+          <div className="flex flex-col gap-1.5">
+            <label
+              htmlFor="chord-chart-raw-input"
+              className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground"
+            >
+              Chord Chart
+            </label>
+            <textarea
+              id="chord-chart-raw-input"
+              value={chordChartRaw}
+              onChange={(e) => updateProject({ chordChartRaw: e.target.value })}
+              rows={4}
+              placeholder={"[Verse]\nCmaj7 | Dm7 | G7 | Cmaj7\n\n[Chorus]\nF | G | Am | C"}
+              className={cn(
+                "w-full resize-none rounded-md border border-border bg-secondary px-3 py-2",
+                "font-mono text-xs leading-relaxed text-foreground",
+                "placeholder:text-muted-foreground",
+                "focus:border-ring focus:outline-none focus:ring-1 focus:ring-ring/50"
+              )}
+            />
+          </div>
+
+          <div className="flex flex-col gap-1.5">
+            <label
+              htmlFor="description-input"
+              className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground"
+            >
+              Description
+            </label>
+            <textarea
+              id="description-input"
+              value={generationHints}
+              onChange={(e) => updateProject({ generationHints: e.target.value })}
+              rows={2}
+              placeholder="Jazz waltz, medium tempo, brushes on snare, walking bass..."
+              className={cn(
+                "w-full resize-none rounded-md border border-border bg-secondary px-3 py-2",
+                "text-xs leading-relaxed text-foreground",
+                "placeholder:text-muted-foreground",
+                "focus:border-ring focus:outline-none focus:ring-1 focus:ring-ring/50"
+              )}
+            />
+          </div>
         </div>
       )}
 
@@ -84,29 +108,6 @@ export function InputSection() {
           File upload — Coming soon
         </p>
       )}
-
-      {/* Description / generation hints field */}
-      <div className="flex flex-col gap-1.5">
-        <label
-          htmlFor="description-input"
-          className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground"
-        >
-          Description
-        </label>
-        <textarea
-          id="description-input"
-          value={generationHints}
-          onChange={(e) => updateProject({ generationHints: e.target.value })}
-          rows={2}
-          placeholder="Jazz waltz, medium tempo, brushes on snare, walking bass..."
-          className={cn(
-            "w-full resize-none rounded-md border border-border bg-secondary px-3 py-2",
-            "text-xs leading-relaxed text-foreground",
-            "placeholder:text-muted-foreground",
-            "focus:border-ring focus:outline-none focus:ring-1 focus:ring-ring/50"
-          )}
-        />
-      </div>
 
       {/* Generate button */}
       <button
