@@ -11,28 +11,32 @@ import { StyleControlsSection } from "./StyleControlsSection"
 import { AiAssistantSection } from "./AiAssistantSection"
 import { SectionContext } from "./SectionContext"
 import { BlockContext } from "./BlockContext"
+import { useUiStore } from "@/store/ui-store"
 import type { Instrument } from "@/components/sequencer-block"
+
+type AccordionSection = "input" | "style" | "ai" | null
 
 interface PanelSectionProps {
   title: string
-  defaultOpen?: boolean
+  isOpen: boolean
+  onToggle: () => void
   children: React.ReactNode
   className?: string
 }
 
 function PanelSection({
   title,
-  defaultOpen = true,
+  isOpen,
+  onToggle,
   children,
   className,
 }: PanelSectionProps) {
-  const [open, setOpen] = useState(defaultOpen)
-
   return (
-    <Collapsible open={open} onOpenChange={setOpen}>
+    <Collapsible open={isOpen} onOpenChange={() => onToggle()}>
       <div
         className={cn(
           "flex flex-col overflow-hidden rounded-lg border border-border bg-card",
+          isOpen ? "min-h-0" : "shrink-0",
           className
         )}
       >
@@ -40,7 +44,7 @@ function PanelSection({
         <CollapsibleTrigger asChild>
           <button
             type="button"
-            className="flex items-center justify-between px-4 py-3 text-left transition-colors hover:bg-secondary/50"
+            className="flex shrink-0 items-center justify-between px-4 py-3 text-left transition-colors hover:bg-secondary/50"
           >
             <span className="text-xs font-semibold uppercase tracking-wider text-foreground">
               {title}
@@ -48,14 +52,14 @@ function PanelSection({
             <ChevronDown
               className={cn(
                 "size-3.5 text-muted-foreground transition-transform duration-200",
-                !open && "-rotate-90"
+                !isOpen && "-rotate-90"
               )}
             />
           </button>
         </CollapsibleTrigger>
 
-        <CollapsibleContent>
-          <div className="border-t border-border px-4 pb-4 pt-3">
+        <CollapsibleContent className="flex-1 overflow-hidden">
+          <div className="h-full overflow-y-auto border-t border-border px-4 pb-4 pt-3">
             {children}
           </div>
         </CollapsibleContent>
@@ -92,16 +96,24 @@ export function LeftPanel({
   onContextClose,
 }: LeftPanelProps) {
   const isInspector = context.mode !== "default"
+  const generationState = useUiStore((s) => s.generationState)
+  const defaultSection: AccordionSection =
+    generationState === "complete" ? "style" : "input"
+  const [expanded, setExpanded] = useState<AccordionSection>(defaultSection)
+
+  const toggle = (section: AccordionSection) => {
+    setExpanded((prev) => (prev === section ? null : section))
+  }
 
   return (
     <aside
       className={cn(
-        "flex h-full w-[320px] shrink-0 flex-col bg-sidebar",
+        "flex h-full w-[320px] shrink-0 flex-col overflow-hidden bg-sidebar",
         className
       )}
     >
       {/* Panel body */}
-      <div className="flex flex-1 flex-col overflow-y-auto">
+      <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
         {context.mode === "section" && (
           <SectionContext
             sectionName={context.sectionName}
@@ -121,16 +133,31 @@ export function LeftPanel({
         )}
 
         {context.mode === "default" && (
-          <div className="flex flex-1 flex-col gap-2 p-2">
-            <PanelSection title="Input">
+          <div className="flex min-h-0 flex-1 flex-col gap-2 overflow-hidden p-2">
+            <PanelSection
+              title="Input"
+              isOpen={expanded === "input"}
+              onToggle={() => toggle("input")}
+              className={expanded === "input" ? "flex-1 min-h-0" : ""}
+            >
               <InputSection />
             </PanelSection>
 
-            <PanelSection title="Style Controls">
+            <PanelSection
+              title="Style Controls"
+              isOpen={expanded === "style"}
+              onToggle={() => toggle("style")}
+              className={expanded === "style" ? "flex-1 min-h-0" : ""}
+            >
               <StyleControlsSection />
             </PanelSection>
 
-            <PanelSection title="AI Assistant" className="flex-1">
+            <PanelSection
+              title="AI Assistant"
+              isOpen={expanded === "ai"}
+              onToggle={() => toggle("ai")}
+              className={expanded === "ai" ? "flex-1 min-h-0" : ""}
+            >
               <AiAssistantSection />
             </PanelSection>
           </div>
@@ -141,7 +168,7 @@ export function LeftPanel({
       <button
         type="button"
         onClick={onCollapse}
-        className="flex items-center gap-2 border-t border-border px-4 py-3 text-xs text-muted-foreground transition-colors hover:text-foreground"
+        className="flex shrink-0 items-center gap-2 border-t border-border px-4 py-3 text-xs text-muted-foreground transition-colors hover:text-foreground"
       >
         <ChevronLeft className="size-3.5" />
         <span>{isInspector ? "Close inspector" : "Collapse"}</span>

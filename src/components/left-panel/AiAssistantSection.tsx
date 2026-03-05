@@ -73,7 +73,7 @@ export function AiAssistantSection() {
   return (
     <div className="flex flex-1 flex-col gap-2 overflow-hidden">
       {/* Chat thread */}
-      <ScrollArea className="flex-1 pr-1" style={{ maxHeight: 260 }}>
+      <ScrollArea className="min-h-0 flex-1 pr-1">
         <div className="flex flex-col gap-2.5 py-1">
           {messages.map((msg) => (
             <div
