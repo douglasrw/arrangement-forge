@@ -39,7 +39,7 @@ export function StatusBar({ status = "saved", className }: StatusBarProps) {
   return (
     <div
       className={cn(
-        "flex h-6 shrink-0 items-center border-t border-border bg-card px-4",
+        "flex h-6 shrink-0 items-center border-t border-muted-foreground/20 bg-muted/30 px-4",
         className
       )}
     >

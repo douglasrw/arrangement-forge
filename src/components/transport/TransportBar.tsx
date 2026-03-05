@@ -78,7 +78,7 @@ export function TransportBar() {
   }
 
   function commitBpm() {
-    const val = Math.min(280, Math.max(40, parseInt(bpmDraft) || 120))
+    const val = Math.min(300, Math.max(40, parseInt(bpmDraft) || 120))
     setBpmDraft(String(val))
     setEditingBpm(false)
     updateProject({ tempo: val })
@@ -90,9 +90,9 @@ export function TransportBar() {
   const timeStr = `${mins}:${String(secs).padStart(2, "0")}`
 
   return (
-    <footer className="flex h-12 w-full shrink-0 items-center justify-center gap-4 border-t border-border bg-card px-4">
+    <footer className="flex h-14 w-full shrink-0 items-center justify-center gap-4 border-t border-muted-foreground/30 bg-card py-3 px-4">
       {/* ---- LEFT: Playback pill group ---- */}
-      <div className="flex items-center gap-1 rounded-xl bg-secondary p-1">
+      <div className="flex items-center gap-1 rounded-lg bg-muted/50 px-3 py-1.5">
         {/* Skip to start */}
         <button
           type="button"
@@ -147,7 +147,7 @@ export function TransportBar() {
       </div>
 
       {/* ---- CENTER: Position + BPM + Time Sig ---- */}
-      <div className="flex items-center gap-3">
+      <div className="flex items-center gap-3 rounded-lg bg-muted/50 px-3 py-1.5">
         {/* Bar | Beat counter */}
         <div className="flex items-center gap-0 rounded-lg bg-secondary px-3 py-1 font-mono text-sm">
           <span className="text-zinc-200">{bar}</span>
@@ -203,7 +203,7 @@ export function TransportBar() {
       </div>
 
       {/* ---- RIGHT: Loop, Metronome, Elapsed ---- */}
-      <div className="flex items-center gap-1.5">
+      <div className="flex items-center gap-1.5 rounded-lg bg-muted/50 px-3 py-1.5">
         {/* Loop toggle */}
         <button
           type="button"

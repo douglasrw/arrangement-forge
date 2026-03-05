@@ -236,7 +236,7 @@ export function MixerDrawer() {
   )
 
   return (
-    <div className="shrink-0 border-t border-border bg-card">
+    <div className="shrink-0 border-t border-muted-foreground/20 bg-card">
       {/* Header strip — always visible, acts as toggle */}
       <button
         type="button"
