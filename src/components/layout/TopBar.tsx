@@ -127,7 +127,7 @@ function ChordDisplayToggle({
 }) {
   return (
     <div
-      className="h-8 flex items-center gap-1 rounded-lg bg-secondary p-1"
+      className="h-8 flex items-center gap-1 rounded-lg border border-border/30 bg-secondary/50 p-1"
       role="radiogroup"
       aria-label="Chord display mode"
     >

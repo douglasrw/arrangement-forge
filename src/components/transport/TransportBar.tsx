@@ -118,7 +118,7 @@ export function TransportBar() {
           type="button"
           onClick={handlePlayPause}
           className={cn(
-            "flex size-10 items-center justify-center rounded-full transition-all",
+            "flex size-8 items-center justify-center rounded-full transition-all",
             isPlaying
               ? "bg-primary text-primary-foreground shadow-[0_0_12px_rgba(6,182,212,0.4)]"
               : "bg-primary text-primary-foreground hover:bg-primary/90"
