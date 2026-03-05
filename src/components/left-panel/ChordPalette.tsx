@@ -52,17 +52,9 @@ function parseTimeSig(timeSig: string): number {
   return parseInt(parts[0], 10) || 4
 }
 
-/** How many chord cells per row, based on time signature numerator */
-function chordsPerRow(beatsPerBar: number): number {
-  if (beatsPerBar <= 2) return 8    // 2/4 → 8 (4 bars)
-  if (beatsPerBar <= 4) return 8    // 3/4 → 6, 4/4 → 8
-  return beatsPerBar * 2            // 6/8 → 12, etc.
-}
-
-// 3/4 is special: 6 per row not 8
-function getChordsPerRow(beatsPerBar: number): number {
-  if (beatsPerBar === 3) return 6
-  return chordsPerRow(beatsPerBar)
+/** Always 7 columns — matches the 7 diatonic chord buttons below */
+function getChordsPerRow(_beatsPerBar: number): number {
+  return 7
 }
 
 const TEAL = "var(--primary)"
@@ -233,7 +225,7 @@ export function ChordPalette({
                           : undefined
                       }
                     >
-                      <span className="truncate px-1 text-xs font-medium leading-none">
+                      <span className="whitespace-nowrap px-1 text-xs font-medium leading-none">
                         {chord}
                       </span>
                       <button
