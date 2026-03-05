@@ -181,6 +181,7 @@ export function ArrangementView({
         {/* Instrument rows — fixed height, matches grid lanes */}
         {INSTRUMENT_CONFIG.map((inst, i) => {
           const isEven = i % 2 === 1
+          const isSelected = selectedBlockId !== null && blocks.some((b) => b.stemId === inst.id && b.id === selectedBlockId)
           const laneBlocks = blocks
             .filter((b) => b.stemId === inst.id)
             .sort((a, b) => a.startBar - b.startBar)
@@ -188,10 +189,15 @@ export function ArrangementView({
             <button
               type="button"
               key={inst.id}
-              className="flex shrink-0 items-center gap-1.5 border-b border-secondary px-2 cursor-pointer hover:bg-secondary/60 transition-colors"
+              className={cn(
+                "flex shrink-0 items-center gap-1.5 border-b border-secondary px-2 cursor-pointer hover:bg-secondary/60 transition-colors",
+                isSelected && "bg-secondary border-l-2 border-l-primary"
+              )}
               style={{
                 height: laneH,
-                backgroundColor: isEven ? "color-mix(in srgb, var(--background) 60%, transparent)" : "var(--card)",
+                ...(!isSelected && {
+                  backgroundColor: isEven ? "color-mix(in srgb, var(--background) 60%, transparent)" : "var(--card)",
+                }),
               }}
               onClick={() => {
                 if (laneBlocks.length > 0) {
@@ -205,11 +211,10 @@ export function ArrangementView({
                 }
               }}
             >
-              <div
-                className="size-2.5 shrink-0 rounded-full"
-                style={{ backgroundColor: inst.color }}
-              />
-              <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+              <span
+                className="text-xs font-semibold uppercase tracking-wider"
+                style={{ color: inst.color }}
+              >
                 {inst.label}
               </span>
             </button>

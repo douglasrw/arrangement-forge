@@ -293,7 +293,7 @@ export function ChordPalette({
             </select>
           </div>
         </div>
-        <div className="grid grid-cols-7 gap-1">
+        <div className="grid grid-cols-7 gap-1 px-1">
           {diatonicChords.map((dc) => (
             <DiatonicButton
               key={dc.numeral}
@@ -435,13 +435,6 @@ export function ChordPalette({
         >
           Clear all
         </button>
-        <button
-          type="button"
-          onClick={() => setManualMode(true)}
-          className="text-[10px] text-muted-foreground transition-colors hover:text-ring"
-        >
-          Type manually
-        </button>
       </div>
     </div>
   )
@@ -475,7 +468,7 @@ function DiatonicButton({
       type="button"
       onClick={handleClick}
       className={cn(
-        "flex flex-col items-center rounded-lg border px-1 py-1.5 transition-all duration-200",
+        "flex min-w-[48px] flex-1 flex-col items-center rounded-lg border px-1 py-1.5 transition-all duration-200",
         flash
           ? "border-primary bg-primary/15 shadow-[0_0_8px_1px_rgba(6,182,212,0.25)]"
           : "border-border bg-secondary hover:border-muted-foreground/30 hover:bg-secondary/80"
