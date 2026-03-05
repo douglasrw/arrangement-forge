@@ -79,6 +79,37 @@ All colors are defined as CSS custom properties in `src/styles/globals.css` and 
 
 ---
 
+## Element Sizing Scale
+
+Three tiers standardize indicator dots, labels, icons, and touch targets across the app. Pick a tier based on the element's importance — never use arbitrary sizes.
+
+| Element | Compact | Standard | Large |
+|---------|---------|----------|-------|
+| Indicator dot | `size-2` (8px) | `size-2.5` (10px) | `size-3` (12px) |
+| Label text | `text-xs` (12px) | `text-sm` (14px) | `text-base` (16px) |
+| Icon | `size-3.5` (14px) | `size-4` (16px) | `size-5` (20px) |
+| Touch target | `size-7` (28px) | `size-8` (32px) | `size-10` (40px) |
+| Lane/row height | `h-8` (32px) | `h-10` (40px) | `h-12` (48px) |
+
+### Tier assignment
+
+| Context | Tier | Rationale |
+|---------|------|-----------|
+| Stem lane labels (arrangement gutter) | Standard | Primary UI, always visible |
+| TopBar metadata pills | Compact | Secondary info, glanceable |
+| Transport controls | Standard | Primary interaction zone |
+| Status bar indicators | Compact | Peripheral information |
+| Left panel section headers | Standard | Navigation landmarks |
+
+### Rules
+
+- **Minimum visible dot size:** `size-2` (8px). Anything smaller looks cheap on dark backgrounds.
+- **Minimum label size:** `text-xs` (12px). `text-[10px]` is prohibited in new code.
+- **Clickable elements:** Must have at least Compact touch target (`size-7` / 28px).
+- Never use arbitrary pixel values (e.g., `text-[10px]`, `size-1.5`) for these elements — pick a tier.
+
+---
+
 ## Borders & Radius
 
 - **Default border:** `border border-border` (1px solid `#3f3f46`)

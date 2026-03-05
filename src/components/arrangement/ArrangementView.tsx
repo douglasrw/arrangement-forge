@@ -181,23 +181,38 @@ export function ArrangementView({
         {/* Instrument rows — fixed height, matches grid lanes */}
         {INSTRUMENT_CONFIG.map((inst, i) => {
           const isEven = i % 2 === 1
+          const laneBlocks = blocks
+            .filter((b) => b.stemId === inst.id)
+            .sort((a, b) => a.startBar - b.startBar)
           return (
-            <div
+            <button
+              type="button"
               key={inst.id}
-              className="flex shrink-0 items-center gap-1.5 border-b border-secondary px-2"
+              className="flex shrink-0 items-center gap-1.5 border-b border-secondary px-2 cursor-pointer hover:bg-secondary/60 transition-colors"
               style={{
                 height: laneH,
                 backgroundColor: isEven ? "color-mix(in srgb, var(--background) 60%, transparent)" : "var(--card)",
               }}
+              onClick={() => {
+                if (laneBlocks.length > 0) {
+                  selectBlock(laneBlocks[0].id, inst.id)
+                  onBlockSelect?.({
+                    instrument: inst.instrument,
+                    styleName: laneBlocks[0].style ?? "Default",
+                    startBar: laneBlocks[0].startBar,
+                    endBar: laneBlocks[0].endBar,
+                  })
+                }
+              }}
             >
               <div
-                className="size-1.5 shrink-0 rounded-full"
+                className="size-2.5 shrink-0 rounded-full"
                 style={{ backgroundColor: inst.color }}
               />
-              <span className="text-[10px] font-medium uppercase tracking-[0.1em] text-muted-foreground">
+              <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
                 {inst.label}
               </span>
-            </div>
+            </button>
           )
         })}
         {/* Chord row */}
@@ -205,7 +220,7 @@ export function ArrangementView({
           className="flex shrink-0 items-center gap-1.5 border-b border-secondary border-t border-t-border/50 px-2"
           style={{ height: CHORD_H, backgroundColor: "var(--card)" }}
         >
-          <span className="text-[10px] font-medium uppercase tracking-[0.1em] text-zinc-600">
+          <span className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
             CHORDS
           </span>
         </div>
