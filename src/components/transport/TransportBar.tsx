@@ -90,9 +90,9 @@ export function TransportBar() {
   const timeStr = `${mins}:${String(secs).padStart(2, "0")}`
 
   return (
-    <footer className="flex h-16 w-full shrink-0 items-center justify-center gap-6 border-t border-border bg-card px-4">
+    <footer className="flex h-16 w-full shrink-0 items-center justify-center gap-6 border-t border-border bg-secondary px-4">
       {/* ---- LEFT: Playback pill group ---- */}
-      <div className="flex min-w-[180px] items-center justify-center gap-1 rounded-xl border border-border bg-background px-4 py-2">
+      <div className="flex h-12 min-w-[180px] items-center justify-center gap-1 rounded-xl border border-border bg-background px-4 py-2">
         {/* Skip to start */}
         <button
           type="button"
@@ -147,7 +147,7 @@ export function TransportBar() {
       </div>
 
       {/* ---- CENTER: Position + BPM + Time Sig ---- */}
-      <div className="flex min-w-[180px] items-center justify-center gap-3 rounded-xl border border-border bg-background px-4 py-2">
+      <div className="flex h-12 min-w-[180px] items-center justify-center gap-3 rounded-xl border border-border bg-background px-4 py-2">
         {/* Bar | Beat counter */}
         <div className="flex items-center gap-0 rounded-lg bg-secondary px-3 py-1 font-mono text-sm">
           <span className="text-zinc-200">{bar}</span>
@@ -203,7 +203,7 @@ export function TransportBar() {
       </div>
 
       {/* ---- RIGHT: Loop, Metronome, Elapsed ---- */}
-      <div className="flex min-w-[180px] items-center justify-center gap-1.5 rounded-xl border border-border bg-background px-4 py-2">
+      <div className="flex h-12 min-w-[180px] items-center justify-center gap-1.5 rounded-xl border border-border bg-background px-4 py-2">
         {/* Loop toggle */}
         <button
           type="button"
