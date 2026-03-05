@@ -120,7 +120,25 @@ export function StyleControlsSection() {
               </span>
             </div>
             {/* Custom slider with teal accent fill */}
-            <div className="group relative h-1.5 w-full cursor-pointer rounded-full bg-secondary">
+            <div
+              className="group relative h-1.5 w-full cursor-pointer rounded-full bg-secondary"
+              role="slider"
+              aria-label={slider.label}
+              aria-valuemin={slider.min}
+              aria-valuemax={slider.max}
+              aria-valuenow={slider.value}
+              tabIndex={0}
+              onKeyDown={(e) => {
+                if (e.key === "ArrowRight" || e.key === "ArrowUp") {
+                  e.preventDefault()
+                  handleSliderChange(slider.field, Math.min(slider.max, slider.value + 1))
+                }
+                if (e.key === "ArrowLeft" || e.key === "ArrowDown") {
+                  e.preventDefault()
+                  handleSliderChange(slider.field, Math.max(slider.min, slider.value - 1))
+                }
+              }}
+            >
               <div
                 className="absolute inset-y-0 left-0 rounded-full bg-ring"
                 style={{ width: `${slider.value}%` }}
@@ -128,6 +146,7 @@ export function StyleControlsSection() {
               <input
                 type="range"
                 id={`slider-${slider.label}`}
+                aria-label={slider.label}
                 min={slider.min}
                 max={slider.max}
                 value={slider.value}
