@@ -223,7 +223,7 @@ This section will be populated as designs are approved.
 
 ---
 
-## Quality Checklist
+## Quality Checklist (8-Criterion Gate)
 
 Every UI component must pass these checks before shipping:
 
@@ -236,6 +236,7 @@ Every UI component must pass these checks before shipping:
 | Text hierarchy | Headings use `text-lg font-semibold`, labels use `text-xs text-muted-foreground` | Reference typography section |
 | Border visibility | All interactive elements have `border border-border` or `border border-input` | Add border class |
 | Dark theme contrast | Text readable against `bg-background` (#0a0a0f) and `bg-card` (#111118) | Use `text-foreground` or `text-muted-foreground` |
+| Container padding | Every functional zone (panels, bars, cards, modals) has minimum 8px (p-2) internal padding. Zero-padding containers are always a bug. | Add `p-2` or larger padding to containers |
 
 ---
 
