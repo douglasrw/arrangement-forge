@@ -4,6 +4,7 @@ import { useProjectStore } from "@/store/project-store"
 import { useSelectionStore } from "@/store/selection-store"
 import { useUiStore } from "@/store/ui-store"
 import { useAudio } from "@/hooks/useAudio"
+import { useGenerate } from "@/hooks/useGenerate"
 import { formatChord } from "@/lib/chords"
 import { useShallow } from "zustand/react/shallow"
 import { useRef, useState, useEffect, useCallback } from "react"
@@ -90,9 +91,10 @@ export function ArrangementView({
       project: s.project,
     }))
   )
-  const { generationState, chordDisplayMode, setGenerationState } = useUiStore()
+  const { generationState, chordDisplayMode } = useUiStore()
   const { sectionId: selectedSectionId, blockId: selectedBlockId, selectSection, selectBlock, selectSong } = useSelectionStore()
   const { transportState, seek } = useAudio()
+  const { runGeneration } = useGenerate()
   const key = project?.key ?? "C"
   const hasAnyBlockSelected = selectedBlockId !== null
 
@@ -135,7 +137,7 @@ export function ArrangementView({
   }, [totalBarsForClamp])
 
   if (generationState !== "complete") {
-    return <EmptyState onGenerate={() => setGenerationState("complete")} />
+    return <EmptyState onGenerate={() => void runGeneration(false)} />
   }
 
   /* Sort sections by sortOrder */
