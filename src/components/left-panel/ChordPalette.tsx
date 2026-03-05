@@ -211,7 +211,7 @@ export function ChordPalette({
         ) : (
           <div className="flex flex-col gap-1">
             {rows.map((row, rowIdx) => (
-              <div key={rowIdx} className="-mx-1 flex items-stretch gap-0 overflow-x-auto px-1" style={{ scrollbarWidth: "none" }}>
+              <div key={rowIdx} className="-mx-1 flex items-stretch gap-1.5 overflow-x-auto px-1" style={{ scrollbarWidth: "none" }}>
                 {row.map((chord, colIdx) => {
                   const globalIdx = rowIdx * perRow + colIdx
                   const isBarline = colIdx > 0 && colIdx % beatsPerBar === 0
@@ -293,7 +293,7 @@ export function ChordPalette({
             </select>
           </div>
         </div>
-        <div className="grid grid-cols-7 gap-1 px-1">
+        <div className="grid grid-cols-7 gap-1.5 px-2">
           {diatonicChords.map((dc) => (
             <DiatonicButton
               key={dc.numeral}
@@ -468,7 +468,7 @@ function DiatonicButton({
       type="button"
       onClick={handleClick}
       className={cn(
-        "flex min-w-[48px] flex-1 flex-col items-center rounded-lg border px-1 py-1.5 transition-all duration-200",
+        "flex flex-1 flex-col items-center rounded-lg border px-1 py-1.5 transition-all duration-200",
         flash
           ? "border-primary bg-primary/15 shadow-[0_0_8px_1px_rgba(6,182,212,0.25)]"
           : "border-border bg-secondary hover:border-muted-foreground/30 hover:bg-secondary/80"
