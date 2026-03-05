@@ -1,4 +1,4 @@
-import { useState, useCallback, useRef, useEffect, useMemo, Fragment } from "react"
+import { useState, useCallback, useRef, useEffect, useMemo } from "react"
 import { cn } from "@/lib/utils"
 import { X, Plus, ArrowRight } from "lucide-react"
 import { degreeToNote } from "@/lib/chords"
@@ -211,56 +211,40 @@ export function ChordPalette({
         ) : (
           <div className="flex flex-col gap-1">
             {rows.map((row, rowIdx) => (
-              <div key={rowIdx} className="flex items-center gap-1.5 flex-wrap">
+              <div
+                key={rowIdx}
+                className="grid gap-1"
+                style={{ gridTemplateColumns: `repeat(${perRow}, minmax(0, 1fr))` }}
+              >
                 {row.map((chord, colIdx) => {
                   const globalIdx = rowIdx * perRow + colIdx
-                  const isBarline = colIdx > 0 && colIdx % beatsPerBar === 0
                   return (
-                    <Fragment key={globalIdx}>
-                      {/* Barline indicator */}
-                      {isBarline && (
-                        <div className="mx-1 w-0.5 shrink-0 self-stretch rounded-full bg-zinc-500" />
+                    <div
+                      key={globalIdx}
+                      className={cn(
+                        "group relative flex h-8 items-center justify-center rounded-sm border text-xs font-medium transition-all duration-300",
+                        recentlyAdded === globalIdx
+                          ? "border-primary/60 bg-primary/15 ring-1 ring-primary/40"
+                          : "border-border/50 bg-secondary/50 text-muted-foreground"
                       )}
-                      {/* Chord cell — matches DiatonicButton sizing */}
-                      <div
-                        className={cn(
-                          "group relative flex w-[52px] h-[36px] shrink-0 items-center justify-center rounded-sm border text-xs font-medium transition-all duration-300",
-                          recentlyAdded === globalIdx
-                            ? "border-primary/60 bg-primary/15 ring-1 ring-primary/40"
-                            : "border-border/50 bg-secondary/50 text-muted-foreground"
-                        )}
-                        style={
-                          recentlyAdded === globalIdx
-                            ? { boxShadow: `0 0 6px 1px ${TEAL}22` }
-                            : undefined
-                        }
+                      style={
+                        recentlyAdded === globalIdx
+                          ? { boxShadow: `0 0 6px 1px ${TEAL}22` }
+                          : undefined
+                      }
+                    >
+                      <span className="truncate px-1 text-xs font-medium leading-none">
+                        {chord}
+                      </span>
+                      <button
+                        type="button"
+                        onClick={() => removeChord(globalIdx)}
+                        className="absolute -right-1 -top-1 flex size-3.5 items-center justify-center rounded-full bg-input text-muted-foreground opacity-0 transition-opacity hover:bg-zinc-600 hover:text-foreground group-hover:opacity-100"
+                        aria-label={`Remove ${chord}`}
                       >
-                        <span className="whitespace-nowrap text-xs font-medium leading-none">
-                          {chord}
-                        </span>
-                        <button
-                          type="button"
-                          onClick={() => removeChord(globalIdx)}
-                          className="absolute -right-1 -top-1 flex size-3.5 items-center justify-center rounded-full bg-input text-muted-foreground opacity-0 transition-opacity hover:bg-zinc-600 hover:text-foreground group-hover:opacity-100"
-                          aria-label={`Remove ${chord}`}
-                        >
-                          <X className="size-2" />
-                        </button>
-                      </div>
-                    </Fragment>
-                  )
-                })}
-                {/* Fill remaining cells in partial rows for alignment */}
-                {row.length < perRow && Array.from({ length: perRow - row.length }).map((_, i) => {
-                  const fillColIdx = row.length + i
-                  const isBarline = fillColIdx > 0 && fillColIdx % beatsPerBar === 0
-                  return (
-                    <Fragment key={`empty-${i}`}>
-                      {isBarline && (
-                        <div className="mx-0.5 w-px shrink-0 self-stretch bg-transparent" />
-                      )}
-                      <div className="w-[52px] h-[36px] shrink-0" />
-                    </Fragment>
+                        <X className="size-2" />
+                      </button>
+                    </div>
                   )
                 })}
               </div>
@@ -290,7 +274,7 @@ export function ChordPalette({
             </select>
           </div>
         </div>
-        <div className="flex gap-1.5">
+        <div className="grid grid-cols-7 gap-1">
           {diatonicChords.map((dc) => (
             <DiatonicButton
               key={dc.numeral}
@@ -465,7 +449,7 @@ function DiatonicButton({
       type="button"
       onClick={handleClick}
       className={cn(
-        "flex w-[52px] h-[36px] shrink-0 flex-col items-center justify-center rounded-sm border transition-all duration-200",
+        "flex h-8 flex-col items-center justify-center rounded-sm border transition-all duration-200",
         flash
           ? "border-primary bg-primary/15 shadow-[0_0_8px_1px_rgba(6,182,212,0.25)]"
           : "border-border/50 bg-secondary/50 hover:border-muted-foreground/30 hover:bg-secondary/80"
