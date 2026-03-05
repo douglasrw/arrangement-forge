@@ -25,6 +25,11 @@ const INSTRUMENT_COLORS: Record<Instrument, string> = {
   strings: "var(--instrument-strings)",
 }
 
+/** color-mix helper — avoids appending hex alpha suffixes to var() references */
+function mix(color: string, opacityPct: number): string {
+  return `color-mix(in srgb, ${color} ${opacityPct}%, transparent)`
+}
+
 const INSTRUMENT_LABELS: Record<Instrument, string> = {
   drums: "Drums",
   bass: "Bass",
@@ -100,11 +105,11 @@ function InstrumentSlider({
         <style>{`
           input[type="range"]::-webkit-slider-thumb {
             background: ${color};
-            box-shadow: 0 0 6px 1px ${color}44;
+            box-shadow: 0 0 6px 1px ${mix(color, 27)};
           }
           input[type="range"]::-moz-range-thumb {
             background: ${color};
-            box-shadow: 0 0 6px 1px ${color}44;
+            box-shadow: 0 0 6px 1px ${mix(color, 27)};
           }
         `}</style>
       </div>

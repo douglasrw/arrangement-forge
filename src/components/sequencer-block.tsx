@@ -12,6 +12,12 @@ export const INSTRUMENT_COLORS: Record<Instrument, string> = {
   strings: "var(--instrument-strings)",
 }
 
+/** Build a color-mix() expression for a CSS var color at the given opacity %.
+ *  This avoids appending hex alpha suffixes to var() which produces invalid CSS. */
+function mix(color: string, opacityPct: number): string {
+  return `color-mix(in srgb, ${color} ${opacityPct}%, transparent)`
+}
+
 interface SequencerBlockProps {
   instrument: Instrument
   styleName?: string
@@ -44,15 +50,15 @@ export function SequencerBlock({
       )}
       style={{
         background: isSelected
-          ? `linear-gradient(to bottom, ${color}33 0%, ${color}0d 100%), var(--surface-raised)`
-          : `linear-gradient(to bottom, ${color}26 0%, transparent 100%), var(--sidebar)`,
+          ? `linear-gradient(to bottom, ${mix(color, 20)} 0%, ${mix(color, 5)} 100%), var(--surface-raised)`
+          : `linear-gradient(to bottom, ${mix(color, 15)} 0%, transparent 100%), var(--sidebar)`,
         border: isSelected ? `2px solid ${color}` : undefined,
-        borderTop: isSelected ? undefined : `2px solid ${color}99`,
+        borderTop: isSelected ? undefined : `2px solid ${mix(color, 60)}`,
         borderRight: isSelected ? undefined : `none`,
         borderBottom: isSelected ? undefined : `none`,
         borderLeft: isSelected ? undefined : `none`,
         boxShadow: isSelected
-          ? `0 0 20px 3px ${color}40, 0 0 6px 1px ${color}30, inset 0 0 12px ${color}10`
+          ? `0 0 20px 3px ${mix(color, 25)}, 0 0 6px 1px ${mix(color, 19)}, inset 0 0 12px ${mix(color, 6)}`
           : "none",
         opacity: dimmed && !isSelected ? 0.55 : 1,
         outlineColor: color,
@@ -65,7 +71,7 @@ export function SequencerBlock({
       }}
       onMouseLeave={(e) => {
         if (!isSelected) {
-          e.currentTarget.style.borderTopColor = `${color}99`
+          e.currentTarget.style.borderTopColor = mix(color, 60)
           if (dimmed) e.currentTarget.style.opacity = "0.55"
         }
       }}
