@@ -211,7 +211,7 @@ export function ChordPalette({
         ) : (
           <div className="flex flex-col gap-1">
             {rows.map((row, rowIdx) => (
-              <div key={rowIdx} className="-mx-1 flex items-stretch gap-1.5 overflow-x-auto px-1" style={{ scrollbarWidth: "none" }}>
+              <div key={rowIdx} className="flex items-stretch gap-1.5 overflow-x-auto" style={{ scrollbarWidth: "none" }}>
                 {row.map((chord, colIdx) => {
                   const globalIdx = rowIdx * perRow + colIdx
                   const isBarline = colIdx > 0 && colIdx % beatsPerBar === 0
@@ -221,24 +221,21 @@ export function ChordPalette({
                       {isBarline && (
                         <div className="mx-1 w-0.5 shrink-0 self-stretch rounded-full bg-zinc-500" />
                       )}
-                      {/* Chord cell — equal width, min-width ensures text fits */}
+                      {/* Chord cell — matches DiatonicButton sizing */}
                       <div
                         className={cn(
-                          "group relative flex shrink-0 items-center justify-center rounded-md border px-1.5 py-1.5 transition-all duration-300",
-                          "bg-secondary text-foreground",
+                          "group relative flex flex-1 flex-col items-center justify-center rounded-lg border px-1 py-1.5 transition-all duration-300",
                           recentlyAdded === globalIdx
-                            ? "border-primary/60 ring-1 ring-primary/40"
-                            : "border-border/50"
+                            ? "border-primary/60 bg-primary/15 ring-1 ring-primary/40"
+                            : "border-border bg-secondary"
                         )}
-                        style={{
-                          width: `${100 / perRow}%`,
-                          minWidth: 28,
-                          ...(recentlyAdded === globalIdx
+                        style={
+                          recentlyAdded === globalIdx
                             ? { boxShadow: `0 0 6px 1px ${TEAL}22` }
-                            : {}),
-                        }}
+                            : undefined
+                        }
                       >
-                        <span className="whitespace-nowrap font-mono text-[9px] font-medium">
+                        <span className="whitespace-nowrap font-mono text-[9px] font-medium leading-none">
                           {chord}
                         </span>
                         <button
@@ -262,7 +259,7 @@ export function ChordPalette({
                       {isBarline && (
                         <div className="mx-0.5 w-px shrink-0 self-stretch bg-transparent" />
                       )}
-                      <div style={{ width: `${100 / perRow}%`, minWidth: 28 }} />
+                      <div className="flex-1" />
                     </Fragment>
                   )
                 })}
@@ -293,7 +290,7 @@ export function ChordPalette({
             </select>
           </div>
         </div>
-        <div className="grid grid-cols-7 gap-1.5 px-2">
+        <div className="grid grid-cols-7 gap-1.5">
           {diatonicChords.map((dc) => (
             <DiatonicButton
               key={dc.numeral}
