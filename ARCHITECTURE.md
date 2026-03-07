@@ -196,39 +196,51 @@ Inherited values display dimmer. Overridden values display bold/highlighted.
 ```
 arrangement-forge/
 ├── public/
-│   └── favicon.ico
+│   └── samples/drums/                    # Drum sample audio files
 ├── src/
 │   ├── main.tsx                          # App entry point
 │   ├── App.tsx                           # Root component, router
+│   ├── vite-env.d.ts                     # Vite type declarations
 │   ├── types/                            # TypeScript type definitions
-│   │   ├── index.ts                      # Barrel export
+│   │   ├── index.ts                      # Barrel export (only barrel in project)
 │   │   ├── project.ts                    # Project, Section, Stem, Block, Chord
 │   │   ├── audio.ts                      # Audio engine types
 │   │   └── ui.ts                         # UI state types (selection, mode, etc.)
 │   ├── lib/                              # Non-React utilities
 │   │   ├── supabase.ts                   # Supabase client init
-│   │   ├── chords.ts                     # Chord parsing, Roman↔letter conversion
-│   │   ├── chord-chart-parser.ts         # Raw text → ChordEntry[] (T26)
+│   │   ├── chords.ts                     # Chord parsing, Roman<>letter conversion
+│   │   ├── chord-chart-parser.ts         # Raw text -> ChordEntry[]
 │   │   ├── midi-generator.ts             # Stubbed AI: rule-based MIDI generation
-│   │   ├── description-parser.ts         # Free-text → structured controls parser
+│   │   ├── description-parser.ts         # Free-text -> structured controls parser
 │   │   ├── genre-config.ts               # GENRE_SUBSTYLES, GENRE_SLIDERS configs
-│   │   └── style-cascade.ts              # resolveStyle() and cascade utilities
+│   │   ├── style-cascade.ts              # resolveStyle() and cascade utilities
+│   │   ├── bass-patterns.ts              # Bass instrument pattern library
+│   │   ├── drum-patterns.ts              # Drum instrument pattern library
+│   │   ├── guitar-patterns.ts            # Guitar instrument pattern library
+│   │   ├── piano-patterns.ts             # Piano instrument pattern library
+│   │   ├── strings-patterns.ts           # Strings instrument pattern library
+│   │   ├── undo-helpers.ts               # Undo/redo helper utilities
+│   │   └── utils.ts                      # General utility functions
 │   ├── audio/                            # Tone.js audio engine
 │   │   ├── engine.ts                     # AudioEngine class (init, play, stop, seek)
 │   │   ├── instruments.ts                # Instrument definitions and sample loading
 │   │   ├── transport.ts                  # Transport controls (play/pause/seek/loop)
-│   │   └── metronome.ts                  # Click track and count-in
-│   ├── store/                            # State management
-│   │   ├── auth-store.ts                 # Auth state (T25)
-│   │   ├── project-store.ts              # Project state (Zustand or useReducer)
+│   │   ├── metronome.ts                  # Click track and count-in
+│   │   ├── drum-kit.ts                   # Drum kit definitions
+│   │   ├── sampled-drum-kit.ts           # Sampled drum kit implementation
+│   │   └── sampler-cache.ts              # Audio sampler caching
+│   ├── store/                            # Zustand state management
+│   │   ├── auth-store.ts                 # Auth state
+│   │   ├── project-store.ts              # Project state
 │   │   ├── selection-store.ts            # Current selection (song/section/block)
 │   │   ├── undo-store.ts                 # Undo/redo stack
 │   │   └── ui-store.ts                   # UI state (mixer open, zoom level, etc.)
 │   ├── hooks/                            # Custom React hooks
-│   │   ├── useAuth.ts                    # Auth init, sign-in/out, profile hydration (T25)
+│   │   ├── useAuth.ts                    # Auth init, sign-in/out, profile hydration
 │   │   ├── useAudio.ts                   # Audio engine hook
+│   │   ├── useAutoSave.ts               # Auto-save hook
+│   │   ├── useGenerate.ts               # Generation trigger hook
 │   │   ├── useProject.ts                 # Project CRUD + Supabase sync
-│   │   ├── useSelection.ts               # Selection state hook
 │   │   └── useKeyboardShortcuts.ts       # Global keyboard shortcut handler
 │   ├── components/                       # React components
 │   │   ├── layout/
@@ -237,40 +249,41 @@ arrangement-forge/
 │   │   │   └── StatusBar.tsx             # Bottom status bar
 │   │   ├── left-panel/
 │   │   │   ├── LeftPanel.tsx             # Context-aware panel container
-│   │   │   ├── SongContext.tsx           # Song-level inspector
 │   │   │   ├── SectionContext.tsx        # Section-level inspector
 │   │   │   ├── BlockContext.tsx          # Block-level inspector (instrument-specific)
-│   │   │   ├── StyleControls.tsx         # Genre, sub-style, sliders
-│   │   │   ├── InputPanel.tsx            # Pre-generation: Text/Upload/Image tabs
-│   │   │   └── AiAssistant.tsx           # AI chat with scope badges
+│   │   │   ├── StyleControlsSection.tsx  # Genre, sub-style, sliders
+│   │   │   ├── InputSection.tsx          # Pre-generation: Text/Upload/Image tabs
+│   │   │   ├── AiAssistantSection.tsx    # AI chat with scope badges
+│   │   │   └── ChordPalette.tsx          # Chord selection palette
 │   │   ├── arrangement/
 │   │   │   ├── ArrangementView.tsx       # Main arrangement container
-│   │   │   ├── SectionHeaders.tsx        # Clickable section header row
-│   │   │   ├── BarRuler.tsx              # Bar number ruler
-│   │   │   ├── StemLane.tsx              # Single stem lane with blocks
-│   │   │   ├── Block.tsx                 # Single bar-block (clickable, splittable)
-│   │   │   ├── ChordLane.tsx             # Bottom chord display row
-│   │   │   └── EmptyState.tsx            # Pre-generation empty arrangement
+│   │   │   └── ChordLane.tsx             # Bottom chord display row
+│   │   ├── sequencer-block.tsx           # Single bar-block (clickable, splittable)
 │   │   ├── transport/
 │   │   │   ├── TransportBar.tsx          # Play/pause, scrubber, loop, metronome
 │   │   │   └── Scrubber.tsx              # Playhead position scrubber
 │   │   ├── mixer/
-│   │   │   ├── MixerDrawer.tsx           # Collapsible mixer container
-│   │   │   ├── ChannelStrip.tsx          # Single stem: fader, S/M, pan
-│   │   │   └── MasterStrip.tsx           # Master fader
+│   │   │   └── MixerDrawer.tsx           # Collapsible mixer container
+│   │   ├── library/
+│   │   │   └── ProjectCard.tsx           # Project card for library view
+│   │   ├── ui/                           # Primitive UI components (shadcn-derived)
+│   │   │   ├── collapsible.tsx           # Collapsible container
+│   │   │   ├── scroll-area.tsx           # Scroll area wrapper
+│   │   │   └── select.tsx                # Select dropdown
 │   │   └── shared/
 │   │       ├── ConfirmDialog.tsx         # Reusable confirmation dialog
 │   │       └── ScopeBadge.tsx            # "Song" / "Verse 2" / "Bass bar 7" badge
-│   ├── pages/                            # Route-level pages
+│   ├── pages/                            # Route-level pages (default exports allowed)
 │   │   ├── EditorPage.tsx                # Main arrangement editor (the primary view)
 │   │   ├── LibraryPage.tsx               # User's saved projects
 │   │   ├── LoginPage.tsx                 # Auth page
 │   │   └── SettingsPage.tsx              # User preferences
 │   └── styles/
-│       └── globals.css                   # Tailwind imports + minimal custom CSS
+│       └── globals.css                   # Tailwind imports + forge theme tokens
 ├── supabase/
 │   ├── migrations/                       # Database migrations (SQL)
-│   │   └── 001_initial_schema.sql
+│   │   ├── 001_initial_schema.sql
+│   │   └── 002_add_feel_column.sql
 │   └── functions/                        # Supabase Edge Functions
 │       └── generate/                     # AI generation endpoint
 │           └── index.ts
@@ -278,10 +291,13 @@ arrangement-forge/
 ├── vite.config.ts
 ├── tailwind.config.ts
 ├── tsconfig.json
+├── tsconfig.app.json
+├── eslint.config.js
 ├── package.json
 ├── .env.local                            # VITE_SUPABASE_URL, VITE_SUPABASE_ANON_KEY
-├── CLAUDE.md                             # Agent constraint architecture (see below)
-└── README.md
+├── CLAUDE.md                             # Agent constraints and guardrails
+├── ARCHITECTURE.md                       # This file
+└── DESIGN_SYSTEM.md                      # Visual design tokens and component patterns
 ```
 
 ---
@@ -401,12 +417,27 @@ Transport syncs Tone.js Transport position with the arrangement's bar/beat struc
 
 ---
 
-## Key Conventions
+## Code Conventions
 
+### Naming and Imports
+- **File naming:** kebab-case for files, PascalCase for React components, camelCase for functions/variables
+- **Path alias:** Use `@/` for all `src/` imports (e.g., `@/lib/chords`, `@/store/project-store`)
+- **Types barrel:** Import shared types via `import { Project } from '@/types'`
+- **No barrel re-exports** except `types/index.ts`. Import directly from the source file.
+- Named exports for all files. Default exports only for page/route components in `src/pages/`.
+
+### Data Semantics
 - **Chord storage:** Always Roman numerals internally. Letter names computed from key + degree at display time.
 - **Bar numbering:** 1-indexed throughout. Bar 1 is the first bar of the arrangement.
 - **Block spans:** Blocks cover contiguous bar ranges within a section. `start_bar` and `end_bar` are inclusive.
 - **Null = inherited:** Any `_override` field that is null means "inherit from parent level."
-- **State management:** Zustand for global stores (project, selection, undo, UI). React state for component-local UI state only.
-- **File naming:** kebab-case for files, PascalCase for components, camelCase for functions/variables.
-- **No barrel re-exports** except in `types/index.ts`. Import directly from the file.
+- **DB field mapping:** Database uses snake_case, TypeScript uses camelCase. Transform in the `useProject` hook at the boundary.
+- **All timestamps:** ISO 8601 strings
+- **All UUIDs:** `string` type
+
+### State and Components
+- **State management:** Zustand for global stores (project, selection, undo, UI). React `useState` for component-local UI only.
+- **No prop drilling** beyond 2 levels -- use stores.
+- **Functional components only**, no class components.
+- Use the `forge` theme's CSS custom property classes (`bg-background`, `bg-primary`, `text-foreground`, `bg-card`, `border-border`, etc.) defined in `src/styles/globals.css`.
+- No custom CSS framework -- only Tailwind utilities + forge theme tokens.
