@@ -384,6 +384,7 @@ export function ArrangementView({
                         styleName={block.style ?? "Default"}
                         state={isSelected ? "selected" : "default"}
                         dimmed={hasAnyBlockSelected && !isSelected}
+                        aria-label={`${inst.instrument} block, bars ${block.startBar}-${block.endBar}`}
                         onClick={() => {
                           const isDeselecting = block.id === selectedBlockId
                           if (isDeselecting) {

@@ -11,7 +11,7 @@
 | Layer | Technology | Why |
 |---|---|---|
 | **Frontend** | React 19 + TypeScript + Vite | Complex reactive UI (undo/redo, context-aware inspector, real-time playback). TypeScript required — data model complexity demands compile-time safety. |
-| **Styling** | Tailwind CSS 4 + DaisyUI 4 (custom `forge` dark theme) | DaisyUI established in mockups. Custom premium dark theme defined in T24. Zero custom CSS framework to learn. |
+| **Styling** | Tailwind CSS 4 (custom `forge` dark theme via CSS custom properties) | Custom premium dark theme via CSS custom properties in `src/styles/globals.css`. No component library. |
 | **Audio** | Tone.js + Web Audio API | MIDI playback via browser synths/samplers. Tone.js for MVP; upgrade to SoundFont/custom samples post-MVP. |
 | **Backend** | Supabase (hosted) | Postgres + Auth + Storage + Edge Functions + Realtime. Minimal backend code for MVP. |
 | **Auth** | Supabase Auth | Email/password + Google OAuth. |

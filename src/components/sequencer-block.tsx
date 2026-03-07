@@ -26,6 +26,8 @@ interface SequencerBlockProps {
   dimmed?: boolean
   onClick?: () => void
   className?: string
+  /** Accessible label for the block (e.g. "Drums block, bars 1-8") */
+  "aria-label"?: string
 }
 
 export function SequencerBlock({
@@ -34,6 +36,7 @@ export function SequencerBlock({
   dimmed = false,
   onClick,
   className,
+  "aria-label": ariaLabel,
 }: SequencerBlockProps) {
   const color = INSTRUMENT_COLORS[instrument]
   const isSelected = state === "selected"
@@ -41,6 +44,7 @@ export function SequencerBlock({
   return (
     <button
       type="button"
+      aria-label={ariaLabel}
       onClick={onClick}
       className={cn(
         "group relative flex min-w-0 flex-col justify-center overflow-hidden rounded-sm px-3 py-2.5",
