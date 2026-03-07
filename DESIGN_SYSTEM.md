@@ -8,11 +8,13 @@ Dark, clean, professional. Linear/Vercel aesthetic. No gradients. Minimal shadow
 
 ## Color Tokens
 
-All colors are defined as CSS custom properties in `src/styles/globals.css` and mapped to Tailwind via `@theme inline`.
+All colors are defined as CSS custom properties in `src/styles/globals.css` and mapped to Tailwind via `@theme inline`. This table is the complete set (42 color tokens + radius).
+
+### Core
 
 | Token | CSS Variable | Hex | Description |
 |-------|-------------|-----|-------------|
-| `bg-background` | `--background` | `#09090b` | Page background. Near-black with a hint of blue. |
+| `bg-background` | `--background` | `#09090b` | Page background. Near-black. |
 | `text-foreground` | `--foreground` | `#fafafa` | Primary text. Off-white. |
 | `bg-card` | `--card` | `#18181b` | Card/panel surfaces. Dark zinc. |
 | `text-card-foreground` | `--card-foreground` | `#fafafa` | Text on cards. Off-white. |
@@ -32,6 +34,63 @@ All colors are defined as CSS custom properties in `src/styles/globals.css` and 
 | `border-input` | `--input` | `#3f3f46` | Input border color. Same as border. |
 | `ring-ring` | `--ring` | `#0891b2` | Focus ring color. Cyan-600. |
 | `bg-sidebar` | `--sidebar` | `#111113` | Sidebar/left panel background. Slightly lighter than page. |
+
+### Instrument Identity
+
+| Token | CSS Variable | Hex | Description |
+|-------|-------------|-----|-------------|
+| `bg-instrument-drums` | `--instrument-drums` | `#06b6d4` | Drums lane. Cyan-500. |
+| `bg-instrument-bass` | `--instrument-bass` | `#34d399` | Bass lane. Emerald-400. |
+| `bg-instrument-piano` | `--instrument-piano` | `#fbbf24` | Piano lane. Amber-400. |
+| `bg-instrument-guitar` | `--instrument-guitar` | `#a78bfa` | Guitar lane. Violet-400. |
+| `bg-instrument-strings` | `--instrument-strings` | `#14b8a6` | Strings lane. Teal-500. |
+
+### Status Indicators
+
+| Token | CSS Variable | Hex | Description |
+|-------|-------------|-----|-------------|
+| `bg-status-ready` | `--status-ready` | `#22c55e` | Ready/saved. Green-500. |
+| `bg-status-saving` | `--status-saving` | `#3b82f6` | Save in progress. Blue-500. |
+| `bg-status-unsaved` | `--status-unsaved` | `#fbbf24` | Unsaved changes. Amber-400. |
+| `bg-status-error` | `--status-error` | `#fbbf24` | Error state. Amber-400. |
+
+### Scope Badges
+
+| Token | CSS Variable | Hex | Description |
+|-------|-------------|-----|-------------|
+| `bg-scope-song` | `--scope-song` | `#0891b2` | Song-level scope. Cyan-600. |
+| `bg-scope-section` | `--scope-section` | `#f59e0b` | Section-level scope. Amber-500. |
+| `bg-scope-block` | `--scope-block` | `#ea580c` | Block-level scope. Orange-600. |
+
+### Playhead
+
+| Token | CSS Variable | Hex | Description |
+|-------|-------------|-----|-------------|
+| `bg-playhead` | `--playhead` | `#2dd4bf` | Playhead position marker. Teal-400. |
+| `bg-playhead-light` | `--playhead-light` | `#5eead4` | Playhead glow/highlight. Teal-300. |
+
+### Warning / Danger
+
+| Token | CSS Variable | Hex | Description |
+|-------|-------------|-----|-------------|
+| `bg-warning` | `--warning` | `#fbbf24` | Warning state. Amber-400. |
+| `bg-confirm-danger` | `--confirm-danger` | `#f87171` | Confirm dialog danger button. Red-400. |
+
+### Mixer Meter
+
+| Token | CSS Variable | Hex | Description |
+|-------|-------------|-----|-------------|
+| `bg-meter-green` | `--meter-green` | `#14b8a6` | Meter safe zone. Teal-500. |
+| `bg-meter-yellow` | `--meter-yellow` | `#fbbf24` | Meter caution zone. Amber-400. |
+| `bg-meter-red` | `--meter-red` | `#ef4444` | Meter clipping zone. Red-500. |
+
+### Master / Surface
+
+| Token | CSS Variable | Hex | Description |
+|-------|-------------|-----|-------------|
+| `bg-master-thumb` | `--master-thumb` | `#e4e4e7` | Master fader thumb. Zinc-200. |
+| `bg-surface-sunken` | `--surface-sunken` | `#0a0a0c` | Recessed surface. Darker than background. |
+| `bg-surface-raised` | `--surface-raised` | `#141416` | Raised surface. Between background and card. |
 
 **Base radius:** `--radius: 0.5rem` (8px, equivalent to `rounded-lg`).
 
@@ -245,12 +304,7 @@ Custom scrollbars are defined in globals.css:
 
 ## Golden Screenshots
 
-This section will be populated as designs are approved.
-
-- Login page: (pending)
-- Editor — empty state: (pending)
-- Editor — arrangement view: (pending)
-- Library page: (pending)
+Use the `/screenshot` skill to capture before/after comparisons for UI changes. Golden baselines are managed via Playwright `toHaveScreenshot()` assertions in the automated enforcement layer (see below).
 
 ---
 
@@ -291,22 +345,11 @@ Every UI component must pass these checks before shipping:
 | Section gaps | `gap-6` between major sections, `gap-4` within sections | Add gap to flex/grid container |
 | Text hierarchy | Headings use `text-lg font-semibold`, labels use `text-xs text-muted-foreground` | Reference typography section |
 | Border visibility | All interactive elements have `border border-border` or `border border-input` | Add border class |
-| Dark theme contrast | Text readable against `bg-background` (#0a0a0f) and `bg-card` (#111118) | Use `text-foreground` or `text-muted-foreground` |
+| Dark theme contrast | Text readable against `bg-background` (#09090b) and `bg-card` (#18181b) | Use `text-foreground` or `text-muted-foreground` |
 | Container padding | Every functional zone (panels, bars, cards, modals) has minimum 8px (p-2) internal padding. Zero-padding containers are always a bug. | Add `p-2` or larger padding to containers |
 
 ---
 
 ## Anti-Patterns
 
-- No gradients
-- No box shadows except on modals/dropdowns
-- No `rounded-full` on cards or containers (only on avatars, badges, status dots, pills)
-- No opacity below 0.5 for interactive elements
-- No custom animations beyond Tailwind defaults and `forge-pulse`
-- No DaisyUI classes (DaisyUI has been removed)
-- No hardcoded hex colors in components — use theme tokens only
-- No CSS-in-JS (styled-components, emotion, CSS modules)
-- No generic AI fonts (Inter, Roboto) — use the system font stack
-- No gradients on backgrounds — use flat color tokens
-- No `confirm()`, `alert()`, or `prompt()` — use `ConfirmDialog` or custom UI
-- No `w-[Npx]` with `shrink-0` in flex/grid children (use `flex-1` or CSS grid)
+For prohibited patterns and must-nots, see CLAUDE.md.
