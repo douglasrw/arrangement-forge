@@ -1,0 +1,169 @@
+# Page snapshot
+
+```yaml
+- generic [ref=e3]:
+  - banner [ref=e4]:
+    - generic [ref=e5]:
+      - generic [ref=e7]: AF
+      - generic [ref=e8]:
+        - button "Untitled Project" [ref=e9]
+        - generic [ref=e10]:
+          - generic: Unsaved changes
+    - generic [ref=e12]:
+      - generic [ref=e13]:
+        - generic [ref=e14]: Key
+        - combobox "Key" [ref=e15] [cursor=pointer]:
+          - option "Key of C"
+          - option "Key of C#/Db"
+          - option "Key of D" [selected]
+          - option "Key of D#/Eb"
+          - option "Key of E"
+          - option "Key of F"
+          - option "Key of F#/Gb"
+          - option "Key of G"
+          - option "Key of G#/Ab"
+          - option "Key of A"
+          - option "Key of A#/Bb"
+          - option "Key of B"
+        - generic:
+          - img
+      - button "♩ 120 bpm" [ref=e16]
+      - generic [ref=e17]: Jazz
+      - generic [ref=e18]: 4/4
+      - radiogroup "Chord display mode" [ref=e19]:
+        - radio "A" [checked] [ref=e20]
+        - radio "I" [ref=e21]
+    - generic [ref=e22]:
+      - button "Export" [disabled] [ref=e23]
+      - button "Settings" [ref=e24]:
+        - img [ref=e25]
+      - button "User menu" [ref=e29]: DW
+  - generic [ref=e30]:
+    - complementary [ref=e31]:
+      - generic [ref=e33]:
+        - generic [ref=e35]:
+          - button "Input" [expanded] [ref=e36]:
+            - generic [ref=e37]: Input
+            - img [ref=e38]
+          - generic [ref=e42]:
+            - generic [ref=e43]:
+              - button "Chord" [ref=e44]
+              - button "Text" [ref=e45]
+              - button "Upload" [ref=e46]
+            - generic [ref=e47]:
+              - generic [ref=e48]:
+                - generic [ref=e49]: Progression
+                - paragraph [ref=e50]: Click chords below to build your progression
+              - generic [ref=e51]:
+                - generic [ref=e52]:
+                  - generic [ref=e53]: Key of D
+                  - generic [ref=e54]:
+                    - generic [ref=e55]: Time signature
+                    - combobox "Time signature" [ref=e56]:
+                      - option "4/4" [selected]
+                      - option "3/4"
+                      - option "6/8"
+                      - option "2/4"
+                - generic [ref=e57]:
+                  - button "I D" [ref=e58]:
+                    - generic [ref=e59]: I
+                    - generic [ref=e60]: D
+                  - button "ii Em" [ref=e61]:
+                    - generic [ref=e62]: ii
+                    - generic [ref=e63]: Em
+                  - button "iii F#m" [ref=e64]:
+                    - generic [ref=e65]: iii
+                    - generic [ref=e66]: F#m
+                  - button "IV G" [ref=e67]:
+                    - generic [ref=e68]: IV
+                    - generic [ref=e69]: G
+                  - button "V A" [ref=e70]:
+                    - generic [ref=e71]: V
+                    - generic [ref=e72]: A
+                  - button "vi Bm" [ref=e73]:
+                    - generic [ref=e74]: vi
+                    - generic [ref=e75]: Bm
+                  - button "vii° C#dim" [ref=e76]:
+                    - generic [ref=e77]: vii°
+                    - generic [ref=e78]: C#dim
+              - button "Custom chord" [ref=e79]:
+                - img [ref=e80]
+                - generic [ref=e81]: Custom chord
+              - button "Clear all" [ref=e83]
+            - button "Generate" [disabled] [ref=e84]
+        - button "Style Controls" [ref=e87]:
+          - generic [ref=e88]: Style Controls
+          - img [ref=e89]
+        - button "AI Assistant" [ref=e93]:
+          - generic [ref=e94]: AI Assistant
+          - img [ref=e95]
+      - button "Collapse" [ref=e97]:
+        - img [ref=e98]
+        - generic [ref=e100]: Collapse
+    - generic [ref=e101]:
+      - generic [ref=e102]:
+        - generic [ref=e103]:
+          - button "DRUMS" [ref=e106] [cursor=pointer]:
+            - generic [ref=e107]: DRUMS
+          - button "BASS" [ref=e108] [cursor=pointer]:
+            - generic [ref=e109]: BASS
+          - button "PIANO" [ref=e110] [cursor=pointer]:
+            - generic [ref=e111]: PIANO
+          - button "GUITAR" [ref=e112] [cursor=pointer]:
+            - generic [ref=e113]: GUITAR
+          - button "STRINGS" [ref=e114] [cursor=pointer]:
+            - generic [ref=e115]: STRINGS
+          - generic [ref=e117]: CHORDS
+        - generic [ref=e119]:
+          - button "Intro 8 bars" [ref=e121]:
+            - generic [ref=e122]: Intro
+            - generic [ref=e123]: 8 bars
+          - generic [ref=e124] [cursor=pointer]:
+            - generic [ref=e127]: "1"
+            - generic [ref=e130]: "2"
+            - generic [ref=e133]: "3"
+            - generic [ref=e136]: "4"
+            - generic [ref=e139]: "5"
+            - generic [ref=e142]: "6"
+            - generic [ref=e145]: "7"
+            - generic [ref=e148]: "8"
+          - button [ref=e159] [cursor=pointer]
+          - button [ref=e170] [cursor=pointer]
+          - button [ref=e181] [cursor=pointer]
+          - button [ref=e192] [cursor=pointer]
+          - button [ref=e203] [cursor=pointer]
+          - generic:
+            - generic:
+              - img
+      - button "Mixer" [ref=e206]:
+        - generic [ref=e207]: Mixer
+      - contentinfo [ref=e209]:
+        - generic [ref=e210]:
+          - button "Skip to start" [ref=e211]:
+            - img [ref=e212]
+          - button "Stop" [ref=e214]:
+            - img [ref=e215]
+          - button "Play" [ref=e217]:
+            - img [ref=e218]
+          - button "Skip to end" [ref=e220]:
+            - img [ref=e221]
+        - generic [ref=e223]:
+          - generic [ref=e224]:
+            - generic [ref=e225]: "1"
+            - generic [ref=e226]: "|"
+            - generic [ref=e227]: "1"
+          - generic [ref=e228]:
+            - generic [ref=e229]: ♩
+            - button "120" [ref=e230]
+          - generic [ref=e231]: 4/4
+        - generic [ref=e232]:
+          - button "Toggle loop" [ref=e233]:
+            - img [ref=e234]
+          - button "Toggle metronome" [ref=e239]:
+            - img [ref=e240]
+          - generic [ref=e243]: 0:00
+  - generic [ref=e244]:
+    - generic [ref=e247]: Unsaved changes
+    - generic [ref=e248]: Arrangement Forge
+    - generic [ref=e249]: v0.1.0
+```
