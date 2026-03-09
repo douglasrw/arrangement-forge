@@ -19,16 +19,14 @@
 
 | # | Document | Purpose |
 |---|----------|---------|
-| 1 | `CLAUDE.md` | Constraints, guardrails |
-| 2 | `ARCHITECTURE.md` | Data model, project structure, API contracts, code conventions |
-| 3 | `DESIGN_SYSTEM.md` | Visual design tokens, component patterns |
-| 4 | Assigned spec in `specs/` | Task-specific requirements |
+| 1 | `ARCHITECTURE.md` | Data model, project structure, API contracts, code conventions |
+| 2 | `DESIGN_SYSTEM.md` | Visual design tokens, component patterns |
+| 3 | Assigned spec in `specs/` | Task-specific requirements |
 
 For UI tasks, also read: `src/styles/globals.css`
 
 ## Musts
 
-- Read ARCHITECTURE.md before starting any task
 - Use types from `src/types/` -- never inline shared type definitions
 - Use `formatChord()` from `src/lib/chords.ts` for all chord display
 - Use `resolveStyle()` from `src/lib/style-cascade.ts` for all cascade resolution
@@ -50,25 +48,19 @@ For UI tasks, also read: `src/styles/globals.css`
 - Do not create files not listed in the task's "Creates" section without escalating
 - Do not store Tone.js objects or DOM refs in Zustand stores (use module-scoped vars or React refs)
 - Do not implement actual AI/LLM responses -- placeholder/stub only for MVP
-- Do not add emoji to the UI unless the spec explicitly says so
-- Do not create README.md or documentation files
 
 ## Preferences
 
-- Prefer `interface` over `type` for object shapes
-- Prefer early return over nested if/else
-- Prefer Tailwind utility classes over inline styles
-- Prefer computed/derived values over duplicated state
 - Keep components under 200 lines; functions under 50 lines
 
 ## Escalation Triggers
 
-- Dependency not in ARCHITECTURE.md
-- File not in task's "Creates" section
 - Conflicting task requirements
 - Store action would break invariants (overlapping blocks, gaps, duplicate sort orders)
 - Audio engine needs unsupported Tone.js features
 - Modifying a file owned by another task
+
+<!-- STATIC ABOVE / DYNAMIC BELOW -->
 
 ## Reference (load on demand)
 
