@@ -1,6 +1,10 @@
 import { useState, FormEvent } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 
 export default function LoginPage() {
   const navigate = useNavigate();
@@ -58,38 +62,33 @@ export default function LoginPage() {
 
           {/* Mode toggle */}
           <div className="flex gap-2 bg-secondary rounded-lg p-1">
-            <button
-              className={`flex-1 py-1.5 px-3 rounded-md text-sm font-medium transition-colors ${
-                mode === 'signin'
-                  ? 'bg-primary text-primary-foreground'
-                  : 'text-muted-foreground hover:text-foreground'
-              }`}
+            <Button
+              variant={mode === 'signin' ? 'default' : 'ghost'}
+              size="sm"
+              className="flex-1"
               onClick={() => { setMode('signin'); setError(null); }}
             >
               Sign In
-            </button>
-            <button
-              className={`flex-1 py-1.5 px-3 rounded-md text-sm font-medium transition-colors ${
-                mode === 'signup'
-                  ? 'bg-primary text-primary-foreground'
-                  : 'text-muted-foreground hover:text-foreground'
-              }`}
+            </Button>
+            <Button
+              variant={mode === 'signup' ? 'default' : 'ghost'}
+              size="sm"
+              className="flex-1"
               onClick={() => { setMode('signup'); setError(null); }}
             >
               Sign Up
-            </button>
+            </Button>
           </div>
 
           {/* Email/password form */}
           <form onSubmit={handleSubmit} className="flex flex-col gap-4">
             <div className="flex flex-col gap-1.5">
-              <label className="text-xs text-muted-foreground" htmlFor="login-email">
+              <Label htmlFor="login-email" className="text-xs text-muted-foreground">
                 Email
-              </label>
-              <input
+              </Label>
+              <Input
                 id="login-email"
                 type="email"
-                className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
                 placeholder="you@example.com"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
@@ -99,13 +98,12 @@ export default function LoginPage() {
             </div>
 
             <div className="flex flex-col gap-1.5">
-              <label className="text-xs text-muted-foreground" htmlFor="login-password">
+              <Label htmlFor="login-password" className="text-xs text-muted-foreground">
                 Password
-              </label>
-              <input
+              </Label>
+              <Input
                 id="login-password"
                 type="password"
-                className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
                 placeholder="••••••••"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
@@ -116,20 +114,20 @@ export default function LoginPage() {
             </div>
 
             {error && (
-              <div className="rounded-md border border-destructive/50 bg-destructive/10 px-3 py-2 text-sm text-destructive">
-                <span>{error}</span>
-              </div>
+              <Alert variant="destructive">
+                <AlertDescription>{error}</AlertDescription>
+              </Alert>
             )}
 
-            <button
+            <Button
               type="submit"
-              className="w-full rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90 transition-colors disabled:opacity-50"
+              className="w-full"
               disabled={loading}
             >
               {loading
                 ? '...'
                 : mode === 'signin' ? 'Sign In' : 'Create Account'}
-            </button>
+            </Button>
           </form>
 
           <div className="flex items-center gap-3 text-xs text-muted-foreground">
@@ -139,8 +137,9 @@ export default function LoginPage() {
           </div>
 
           {/* Google OAuth */}
-          <button
-            className="w-full flex items-center justify-center gap-2 rounded-md border border-border bg-background px-4 py-2 text-sm text-foreground hover:bg-secondary transition-colors disabled:opacity-50"
+          <Button
+            variant="outline"
+            className="w-full"
             onClick={handleGoogle}
             disabled={loading}
           >
@@ -151,7 +150,7 @@ export default function LoginPage() {
               <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/>
             </svg>
             Continue with Google
-          </button>
+          </Button>
         </div>
       </div>
     </div>
