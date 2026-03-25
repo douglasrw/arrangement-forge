@@ -1,3 +1,6 @@
+# Environment / secrets
+.env*
+
 # Staging folder for local <-> server file transfers
 uploads/
 
