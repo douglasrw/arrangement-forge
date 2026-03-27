@@ -4,6 +4,7 @@ import { supabase } from '@/lib/supabase';
 import { useAuthStore } from '@/store/auth-store';
 import { useUiStore } from '@/store/ui-store';
 import { GENRES } from '@/lib/genre-config';
+import type { Profile } from '@/types';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -12,27 +13,72 @@ import { Separator } from '@/components/ui/separator';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
 
+type SettingsField = 'displayName' | 'chordMode' | 'defaultGenre';
+
+export interface SettingsDraft {
+  profileId: string | null;
+  displayName: string;
+  chordMode: 'letter' | 'roman';
+  defaultGenre: string;
+  touchedFields: Record<SettingsField, boolean>;
+}
+
+const EMPTY_TOUCHED_FIELDS: Record<SettingsField, boolean> = {
+  displayName: false,
+  chordMode: false,
+  defaultGenre: false,
+};
+
+export function createSettingsDraft(profile: Profile | null): SettingsDraft {
+  return {
+    profileId: profile?.id ?? null,
+    displayName: profile?.displayName ?? '',
+    chordMode: profile?.chordDisplayMode ?? 'letter',
+    defaultGenre: profile?.defaultGenre ?? '',
+    touchedFields: { ...EMPTY_TOUCHED_FIELDS },
+  };
+}
+
+export function reconcileSettingsDraft(
+  currentDraft: SettingsDraft,
+  profile: Profile | null
+): SettingsDraft {
+  if (!profile) {
+    return currentDraft;
+  }
+
+  if (currentDraft.profileId !== profile.id) {
+    return createSettingsDraft(profile);
+  }
+
+  return {
+    ...currentDraft,
+    displayName: currentDraft.touchedFields.displayName
+      ? currentDraft.displayName
+      : profile.displayName,
+    chordMode: currentDraft.touchedFields.chordMode
+      ? currentDraft.chordMode
+      : profile.chordDisplayMode,
+    defaultGenre: currentDraft.touchedFields.defaultGenre
+      ? currentDraft.defaultGenre
+      : profile.defaultGenre ?? '',
+  };
+}
+
 export default function SettingsPage() {
   const navigate = useNavigate();
   const { user, profile } = useAuthStore();
   const { setChordDisplayMode } = useUiStore();
 
-  const [displayName, setDisplayName] = useState(profile?.displayName ?? '');
-  const [chordMode, setChordMode] = useState<'letter' | 'roman'>(
-    profile?.chordDisplayMode ?? 'letter'
-  );
-  const [defaultGenre, setDefaultGenre] = useState(profile?.defaultGenre ?? '');
+  const [draft, setDraft] = useState<SettingsDraft>(() => createSettingsDraft(profile));
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // Sync from profile when it loads
+  // Sync from profile when the same surface rerenders. Untouched fields should
+  // absorb fresh props while locally edited fields preserve draft wins.
   useEffect(() => {
-    if (profile) {
-      setDisplayName(profile.displayName);
-      setChordMode(profile.chordDisplayMode);
-      setDefaultGenre(profile.defaultGenre ?? '');
-    }
+    setDraft((currentDraft) => reconcileSettingsDraft(currentDraft, profile));
   }, [profile]);
 
   async function handleSave(e: FormEvent) {
@@ -44,9 +90,9 @@ export default function SettingsPage() {
 
     const { error: err } = await supabase.from('profiles').upsert({
       id: user.id,
-      display_name: displayName,
-      chord_display_mode: chordMode,
-      default_genre: defaultGenre || null,
+      display_name: draft.displayName,
+      chord_display_mode: draft.chordMode,
+      default_genre: draft.defaultGenre || null,
       updated_at: new Date().toISOString(),
     });
 
@@ -55,7 +101,11 @@ export default function SettingsPage() {
     if (err) {
       setError(err.message);
     } else {
-      setChordDisplayMode(chordMode);
+      setChordDisplayMode(draft.chordMode);
+      setDraft((currentDraft) => ({
+        ...currentDraft,
+        touchedFields: { ...EMPTY_TOUCHED_FIELDS },
+      }));
       setSaved(true);
       setTimeout(() => setSaved(false), 2000);
     }
@@ -98,8 +148,17 @@ export default function SettingsPage() {
                     id="settings-display-name"
                     type="text"
                     placeholder="Your name"
-                    value={displayName}
-                    onChange={(e) => setDisplayName(e.target.value)}
+                    value={draft.displayName}
+                    onChange={(e) =>
+                      setDraft((currentDraft) => ({
+                        ...currentDraft,
+                        displayName: e.target.value,
+                        touchedFields: {
+                          ...currentDraft.touchedFields,
+                          displayName: true,
+                        },
+                      }))
+                    }
                   />
                 </div>
               </div>
@@ -123,8 +182,17 @@ export default function SettingsPage() {
                         id="settings-chord-letter"
                         type="radio"
                         className="h-4 w-4 accent-primary"
-                        checked={chordMode === 'letter'}
-                        onChange={() => setChordMode('letter')}
+                        checked={draft.chordMode === 'letter'}
+                        onChange={() =>
+                          setDraft((currentDraft) => ({
+                            ...currentDraft,
+                            chordMode: 'letter',
+                            touchedFields: {
+                              ...currentDraft.touchedFields,
+                              chordMode: true,
+                            },
+                          }))
+                        }
                       />
                       <span className="text-sm text-foreground">Letter names</span>
                       <Badge variant="secondary">(C, Dm7, G7)</Badge>
@@ -134,8 +202,17 @@ export default function SettingsPage() {
                         id="settings-chord-roman"
                         type="radio"
                         className="h-4 w-4 accent-primary"
-                        checked={chordMode === 'roman'}
-                        onChange={() => setChordMode('roman')}
+                        checked={draft.chordMode === 'roman'}
+                        onChange={() =>
+                          setDraft((currentDraft) => ({
+                            ...currentDraft,
+                            chordMode: 'roman',
+                            touchedFields: {
+                              ...currentDraft.touchedFields,
+                              chordMode: true,
+                            },
+                          }))
+                        }
                       />
                       <span className="text-sm text-foreground">Roman numerals</span>
                       <Badge variant="secondary">(I, ii7, V7)</Badge>
@@ -154,8 +231,17 @@ export default function SettingsPage() {
                   <select
                     id="settings-genre"
                     className={selectClasses}
-                    value={defaultGenre}
-                    onChange={(e) => setDefaultGenre(e.target.value)}
+                    value={draft.defaultGenre}
+                    onChange={(e) =>
+                      setDraft((currentDraft) => ({
+                        ...currentDraft,
+                        defaultGenre: e.target.value,
+                        touchedFields: {
+                          ...currentDraft.touchedFields,
+                          defaultGenre: true,
+                        },
+                      }))
+                    }
                   >
                     <option value="">No default</option>
                     {GENRES.map((g) => (
