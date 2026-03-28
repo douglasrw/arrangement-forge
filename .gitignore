@@ -1,6 +1,10 @@
 # Environment / secrets
 .env*
 
+# Local dependencies / workspaces
+node_modules/
+.worktrees/
+
 # Staging folder for local <-> server file transfers
 uploads/
 
