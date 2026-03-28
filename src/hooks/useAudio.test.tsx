@@ -44,6 +44,7 @@ const playMock = vi.hoisted(() => vi.fn());
 const pauseMock = vi.hoisted(() => vi.fn());
 const stopMock = vi.hoisted(() => vi.fn());
 const seekMock = vi.hoisted(() => vi.fn());
+const seekToSecondsMock = vi.hoisted(() => vi.fn());
 const setTempoMock = vi.hoisted(() => vi.fn());
 const hotSwapInstrumentMock = vi.hoisted(() => vi.fn());
 const AudioEngineMock = vi.hoisted(() => vi.fn(() => ({
@@ -60,6 +61,7 @@ const AudioEngineMock = vi.hoisted(() => vi.fn(() => ({
   pause: pauseMock,
   stop: stopMock,
   seek: seekMock,
+  seekToSeconds: seekToSecondsMock,
   setTempo: setTempoMock,
   hotSwapInstrument: hotSwapInstrumentMock,
 })));
@@ -127,6 +129,7 @@ beforeEach(() => {
   pauseMock.mockClear();
   stopMock.mockClear();
   seekMock.mockClear();
+  seekToSecondsMock.mockClear();
   setTempoMock.mockClear();
   hotSwapInstrumentMock.mockClear();
 

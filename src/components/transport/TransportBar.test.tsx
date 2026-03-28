@@ -11,6 +11,7 @@ const playMock = vi.hoisted(() => vi.fn(async () => undefined));
 const pauseMock = vi.hoisted(() => vi.fn());
 const stopMock = vi.hoisted(() => vi.fn());
 const seekMock = vi.hoisted(() => vi.fn());
+const seekToSecondsMock = vi.hoisted(() => vi.fn());
 const setMetronomeEnabledMock = vi.hoisted(() => vi.fn());
 const setLoopEnabledMock = vi.hoisted(() => vi.fn());
 const useAudioState = vi.hoisted(() => ({
@@ -40,6 +41,7 @@ vi.mock('@/hooks/useAudio', () => ({
     pause: pauseMock,
     stop: stopMock,
     seek: seekMock,
+    seekToSeconds: seekToSecondsMock,
     setMetronomeEnabled: setMetronomeEnabledMock,
     setLoopEnabled: setLoopEnabledMock,
   }),
@@ -116,6 +118,7 @@ beforeEach(() => {
   pauseMock.mockClear();
   stopMock.mockClear();
   seekMock.mockClear();
+  seekToSecondsMock.mockClear();
   setMetronomeEnabledMock.mockClear();
   setLoopEnabledMock.mockClear();
 
@@ -162,6 +165,13 @@ afterEach(() => {
 
 describe('TransportBar transport controls', () => {
   it('reflects engine-backed loop and metronome state instead of local toggle state', () => {
+    useAudioState.transportState = {
+      ...useAudioState.transportState,
+      currentBar: 3,
+      currentBeat: 2,
+      elapsedSeconds: 24,
+      totalSeconds: 96,
+    }
     useAudioState.audioConfig = {
       ...useAudioState.audioConfig,
       loopEnabled: true,
@@ -181,6 +191,8 @@ describe('TransportBar transport controls', () => {
 
     expect(loopButton?.getAttribute('aria-pressed')).toBe('true');
     expect(metronomeButton?.getAttribute('aria-pressed')).toBe('true');
+    expect(mounted.container.textContent).toContain('Bar 3');
+    expect(mounted.container.textContent).toContain('0:24 / 1:36');
   });
 
   it('forwards loop and metronome toggles into the audio hook', () => {
@@ -202,5 +214,34 @@ describe('TransportBar transport controls', () => {
 
     expect(setLoopEnabledMock).toHaveBeenCalledWith(true);
     expect(setMetronomeEnabledMock).toHaveBeenCalledWith(true);
+  });
+
+  it('forwards scrubber changes into second-level transport seek', () => {
+    useAudioState.transportState = {
+      ...useAudioState.transportState,
+      elapsedSeconds: 12,
+      totalSeconds: 64,
+    };
+
+    const mounted = renderTransportBar();
+    mountedRoot = mounted.root;
+    mountedContainer = mounted.container;
+
+    const scrubber = mounted.container.querySelector(
+      'input[aria-label="Transport scrubber"]'
+    ) as HTMLInputElement | null;
+
+    expect(scrubber).not.toBeNull();
+
+    act(() => {
+      const valueSetter = Object.getOwnPropertyDescriptor(
+        HTMLInputElement.prototype,
+        'value'
+      )?.set;
+      valueSetter?.call(scrubber, '32.5');
+      scrubber?.dispatchEvent(new Event('input', { bubbles: true }));
+    });
+
+    expect(seekToSecondsMock).toHaveBeenCalledWith(32.5);
   });
 });

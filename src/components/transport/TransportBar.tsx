@@ -9,6 +9,7 @@ import {
   SkipForward,
 } from "lucide-react"
 import { useAudio } from "@/hooks/useAudio"
+import { Scrubber } from "@/components/transport/Scrubber"
 import { useProjectStore } from "@/store/project-store"
 
 /* ------------------------------------------------------------------ */
@@ -33,6 +34,13 @@ function MetronomeIcon({ className }: { className?: string }) {
   )
 }
 
+function formatClock(seconds: number) {
+  const safeSeconds = Math.max(0, seconds)
+  const mins = Math.floor(safeSeconds / 60)
+  const secs = Math.floor(safeSeconds % 60)
+  return `${mins}:${String(secs).padStart(2, "0")}`
+}
+
 /* ------------------------------------------------------------------ */
 /*  Transport Bar                                                      */
 /* ------------------------------------------------------------------ */
@@ -44,6 +52,7 @@ export function TransportBar() {
     pause,
     stop,
     seek,
+    seekToSeconds,
     setMetronomeEnabled,
     setLoopEnabled,
   } = useAudio()
@@ -52,13 +61,11 @@ export function TransportBar() {
   const isPlaying = transportState.playbackState === "playing"
   const bar = transportState.currentBar
   const beat = transportState.currentBeat
+  const elapsedSeconds = transportState.elapsedSeconds
+  const totalSeconds = transportState.totalSeconds
 
   const bpm = project?.tempo ?? 120
   const timeSig = project?.timeSignature ?? "4/4"
-  const beatsPerBar = parseInt(timeSig.split("/")[0] ?? "4", 10) || 4
-
-  /* Compute elapsed from bar/beat and tempo */
-  const elapsed = ((bar - 1) * beatsPerBar + (beat - 1)) * (60 / bpm)
   const loopActive = audioConfig.loopEnabled
   const metronomeActive = audioConfig.metronomeEnabled
 
@@ -92,14 +99,11 @@ export function TransportBar() {
     setEditingBpm(false)
     updateProject({ tempo: val })
   }
-
-  /* Format elapsed */
-  const mins = Math.floor(elapsed / 60)
-  const secs = Math.floor(elapsed % 60)
-  const timeStr = `${mins}:${String(secs).padStart(2, "0")}`
+  const timeStr = `${formatClock(elapsedSeconds)} / ${formatClock(totalSeconds)}`
+  const totalBars = sections.reduce((sum, section) => sum + section.barCount, 0)
 
   return (
-    <footer className="flex h-16 w-full shrink-0 items-center justify-center gap-6 border-t border-border bg-secondary px-4">
+    <footer className="flex h-16 w-full shrink-0 items-center gap-4 border-t border-border bg-secondary px-4">
       {/* ---- LEFT: Playback pill group ---- */}
       <div className="flex h-12 min-w-[180px] items-center justify-center gap-1 rounded-xl border border-border bg-background px-4 py-2">
         {/* Skip to start */}
@@ -145,8 +149,7 @@ export function TransportBar() {
         <button
           type="button"
           onClick={() => {
-            const totalBars = sections.reduce((sum, s) => sum + s.barCount, 0)
-            seek(totalBars)
+            seek(Math.max(totalBars, 1))
           }}
           className="flex size-9 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:text-foreground"
           aria-label="Skip to end"
@@ -155,16 +158,25 @@ export function TransportBar() {
         </button>
       </div>
 
-      {/* ---- CENTER: Position + BPM + Time Sig ---- */}
-      <div className="flex h-12 min-w-[180px] items-center justify-center gap-3 rounded-xl border border-border bg-background px-4 py-2">
-        {/* Bar | Beat counter */}
-        <div className="flex items-center gap-0 rounded-lg bg-secondary px-3 py-1 font-mono text-sm">
-          <span className="text-zinc-200">{bar}</span>
-          <span className="mx-1.5 text-zinc-600">|</span>
-          <span className="text-zinc-200">{beat}</span>
+      {/* ---- CENTER: Transport clock + scrubber ---- */}
+      <div className="flex h-12 min-w-0 flex-1 items-center gap-3 rounded-xl border border-border bg-background px-4 py-2">
+        <div className="flex shrink-0 items-center gap-2 rounded-lg bg-secondary px-3 py-1 font-mono text-xs">
+          <span className="font-semibold text-zinc-200">{`Bar ${bar}`}</span>
+          <span className="text-zinc-600">|</span>
+          <span className="text-zinc-500">{`Beat ${beat}`}</span>
         </div>
+        <Scrubber
+          value={elapsedSeconds}
+          max={Math.max(totalSeconds, 0)}
+          onChange={seekToSeconds}
+        />
+        <span className="min-w-[88px] text-right font-mono text-xs text-zinc-500">
+          {timeStr}
+        </span>
+      </div>
 
-        {/* BPM */}
+      {/* ---- RIGHT: Tempo + toggles ---- */}
+      <div className="flex h-12 min-w-[220px] items-center justify-center gap-3 rounded-xl border border-border bg-background px-4 py-2">
         <div className="flex items-center gap-1.5">
           <span className="text-xs text-zinc-500" aria-hidden="true">
             {"♩"}
@@ -207,13 +219,7 @@ export function TransportBar() {
           )}
         </div>
 
-        {/* Time signature */}
         <span className="text-sm text-zinc-500">{timeSig}</span>
-      </div>
-
-      {/* ---- RIGHT: Loop, Metronome, Elapsed ---- */}
-      <div className="flex h-12 min-w-[180px] items-center justify-center gap-1.5 rounded-xl border border-border bg-background px-4 py-2">
-        {/* Loop toggle */}
         <button
           type="button"
           onClick={() => setLoopEnabled(!loopActive)}
@@ -229,7 +235,6 @@ export function TransportBar() {
           <Repeat className="size-3.5" />
         </button>
 
-        {/* Metronome toggle */}
         <button
           type="button"
           onClick={() => setMetronomeEnabled(!metronomeActive)}
@@ -244,11 +249,6 @@ export function TransportBar() {
         >
           <MetronomeIcon className="size-3.5" />
         </button>
-
-        {/* Elapsed time */}
-        <span className="ml-1 min-w-[36px] text-right font-mono text-xs text-zinc-500">
-          {timeStr}
-        </span>
       </div>
     </footer>
   )

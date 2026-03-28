@@ -108,6 +108,12 @@ export class AudioEngine {
     Tone.getTransport().seconds = seconds;
   }
 
+  seekToSeconds(seconds: number): void {
+    const loopEnd = Tone.getTransport().loopEnd;
+    const maxSeconds = typeof loopEnd === 'number' && loopEnd > 0 ? loopEnd : seconds;
+    Tone.getTransport().seconds = Math.max(0, Math.min(seconds, maxSeconds));
+  }
+
   setVolume(instrument: InstrumentType, volume: number): void {
     const gain = this.channelGains.get(instrument);
     if (gain) gain.gain.value = volume;

@@ -9,6 +9,7 @@ interface Props {
 export function Scrubber({ value, max, onChange }: Props) {
   return (
     <input
+      aria-label="Transport scrubber"
       type="range"
       min={0}
       max={Math.max(1, max)}

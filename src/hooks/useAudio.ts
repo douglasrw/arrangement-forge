@@ -119,6 +119,7 @@ export function useAudio() {
   const pause = useCallback(() => engine.pause(), [engine]);
   const stop = useCallback(() => engine.stop(), [engine]);
   const seek = useCallback((bar: number) => engine.seek(bar), [engine]);
+  const seekToSeconds = useCallback((seconds: number) => engine.seekToSeconds(seconds), [engine]);
   const setMetronomeEnabled = useCallback((enabled: boolean) => {
     engine.setMetronomeEnabled(enabled);
     setAudioConfig(engine.getAudioConfig());
@@ -137,6 +138,7 @@ export function useAudio() {
     pause,
     stop,
     seek,
+    seekToSeconds,
     setMetronomeEnabled,
     setLoopEnabled,
     initEngine,
