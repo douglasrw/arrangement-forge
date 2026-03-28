@@ -20,6 +20,14 @@ interface ProjectStore {
   allInstrumentsUpdate: boolean;
 
   setProject: (project: Project) => void;
+  hydrateProject: (data: {
+    project: Project;
+    stems: Stem[];
+    sections: Section[];
+    blocks: Block[];
+    chords: Chord[];
+    chatMessages: AiChatMessage[];
+  }) => void;
   updateProject: (partial: Partial<Project>) => void;
   setArrangement: (data: {
     stems: Stem[];
@@ -70,6 +78,18 @@ export const useProjectStore = create<ProjectStore>()((set, get) => ({
   allInstrumentsUpdate: false,
 
   setProject: (project) => set({ project }),
+
+  hydrateProject: ({ project, stems, sections, blocks, chords, chatMessages }) =>
+    set({
+      project,
+      stems,
+      sections,
+      blocks,
+      chords,
+      chatMessages,
+      drumOnlyUpdate: false,
+      allInstrumentsUpdate: false,
+    }),
 
   updateProject: (partial) => {
     set((state) => ({ project: state.project ? { ...state.project, ...partial } : null }));

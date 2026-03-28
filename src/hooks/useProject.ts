@@ -87,7 +87,7 @@ export function useProject() {
         if (projectRes.error) throw projectRes.error;
 
         const store = useProjectStore.getState();
-        store.setProject(rowToProject(projectRes.data as Record<string, unknown>));
+        const project = rowToProject(projectRes.data as Record<string, unknown>);
 
         const stemIds = (stemsRes.data ?? []).map((s: Record<string, unknown>) => s.id as string);
 
@@ -96,16 +96,14 @@ export function useProject() {
           ? await supabase.from('blocks').select('*').in('stem_id', stemIds)
           : { data: [], error: null };
 
-        store.setArrangement({
+        store.hydrateProject({
+          project,
           stems: (stemsRes.data ?? []).map((r) => rowToStem(r as Record<string, unknown>)),
           sections: (sectionsRes.data ?? []).map((r) => rowToSection(r as Record<string, unknown>)),
           blocks: (blocksForProject.data ?? []).map((r) => rowToBlock(r as Record<string, unknown>)),
           chords: (chordsRes.data ?? []).map((r) => rowToChord(r as Record<string, unknown>)),
+          chatMessages: (messagesRes.data ?? []).map((msg) => rowToMessage(msg as Record<string, unknown>)),
         });
-
-        for (const msg of (messagesRes.data ?? [])) {
-          store.addChatMessage(rowToMessage(msg as Record<string, unknown>));
-        }
 
         // Restore generation state if project already has an arrangement
         const freshState = useProjectStore.getState();

@@ -2,7 +2,7 @@ import { describe, it, expect, beforeEach } from 'vitest';
 import { useProjectStore } from './project-store';
 import { useUndoStore } from './undo-store';
 import { parseSnapshot } from '@/lib/undo-helpers';
-import type { Project, Section, Block, Stem, Chord } from '@/types';
+import type { Project, Section, Block, Stem, Chord, AiChatMessage } from '@/types';
 
 const makeProject = (partial: Partial<Project> = {}): Project => ({
   id: 'p1', userId: 'u1', name: 'Test', key: 'C', tempo: 120,
@@ -32,6 +32,17 @@ const makeStem = (partial: Partial<Stem> = {}): Stem => ({
 
 const makeChord = (partial: Partial<Chord> = {}): Chord => ({
   id: 'c1', projectId: 'p1', barNumber: 1, degree: 'I', quality: 'maj7', bassDegree: null,
+  ...partial,
+});
+
+const makeMessage = (partial: Partial<AiChatMessage> = {}): AiChatMessage => ({
+  id: 'm1',
+  projectId: 'p1',
+  role: 'assistant',
+  content: 'hello',
+  scope: 'song',
+  scopeTarget: null,
+  createdAt: '2026-01-01',
   ...partial,
 });
 
@@ -65,6 +76,56 @@ describe('projectStore', () => {
     expect(useProjectStore.getState().stems).toHaveLength(1);
     expect(useProjectStore.getState().sections).toHaveLength(1);
     expect(useProjectStore.getState().blocks).toHaveLength(1);
+  });
+
+  it('hydrateProject replaces prior arrangement and chat state atomically', () => {
+    useProjectStore.getState().hydrateProject({
+      project: makeProject(),
+      stems: [makeStem()],
+      sections: [makeSection()],
+      blocks: [makeBlock()],
+      chords: [makeChord()],
+      chatMessages: [makeMessage()],
+    });
+
+    useProjectStore.getState().hydrateProject({
+      project: makeProject({ id: 'p2', name: 'Second' }),
+      stems: [makeStem({ id: 'st2', projectId: 'p2' })],
+      sections: [makeSection({ id: 's2', projectId: 'p2', startBar: 9 })],
+      blocks: [makeBlock({ id: 'b2', stemId: 'st2', sectionId: 's2', startBar: 9, endBar: 16 })],
+      chords: [makeChord({ id: 'c2', projectId: 'p2', barNumber: 9 })],
+      chatMessages: [makeMessage({ id: 'm2', projectId: 'p2', content: 'second project' })],
+    });
+
+    const state = useProjectStore.getState();
+    expect(state.project?.id).toBe('p2');
+    expect(state.stems.map((stem) => stem.id)).toEqual(['st2']);
+    expect(state.sections.map((section) => section.id)).toEqual(['s2']);
+    expect(state.blocks.map((block) => block.id)).toEqual(['b2']);
+    expect(state.chords.map((chord) => chord.id)).toEqual(['c2']);
+    expect(state.chatMessages.map((message) => message.id)).toEqual(['m2']);
+  });
+
+  it('hydrateProject clears stale chat when the loaded project has no messages', () => {
+    useProjectStore.getState().hydrateProject({
+      project: makeProject(),
+      stems: [],
+      sections: [],
+      blocks: [],
+      chords: [],
+      chatMessages: [makeMessage()],
+    });
+
+    useProjectStore.getState().hydrateProject({
+      project: makeProject({ id: 'p2', name: 'Empty Chat' }),
+      stems: [],
+      sections: [],
+      blocks: [],
+      chords: [],
+      chatMessages: [],
+    });
+
+    expect(useProjectStore.getState().chatMessages).toEqual([]);
   });
 
   it('splitBlock creates two blocks with correct bar ranges', () => {
