@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import type { Profile } from '@/types';
 import {
+  applySavedProfile,
   createSettingsDraft,
   reconcileSettingsDraft,
   type SettingsDraft,
@@ -95,6 +96,43 @@ describe('SettingsPage draft reconciliation', () => {
       displayName: 'Ashlyn',
       chordMode: 'roman',
       defaultGenre: 'Pop',
+      touchedFields: {
+        displayName: false,
+        chordMode: false,
+        defaultGenre: false,
+      },
+    });
+  });
+
+  it('refreshes the draft from the saved profile while clearing touched fields', () => {
+    const initialDraft = createSettingsDraft(makeProfile());
+    const locallyEditedDraft: SettingsDraft = {
+      ...initialDraft,
+      displayName: 'Saved Name',
+      chordMode: 'roman',
+      defaultGenre: 'Funk',
+      touchedFields: {
+        displayName: true,
+        chordMode: true,
+        defaultGenre: true,
+      },
+    };
+
+    const updated = applySavedProfile(
+      locallyEditedDraft,
+      makeProfile({
+        displayName: 'Saved Name',
+        chordDisplayMode: 'roman',
+        defaultGenre: 'Funk',
+        updatedAt: '2026-03-28T01:00:00Z',
+      })
+    );
+
+    expect(updated).toEqual({
+      profileId: 'profile-1',
+      displayName: 'Saved Name',
+      chordMode: 'roman',
+      defaultGenre: 'Funk',
       touchedFields: {
         displayName: false,
         chordMode: false,

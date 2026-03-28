@@ -1,6 +1,7 @@
 import { useState, useEffect, FormEvent } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/lib/supabase';
+import { rowToProfile } from '@/lib/profile';
 import { useAuthStore } from '@/store/auth-store';
 import { useUiStore } from '@/store/ui-store';
 import { GENRES } from '@/lib/genre-config';
@@ -65,9 +66,16 @@ export function reconcileSettingsDraft(
   };
 }
 
+export function applySavedProfile(
+  _currentDraft: SettingsDraft,
+  profile: Profile
+): SettingsDraft {
+  return createSettingsDraft(profile);
+}
+
 export default function SettingsPage() {
   const navigate = useNavigate();
-  const { user, profile } = useAuthStore();
+  const { user, profile, setProfile } = useAuthStore();
   const { setChordDisplayMode } = useUiStore();
 
   const [draft, setDraft] = useState<SettingsDraft>(() => createSettingsDraft(profile));
@@ -88,24 +96,29 @@ export default function SettingsPage() {
     setError(null);
     setSaved(false);
 
-    const { error: err } = await supabase.from('profiles').upsert({
-      id: user.id,
-      display_name: draft.displayName,
-      chord_display_mode: draft.chordMode,
-      default_genre: draft.defaultGenre || null,
-      updated_at: new Date().toISOString(),
-    });
+    const { data, error: err } = await supabase
+      .from('profiles')
+      .upsert({
+        id: user.id,
+        display_name: draft.displayName,
+        chord_display_mode: draft.chordMode,
+        default_genre: draft.defaultGenre || null,
+        updated_at: new Date().toISOString(),
+      })
+      .select('*')
+      .single();
 
     setSaving(false);
 
     if (err) {
       setError(err.message);
+    } else if (!data) {
+      setError('Profile save succeeded but no persisted profile row was returned.');
     } else {
-      setChordDisplayMode(draft.chordMode);
-      setDraft((currentDraft) => ({
-        ...currentDraft,
-        touchedFields: { ...EMPTY_TOUCHED_FIELDS },
-      }));
+      const savedProfile = rowToProfile(data as Record<string, unknown>);
+      setProfile(savedProfile);
+      setChordDisplayMode(savedProfile.chordDisplayMode);
+      setDraft((currentDraft) => applySavedProfile(currentDraft, savedProfile));
       setSaved(true);
       setTimeout(() => setSaved(false), 2000);
     }
