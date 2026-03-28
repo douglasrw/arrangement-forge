@@ -209,7 +209,8 @@ export function generateMidiForBlock(
   key: string,
   genre: string,
   drumContext?: DrumContext,
-  startBar: number = 1
+  startBar: number = 1,
+  styleOverride?: string
 ): MidiNoteData[] {
   const notes: MidiNoteData[] = [];
 
@@ -227,6 +228,7 @@ export function generateMidiForBlock(
           const barNotes = buildDrumMidi({
             genre,
             substyle: '',
+            patternIdOverride: styleOverride,
             barCount: 1,
             beatsPerBar: 4,
             energy: 50,
@@ -250,6 +252,7 @@ export function generateMidiForBlock(
         const barNotes = buildDrumMidi({
           genre,
           substyle: drumContext.substyle,
+          patternIdOverride: styleOverride,
           barCount: 1,
           beatsPerBar: drumContext.beatsPerBar,
           energy: drumContext.energy,
@@ -273,26 +276,26 @@ export function generateMidiForBlock(
         break;
       }
       case 'bass': {
-        const style = getStyle('bass', genre);
+        const style = styleOverride ?? getStyle('bass', genre);
         const pattern = getBassPattern(style);
         notes.push(...buildBassFromPattern(pattern, chord, key, barNumberGlobal, barOffset));
         break;
       }
       case 'piano': {
-        const style = getStyle('piano', genre);
+        const style = styleOverride ?? getStyle('piano', genre);
         const pattern = getPianoPattern(style);
         notes.push(...buildPianoFromPattern(pattern, chord, key, barNumberGlobal, barOffset));
         break;
       }
       case 'guitar': {
-        const style = getStyle('guitar', genre);
+        const style = styleOverride ?? getStyle('guitar', genre);
         const pattern = getGuitarPattern(style);
         notes.push(...buildGuitarFromPattern(pattern, chord, key, barNumberGlobal, barOffset));
         break;
       }
       case 'strings': {
         const energy = drumContext?.energy ?? 50;
-        notes.push(...buildStringsFromPattern(chord, key, barNumberGlobal, barOffset, energy));
+        notes.push(...buildStringsFromPattern(chord, key, barNumberGlobal, barOffset, energy, 4, styleOverride));
         break;
       }
     }
@@ -343,6 +346,8 @@ export function generate(request: GenerationRequest): GenerationResponse {
           barNumberGlobal: section.start_bar,
         };
 
+        const style = getStyle(stem.instrument, request.genre);
+
         blocks.push({
           stem_instrument: stem.instrument,
           section_name: section.name,
@@ -350,14 +355,16 @@ export function generate(request: GenerationRequest): GenerationResponse {
           end_bar: section.start_bar + section.bar_count - 1,
           chord_degree: sectionChords[0]?.degree ?? null,
           chord_quality: sectionChords[0]?.quality ?? null,
-          style: getStyle(stem.instrument, request.genre),
+          style,
           midi_data: generateMidiForBlock(
             stem.instrument,
             section.bar_count,
             sectionChords,
             request.key,
             request.genre,
-            drumContext
+            drumContext,
+            section.start_bar,
+            style
           ),
         });
       }
@@ -370,6 +377,7 @@ export function generate(request: GenerationRequest): GenerationResponse {
           section.start_bar - 1 + section.bar_count
         );
         const firstChord = sectionChords[0];
+        const style = getStyle(stem.instrument, request.genre);
 
         blocks.push({
           stem_instrument: stem.instrument,
@@ -378,7 +386,7 @@ export function generate(request: GenerationRequest): GenerationResponse {
           end_bar: section.start_bar + section.bar_count - 1,
           chord_degree: firstChord?.degree ?? null,
           chord_quality: firstChord?.quality ?? null,
-          style: getStyle(stem.instrument, request.genre),
+          style,
           midi_data: generateMidiForBlock(
             stem.instrument,
             section.bar_count,
@@ -386,7 +394,8 @@ export function generate(request: GenerationRequest): GenerationResponse {
             request.key,
             request.genre,
             undefined, // no DrumContext for pitched instruments
-            section.start_bar
+            section.start_bar,
+            style
           ),
         });
       }

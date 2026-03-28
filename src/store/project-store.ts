@@ -4,6 +4,7 @@ import { useUndoStore } from './undo-store';
 import { useUiStore } from './ui-store';
 import { useSelectionStore } from './selection-store';
 import { snapshotArrangement } from '@/lib/undo-helpers';
+import { generateMidiForBlock } from '@/lib/midi-generator';
 
 const genId = () => crypto.randomUUID();
 
@@ -121,6 +122,85 @@ function applySectionUpdate(state: {
     blocks: nextBlocks,
     chords: nextChords,
   };
+}
+
+function regenerateBlockWithProjectState(state: {
+  project: Project | null;
+  stems: Stem[];
+  sections: Section[];
+  chords: Chord[];
+}, currentBlock: Block, nextBlock: Block): Block {
+  if (!state.project || !state.project.hasArrangement) {
+    return nextBlock;
+  }
+
+  const section = state.sections.find((candidate) => candidate.id === nextBlock.sectionId);
+  const stem = state.stems.find((candidate) => candidate.id === nextBlock.stemId);
+
+  if (!section || !stem) {
+    return nextBlock;
+  }
+
+  const needsMidiRefresh =
+    nextBlock.style !== currentBlock.style ||
+    nextBlock.startBar !== currentBlock.startBar ||
+    nextBlock.endBar !== currentBlock.endBar ||
+    nextBlock.sectionId !== currentBlock.sectionId;
+
+  if (!needsMidiRefresh) {
+    return nextBlock;
+  }
+
+  const beatsPerBar = parseInt(state.project.timeSignature.split('/')[0] ?? '4', 10) || 4;
+  const blockChords = state.chords
+    .filter((chord) => chord.barNumber >= nextBlock.startBar && chord.barNumber <= nextBlock.endBar)
+    .map((chord) => ({
+      bar_number: chord.barNumber,
+      degree: chord.degree,
+      quality: chord.quality,
+      bass_degree: chord.bassDegree,
+    }));
+
+  const midiData = generateMidiForBlock(
+    stem.instrument,
+    nextBlock.endBar - nextBlock.startBar + 1,
+    blockChords,
+    state.project.key,
+    state.project.genre,
+    stem.instrument === 'drums'
+      ? {
+          substyle: state.project.subStyle,
+          energy: section.energyOverride ?? state.project.energy,
+          dynamics: section.dynamicsOverride ?? state.project.dynamics,
+          swingPct: section.swingPctOverride ?? state.project.swingPct,
+          groove: section.grooveOverride ?? state.project.groove,
+          feel: section.feelOverride ?? state.project.feel,
+          beatsPerBar,
+          sectionType: section.name.replace(/\s*\d+$/, ''),
+          sectionIndex: section.sortOrder,
+          isLastSection: section.sortOrder === state.sections.length - 1,
+          totalBarsInSection: section.barCount,
+          barNumberGlobal: nextBlock.startBar,
+        }
+      : {
+          substyle: state.project.subStyle,
+          energy: section.energyOverride ?? state.project.energy,
+          dynamics: section.dynamicsOverride ?? state.project.dynamics,
+          swingPct: section.swingPctOverride ?? state.project.swingPct,
+          groove: section.grooveOverride ?? state.project.groove,
+          feel: section.feelOverride ?? state.project.feel,
+          beatsPerBar,
+          sectionType: section.name.replace(/\s*\d+$/, ''),
+          sectionIndex: section.sortOrder,
+          isLastSection: section.sortOrder === state.sections.length - 1,
+          totalBarsInSection: section.barCount,
+          barNumberGlobal: nextBlock.startBar,
+        },
+    nextBlock.startBar,
+    nextBlock.style
+  );
+
+  return { ...nextBlock, midiData };
 }
 
 function reconcileSelectionWithArrangement(state: {
@@ -368,7 +448,14 @@ export const useProjectStore = create<ProjectStore>()((set, get) => ({
   updateBlock: (blockId, partial) => {
     const before = snapshotArrangement(get());
     set((state) => ({
-      blocks: state.blocks.map((b) => (b.id === blockId ? { ...b, ...partial } : b)),
+      blocks: state.blocks.map((block) => {
+        if (block.id !== blockId) {
+          return block;
+        }
+
+        const nextBlock = { ...block, ...partial };
+        return regenerateBlockWithProjectState(state, block, nextBlock);
+      }),
     }));
     const after = snapshotArrangement(get());
     useUndoStore.getState().pushUndo('Update block', before, after);

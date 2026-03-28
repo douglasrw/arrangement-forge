@@ -70,14 +70,21 @@ export function buildStringsFromPattern(
   _barNumber: number,
   barOffset: number,
   energy: number,
-  octave: number = 4
+  octave: number = 4,
+  styleOverride?: string
 ): MidiNoteData[] {
   if (!chord.degree) return [];
 
   const tones = getChordTones(chord.degree, chord.quality, key, octave);
   if (tones.length === 0) return [];
 
-  const pattern = energy > 70 ? TREMOLO : SUSTAINED_PAD;
+  const pattern = styleOverride === 'tremolo'
+    ? TREMOLO
+    : styleOverride === 'sustained_pad'
+      ? SUSTAINED_PAD
+      : energy > 70
+        ? TREMOLO
+        : SUSTAINED_PAD;
   const bar = pattern.bars[0]; // Strings use single-bar patterns
 
   const notes: MidiNoteData[] = [];

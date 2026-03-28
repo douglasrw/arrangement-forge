@@ -303,20 +303,24 @@ export function useGenerate() {
         blockChords,
         project.key,
         project.genre,
-        stem.instrument === 'drums' ? {
-          substyle: project.subStyle,
-          energy,
-          dynamics,
-          swingPct,
-          groove,
-          feel: feel ?? 50,
-          beatsPerBar,
-          sectionType: section.name.replace(/\s*\d+$/, ''),
-          sectionIndex: section.sortOrder,
-          isLastSection: section.sortOrder === sections.length - 1,
-          totalBarsInSection: section.barCount,
-          barNumberGlobal: block.startBar,
-        } : undefined
+        stem.instrument === 'drums'
+          ? {
+              substyle: project.subStyle,
+              energy,
+              dynamics,
+              swingPct,
+              groove,
+              feel: feel ?? 50,
+              beatsPerBar,
+              sectionType: section.name.replace(/\s*\d+$/, ''),
+              sectionIndex: section.sortOrder,
+              isLastSection: section.sortOrder === sections.length - 1,
+              totalBarsInSection: section.barCount,
+              barNumberGlobal: block.startBar,
+            }
+          : undefined,
+        block.startBar,
+        block.style
       );
 
       return { ...block, midiData: newMidi };
@@ -385,7 +389,9 @@ export function useGenerate() {
           isLastSection: section.sortOrder === sections.length - 1,
           totalBarsInSection: section.barCount,
           barNumberGlobal: block.startBar,
-        }
+        },
+        block.startBar,
+        block.style
       );
 
       return { ...block, midiData: newMidi };
@@ -435,20 +441,24 @@ export function useGenerate() {
         blockChords,
         project.key,
         project.genre,
-        stem.instrument === 'drums' ? {
-          substyle: project.subStyle,
-          energy,
-          dynamics,
-          swingPct,
-          groove,
-          feel: feel ?? 50,
-          beatsPerBar,
-          sectionType: section.name.replace(/\s*\d+$/, ''),
-          sectionIndex: section.sortOrder,
-          isLastSection: section.sortOrder === sections.length - 1,
-          totalBarsInSection: section.barCount,
-          barNumberGlobal: block.startBar,
-        } : undefined
+        stem.instrument === 'drums'
+          ? {
+              substyle: project.subStyle,
+              energy,
+              dynamics,
+              swingPct,
+              groove,
+              feel: feel ?? 50,
+              beatsPerBar,
+              sectionType: section.name.replace(/\s*\d+$/, ''),
+              sectionIndex: section.sortOrder,
+              isLastSection: section.sortOrder === sections.length - 1,
+              totalBarsInSection: section.barCount,
+              barNumberGlobal: block.startBar,
+            }
+          : undefined,
+        block.startBar,
+        block.style
       );
 
       return { ...block, midiData: newMidi };

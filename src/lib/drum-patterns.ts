@@ -933,6 +933,7 @@ function adaptToTimeSignature(
 export function buildDrumMidi(params: {
   genre: string;
   substyle: string;
+  patternIdOverride?: string;
   barCount: number;
   beatsPerBar: number;
   energy: number;
@@ -947,7 +948,7 @@ export function buildDrumMidi(params: {
   barNumberGlobal: number;
   totalBarsInSection: number;
 }): MidiNoteData[] {
-  const patternId = getDrumPatternId(params.genre, params.substyle);
+  const patternId = params.patternIdOverride ?? getDrumPatternId(params.genre, params.substyle);
 
   const pattern = getPattern(patternId);
 
@@ -1023,4 +1024,3 @@ export function buildDrumMidi(params: {
     velocity: Math.max(0, Math.min(110, Math.round(h.velocity))),
   }));
 }
-

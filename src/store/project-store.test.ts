@@ -466,6 +466,29 @@ describe('projectStore', () => {
     });
   });
 
+  it('updateBlock regenerates MIDI from the selected block style instead of the genre default', () => {
+    useProjectStore.getState().setProject(makeProject({ hasArrangement: true, genre: 'Rock' }));
+    useProjectStore.getState().setArrangement({
+      stems: [makeStem()],
+      sections: [makeSection({ barCount: 1 })],
+      blocks: [
+        makeBlock({
+          style: 'block_chords',
+          startBar: 1,
+          endBar: 1,
+          midiData: [{ note: 'C4', time: 0, duration: 1, velocity: 70 }],
+        }),
+      ],
+      chords: [makeChord({ barNumber: 1 })],
+    });
+
+    useProjectStore.getState().updateBlock('b1', { style: 'arpeggiated' });
+
+    const updatedBlock = useProjectStore.getState().blocks[0];
+    expect(updatedBlock?.style).toBe('arpeggiated');
+    expect(updatedBlock?.midiData).toHaveLength(8);
+  });
+
   it('getTotalBars sums section barCounts', () => {
     useProjectStore.getState().setArrangement({
       stems: [], sections: [makeSection({ barCount: 8 }), makeSection({ id: 's2', barCount: 4, startBar: 9 })],
@@ -873,5 +896,40 @@ describe('undo/redo round-trip', () => {
     expect(state.chords.find((chord) => chord.id === 'c2')).toMatchObject({
       barNumber: 9,
     });
+  });
+
+  it('updateBlock style undo and redo preserve regenerated MIDI truth', () => {
+    const originalMidi = [{ note: 'C4', time: 0, duration: 1, velocity: 70 }];
+
+    useProjectStore.getState().setProject(makeProject({ hasArrangement: true, genre: 'Rock' }));
+    useProjectStore.getState().setArrangement({
+      stems: [makeStem()],
+      sections: [makeSection({ barCount: 1 })],
+      blocks: [
+        makeBlock({
+          style: 'block_chords',
+          startBar: 1,
+          endBar: 1,
+          midiData: originalMidi,
+        }),
+      ],
+      chords: [makeChord({ barNumber: 1 })],
+    });
+
+    useProjectStore.getState().updateBlock('b1', { style: 'arpeggiated' });
+
+    const undoEntry = useUndoStore.getState().undo();
+    useProjectStore.getState().setArrangement(parseSnapshot(undoEntry!.stateBefore)!);
+    expect(useProjectStore.getState().blocks[0]).toMatchObject({
+      style: 'block_chords',
+      midiData: originalMidi,
+    });
+
+    const redoEntry = useUndoStore.getState().redo();
+    useProjectStore.getState().setArrangement(parseSnapshot(redoEntry!.stateAfter)!);
+    expect(useProjectStore.getState().blocks[0]).toMatchObject({
+      style: 'arpeggiated',
+    });
+    expect(useProjectStore.getState().blocks[0]?.midiData).toHaveLength(8);
   });
 });

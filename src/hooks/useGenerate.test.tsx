@@ -13,6 +13,7 @@ import type { Project } from '@/types';
 const saveArrangementMock = vi.hoisted(() => vi.fn(async () => undefined));
 const saveProjectMock = vi.hoisted(() => vi.fn(async () => undefined));
 const generateMock = vi.hoisted(() => vi.fn());
+const generateMidiForBlockMock = vi.hoisted(() => vi.fn());
 const parseChordChartMock = vi.hoisted(() => vi.fn());
 
 vi.mock('@/hooks/useProject', () => ({
@@ -24,7 +25,7 @@ vi.mock('@/hooks/useProject', () => ({
 
 vi.mock('@/lib/midi-generator', () => ({
   generate: generateMock,
-  generateMidiForBlock: vi.fn(),
+  generateMidiForBlock: generateMidiForBlockMock,
 }));
 
 vi.mock('@/lib/chord-chart-parser', () => ({
@@ -91,6 +92,7 @@ beforeEach(() => {
   saveArrangementMock.mockClear();
   saveProjectMock.mockClear();
   generateMock.mockReset();
+  generateMidiForBlockMock.mockReset();
   parseChordChartMock.mockReset();
 
   useProjectStore.setState({
@@ -430,5 +432,117 @@ describe('useGenerate assistant prompt flow', () => {
     });
     expect(saveArrangementMock).not.toHaveBeenCalled();
     expect(saveProjectMock).toHaveBeenCalledTimes(1);
+  });
+
+  it('regenerateAllInstruments preserves block style and block start bar when rebuilding MIDI', async () => {
+    generateMidiForBlockMock.mockImplementation(
+      (
+        _instrument: string,
+        _barCount: number,
+        _chords: unknown,
+        _key: string,
+        _genre: string,
+        _drumContext: unknown,
+        startBar?: number,
+        styleOverride?: string
+      ) => [
+        {
+          note: 'C4',
+          time: startBar ?? 0,
+          duration: 1,
+          velocity: styleOverride === 'arpeggiated' ? 99 : 60,
+        },
+      ]
+    );
+
+    useProjectStore.setState({
+      project: makeProject({ hasArrangement: true, genre: 'Rock' }),
+      stems: [
+        {
+          id: 'stem-piano',
+          projectId: 'p1',
+          instrument: 'piano',
+          sortOrder: 0,
+          volume: 0.8,
+          pan: 0,
+          isMuted: false,
+          isSolo: false,
+          createdAt: '2026-03-28T00:00:00Z',
+        },
+      ],
+      sections: [
+        {
+          id: 'section-chorus',
+          projectId: 'p1',
+          name: 'Chorus',
+          sortOrder: 0,
+          barCount: 1,
+          startBar: 5,
+          energyOverride: null,
+          grooveOverride: null,
+          feelOverride: null,
+          swingPctOverride: null,
+          dynamicsOverride: null,
+          createdAt: '2026-03-28T00:00:00Z',
+        },
+      ],
+      blocks: [
+        {
+          id: 'block-piano',
+          stemId: 'stem-piano',
+          sectionId: 'section-chorus',
+          startBar: 5,
+          endBar: 5,
+          chordDegree: 'I',
+          chordQuality: 'maj7',
+          chordBassDegree: null,
+          style: 'arpeggiated',
+          energyOverride: null,
+          dynamicsOverride: null,
+          midiData: [],
+          createdAt: '2026-03-28T00:00:00Z',
+        },
+      ],
+      chords: [
+        {
+          id: 'chord-5',
+          projectId: 'p1',
+          barNumber: 5,
+          degree: 'I',
+          quality: 'maj7',
+          bassDegree: null,
+        },
+      ],
+      chatMessages: [],
+      drumOnlyUpdate: false,
+      allInstrumentsUpdate: false,
+    });
+
+    const mounted = renderHarness();
+    mountedRoot = mounted.root;
+    mountedContainer = mounted.container;
+
+    await act(async () => {
+      hookValue!.regenerateAllInstruments();
+      await Promise.resolve();
+    });
+
+    expect(generateMidiForBlockMock).toHaveBeenCalledWith(
+      'piano',
+      1,
+      expect.arrayContaining([
+        expect.objectContaining({ bar_number: 5, degree: 'I' }),
+      ]),
+      'C',
+      'Rock',
+      undefined,
+      5,
+      'arpeggiated'
+    );
+    expect(useProjectStore.getState().allInstrumentsUpdate).toBe(true);
+    expect(useProjectStore.getState().blocks[0]?.midiData[0]).toMatchObject({
+      time: 5,
+      velocity: 99,
+    });
   });
 });
