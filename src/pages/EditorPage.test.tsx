@@ -75,6 +75,12 @@ function queryAppShell() {
   return document.querySelector('[data-testid="app-shell"]');
 }
 
+function queryErrorHeading() {
+  return Array.from(document.querySelectorAll('h1')).find(
+    (element) => element.textContent === 'Unable to open project'
+  );
+}
+
 let mountedRoot: Root | null = null;
 let mountedContainer: HTMLDivElement | null = null;
 
@@ -167,5 +173,28 @@ describe('EditorPage route loading gate', () => {
     expect(loadProjectMock).toHaveBeenCalledWith('project-b');
     expect(queryLoadingGate()).not.toBeNull();
     expect(queryAppShell()).toBeNull();
+  });
+
+  it('shows a route error when the requested project cannot be loaded', async () => {
+    loadProjectMock.mockImplementation(async () => {
+      useUiStore.setState({
+        systemStatus: 'error',
+        errorMessage: 'Project not found',
+      });
+    });
+
+    const mounted = renderEditor('missing-project');
+    mountedRoot = mounted.root;
+    mountedContainer = mounted.container;
+
+    await act(async () => {
+      await Promise.resolve();
+    });
+
+    expect(loadProjectMock).toHaveBeenCalledWith('missing-project');
+    expect(queryLoadingGate()).toBeNull();
+    expect(queryAppShell()).toBeNull();
+    expect(queryErrorHeading()).not.toBeUndefined();
+    expect(document.body.textContent).toContain('Project not found');
   });
 });
