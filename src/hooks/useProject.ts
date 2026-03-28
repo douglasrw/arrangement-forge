@@ -238,8 +238,11 @@ export function useProject() {
     if (!project) return;
     setSystemStatus('saving');
     try {
-      // Delete existing arrangement data
+      // Replace the persisted arrangement so regeneration cannot leave stale
+      // sections or chord rows behind.
       await supabase.from('stems').delete().eq('project_id', project.id);
+      await supabase.from('sections').delete().eq('project_id', project.id);
+      await supabase.from('chords').delete().eq('project_id', project.id);
 
       // Insert new data
       if (stems.length) {
@@ -269,8 +272,14 @@ export function useProject() {
 
       await supabase
         .from('projects')
-        .update({ has_arrangement: true, generated_at: new Date().toISOString() })
-        .eq('id', project.id);
+        .upsert(
+          camelToSnake({
+            ...project,
+            hasArrangement: true,
+            generatedAt: project.generatedAt ?? new Date().toISOString(),
+            generatedTempo: project.generatedTempo ?? project.tempo,
+          } as unknown as Record<string, unknown>)
+        );
 
       markSaved();
       setSystemStatus('ready');

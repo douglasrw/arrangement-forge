@@ -405,21 +405,28 @@ describe('useProject save paths', () => {
     });
   });
 
-  it('saveArrangement persists chat history alongside arrangement saves', async () => {
+  it('saveArrangement replaces persisted arrangement rows and saves current project metadata', async () => {
     const stemsDeleteEq = vi.fn(() => Promise.resolve({ error: null }));
     const stemsDelete = vi.fn(() => ({ eq: stemsDeleteEq }));
+    const sectionsDeleteEq = vi.fn(() => Promise.resolve({ error: null }));
+    const sectionsDelete = vi.fn(() => ({ eq: sectionsDeleteEq }));
+    const chordsDeleteEq = vi.fn(() => Promise.resolve({ error: null }));
+    const chordsDelete = vi.fn(() => ({ eq: chordsDeleteEq }));
     const chatDeleteEq = vi.fn(() => Promise.resolve({ error: null }));
     const chatDelete = vi.fn(() => ({ eq: chatDeleteEq }));
     const chatInsert = vi.fn(() => Promise.resolve({ error: null }));
-    const projectUpdateEq = vi.fn(() => Promise.resolve({ error: null }));
-    const projectUpdate = vi.fn(() => ({ eq: projectUpdateEq }));
+    const projectUpsert = vi.fn(() => Promise.resolve({ error: null }));
 
     supabaseMock.from.mockImplementation((table: string) => {
       switch (table) {
         case 'stems':
           return { delete: stemsDelete, insert: vi.fn(() => Promise.resolve({ error: null })) };
+        case 'sections':
+          return { delete: sectionsDelete, insert: vi.fn(() => Promise.resolve({ error: null })) };
+        case 'chords':
+          return { delete: chordsDelete, insert: vi.fn(() => Promise.resolve({ error: null })) };
         case 'projects':
-          return { update: projectUpdate };
+          return { upsert: projectUpsert };
         case 'ai_chat_messages':
           return { delete: chatDelete, insert: chatInsert };
         default:
@@ -428,7 +435,14 @@ describe('useProject save paths', () => {
     });
 
     useProjectStore.setState({
-      project: buildStoredProject('project-arrangement', true),
+      project: {
+        ...buildStoredProject('project-arrangement', true),
+        tempo: 132,
+        generationHints: 'Keep the voicings darker',
+        chordChartRaw: 'Am7 | D7 | Gmaj7 | Cmaj7',
+        generatedAt: '2026-03-29T00:00:00Z',
+        generatedTempo: 132,
+      },
       stems: [],
       sections: [],
       blocks: [],
@@ -450,6 +464,10 @@ describe('useProject save paths', () => {
 
     expect(stemsDelete).toHaveBeenCalledTimes(1);
     expect(stemsDeleteEq).toHaveBeenCalledWith('project_id', 'project-arrangement');
+    expect(sectionsDelete).toHaveBeenCalledTimes(1);
+    expect(sectionsDeleteEq).toHaveBeenCalledWith('project_id', 'project-arrangement');
+    expect(chordsDelete).toHaveBeenCalledTimes(1);
+    expect(chordsDeleteEq).toHaveBeenCalledWith('project_id', 'project-arrangement');
     expect(chatDelete).toHaveBeenCalledTimes(1);
     expect(chatDeleteEq).toHaveBeenCalledWith('project_id', 'project-arrangement');
     expect(chatInsert).toHaveBeenCalledWith([
@@ -458,10 +476,17 @@ describe('useProject save paths', () => {
         content: 'Generation summary',
       }),
     ]);
-    expect(projectUpdate).toHaveBeenCalledWith(
-      expect.objectContaining({ has_arrangement: true })
+    expect(projectUpsert).toHaveBeenCalledWith(
+      expect.objectContaining({
+        id: 'project-arrangement',
+        tempo: 132,
+        generation_hints: 'Keep the voicings darker',
+        chord_chart_raw: 'Am7 | D7 | Gmaj7 | Cmaj7',
+        has_arrangement: true,
+        generated_at: '2026-03-29T00:00:00Z',
+        generated_tempo: 132,
+      })
     );
-    expect(projectUpdateEq).toHaveBeenCalledWith('id', 'project-arrangement');
     expect(useUiStore.getState()).toMatchObject({
       unsavedChanges: false,
       systemStatus: 'ready',
