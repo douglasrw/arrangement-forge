@@ -382,6 +382,90 @@ describe('projectStore', () => {
     });
   });
 
+  it('updateSection growth reflows downstream section, block, and chord bars', () => {
+    useProjectStore.getState().setArrangement({
+      stems: [makeStem()],
+      sections: [
+        makeSection({ id: 's1', name: 'Verse', startBar: 1, barCount: 8 }),
+        makeSection({ id: 's2', name: 'Chorus', sortOrder: 1, startBar: 9, barCount: 4 }),
+      ],
+      blocks: [
+        makeBlock({ id: 'b1', sectionId: 's1', startBar: 1, endBar: 8 }),
+        makeBlock({ id: 'b2', sectionId: 's2', startBar: 9, endBar: 12 }),
+      ],
+      chords: [
+        makeChord({ id: 'c1', barNumber: 1 }),
+        makeChord({ id: 'c2', barNumber: 9, degree: 'V', quality: 'dom7' }),
+      ],
+    });
+
+    useProjectStore.getState().updateSection('s1', { barCount: 12 });
+
+    const state = useProjectStore.getState();
+    expect(state.sections.find((section) => section.id === 's1')).toMatchObject({
+      barCount: 12,
+      startBar: 1,
+    });
+    expect(state.sections.find((section) => section.id === 's2')).toMatchObject({
+      startBar: 13,
+    });
+    expect(state.blocks.find((block) => block.id === 'b2')).toMatchObject({
+      startBar: 13,
+      endBar: 16,
+    });
+    expect(state.chords.find((chord) => chord.id === 'c2')).toMatchObject({
+      barNumber: 13,
+    });
+  });
+
+  it('updateSection shrink trims removed bars, shifts later data earlier, and clears selection for dropped blocks', () => {
+    useProjectStore.getState().setArrangement({
+      stems: [makeStem()],
+      sections: [
+        makeSection({ id: 's1', name: 'Verse', startBar: 1, barCount: 8 }),
+        makeSection({ id: 's2', name: 'Chorus', sortOrder: 1, startBar: 9, barCount: 4 }),
+      ],
+      blocks: [
+        makeBlock({ id: 'b1', sectionId: 's1', startBar: 3, endBar: 8 }),
+        makeBlock({ id: 'b-removed', sectionId: 's1', startBar: 5, endBar: 8 }),
+        makeBlock({ id: 'b2', sectionId: 's2', startBar: 9, endBar: 12 }),
+      ],
+      chords: [
+        makeChord({ id: 'c1', barNumber: 3 }),
+        makeChord({ id: 'c-trimmed', barNumber: 7, degree: 'ii', quality: 'min7' }),
+        makeChord({ id: 'c2', barNumber: 9, degree: 'V', quality: 'dom7' }),
+      ],
+    });
+
+    useSelectionStore.getState().selectBlock('b-removed', 'st1');
+
+    useProjectStore.getState().updateSection('s1', { barCount: 4 });
+
+    const state = useProjectStore.getState();
+    expect(state.sections.find((section) => section.id === 's2')).toMatchObject({
+      startBar: 5,
+    });
+    expect(state.blocks.map((block) => block.id)).toEqual(['b1', 'b2']);
+    expect(state.blocks.find((block) => block.id === 'b1')).toMatchObject({
+      startBar: 3,
+      endBar: 4,
+    });
+    expect(state.blocks.find((block) => block.id === 'b2')).toMatchObject({
+      startBar: 5,
+      endBar: 8,
+    });
+    expect(state.chords.map((chord) => chord.id)).toEqual(['c1', 'c2']);
+    expect(state.chords.find((chord) => chord.id === 'c2')).toMatchObject({
+      barNumber: 5,
+    });
+    expect(useSelectionStore.getState()).toMatchObject({
+      level: 'song',
+      sectionId: null,
+      blockId: null,
+      stemId: null,
+    });
+  });
+
   it('getTotalBars sums section barCounts', () => {
     useProjectStore.getState().setArrangement({
       stems: [], sections: [makeSection({ barCount: 8 }), makeSection({ id: 's2', barCount: 4, startBar: 9 })],
@@ -753,5 +837,41 @@ describe('undo/redo round-trip', () => {
     const entry = useUndoStore.getState().undo();
     useProjectStore.getState().setArrangement(parseSnapshot(entry!.stateBefore)!);
     expect(useProjectStore.getState().chords[0].quality).toBe('maj7');
+  });
+
+  it('updateSection barCount undo restores original timeline positions', () => {
+    useProjectStore.getState().setProject(makeProject());
+    useProjectStore.getState().setArrangement({
+      stems: [makeStem()],
+      sections: [
+        makeSection({ id: 's1', startBar: 1, barCount: 8 }),
+        makeSection({ id: 's2', sortOrder: 1, startBar: 9, barCount: 4 }),
+      ],
+      blocks: [
+        makeBlock({ id: 'b1', sectionId: 's1', startBar: 1, endBar: 8 }),
+        makeBlock({ id: 'b2', sectionId: 's2', startBar: 9, endBar: 12 }),
+      ],
+      chords: [
+        makeChord({ id: 'c1', barNumber: 1 }),
+        makeChord({ id: 'c2', barNumber: 9, degree: 'V', quality: 'dom7' }),
+      ],
+    });
+
+    useProjectStore.getState().updateSection('s1', { barCount: 12 });
+
+    const entry = useUndoStore.getState().undo();
+    useProjectStore.getState().setArrangement(parseSnapshot(entry!.stateBefore)!);
+
+    const state = useProjectStore.getState();
+    expect(state.sections.find((section) => section.id === 's2')).toMatchObject({
+      startBar: 9,
+    });
+    expect(state.blocks.find((block) => block.id === 'b2')).toMatchObject({
+      startBar: 9,
+      endBar: 12,
+    });
+    expect(state.chords.find((chord) => chord.id === 'c2')).toMatchObject({
+      barNumber: 9,
+    });
   });
 });

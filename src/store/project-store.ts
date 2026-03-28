@@ -7,6 +7,122 @@ import { snapshotArrangement } from '@/lib/undo-helpers';
 
 const genId = () => crypto.randomUUID();
 
+function sortSectionsByTimeline(sections: Section[]): Section[] {
+  return [...sections].sort((a, b) => a.sortOrder - b.sortOrder);
+}
+
+function reflowSections(sections: Section[]): Section[] {
+  const nextById = new Map<string, Section>();
+  let startBar = 1;
+
+  for (const section of sortSectionsByTimeline(sections)) {
+    const nextSection = { ...section, startBar };
+    nextById.set(nextSection.id, nextSection);
+    startBar += nextSection.barCount;
+  }
+
+  return sections.map((section) => nextById.get(section.id) ?? section);
+}
+
+function findSectionForBar(sections: Section[], barNumber: number): Section | undefined {
+  return sortSectionsByTimeline(sections).find(
+    (section) =>
+      barNumber >= section.startBar &&
+      barNumber < section.startBar + section.barCount
+  );
+}
+
+function applySectionUpdate(state: {
+  sections: Section[];
+  blocks: Block[];
+  chords: Chord[];
+}, sectionId: string, partial: Partial<Section>) {
+  const currentSection = state.sections.find((section) => section.id === sectionId);
+
+  if (!currentSection) {
+    return {
+      sections: state.sections,
+      blocks: state.blocks,
+      chords: state.chords,
+    };
+  }
+
+  const shouldReflowTimeline =
+    partial.barCount !== undefined || partial.sortOrder !== undefined;
+  const normalizedBarCount =
+    partial.barCount === undefined
+      ? currentSection.barCount
+      : Math.max(1, partial.barCount);
+
+  const nextSectionsInput = state.sections.map((section) =>
+    section.id === sectionId
+      ? { ...section, ...partial, barCount: normalizedBarCount }
+      : section
+  );
+
+  if (!shouldReflowTimeline) {
+    return {
+      sections: nextSectionsInput,
+      blocks: state.blocks,
+      chords: state.chords,
+    };
+  }
+
+  const nextSections = reflowSections(nextSectionsInput);
+  const nextSectionById = new Map(nextSections.map((section) => [section.id, section]));
+  const currentSectionById = new Map(state.sections.map((section) => [section.id, section]));
+
+  const nextBlocks = state.blocks.flatMap((block) => {
+    const currentBlockSection = currentSectionById.get(block.sectionId);
+    const nextBlockSection = nextSectionById.get(block.sectionId);
+
+    if (!currentBlockSection || !nextBlockSection) {
+      return [block];
+    }
+
+    const relativeStart = block.startBar - currentBlockSection.startBar;
+    const relativeEnd = block.endBar - currentBlockSection.startBar;
+
+    if (relativeStart >= nextBlockSection.barCount) {
+      return [];
+    }
+
+    const nextStartBar = nextBlockSection.startBar + relativeStart;
+    const nextEndBar = Math.min(
+      nextBlockSection.startBar + relativeEnd,
+      nextBlockSection.startBar + nextBlockSection.barCount - 1
+    );
+
+    return [{ ...block, startBar: nextStartBar, endBar: nextEndBar }];
+  });
+
+  const nextChords = state.chords.flatMap((chord) => {
+    const currentChordSection = findSectionForBar(state.sections, chord.barNumber);
+
+    if (!currentChordSection) {
+      return [chord];
+    }
+
+    const nextChordSection = nextSectionById.get(currentChordSection.id);
+    if (!nextChordSection) {
+      return [];
+    }
+
+    const relativeBar = chord.barNumber - currentChordSection.startBar;
+    if (relativeBar >= nextChordSection.barCount) {
+      return [];
+    }
+
+    return [{ ...chord, barNumber: nextChordSection.startBar + relativeBar }];
+  });
+
+  return {
+    sections: nextSections,
+    blocks: nextBlocks,
+    chords: nextChords,
+  };
+}
+
 function reconcileSelectionWithArrangement(state: {
   stems: Stem[];
   sections: Section[];
@@ -214,8 +330,9 @@ export const useProjectStore = create<ProjectStore>()((set, get) => ({
   updateSection: (sectionId, partial) => {
     const before = snapshotArrangement(get());
     set((state) => ({
-      sections: state.sections.map((s) => (s.id === sectionId ? { ...s, ...partial } : s)),
+      ...applySectionUpdate(state, sectionId, partial),
     }));
+    reconcileSelectionWithArrangement(get());
     const after = snapshotArrangement(get());
     useUndoStore.getState().pushUndo('Update section', before, after);
     useUiStore.getState().markDirty();
