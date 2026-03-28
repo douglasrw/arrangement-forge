@@ -6,6 +6,18 @@ import { useUiStore } from "@/store/ui-store"
 import { useAuth } from "@/hooks/useAuth"
 import { ALL_KEYS } from "@/lib/chords"
 
+export function reconcileProjectNameDraft(
+  currentDraft: string,
+  projectName: string,
+  isEditing: boolean
+): string {
+  return isEditing ? currentDraft : projectName
+}
+
+export function normalizeProjectNameDraft(newName: string): string {
+  return newName.trim() || "Untitled Project"
+}
+
 /* ------------------------------------------------------------------ */
 /*  Key dropdown                                                       */
 /* ------------------------------------------------------------------ */
@@ -185,7 +197,9 @@ export function TopBar() {
 
   /* Sync draft when project name changes externally */
   useEffect(() => {
-    if (!isEditing) setNameDraft(projectName)
+    setNameDraft((currentDraft) =>
+      reconcileProjectNameDraft(currentDraft, projectName, isEditing)
+    )
   }, [projectName, isEditing])
 
   /* Focus input when editing starts */
@@ -207,7 +221,7 @@ export function TopBar() {
 
   function commitName(newName: string) {
     setIsEditing(false)
-    const name = newName.trim() || "Untitled Project"
+    const name = normalizeProjectNameDraft(newName)
     setNameDraft(name)
     updateProject({ name })
   }
