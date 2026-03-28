@@ -7,6 +7,51 @@ import { snapshotArrangement } from '@/lib/undo-helpers';
 
 const genId = () => crypto.randomUUID();
 
+function reconcileSelectionWithArrangement(state: {
+  stems: Stem[];
+  sections: Section[];
+  blocks: Block[];
+}) {
+  const selection = useSelectionStore.getState();
+
+  if (selection.level === 'section') {
+    const hasSelectedSection =
+      selection.sectionId !== null &&
+      state.sections.some((section) => section.id === selection.sectionId);
+
+    if (!hasSelectedSection) {
+      selection.clearSelection();
+    }
+    return;
+  }
+
+  if (selection.level === 'block') {
+    const selectedBlock =
+      selection.blockId !== null
+        ? state.blocks.find((block) => block.id === selection.blockId)
+        : null;
+
+    const hasSelectedStem =
+      selectedBlock !== undefined &&
+      selectedBlock !== null &&
+      state.stems.some((stem) => stem.id === selectedBlock.stemId);
+
+    const hasSelectedSection =
+      selectedBlock !== undefined &&
+      selectedBlock !== null &&
+      state.sections.some((section) => section.id === selectedBlock.sectionId);
+
+    if (!selectedBlock || !hasSelectedStem || !hasSelectedSection) {
+      selection.clearSelection();
+      return;
+    }
+
+    if (selection.stemId !== selectedBlock.stemId) {
+      selection.selectBlock(selectedBlock.id, selectedBlock.stemId);
+    }
+  }
+}
+
 interface ProjectStore {
   project: Project | null;
   stems: Stem[];
@@ -99,6 +144,8 @@ export const useProjectStore = create<ProjectStore>()((set, get) => ({
         drumOnlyUpdate: false,
         allInstrumentsUpdate: false,
       });
+
+      reconcileSelectionWithArrangement({ stems, sections, blocks });
     },
 
   updateProject: (partial) => {
@@ -106,20 +153,31 @@ export const useProjectStore = create<ProjectStore>()((set, get) => ({
     useUiStore.getState().markDirty();
   },
 
-  setArrangement: ({ stems, sections, blocks, chords }) =>
-    set({ stems, sections, blocks, chords }),
+  setArrangement: ({ stems, sections, blocks, chords }) => {
+    set({ stems, sections, blocks, chords });
+    reconcileSelectionWithArrangement({ stems, sections, blocks });
+  },
 
-  setDrumBlocks: (updatedBlocks) =>
-    set({ blocks: updatedBlocks, drumOnlyUpdate: true }),
+  setDrumBlocks: (updatedBlocks) => {
+    const { stems, sections } = get();
+    set({ blocks: updatedBlocks, drumOnlyUpdate: true });
+    reconcileSelectionWithArrangement({ stems, sections, blocks: updatedBlocks });
+  },
 
   clearDrumOnlyUpdate: () => set({ drumOnlyUpdate: false }),
 
-  setAllInstrumentBlocks: (updatedBlocks) =>
-    set({ blocks: updatedBlocks, allInstrumentsUpdate: true }),
+  setAllInstrumentBlocks: (updatedBlocks) => {
+    const { stems, sections } = get();
+    set({ blocks: updatedBlocks, allInstrumentsUpdate: true });
+    reconcileSelectionWithArrangement({ stems, sections, blocks: updatedBlocks });
+  },
 
   clearAllInstrumentsUpdate: () => set({ allInstrumentsUpdate: false }),
 
-  clearArrangement: () => set({ stems: [], sections: [], blocks: [], chords: [] }),
+  clearArrangement: () => {
+    set({ stems: [], sections: [], blocks: [], chords: [] });
+    reconcileSelectionWithArrangement({ stems: [], sections: [], blocks: [] });
+  },
 
   updateStem: (stemId, partial) => {
     set((state) => ({
@@ -165,13 +223,11 @@ export const useProjectStore = create<ProjectStore>()((set, get) => ({
 
   removeSection: (sectionId) => {
     const before = snapshotArrangement(get());
-    // Defense-in-depth: clear selection if it points at the deleted section
-    const sel = useSelectionStore.getState();
-    if (sel.sectionId === sectionId) sel.selectSong();
     set((state) => ({
       sections: state.sections.filter((s) => s.id !== sectionId),
       blocks: state.blocks.filter((b) => b.sectionId !== sectionId),
     }));
+    reconcileSelectionWithArrangement(get());
     const after = snapshotArrangement(get());
     useUndoStore.getState().pushUndo('Remove section', before, after);
     useUiStore.getState().markDirty();
@@ -230,6 +286,7 @@ export const useProjectStore = create<ProjectStore>()((set, get) => ({
     const merged: Block = { ...b1, endBar: b2.endBar };
     const newBlocks = blocks.filter((b) => b.id !== blockId1 && b.id !== blockId2).concat(merged);
     set({ blocks: newBlocks });
+    reconcileSelectionWithArrangement(get());
     const after = snapshotArrangement(get());
     useUndoStore.getState().pushUndo(`Merge blocks (bars ${b1.startBar}-${b2.endBar})`, before, after);
     useUiStore.getState().markDirty();
@@ -239,6 +296,7 @@ export const useProjectStore = create<ProjectStore>()((set, get) => ({
     const before = snapshotArrangement(get());
     const newBlocks = get().blocks.filter((b) => b.id !== blockId);
     set({ blocks: newBlocks });
+    reconcileSelectionWithArrangement(get());
     const after = snapshotArrangement(get());
     useUndoStore.getState().pushUndo('Delete block', before, after);
     useUiStore.getState().markDirty();

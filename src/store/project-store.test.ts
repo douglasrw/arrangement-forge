@@ -93,6 +93,31 @@ describe('projectStore', () => {
     expect(useProjectStore.getState().blocks).toHaveLength(1);
   });
 
+  it('setArrangement clears stale block selection when the replacement snapshot omits it', () => {
+    useProjectStore.getState().setArrangement({
+      stems: [makeStem()],
+      sections: [makeSection()],
+      blocks: [makeBlock()],
+      chords: [],
+    });
+
+    useSelectionStore.getState().selectBlock('b1', 'st1');
+
+    useProjectStore.getState().setArrangement({
+      stems: [makeStem()],
+      sections: [makeSection()],
+      blocks: [],
+      chords: [],
+    });
+
+    expect(useSelectionStore.getState()).toMatchObject({
+      level: 'song',
+      sectionId: null,
+      blockId: null,
+      stemId: null,
+    });
+  });
+
   it('addChatMessage appends the message and marks the project dirty', () => {
     useProjectStore.getState().addChatMessage(makeMessage());
 
@@ -167,6 +192,35 @@ describe('projectStore', () => {
       stems: [makeStem({ id: 'st2', projectId: 'p2' })],
       sections: [makeSection({ id: 's2', projectId: 'p2' })],
       blocks: [makeBlock({ id: 'b2', stemId: 'st2', sectionId: 's2' })],
+      chords: [],
+      chatMessages: [],
+    });
+
+    expect(useSelectionStore.getState()).toMatchObject({
+      level: 'song',
+      sectionId: null,
+      blockId: null,
+      stemId: null,
+    });
+  });
+
+  it('hydrateProject clears stale selection when the reloaded arrangement no longer contains it', () => {
+    useProjectStore.getState().hydrateProject({
+      project: makeProject(),
+      stems: [makeStem()],
+      sections: [makeSection()],
+      blocks: [makeBlock()],
+      chords: [],
+      chatMessages: [],
+    });
+
+    useSelectionStore.getState().selectSection('s1');
+
+    useProjectStore.getState().hydrateProject({
+      project: makeProject({ name: 'Reloaded' }),
+      stems: [makeStem()],
+      sections: [],
+      blocks: [],
       chords: [],
       chatMessages: [],
     });
@@ -255,6 +309,28 @@ describe('projectStore', () => {
     expect(blocks[0].endBar).toBe(8);
   });
 
+  it('mergeBlocks clears stale selection when the selected block is merged away', () => {
+    useProjectStore.getState().setArrangement({
+      stems: [makeStem()], sections: [makeSection()],
+      blocks: [
+        makeBlock({ id: 'b1', startBar: 1, endBar: 4 }),
+        makeBlock({ id: 'b2', startBar: 5, endBar: 8 }),
+      ],
+      chords: [],
+    });
+
+    useSelectionStore.getState().selectBlock('b2', 'st1');
+
+    useProjectStore.getState().mergeBlocks('b1', 'b2');
+
+    expect(useSelectionStore.getState()).toMatchObject({
+      level: 'song',
+      sectionId: null,
+      blockId: null,
+      stemId: null,
+    });
+  });
+
   it('mergeBlocks rejects non-adjacent blocks', () => {
     useProjectStore.getState().setArrangement({
       stems: [makeStem()], sections: [makeSection()],
@@ -266,6 +342,44 @@ describe('projectStore', () => {
     });
     useProjectStore.getState().mergeBlocks('b1', 'b2');
     expect(useProjectStore.getState().blocks).toHaveLength(2); // unchanged
+  });
+
+  it('deleteBlock clears stale selection when removing the active block', () => {
+    useProjectStore.getState().setArrangement({
+      stems: [makeStem()], sections: [makeSection()],
+      blocks: [makeBlock()], chords: [],
+    });
+
+    useSelectionStore.getState().selectBlock('b1', 'st1');
+
+    useProjectStore.getState().deleteBlock('b1');
+
+    expect(useSelectionStore.getState()).toMatchObject({
+      level: 'song',
+      sectionId: null,
+      blockId: null,
+      stemId: null,
+    });
+  });
+
+  it('removeSection clears stale block selection when the selected block belongs to it', () => {
+    useProjectStore.getState().setArrangement({
+      stems: [makeStem()],
+      sections: [makeSection({ id: 's1' })],
+      blocks: [makeBlock({ id: 'b1', sectionId: 's1' })],
+      chords: [],
+    });
+
+    useSelectionStore.getState().selectBlock('b1', 'st1');
+
+    useProjectStore.getState().removeSection('s1');
+
+    expect(useSelectionStore.getState()).toMatchObject({
+      level: 'song',
+      sectionId: null,
+      blockId: null,
+      stemId: null,
+    });
   });
 
   it('getTotalBars sums section barCounts', () => {
