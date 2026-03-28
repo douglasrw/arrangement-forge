@@ -47,7 +47,7 @@ There is no automated enforcement of the 200-line limit, so violations accumulat
 - Must keep every extracted component in the same directory as its parent file.
 - Must preserve all existing imports from external consumers (re-export from parent if needed).
 - Must preserve all `aria-label`, `id`, `htmlFor`, and accessibility attributes exactly.
-- Must run `npm run build`, `npx vitest run`, and `npx playwright test tests/accessibility.spec.ts` after each task.
+- Must run `npm run build`, `npx vitest run`, and `npm run test:ui:accessibility` after each task.
 
 ### Must-nots
 - Must not add any new dependencies.
@@ -295,7 +295,7 @@ The parent `ArrangementView.tsx` becomes ~130 lines: store subscriptions, layout
 | No oversize components | `find src/components -name '*.tsx' -exec wc -l {} + \| awk '$1 > 200'` | Zero results |
 | Build passes | `npm run build` | Exit 0 |
 | Tests pass | `npx vitest run` | Exit 0 |
-| Accessibility passes | `npx playwright test tests/accessibility.spec.ts` | Exit 0 |
+| Accessibility passes | `npm run test:ui:accessibility` | Exit 0 |
 | No new dependencies | `git diff package.json` | Zero dependency changes |
 | No new directories | `git diff --stat \| grep 'src/components'` | Only file additions within existing dirs |
 | Pre-commit blocks oversize | Stage a 201-line `src/components/ui/test.tsx`, run check | Exit 1, prints filename |

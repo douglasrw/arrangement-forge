@@ -10,6 +10,12 @@
     "lint": "eslint .",
     "type-check": "tsc --noEmit",
     "test": "vitest",
+    "test:ui": "./scripts/run-playwright.sh test",
+    "test:ui:list": "./scripts/run-playwright.sh test --list",
+    "test:ui:accessibility": "./scripts/run-playwright.sh test tests/accessibility.spec.ts",
+    "test:ui:design": "./scripts/run-playwright.sh test tests/design-system.spec.ts",
+    "test:ui:overflow": "./scripts/run-playwright.sh test tests/overflow.spec.ts",
+    "test:ui:visual": "./scripts/run-playwright.sh test tests/visual-regression.spec.ts",
     "prepare": "husky"
   },
   "dependencies": {

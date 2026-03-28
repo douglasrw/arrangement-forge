@@ -40,7 +40,7 @@ For UI tasks, also read: `src/styles/globals.css`
 - Stop after one failed UI fix iteration -- get screenshot, write Playwright assertions, fresh context
 - Give every `<input>` and `<textarea>` a unique `id` and a corresponding `<label htmlFor={id}>`
 - Include `SET search_path = public` in Supabase `SECURITY DEFINER` functions; use fully qualified table names
-- Run accessibility tests (`npx playwright test tests/accessibility.spec.ts`) before shipping UI changes
+- Run accessibility tests (`npm run test:ui:accessibility`) before shipping UI changes
 
 ## Must-Nots
 
@@ -68,6 +68,6 @@ For UI tasks, also read: `src/styles/globals.css`
 |-------|----------|
 | Credentials | `~/.secrets.env`, prefix `AF`. Variables: `SUPABASE_AF_URL`, `SUPABASE_AF_ANON_KEY`, `SUPABASE_AF_SERVICE_ROLE`, `SUPABASE_AF_DB_PASSWORD`, `AF_TEST_EMAIL`, `AF_TEST_PASSWORD` |
 | Dev access | Vite on `0.0.0.0:5173`, MacBook via tunnel. Supabase creds in `.env.local`. |
-| Testing | Vitest (unit, colocated `{name}.test.ts`). Playwright (UI verification, not full e2e). |
+| Testing | Vitest (unit, colocated `{name}.test.ts`). Playwright via `./scripts/run-playwright.sh` or `npm run test:ui:*` (UI verification, not full e2e). |
 | Git workflow | One commit per task. Format: `T{ID}: {title}` or `feat:`/`fix:`/`chore:`/`refactor:`. Never commit `node_modules/`, `.env.local`, `dist/`. |
 | psql migrations | `source ~/.secrets.env && PGPASSWORD=$SUPABASE_AF_DB_PASSWORD psql -h db.docuovyxdejyhawbmiqm.supabase.co -U postgres -d postgres -c "SQL"` |
