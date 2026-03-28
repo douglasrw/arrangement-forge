@@ -1,119 +1,106 @@
-import { useState, useRef, useEffect } from "react"
-import { cn } from "@/lib/utils"
 import { ArrowUp } from "lucide-react"
+import { useEffect, useRef, useState } from "react"
 import { ScrollArea } from "@/components/ui/scroll-area"
+import { useGenerate } from "@/hooks/useGenerate"
+import { useProjectStore } from "@/store/project-store"
+import { useUiStore } from "@/store/ui-store"
+import { cn } from "@/lib/utils"
+import type { AiChatMessage } from "@/types"
 
-type ScopeBadge = {
-  label: string
-  color: string
+const SCOPE_STYLES: Record<AiChatMessage["scope"], string> = {
+  setup: "bg-secondary text-muted-foreground",
+  song: "bg-input/60 text-muted-foreground",
+  section: "bg-instrument-strings/10 text-playhead",
+  block: "bg-scope-section/10 text-warning",
 }
 
-type Message = {
-  id: string
-  role: "user" | "ai"
-  text: string
-  scope?: ScopeBadge
+const SCOPE_LABELS: Record<AiChatMessage["scope"], string> = {
+  setup: "Setup",
+  song: "Song",
+  section: "Section",
+  block: "Block",
 }
 
-const SCOPE_COLORS: Record<string, string> = {
-  Song: "var(--ring)",
-  "Verse 1": "var(--instrument-drums)",
-  "Guitar bar 13": "var(--instrument-guitar)",
-  Drums: "var(--instrument-drums)",
-  Bass: "var(--instrument-bass)",
-  Piano: "var(--instrument-piano)",
+function getScopeLabel(message: AiChatMessage) {
+  const label = SCOPE_LABELS[message.scope]
+  return message.scopeTarget ? `${label}: ${message.scopeTarget}` : label
 }
-
-const INITIAL_MESSAGES: Message[] = [
-  {
-    id: "1",
-    role: "user",
-    text: "Make the verse groove more laid back, like a late-night trio.",
-    scope: { label: "Verse 1", color: SCOPE_COLORS["Verse 1"] },
-  },
-  {
-    id: "2",
-    role: "ai",
-    text: "I've pulled back the energy on the drums and added more space between bass notes. The piano now uses rootless voicings with a gentler attack. Want me to adjust the swing percentage too?",
-    scope: { label: "Song", color: SCOPE_COLORS["Song"] },
-  },
-  {
-    id: "3",
-    role: "user",
-    text: "Yes, push swing to about 70% and add a ghost note fill on the guitar at bar 13.",
-    scope: { label: "Guitar bar 13", color: SCOPE_COLORS["Guitar bar 13"] },
-  },
-  {
-    id: "4",
-    role: "ai",
-    text: "Done. Swing is at 70% now and I added a subtle hammer-on ghost fill for the guitar at bar 13. The dynamics are set to mp to keep the intimate feel.",
-  },
-]
 
 export function AiAssistantSection() {
-  const [messages, setMessages] = useState<Message[]>(INITIAL_MESSAGES)
   const [input, setInput] = useState("")
+  const project = useProjectStore((state) => state.project)
+  const chatMessages = useProjectStore((state) => state.chatMessages)
+  const generationState = useUiStore((state) => state.generationState)
+  const { runGeneration } = useGenerate()
   const bottomRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
-    bottomRef.current?.scrollIntoView({ behavior: "smooth" })
-  }, [messages])
+    bottomRef.current?.scrollIntoView({
+      behavior: chatMessages.length > 0 ? "smooth" : "auto",
+    })
+  }, [chatMessages.length])
+
+  const trimmedInput = input.trim()
+  const hasChordChart = Boolean(project?.chordChartRaw.trim())
+  const isGenerating = generationState === "generating"
+  const canSend = Boolean(project && hasChordChart && trimmedInput && !isGenerating)
 
   function handleSend() {
-    if (!input.trim()) return
-    const newMsg: Message = {
-      id: String(Date.now()),
-      role: "user",
-      text: input.trim(),
-    }
-    setMessages((prev) => [...prev, newMsg])
+    if (!canSend) return
+    void runGeneration({ assistantPrompt: trimmedInput })
     setInput("")
   }
 
+  const emptyStateCopy = !project
+    ? "Load a project to use the assistant."
+    : !hasChordChart
+      ? "Add a chord chart before asking the assistant to generate or revise the arrangement."
+      : isGenerating
+        ? "Generating from your latest request..."
+        : "Assistant history is empty. Ask for a generation or revision and the result will be tracked here."
+
   return (
     <div className="flex flex-1 flex-col gap-2 overflow-hidden">
-      {/* Chat thread */}
       <ScrollArea className="min-h-0 flex-1 pr-1">
         <div className="flex flex-col gap-2.5 py-1">
-          {messages.map((msg) => (
-            <div
-              key={msg.id}
-              className={cn(
-                "flex flex-col gap-1",
-                msg.role === "user" ? "items-end" : "items-start"
-              )}
-            >
-              {/* Scope badge */}
-              {msg.scope && (
-                <span
-                  className="rounded px-1.5 py-0.5 text-[10px] font-medium leading-none"
-                  style={{
-                    color: msg.scope.color,
-                    backgroundColor: `${msg.scope.color}1a`,
-                    border: `1px solid ${msg.scope.color}33`,
-                  }}
-                >
-                  {msg.scope.label}
-                </span>
-              )}
-              {/* Bubble */}
+          {chatMessages.length === 0 ? (
+            <div className="rounded-lg border border-dashed border-border bg-secondary/30 px-3 py-4 text-xs leading-relaxed text-muted-foreground">
+              {emptyStateCopy}
+            </div>
+          ) : (
+            chatMessages.map((message) => (
               <div
+                key={message.id}
                 className={cn(
-                  "max-w-[90%] rounded-lg px-3 py-2 text-xs leading-relaxed",
-                  msg.role === "user"
-                    ? "bg-ring/15 text-foreground border border-ring/20"
-                    : "bg-card text-card-foreground border border-border"
+                  "flex flex-col gap-1",
+                  message.role === "user" ? "items-end" : "items-start"
                 )}
               >
-                {msg.text}
+                <span
+                  className={cn(
+                    "inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-medium uppercase tracking-wider",
+                    SCOPE_STYLES[message.scope]
+                  )}
+                >
+                  {getScopeLabel(message)}
+                </span>
+                <div
+                  className={cn(
+                    "max-w-[90%] rounded-lg border px-3 py-2 text-xs leading-relaxed",
+                    message.role === "user"
+                      ? "border-ring/20 bg-ring/15 text-foreground"
+                      : "border-border bg-card text-card-foreground"
+                  )}
+                >
+                  {message.content}
+                </div>
               </div>
-            </div>
-          ))}
+            ))
+          )}
           <div ref={bottomRef} />
         </div>
       </ScrollArea>
 
-      {/* Input bar */}
       <div className="flex items-center gap-2 rounded-md border border-border bg-secondary px-2.5 py-1.5">
         <label htmlFor="ai-input" className="sr-only">Ask the AI assistant</label>
         <input
@@ -121,22 +108,32 @@ export function AiAssistantSection() {
           type="text"
           value={input}
           onChange={(e) => setInput(e.target.value)}
+          disabled={!project || isGenerating}
           onKeyDown={(e) => {
             if (e.key === "Enter" && !e.shiftKey) {
               e.preventDefault()
               handleSend()
             }
           }}
-          placeholder="Ask the AI assistant..."
+          placeholder={
+            !project
+              ? "Load a project to use the assistant..."
+              : !hasChordChart
+                ? "Add a chord chart first..."
+                : isGenerating
+                  ? "Generating..."
+                  : "Describe the arrangement change you want..."
+          }
           className="flex-1 bg-transparent text-xs text-foreground placeholder:text-muted-foreground focus:outline-none"
         />
         <button
           type="button"
           onClick={handleSend}
-          disabled={!input.trim()}
+          aria-label="Send assistant prompt"
+          disabled={!canSend}
           className={cn(
             "flex size-6 shrink-0 items-center justify-center rounded-md transition-colors",
-            input.trim()
+            canSend
               ? "bg-ring text-foreground hover:bg-ring/80"
               : "bg-secondary text-muted-foreground"
           )}

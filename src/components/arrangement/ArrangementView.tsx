@@ -137,7 +137,7 @@ export function ArrangementView({
   }, [totalBarsForClamp])
 
   if (generationState !== "complete") {
-    return <EmptyState onGenerate={() => void runGeneration(false)} />
+    return <EmptyState onGenerate={() => void runGeneration()} />
   }
 
   /* Sort sections by sortOrder */

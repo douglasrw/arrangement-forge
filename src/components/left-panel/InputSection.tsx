@@ -112,7 +112,7 @@ export function InputSection() {
       {/* Generate button */}
       <button
         type="button"
-        onClick={() => void runGeneration(false)}
+        onClick={() => void runGeneration()}
         disabled={isGenerating || !chordChartRaw.trim()}
         className={cn(
           "w-full rounded-md px-4 py-2 text-sm font-medium transition-colors",

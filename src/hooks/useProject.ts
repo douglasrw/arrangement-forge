@@ -111,8 +111,30 @@ export function useProject() {
     [setSystemStatus, handleError]
   );
 
+  const replaceChatMessages = useCallback(
+    async (projectId: string, chatMessages: AiChatMessage[]) => {
+      const { error: deleteError } = await supabase
+        .from('ai_chat_messages')
+        .delete()
+        .eq('project_id', projectId);
+
+      if (deleteError) throw deleteError;
+
+      if (!chatMessages.length) {
+        return;
+      }
+
+      const { error: insertError } = await supabase.from('ai_chat_messages').insert(
+        chatMessages.map((message) => camelToSnake(message as unknown as Record<string, unknown>))
+      );
+
+      if (insertError) throw insertError;
+    },
+    []
+  );
+
   const saveProject = useCallback(async () => {
-    const { project, stems, sections, blocks, chords } = useProjectStore.getState();
+    const { project, stems, sections, blocks, chords, chatMessages } = useProjectStore.getState();
     if (!project) return;
     setSystemStatus('saving');
     try {
@@ -145,12 +167,13 @@ export function useProject() {
           chords.map((c) => camelToSnake(c as unknown as Record<string, unknown>))
         );
       }
+      await replaceChatMessages(project.id, chatMessages);
       markSaved();
       setSystemStatus('ready');
     } catch (err) {
       handleError(err);
     }
-  }, [setSystemStatus, markSaved, handleError]);
+  }, [setSystemStatus, markSaved, handleError, replaceChatMessages]);
 
   const createProject = useCallback(async (): Promise<string | null> => {
     try {
@@ -211,7 +234,7 @@ export function useProject() {
   }, [setLibraryCount, handleError]);
 
   const saveArrangement = useCallback(async () => {
-    const { project, stems, sections, blocks, chords } = useProjectStore.getState();
+    const { project, stems, sections, blocks, chords, chatMessages } = useProjectStore.getState();
     if (!project) return;
     setSystemStatus('saving');
     try {
@@ -242,6 +265,7 @@ export function useProject() {
           chords.map((c) => camelToSnake(c as unknown as Record<string, unknown>))
         );
       }
+      await replaceChatMessages(project.id, chatMessages);
 
       await supabase
         .from('projects')
@@ -253,7 +277,7 @@ export function useProject() {
     } catch (err) {
       handleError(err);
     }
-  }, [setSystemStatus, markSaved, handleError]);
+  }, [setSystemStatus, markSaved, handleError, replaceChatMessages]);
 
   return {
     loadProject,

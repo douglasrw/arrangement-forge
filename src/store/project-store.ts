@@ -266,8 +266,10 @@ export const useProjectStore = create<ProjectStore>()((set, get) => ({
     useUiStore.getState().markDirty();
   },
 
-  addChatMessage: (message) =>
-    set((state) => ({ chatMessages: [...state.chatMessages, message] })),
+  addChatMessage: (message) => {
+    set((state) => ({ chatMessages: [...state.chatMessages, message] }));
+    useUiStore.getState().markDirty();
+  },
 
   getTotalBars: () => get().sections.reduce((sum, s) => sum + s.barCount, 0),
 

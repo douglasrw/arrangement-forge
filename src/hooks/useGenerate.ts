@@ -9,16 +9,95 @@ import { useProject } from '@/hooks/useProject';
 import { generate, generateMidiForBlock } from '@/lib/midi-generator';
 import { parseChordChart } from '@/lib/chord-chart-parser';
 import { snapshotArrangement } from '@/lib/undo-helpers';
-import type { GenerationRequest, Section, Stem, Block, Chord, InstrumentType, ChordEntry } from '@/types';
+import type {
+  AiChatMessage,
+  GenerationRequest,
+  GenerationResponse,
+  Section,
+  Stem,
+  Block,
+  Chord,
+  InstrumentType,
+  ChordEntry,
+} from '@/types';
+
+type RunGenerationOptions = {
+  isRegeneration?: boolean;
+  assistantPrompt?: string;
+};
+
+function createChatMessage(
+  projectId: string,
+  role: AiChatMessage['role'],
+  content: string,
+  scope: AiChatMessage['scope'] = 'song',
+  scopeTarget: string | null = null
+): AiChatMessage {
+  return {
+    id: crypto.randomUUID(),
+    projectId,
+    role,
+    content,
+    scope,
+    scopeTarget,
+    createdAt: new Date().toISOString(),
+  };
+}
+
+function formatList(values: string[]): string {
+  if (values.length === 0) return 'the current instrument setup';
+  if (values.length === 1) return values[0];
+  if (values.length === 2) return `${values[0]} and ${values[1]}`;
+  return `${values.slice(0, -1).join(', ')}, and ${values.at(-1)}`;
+}
+
+function buildGenerationSummary(
+  response: GenerationResponse,
+  options: { assistantPrompt?: string; hadArrangement: boolean }
+): string {
+  const totalBars = response.sections.reduce((sum, section) => sum + section.bar_count, 0);
+
+  if (response.sections.length === 0 || totalBars === 0) {
+    return options.assistantPrompt
+      ? 'I used your latest request, but the current chord chart did not produce any playable sections.'
+      : 'Generation completed, but the current chord chart did not produce any playable sections.';
+  }
+
+  const verb = options.hadArrangement ? 'regenerated' : 'generated';
+  const subject = options.assistantPrompt ? `Applied your latest request and ${verb}` : `${verb[0].toUpperCase()}${verb.slice(1)}`;
+  const sectionLabel = response.sections.length === 1 ? 'section' : 'sections';
+  const barLabel = totalBars === 1 ? 'bar' : 'bars';
+  const instruments = formatList(response.stems.map((stem) => stem.instrument));
+
+  return `${subject} ${response.sections.length} ${sectionLabel} across ${totalBars} ${barLabel} for ${instruments}.`;
+}
 
 export function useGenerate() {
-  const { project, stems, sections, blocks, chords, setArrangement, setDrumBlocks, setAllInstrumentBlocks, updateProject } = useProjectStore();
+  const {
+    project,
+    stems,
+    sections,
+    blocks,
+    chords,
+    setArrangement,
+    setDrumBlocks,
+    setAllInstrumentBlocks,
+    updateProject,
+    addChatMessage,
+  } = useProjectStore();
   const { setGenerationState, setSystemStatus } = useUiStore();
   const { pushUndo } = useUndoStore();
-  const { saveArrangement } = useProject();
+  const { saveArrangement, saveProject } = useProject();
 
-  const runGeneration = useCallback(async (isRegeneration = false) => {
+  const runGeneration = useCallback(async (options: RunGenerationOptions = {}) => {
     if (!project) return;
+    const { isRegeneration = false, assistantPrompt } = options;
+    const trimmedAssistantPrompt = assistantPrompt?.trim() || null;
+    const hadArrangement = project.hasArrangement;
+
+    if (trimmedAssistantPrompt) {
+      addChatMessage(createChatMessage(project.id, 'user', trimmedAssistantPrompt));
+    }
 
     // Capture pre-generation state for undo (only used if isRegeneration)
     const before = isRegeneration
@@ -45,7 +124,9 @@ export function useGenerate() {
         swing_pct: project.swingPct,
         dynamics: project.dynamics,
         chords: parsedChords,
-        generation_hints: project.generationHints,
+        generation_hints: [project.generationHints, trimmedAssistantPrompt]
+          .filter(Boolean)
+          .join('\n\n'),
         stems: ['drums', 'bass', 'piano', 'guitar', 'strings'],
       };
 
@@ -125,6 +206,19 @@ export function useGenerate() {
         generatedTempo: project.tempo,
       });
 
+      if (trimmedAssistantPrompt) {
+        addChatMessage(
+          createChatMessage(
+            project.id,
+            'assistant',
+            buildGenerationSummary(response, {
+              assistantPrompt: trimmedAssistantPrompt,
+              hadArrangement: hadArrangement || isRegeneration,
+            })
+          )
+        );
+      }
+
       // Push single undo entry after generation completes
       if (isRegeneration && before) {
         const after = snapshotArrangement({
@@ -139,6 +233,17 @@ export function useGenerate() {
       // Save to Supabase
       await saveArrangement();
     } catch (err) {
+      if (trimmedAssistantPrompt) {
+        addChatMessage(
+          createChatMessage(
+            project.id,
+            'assistant',
+            err instanceof Error ? `Generation failed: ${err.message}` : 'Generation failed.',
+          )
+        );
+        await saveProject();
+      }
+
       console.error('Generation error:', err);
       setGenerationState(project.hasArrangement ? 'complete' : 'idle');
       setSystemStatus('error', err instanceof Error ? err.message : 'Generation failed');
@@ -147,7 +252,7 @@ export function useGenerate() {
     project, stems, sections, blocks, chords,
     setArrangement, updateProject,
     setGenerationState, setSystemStatus,
-    pushUndo, saveArrangement,
+    pushUndo, saveArrangement, saveProject, addChatMessage,
   ]);
 
   /** Regenerate MIDI data for all existing blocks using current style params.

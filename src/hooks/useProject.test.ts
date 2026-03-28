@@ -7,6 +7,7 @@ import { useProject } from './useProject';
 import { useProjectStore } from '@/store/project-store';
 import { useSelectionStore } from '@/store/selection-store';
 import { useUiStore } from '@/store/ui-store';
+import type { AiChatMessage, Project } from '@/types';
 
 type Row = Record<string, unknown>;
 type TableResponse = {
@@ -54,6 +55,44 @@ function createTableQuery(response: TableResponse = {}) {
           error,
         }),
     }),
+  };
+}
+
+function buildStoredProject(projectId: string, hasArrangement = false): Project {
+  return {
+    id: projectId,
+    userId: 'user-1',
+    name: `Project ${projectId}`,
+    key: 'C',
+    tempo: 120,
+    timeSignature: '4/4',
+    genre: 'Jazz',
+    subStyle: 'Swing',
+    energy: 50,
+    groove: 50,
+    feel: 50,
+    swingPct: null,
+    dynamics: 50,
+    generationHints: '',
+    chordChartRaw: 'Cmaj7 | Dm7 | G7 | Cmaj7',
+    hasArrangement,
+    generatedAt: hasArrangement ? '2026-03-28T00:00:00Z' : null,
+    generatedTempo: hasArrangement ? 120 : null,
+    createdAt: '2026-03-28T00:00:00Z',
+    updatedAt: '2026-03-28T00:00:00Z',
+  };
+}
+
+function buildStoredMessage(projectId: string, partial: Partial<AiChatMessage> = {}): AiChatMessage {
+  return {
+    id: `${projectId}-message`,
+    projectId,
+    role: 'assistant',
+    content: `Chat for ${projectId}`,
+    scope: 'song',
+    scopeTarget: null,
+    createdAt: '2026-03-28T00:00:00Z',
+    ...partial,
   };
 }
 
@@ -304,6 +343,128 @@ describe('useProject loadProject', () => {
       errorMessage: null,
       unsavedChanges: false,
       lastSavedAt: null,
+    });
+  });
+});
+
+describe('useProject save paths', () => {
+  it('saveProject replaces persisted chat history with the current project chat messages', async () => {
+    const projectUpsert = vi.fn(() => Promise.resolve({ error: null }));
+    const chatDeleteEq = vi.fn(() => Promise.resolve({ error: null }));
+    const chatDelete = vi.fn(() => ({ eq: chatDeleteEq }));
+    const chatInsert = vi.fn(() => Promise.resolve({ error: null }));
+
+    supabaseMock.from.mockImplementation((table: string) => {
+      switch (table) {
+        case 'projects':
+          return { upsert: projectUpsert };
+        case 'ai_chat_messages':
+          return { delete: chatDelete, insert: chatInsert };
+        default:
+          return createTableQuery();
+      }
+    });
+
+    useProjectStore.setState({
+      project: buildStoredProject('project-save'),
+      stems: [],
+      sections: [],
+      blocks: [],
+      chords: [],
+      chatMessages: [buildStoredMessage('project-save', { content: 'Saved suggestion' })],
+      drumOnlyUpdate: false,
+      allInstrumentsUpdate: false,
+    });
+    useUiStore.setState({ unsavedChanges: true });
+
+    const mounted = renderHarness();
+    mountedRoot = mounted.root;
+    mountedContainer = mounted.container;
+
+    await act(async () => {
+      await hookValue!.saveProject();
+      await Promise.resolve();
+    });
+
+    expect(projectUpsert).toHaveBeenCalledTimes(1);
+    expect(chatDelete).toHaveBeenCalledTimes(1);
+    expect(chatDeleteEq).toHaveBeenCalledWith('project_id', 'project-save');
+    expect(chatInsert).toHaveBeenCalledWith([
+      expect.objectContaining({
+        project_id: 'project-save',
+        role: 'assistant',
+        content: 'Saved suggestion',
+        scope: 'song',
+        scope_target: null,
+        created_at: '2026-03-28T00:00:00Z',
+      }),
+    ]);
+    expect(useUiStore.getState()).toMatchObject({
+      unsavedChanges: false,
+      systemStatus: 'ready',
+    });
+  });
+
+  it('saveArrangement persists chat history alongside arrangement saves', async () => {
+    const stemsDeleteEq = vi.fn(() => Promise.resolve({ error: null }));
+    const stemsDelete = vi.fn(() => ({ eq: stemsDeleteEq }));
+    const chatDeleteEq = vi.fn(() => Promise.resolve({ error: null }));
+    const chatDelete = vi.fn(() => ({ eq: chatDeleteEq }));
+    const chatInsert = vi.fn(() => Promise.resolve({ error: null }));
+    const projectUpdateEq = vi.fn(() => Promise.resolve({ error: null }));
+    const projectUpdate = vi.fn(() => ({ eq: projectUpdateEq }));
+
+    supabaseMock.from.mockImplementation((table: string) => {
+      switch (table) {
+        case 'stems':
+          return { delete: stemsDelete, insert: vi.fn(() => Promise.resolve({ error: null })) };
+        case 'projects':
+          return { update: projectUpdate };
+        case 'ai_chat_messages':
+          return { delete: chatDelete, insert: chatInsert };
+        default:
+          return { insert: vi.fn(() => Promise.resolve({ error: null })) };
+      }
+    });
+
+    useProjectStore.setState({
+      project: buildStoredProject('project-arrangement', true),
+      stems: [],
+      sections: [],
+      blocks: [],
+      chords: [],
+      chatMessages: [buildStoredMessage('project-arrangement', { content: 'Generation summary' })],
+      drumOnlyUpdate: false,
+      allInstrumentsUpdate: false,
+    });
+    useUiStore.setState({ unsavedChanges: true });
+
+    const mounted = renderHarness();
+    mountedRoot = mounted.root;
+    mountedContainer = mounted.container;
+
+    await act(async () => {
+      await hookValue!.saveArrangement();
+      await Promise.resolve();
+    });
+
+    expect(stemsDelete).toHaveBeenCalledTimes(1);
+    expect(stemsDeleteEq).toHaveBeenCalledWith('project_id', 'project-arrangement');
+    expect(chatDelete).toHaveBeenCalledTimes(1);
+    expect(chatDeleteEq).toHaveBeenCalledWith('project_id', 'project-arrangement');
+    expect(chatInsert).toHaveBeenCalledWith([
+      expect.objectContaining({
+        project_id: 'project-arrangement',
+        content: 'Generation summary',
+      }),
+    ]);
+    expect(projectUpdate).toHaveBeenCalledWith(
+      expect.objectContaining({ has_arrangement: true })
+    );
+    expect(projectUpdateEq).toHaveBeenCalledWith('id', 'project-arrangement');
+    expect(useUiStore.getState()).toMatchObject({
+      unsavedChanges: false,
+      systemStatus: 'ready',
     });
   });
 });

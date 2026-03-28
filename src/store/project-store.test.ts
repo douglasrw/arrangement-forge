@@ -93,6 +93,13 @@ describe('projectStore', () => {
     expect(useProjectStore.getState().blocks).toHaveLength(1);
   });
 
+  it('addChatMessage appends the message and marks the project dirty', () => {
+    useProjectStore.getState().addChatMessage(makeMessage());
+
+    expect(useProjectStore.getState().chatMessages).toHaveLength(1);
+    expect(useUiStore.getState().unsavedChanges).toBe(true);
+  });
+
   it('hydrateProject replaces prior arrangement and chat state atomically', () => {
     useProjectStore.getState().hydrateProject({
       project: makeProject(),
