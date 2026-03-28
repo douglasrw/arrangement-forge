@@ -26,6 +26,7 @@ interface UiStore {
   zoomFitAll: () => void;
   markDirty: () => void;
   markSaved: () => void;
+  syncProjectSession: (generationState: GenerationState) => void;
   toggleChordDisplay: () => void;
   setChordDisplayMode: (mode: 'letter' | 'roman') => void;
   setLibraryCount: (count: number) => void;
@@ -65,6 +66,15 @@ export const useUiStore = create<UiStore>()((set) => ({
   markDirty: () => set({ unsavedChanges: true }),
 
   markSaved: () => set({ unsavedChanges: false, lastSavedAt: new Date().toISOString() }),
+
+  syncProjectSession: (generationState) =>
+    set({
+      generationState,
+      systemStatus: 'ready',
+      errorMessage: null,
+      unsavedChanges: false,
+      lastSavedAt: null,
+    }),
 
   toggleChordDisplay: () =>
     set((state) => ({

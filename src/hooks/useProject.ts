@@ -61,7 +61,7 @@ function rowToMessage(row: Record<string, unknown>): AiChatMessage {
 // ---------- Hook ----------
 
 export function useProject() {
-  const { setSystemStatus, setGenerationState, markSaved, setLibraryCount } = useUiStore();
+  const { setSystemStatus, markSaved, setLibraryCount } = useUiStore();
 
   const handleError = useCallback(
     (error: unknown) => {
@@ -104,18 +104,11 @@ export function useProject() {
           chords: (chordsRes.data ?? []).map((r) => rowToChord(r as Record<string, unknown>)),
           chatMessages: (messagesRes.data ?? []).map((msg) => rowToMessage(msg as Record<string, unknown>)),
         });
-
-        // Restore generation state if project already has an arrangement
-        const freshState = useProjectStore.getState();
-        if (freshState.project?.hasArrangement && freshState.sections.length > 0) {
-          setGenerationState('complete');
-        }
-        // eslint-disable-next-line @typescript-eslint/no-unused-vars
       } catch (err) {
         handleError(err);
       }
     },
-    [setSystemStatus, setGenerationState, handleError]
+    [setSystemStatus, handleError]
   );
 
   const saveProject = useCallback(async () => {

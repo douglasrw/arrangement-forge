@@ -85,6 +85,10 @@ export const useProjectStore = create<ProjectStore>()((set, get) => ({
         useSelectionStore.getState().clearSelection();
       }
 
+      useUiStore
+        .getState()
+        .syncProjectSession(project.hasArrangement && sections.length > 0 ? 'complete' : 'idle');
+
       set({
         project,
         stems,

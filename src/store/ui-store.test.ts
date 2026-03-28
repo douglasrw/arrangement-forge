@@ -57,6 +57,26 @@ describe('uiStore', () => {
     expect(useUiStore.getState().lastSavedAt).not.toBeNull();
   });
 
+  it('syncProjectSession resets stale session flags to the loaded project state', () => {
+    useUiStore.setState({
+      generationState: 'generating',
+      systemStatus: 'error',
+      errorMessage: 'Stale error',
+      unsavedChanges: true,
+      lastSavedAt: '2026-03-28T00:00:00Z',
+    });
+
+    useUiStore.getState().syncProjectSession('idle');
+
+    expect(useUiStore.getState()).toMatchObject({
+      generationState: 'idle',
+      systemStatus: 'ready',
+      errorMessage: null,
+      unsavedChanges: false,
+      lastSavedAt: null,
+    });
+  });
+
   it('toggleChordDisplay switches between letter and roman', () => {
     expect(useUiStore.getState().chordDisplayMode).toBe('letter');
     useUiStore.getState().toggleChordDisplay();

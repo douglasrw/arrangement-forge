@@ -1,6 +1,7 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import { useProjectStore } from './project-store';
 import { useSelectionStore } from './selection-store';
+import { useUiStore } from './ui-store';
 import { useUndoStore } from './undo-store';
 import { parseSnapshot } from '@/lib/undo-helpers';
 import type { Project, Section, Block, Stem, Chord, AiChatMessage } from '@/types';
@@ -56,6 +57,13 @@ beforeEach(() => {
     sectionId: null,
     blockId: null,
     stemId: null,
+  });
+  useUiStore.setState({
+    generationState: 'idle',
+    systemStatus: 'ready',
+    errorMessage: null,
+    unsavedChanges: false,
+    lastSavedAt: null,
   });
   useUndoStore.setState({ undoStack: [], redoStack: [] });
 });
@@ -161,6 +169,42 @@ describe('projectStore', () => {
       sectionId: null,
       blockId: null,
       stemId: null,
+    });
+  });
+
+  it('hydrateProject syncs session UI to the loaded project when switching projects', () => {
+    useProjectStore.getState().hydrateProject({
+      project: makeProject({ hasArrangement: true }),
+      stems: [makeStem()],
+      sections: [makeSection()],
+      blocks: [makeBlock()],
+      chords: [],
+      chatMessages: [],
+    });
+
+    useUiStore.setState({
+      generationState: 'generating',
+      systemStatus: 'error',
+      errorMessage: 'Old project failure',
+      unsavedChanges: true,
+      lastSavedAt: '2026-03-28T00:00:00Z',
+    });
+
+    useProjectStore.getState().hydrateProject({
+      project: makeProject({ id: 'p2', name: 'Clean Slate', hasArrangement: false }),
+      stems: [],
+      sections: [],
+      blocks: [],
+      chords: [],
+      chatMessages: [],
+    });
+
+    expect(useUiStore.getState()).toMatchObject({
+      generationState: 'idle',
+      systemStatus: 'ready',
+      errorMessage: null,
+      unsavedChanges: false,
+      lastSavedAt: null,
     });
   });
 
