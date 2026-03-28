@@ -80,16 +80,22 @@ export const useProjectStore = create<ProjectStore>()((set, get) => ({
   setProject: (project) => set({ project }),
 
   hydrateProject: ({ project, stems, sections, blocks, chords, chatMessages }) =>
-    set({
-      project,
-      stems,
-      sections,
-      blocks,
-      chords,
-      chatMessages,
-      drumOnlyUpdate: false,
-      allInstrumentsUpdate: false,
-    }),
+    {
+      if (get().project?.id !== project.id) {
+        useSelectionStore.getState().clearSelection();
+      }
+
+      set({
+        project,
+        stems,
+        sections,
+        blocks,
+        chords,
+        chatMessages,
+        drumOnlyUpdate: false,
+        allInstrumentsUpdate: false,
+      });
+    },
 
   updateProject: (partial) => {
     set((state) => ({ project: state.project ? { ...state.project, ...partial } : null }));

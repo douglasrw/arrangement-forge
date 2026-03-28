@@ -1,5 +1,6 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import { useProjectStore } from './project-store';
+import { useSelectionStore } from './selection-store';
 import { useUndoStore } from './undo-store';
 import { parseSnapshot } from '@/lib/undo-helpers';
 import type { Project, Section, Block, Stem, Chord, AiChatMessage } from '@/types';
@@ -49,6 +50,12 @@ const makeMessage = (partial: Partial<AiChatMessage> = {}): AiChatMessage => ({
 beforeEach(() => {
   useProjectStore.setState({
     project: null, stems: [], sections: [], blocks: [], chords: [], chatMessages: [],
+  });
+  useSelectionStore.setState({
+    level: 'song',
+    sectionId: null,
+    blockId: null,
+    stemId: null,
   });
   useUndoStore.setState({ undoStack: [], redoStack: [] });
 });
@@ -126,6 +133,35 @@ describe('projectStore', () => {
     });
 
     expect(useProjectStore.getState().chatMessages).toEqual([]);
+  });
+
+  it('hydrateProject resets stale selection when switching to a different project', () => {
+    useProjectStore.getState().hydrateProject({
+      project: makeProject(),
+      stems: [makeStem()],
+      sections: [makeSection()],
+      blocks: [makeBlock()],
+      chords: [],
+      chatMessages: [],
+    });
+
+    useSelectionStore.getState().selectBlock('b1', 'st1');
+
+    useProjectStore.getState().hydrateProject({
+      project: makeProject({ id: 'p2', name: 'Second' }),
+      stems: [makeStem({ id: 'st2', projectId: 'p2' })],
+      sections: [makeSection({ id: 's2', projectId: 'p2' })],
+      blocks: [makeBlock({ id: 'b2', stemId: 'st2', sectionId: 's2' })],
+      chords: [],
+      chatMessages: [],
+    });
+
+    expect(useSelectionStore.getState()).toMatchObject({
+      level: 'song',
+      sectionId: null,
+      blockId: null,
+      stemId: null,
+    });
   });
 
   it('splitBlock creates two blocks with correct bar ranges', () => {
