@@ -3,7 +3,15 @@
 // Samplers are cached via sampler-cache.ts and persist across arrangement reloads.
 
 import * as Tone from 'tone';
-import type { Block, Stem, Section, InstrumentType, TransportState, CountInSetting } from '@/types';
+import type {
+  AudioEngineConfig,
+  Block,
+  Stem,
+  Section,
+  InstrumentType,
+  TransportState,
+  CountInSetting,
+} from '@/types';
 import type { DrumKitLike } from '@/audio/drum-kit';
 import { TransportController } from './transport';
 import { Metronome } from './metronome';
@@ -23,6 +31,15 @@ export class AudioEngine {
   private _initialized = false;
   private _masterVolume = 0.8;
   private _isLoading = false;
+  private arrangementEndEventId: number | null = null;
+  private audioConfig: AudioEngineConfig = {
+    metronomeEnabled: false,
+    countIn: 'off',
+    masterVolume: 0.8,
+    loopEnabled: false,
+    loopStartBar: 1,
+    loopEndBar: 1,
+  };
 
   get isInitialized(): boolean { return this._initialized; }
   get isLoading(): boolean { return this._isLoading; }
@@ -43,6 +60,7 @@ export class AudioEngine {
   dispose(): void {
     Tone.getTransport().stop();
     Tone.getTransport().cancel();
+    this.arrangementEndEventId = null;
     this.metronome.dispose();
     // Don't dispose samplers — they are cached in sampler-cache.ts
     // Just disconnect them from our signal chain
@@ -76,6 +94,7 @@ export class AudioEngine {
   stop(): void {
     Tone.getTransport().stop();
     Tone.getTransport().cancel();
+    this.arrangementEndEventId = null;
     Tone.getTransport().position = 0;
     this.releaseAllNotes();
     if (this.masterGain) {
@@ -118,19 +137,32 @@ export class AudioEngine {
 
   setMasterVolume(volume: number): void {
     this._masterVolume = volume;
+    this.audioConfig.masterVolume = volume;
     if (this.masterGain) this.masterGain.gain.value = volume;
   }
 
   setMetronomeEnabled(enabled: boolean): void {
+    this.audioConfig.metronomeEnabled = enabled;
     this.metronome.setEnabled(enabled);
   }
 
   setMetronomeCountIn(setting: CountInSetting): void {
+    this.audioConfig.countIn = setting;
     this.metronome.setCountIn(setting);
+  }
+
+  setLoopEnabled(enabled: boolean): void {
+    this.audioConfig.loopEnabled = enabled;
+    Tone.getTransport().loop = enabled;
+    this.scheduleArrangementStop();
   }
 
   setTempo(bpm: number): void {
     this.transportController.setTempo(bpm);
+  }
+
+  getAudioConfig(): AudioEngineConfig {
+    return { ...this.audioConfig };
   }
 
   async loadArrangement(
@@ -150,6 +182,7 @@ export class AudioEngine {
       this.transportController.setTimeSignature(numerator, 4);
 
       Tone.getTransport().cancel();
+      this.arrangementEndEventId = null;
 
       // Disconnect old signal chains (but don't dispose cached samplers)
       this.instruments.forEach((inst) => inst.disconnect());
@@ -217,10 +250,17 @@ export class AudioEngine {
       }
 
       const totalBars = sections.reduce((sum, s) => sum + s.barCount, 0);
-      const totalSeconds = this.transportController.getTotalDuration(totalBars);
-      Tone.getTransport().loop = true;
+      const loopEndBar = Math.max(1, totalBars);
+      this.audioConfig.loopStartBar = 1;
+      this.audioConfig.loopEndBar = loopEndBar;
+
+      const totalSeconds = totalBars > 0
+        ? this.transportController.getTimeAtBar(totalBars + 1)
+        : 0;
+      Tone.getTransport().loop = this.audioConfig.loopEnabled;
       Tone.getTransport().loopStart = 0;
       Tone.getTransport().loopEnd = totalSeconds;
+      this.scheduleArrangementStop();
 
       // Schedule metronome clicks (checks enabled at trigger time)
       this.metronome.scheduleClick(1, totalBars, tempo, timeSignature);
@@ -313,6 +353,22 @@ export class AudioEngine {
     this.instruments.forEach((inst) => {
       inst.releaseAll();
     });
+  }
+
+  private scheduleArrangementStop(): void {
+    if (this.arrangementEndEventId !== null) {
+      Tone.getTransport().clear(this.arrangementEndEventId);
+      this.arrangementEndEventId = null;
+    }
+
+    const loopEndSeconds = Tone.getTransport().loopEnd;
+    if (typeof loopEndSeconds !== 'number' || loopEndSeconds <= 0) return;
+
+    this.arrangementEndEventId = Tone.getTransport().schedule(() => {
+      if (!Tone.getTransport().loop) {
+        this.stop();
+      }
+    }, loopEndSeconds) as number;
   }
 
   private applyMuteState(): void {

@@ -4,7 +4,7 @@ import { useState, useEffect, useRef, useCallback } from 'react';
 import { AudioEngine } from '@/audio/engine';
 import { useProjectStore } from '@/store/project-store';
 import { useUiStore } from '@/store/ui-store';
-import type { TransportState } from '@/types';
+import type { AudioEngineConfig, TransportState } from '@/types';
 
 // Module-level singleton — not stored in Zustand
 let engineInstance: AudioEngine | null = null;
@@ -27,6 +27,7 @@ export function useAudio() {
   const [isReady, setIsReady] = useState(false);
   const [transportState, setTransportState] = useState<TransportState>(defaultTransportState);
   const engine = getEngine();
+  const [audioConfig, setAudioConfig] = useState<AudioEngineConfig>(() => engine.getAudioConfig());
   const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   const { project, blocks, stems, sections, drumOnlyUpdate, clearDrumOnlyUpdate, allInstrumentsUpdate, clearAllInstrumentsUpdate } = useProjectStore();
@@ -118,15 +119,26 @@ export function useAudio() {
   const pause = useCallback(() => engine.pause(), [engine]);
   const stop = useCallback(() => engine.stop(), [engine]);
   const seek = useCallback((bar: number) => engine.seek(bar), [engine]);
+  const setMetronomeEnabled = useCallback((enabled: boolean) => {
+    engine.setMetronomeEnabled(enabled);
+    setAudioConfig(engine.getAudioConfig());
+  }, [engine]);
+  const setLoopEnabled = useCallback((enabled: boolean) => {
+    engine.setLoopEnabled(enabled);
+    setAudioConfig(engine.getAudioConfig());
+  }, [engine]);
 
   return {
     engine,
     transportState,
+    audioConfig,
     isReady,
     play,
     pause,
     stop,
     seek,
+    setMetronomeEnabled,
+    setLoopEnabled,
     initEngine,
     loadArrangement: useCallback(
       async (timeSig: string) => engine.loadArrangement(blocks, stems, sections, timeSig),

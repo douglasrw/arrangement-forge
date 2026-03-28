@@ -37,7 +37,16 @@ function MetronomeIcon({ className }: { className?: string }) {
 /*  Transport Bar                                                      */
 /* ------------------------------------------------------------------ */
 export function TransportBar() {
-  const { transportState, play, pause, stop, seek } = useAudio()
+  const {
+    transportState,
+    audioConfig,
+    play,
+    pause,
+    stop,
+    seek,
+    setMetronomeEnabled,
+    setLoopEnabled,
+  } = useAudio()
   const { project, sections, updateProject } = useProjectStore()
 
   const isPlaying = transportState.playbackState === "playing"
@@ -46,12 +55,12 @@ export function TransportBar() {
 
   const bpm = project?.tempo ?? 120
   const timeSig = project?.timeSignature ?? "4/4"
+  const beatsPerBar = parseInt(timeSig.split("/")[0] ?? "4", 10) || 4
 
   /* Compute elapsed from bar/beat and tempo */
-  const elapsed = ((bar - 1) * 4 + (beat - 1)) * (60 / bpm)
-
-  const [loopActive, setLoopActive] = useState(false)
-  const [metronomeActive, setMetronomeActive] = useState(false)
+  const elapsed = ((bar - 1) * beatsPerBar + (beat - 1)) * (60 / bpm)
+  const loopActive = audioConfig.loopEnabled
+  const metronomeActive = audioConfig.metronomeEnabled
 
   /* BPM inline editing — local draft only */
   const [editingBpm, setEditingBpm] = useState(false)
@@ -207,7 +216,7 @@ export function TransportBar() {
         {/* Loop toggle */}
         <button
           type="button"
-          onClick={() => setLoopActive((v) => !v)}
+          onClick={() => setLoopEnabled(!loopActive)}
           className={cn(
             "flex size-7 items-center justify-center rounded-md transition-colors",
             loopActive
@@ -223,7 +232,7 @@ export function TransportBar() {
         {/* Metronome toggle */}
         <button
           type="button"
-          onClick={() => setMetronomeActive((v) => !v)}
+          onClick={() => setMetronomeEnabled(!metronomeActive)}
           className={cn(
             "flex size-7 items-center justify-center rounded-md transition-colors",
             metronomeActive
