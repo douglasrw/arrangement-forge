@@ -16,34 +16,11 @@
  */
 
 import { test, expect, type Page } from '@playwright/test';
+import { login, navigateToEditor } from './helpers/auth';
 
 // ---------------------------------------------------------------------------
 // Helpers
 // ---------------------------------------------------------------------------
-
-async function login(page: Page) {
-  await page.goto('/');
-  await page.waitForTimeout(1500);
-  const emailInput = page.locator('#login-email');
-  // If already logged in (redirected), skip
-  if (!(await emailInput.isVisible().catch(() => false))) return;
-  await emailInput.fill(process.env.AF_TEST_EMAIL!);
-  await page.locator('#login-password').fill(process.env.AF_TEST_PASSWORD!);
-  await page.locator('button[type=submit]').click();
-  await page.waitForTimeout(3000);
-}
-
-async function navigateToEditor(page: Page) {
-  await login(page);
-  // Wait for library to load
-  await page.waitForTimeout(1500);
-  // Click first project card if available
-  const card = page.locator('.rounded-lg.bg-card.border.border-border.cursor-pointer').first();
-  if (await card.isVisible().catch(() => false)) {
-    await card.click();
-    await page.waitForTimeout(2000);
-  }
-}
 
 function parsePx(value: string): number {
   return parseInt(value.replace('px', ''), 10) || 0;
