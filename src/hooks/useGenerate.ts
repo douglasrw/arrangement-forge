@@ -101,14 +101,16 @@ export function useGenerate() {
     const { isRegeneration = false, assistantPrompt } = options;
     const trimmedAssistantPrompt = assistantPrompt?.trim() || null;
     const hadArrangement = project.hasArrangement;
-    const generationScope = getGenerationScope(hadArrangement || isRegeneration, Boolean(trimmedAssistantPrompt));
+    const shouldRegenerate = hadArrangement || isRegeneration;
+    const generationScope = getGenerationScope(shouldRegenerate, Boolean(trimmedAssistantPrompt));
 
     if (trimmedAssistantPrompt) {
       addChatMessage(createChatMessage(project.id, 'user', trimmedAssistantPrompt, 'song'));
     }
 
-    // Capture pre-generation state for undo (only used if isRegeneration)
-    const before = isRegeneration
+    // Capture pre-generation state for undo when the run is replacing an
+    // existing arrangement.
+    const before = shouldRegenerate
       ? snapshotArrangement({ stems, sections, blocks, chords })
       : null;
 
@@ -220,14 +222,14 @@ export function useGenerate() {
           'assistant',
           buildGenerationSummary(response, {
             assistantPrompt: trimmedAssistantPrompt,
-            hadArrangement: hadArrangement || isRegeneration,
+            hadArrangement: shouldRegenerate,
           }),
           generationScope
         )
       );
 
       // Push single undo entry after generation completes
-      if (isRegeneration && before) {
+      if (shouldRegenerate && before) {
         const after = snapshotArrangement({
           stems: newStems, sections: newSections, blocks: newBlocks, chords: newChords,
         });

@@ -253,6 +253,115 @@ describe('useGenerate assistant prompt flow', () => {
     expect(saveProjectMock).not.toHaveBeenCalled();
   });
 
+  it('treats assistant revisions on an existing arrangement as regenerations with undo history', async () => {
+    parseChordChartMock.mockReturnValue({
+      chords: [{ bar_number: 1, degree: 'ii', quality: 'min7', bass_degree: null }],
+    });
+    generateMock.mockReturnValue({
+      sections: [{ name: 'Bridge', sort_order: 0, bar_count: 4, start_bar: 1 }],
+      stems: [{ instrument: 'piano', sort_order: 0 }],
+      blocks: [
+        {
+          stem_instrument: 'piano',
+          section_name: 'Bridge',
+          start_bar: 1,
+          end_bar: 4,
+          chord_degree: 'ii',
+          chord_quality: 'min7',
+          style: 'bridge_comp',
+          midi_data: [],
+        },
+      ],
+      chords: [{ bar_number: 1, degree: 'ii', quality: 'min7', bass_degree: null }],
+    });
+
+    useProjectStore.setState({
+      project: makeProject({
+        hasArrangement: true,
+        generatedAt: '2026-03-28T00:00:00Z',
+        generatedTempo: 120,
+      }),
+      stems: [
+        {
+          id: 'stem-existing',
+          projectId: 'p1',
+          instrument: 'piano',
+          sortOrder: 0,
+          volume: 0.8,
+          pan: 0,
+          isMuted: false,
+          isSolo: false,
+          createdAt: '2026-03-28T00:00:00Z',
+        },
+      ],
+      sections: [
+        {
+          id: 'section-existing',
+          projectId: 'p1',
+          name: 'Verse',
+          sortOrder: 0,
+          barCount: 4,
+          startBar: 1,
+          energyOverride: null,
+          grooveOverride: null,
+          feelOverride: null,
+          swingPctOverride: null,
+          dynamicsOverride: null,
+          createdAt: '2026-03-28T00:00:00Z',
+        },
+      ],
+      blocks: [
+        {
+          id: 'block-existing',
+          stemId: 'stem-existing',
+          sectionId: 'section-existing',
+          startBar: 1,
+          endBar: 4,
+          chordDegree: 'I',
+          chordQuality: 'maj7',
+          chordBassDegree: null,
+          style: 'old_comp',
+          energyOverride: null,
+          dynamicsOverride: null,
+          midiData: [],
+          createdAt: '2026-03-28T00:00:00Z',
+        },
+      ],
+      chords: [
+        {
+          id: 'chord-existing',
+          projectId: 'p1',
+          barNumber: 1,
+          degree: 'I',
+          quality: 'maj7',
+          bassDegree: null,
+        },
+      ],
+      chatMessages: [],
+      drumOnlyUpdate: false,
+      allInstrumentsUpdate: false,
+    });
+
+    const mounted = renderHarness();
+    mountedRoot = mounted.root;
+    mountedContainer = mounted.container;
+
+    await act(async () => {
+      await hookValue!.runGeneration({ assistantPrompt: 'Revoice the bridge' });
+      await Promise.resolve();
+    });
+
+    const state = useProjectStore.getState();
+    expect(state.chatMessages).toHaveLength(2);
+    expect(state.chatMessages[1].content).toContain(
+      'Applied your latest request and regenerated 1 section across 4 bars for piano.'
+    );
+    expect(useUndoStore.getState().undoStack).toHaveLength(1);
+    expect(useUndoStore.getState().undoStack[0]?.description).toBe('Full regeneration');
+    expect(saveArrangementMock).toHaveBeenCalledTimes(1);
+    expect(saveProjectMock).not.toHaveBeenCalled();
+  });
+
   it('records setup-scoped failures even when generation was not assistant-initiated', async () => {
     parseChordChartMock.mockReturnValue({
       chords: [{ bar_number: 1, degree: 'I', quality: 'maj7', bass_degree: null }],
