@@ -9,7 +9,7 @@ import type { Profile } from '@/types';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
@@ -130,12 +130,21 @@ export default function SettingsPage() {
   const disabledSelectClasses =
     'w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground opacity-50 cursor-not-allowed';
 
+  const settingsCardClasses = 'rounded-lg border border-border bg-card p-6 py-6 ring-0 gap-6';
+
+  const settingsCardHeaderClasses = 'px-0 pb-0 rounded-none';
+
+  const settingsCardContentClasses = 'px-0';
+
+  const sectionHeadingClasses = 'text-lg font-semibold text-foreground';
+
   return (
     <div className="min-h-screen bg-background">
       {/* Header */}
       <div className="bg-card border-b border-border px-8 py-4 flex items-center gap-4">
         <Button
           variant="ghost"
+          className="rounded-md px-4 py-2"
           onClick={() => navigate('/library')}
         >
           &larr; Back to Library
@@ -146,11 +155,11 @@ export default function SettingsPage() {
       <div className="max-w-2xl mx-auto px-4 py-8">
         <form onSubmit={handleSave} className="flex flex-col gap-6">
           {/* Profile card */}
-          <Card>
-            <CardHeader>
-              <CardTitle>Profile</CardTitle>
+          <Card className={settingsCardClasses}>
+            <CardHeader className={settingsCardHeaderClasses}>
+              <h2 className={sectionHeadingClasses}>Profile</h2>
             </CardHeader>
-            <CardContent>
+            <CardContent className={settingsCardContentClasses}>
               <div className="flex flex-col gap-4">
                 {/* Display Name */}
                 <div className="flex flex-col gap-1.5">
@@ -179,11 +188,11 @@ export default function SettingsPage() {
           </Card>
 
           {/* Editor Preferences card */}
-          <Card>
-            <CardHeader>
-              <CardTitle>Editor Preferences</CardTitle>
+          <Card className={settingsCardClasses}>
+            <CardHeader className={settingsCardHeaderClasses}>
+              <h2 className={sectionHeadingClasses}>Editor Preferences</h2>
             </CardHeader>
-            <CardContent>
+            <CardContent className={settingsCardContentClasses}>
               <div className="flex flex-col gap-4">
                 {/* Chord Display Mode */}
                 <div className="flex flex-col gap-1.5">
@@ -267,8 +276,11 @@ export default function SettingsPage() {
           </Card>
 
           {/* Coming Soon card */}
-          <Card className="opacity-60">
-            <CardContent>
+          <Card className={`${settingsCardClasses} opacity-60`}>
+            <CardHeader className={settingsCardHeaderClasses}>
+              <h2 className={sectionHeadingClasses}>Coming Soon</h2>
+            </CardHeader>
+            <CardContent className={settingsCardContentClasses}>
               <div className="flex items-center gap-3 mb-4">
                 <Separator className="flex-1" />
                 <Badge variant="outline">Coming Soon</Badge>
@@ -315,6 +327,7 @@ export default function SettingsPage() {
             <Button
               type="submit"
               disabled={saving}
+              className="px-4 py-2"
             >
               {saving ? (
                 <span className="h-4 w-4 rounded-full border-2 border-primary-foreground border-t-transparent animate-spin inline-block" />
