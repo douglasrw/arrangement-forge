@@ -72,6 +72,13 @@ function buildGenerationSummary(
   return `${subject} ${response.sections.length} ${sectionLabel} across ${totalBars} ${barLabel} for ${instruments}.`;
 }
 
+function getGenerationScope(
+  hadArrangement: boolean,
+  hasAssistantPrompt: boolean
+): AiChatMessage['scope'] {
+  return hadArrangement || hasAssistantPrompt ? 'song' : 'setup';
+}
+
 export function useGenerate() {
   const {
     project,
@@ -94,9 +101,10 @@ export function useGenerate() {
     const { isRegeneration = false, assistantPrompt } = options;
     const trimmedAssistantPrompt = assistantPrompt?.trim() || null;
     const hadArrangement = project.hasArrangement;
+    const generationScope = getGenerationScope(hadArrangement || isRegeneration, Boolean(trimmedAssistantPrompt));
 
     if (trimmedAssistantPrompt) {
-      addChatMessage(createChatMessage(project.id, 'user', trimmedAssistantPrompt));
+      addChatMessage(createChatMessage(project.id, 'user', trimmedAssistantPrompt, 'song'));
     }
 
     // Capture pre-generation state for undo (only used if isRegeneration)
@@ -206,18 +214,17 @@ export function useGenerate() {
         generatedTempo: project.tempo,
       });
 
-      if (trimmedAssistantPrompt) {
-        addChatMessage(
-          createChatMessage(
-            project.id,
-            'assistant',
-            buildGenerationSummary(response, {
-              assistantPrompt: trimmedAssistantPrompt,
-              hadArrangement: hadArrangement || isRegeneration,
-            })
-          )
-        );
-      }
+      addChatMessage(
+        createChatMessage(
+          project.id,
+          'assistant',
+          buildGenerationSummary(response, {
+            assistantPrompt: trimmedAssistantPrompt,
+            hadArrangement: hadArrangement || isRegeneration,
+          }),
+          generationScope
+        )
+      );
 
       // Push single undo entry after generation completes
       if (isRegeneration && before) {
@@ -233,16 +240,15 @@ export function useGenerate() {
       // Save to Supabase
       await saveArrangement();
     } catch (err) {
-      if (trimmedAssistantPrompt) {
-        addChatMessage(
-          createChatMessage(
-            project.id,
-            'assistant',
-            err instanceof Error ? `Generation failed: ${err.message}` : 'Generation failed.',
-          )
-        );
-        await saveProject();
-      }
+      addChatMessage(
+        createChatMessage(
+          project.id,
+          'assistant',
+          err instanceof Error ? `Generation failed: ${err.message}` : 'Generation failed.',
+          generationScope
+        )
+      );
+      await saveProject();
 
       console.error('Generation error:', err);
       setGenerationState(project.hasArrangement ? 'complete' : 'idle');

@@ -131,6 +131,50 @@ afterEach(() => {
 });
 
 describe('useGenerate assistant prompt flow', () => {
+  it('records setup-scoped generation summaries even when the run did not start from an assistant prompt', async () => {
+    parseChordChartMock.mockReturnValue({
+      chords: [{ bar_number: 1, degree: 'I', quality: 'maj7', bass_degree: null }],
+    });
+    generateMock.mockReturnValue({
+      sections: [{ name: 'Intro', sort_order: 0, bar_count: 2, start_bar: 1 }],
+      stems: [{ instrument: 'piano', sort_order: 0 }],
+      blocks: [
+        {
+          stem_instrument: 'piano',
+          section_name: 'Intro',
+          start_bar: 1,
+          end_bar: 2,
+          chord_degree: 'I',
+          chord_quality: 'maj7',
+          style: 'intro_piano',
+          midi_data: [],
+        },
+      ],
+      chords: [{ bar_number: 1, degree: 'I', quality: 'maj7', bass_degree: null }],
+    });
+
+    const mounted = renderHarness();
+    mountedRoot = mounted.root;
+    mountedContainer = mounted.container;
+
+    await act(async () => {
+      await hookValue!.runGeneration();
+      await Promise.resolve();
+    });
+
+    const state = useProjectStore.getState();
+    expect(state.chatMessages).toHaveLength(1);
+    expect(state.chatMessages[0]).toMatchObject({
+      role: 'assistant',
+      scope: 'setup',
+    });
+    expect(state.chatMessages[0].content).toContain(
+      'Generated 1 section across 2 bars for piano.'
+    );
+    expect(saveArrangementMock).toHaveBeenCalledTimes(1);
+    expect(saveProjectMock).not.toHaveBeenCalled();
+  });
+
   it('turns an assistant prompt into generation, project changes, and chat history', async () => {
     parseChordChartMock.mockReturnValue({
       chords: [{ bar_number: 1, degree: 'I', quality: 'maj7', bass_degree: null }],
@@ -209,6 +253,39 @@ describe('useGenerate assistant prompt flow', () => {
     expect(saveProjectMock).not.toHaveBeenCalled();
   });
 
+  it('records setup-scoped failures even when generation was not assistant-initiated', async () => {
+    parseChordChartMock.mockReturnValue({
+      chords: [{ bar_number: 1, degree: 'I', quality: 'maj7', bass_degree: null }],
+    });
+    generateMock.mockImplementation(() => {
+      throw new Error('Generator offline');
+    });
+
+    const mounted = renderHarness();
+    mountedRoot = mounted.root;
+    mountedContainer = mounted.container;
+
+    await act(async () => {
+      await hookValue!.runGeneration();
+      await Promise.resolve();
+    });
+
+    const state = useProjectStore.getState();
+    expect(state.chatMessages).toHaveLength(1);
+    expect(state.chatMessages[0]).toMatchObject({
+      role: 'assistant',
+      scope: 'setup',
+      content: 'Generation failed: Generator offline',
+    });
+    expect(useUiStore.getState()).toMatchObject({
+      generationState: 'idle',
+      systemStatus: 'error',
+      errorMessage: 'Generator offline',
+    });
+    expect(saveArrangementMock).not.toHaveBeenCalled();
+    expect(saveProjectMock).toHaveBeenCalledTimes(1);
+  });
+
   it('records assistant-visible failures and persists the chat history on generation error', async () => {
     parseChordChartMock.mockReturnValue({
       chords: [{ bar_number: 1, degree: 'I', quality: 'maj7', bass_degree: null }],
@@ -234,6 +311,7 @@ describe('useGenerate assistant prompt flow', () => {
     });
     expect(state.chatMessages[1]).toMatchObject({
       role: 'assistant',
+      scope: 'song',
       content: 'Generation failed: Generator offline',
     });
     expect(useUiStore.getState()).toMatchObject({
