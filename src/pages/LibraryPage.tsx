@@ -120,6 +120,7 @@ export default function LibraryPage() {
             Settings
           </button>
           <button
+            data-testid="library-create-project"
             className="rounded px-3 py-1.5 text-sm font-medium bg-primary text-primary-foreground hover:bg-primary/80 transition-colors disabled:opacity-50"
             onClick={handleCreate}
             disabled={creating}
@@ -137,6 +138,7 @@ export default function LibraryPage() {
           <label htmlFor="library-search" className="sr-only">Search projects</label>
           <input
             id="library-search"
+            data-testid="library-search-input"
             type="search"
             className="rounded border border-border bg-card px-3 py-1.5 text-sm text-foreground placeholder:text-muted-foreground w-64 focus:outline-none focus:ring-1 focus:ring-ring"
             placeholder="Search by name, genre, key..."
@@ -223,6 +225,8 @@ export default function LibraryPage() {
             {filtered.map((project) => (
               <div
                 key={project.id}
+                data-testid="library-project-card"
+                data-project-id={project.id}
                 className="rounded-lg bg-card border border-border hover:border-primary/50 cursor-pointer transition-colors"
                 onClick={() => navigate(`/project/${project.id}`)}
               >
@@ -233,6 +237,7 @@ export default function LibraryPage() {
                     </h3>
                     <button
                       type="button"
+                      data-testid="library-delete-project"
                       className="rounded p-0.5 text-muted-foreground/50 hover:text-destructive shrink-0 transition-colors"
                       onClick={(e) => {
                         e.stopPropagation();

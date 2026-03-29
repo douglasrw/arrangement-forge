@@ -38,6 +38,7 @@ export function StatusBar({ status = "saved", className }: StatusBarProps) {
 
   return (
     <div
+      data-testid="status-bar"
       className={cn(
         "flex h-6 shrink-0 items-center border-t border-border bg-secondary/50 px-4",
         className

@@ -27,7 +27,10 @@ const FIXED_H = SECTION_H + RULER_H + CHORD_H + BORDER_PX
 /* ------------------------------------------------------------------ */
 function EmptyState({ onGenerate }: { onGenerate: () => void }) {
   return (
-    <div className="flex flex-1 flex-col items-center justify-center gap-4 bg-background">
+    <div
+      className="flex flex-1 flex-col items-center justify-center gap-4 bg-background"
+      data-testid="arrangement-empty-state"
+    >
       {/* Waveform icon */}
       <svg
         viewBox="0 0 64 40"
@@ -165,7 +168,11 @@ export function ArrangementView({
   const playheadBar = Math.max(1, Math.min(transportState.currentBar, totalBars || 1))
 
   return (
-    <div ref={containerRef} className="flex flex-1 min-h-0 overflow-hidden bg-background">
+    <div
+      ref={containerRef}
+      className="flex flex-1 min-h-0 overflow-hidden bg-background"
+      data-testid="arrangement-view"
+    >
       {/* ---- Left gutter (non-scrolling, content-sized) ---- */}
       <div className="flex w-20 shrink-0 flex-col border-r border-secondary bg-background">
         {/* Section header spacer */}

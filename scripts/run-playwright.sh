@@ -3,6 +3,24 @@ set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd "${SCRIPT_DIR}/.." && pwd)"
+SECRETS_ENV_FILE="${HOME}/.secrets.env"
+
+load_af_test_credentials() {
+  if [[ -n "${AF_TEST_EMAIL:-}" && -n "${AF_TEST_PASSWORD:-}" ]]; then
+    return 0
+  fi
+
+  if [[ ! -f "${SECRETS_ENV_FILE}" ]]; then
+    return 0
+  fi
+
+  # Load the documented local Arrangement Forge UI credentials when the
+  # current shell has not exported them yet.
+  set -a
+  # shellcheck disable=SC1090
+  source "${SECRETS_ENV_FILE}"
+  set +a
+}
 
 resolve_node_bin() {
   if [[ -n "${PLAYWRIGHT_NODE_BIN:-}" && -x "${PLAYWRIGHT_NODE_BIN}" ]]; then
@@ -38,5 +56,7 @@ if [[ ! -f "${PLAYWRIGHT_CLI}" ]]; then
   printf >&2 'ERROR: Playwright CLI not found at %s\n' "${PLAYWRIGHT_CLI}"
   exit 1
 fi
+
+load_af_test_credentials
 
 exec "${NODE_BIN}" "${PLAYWRIGHT_CLI}" "$@"

@@ -105,6 +105,7 @@ export function AiAssistantSection() {
         <label htmlFor="ai-input" className="sr-only">Ask the AI assistant</label>
         <input
           id="ai-input"
+          data-testid="ai-assistant-input"
           type="text"
           value={input}
           onChange={(e) => setInput(e.target.value)}
@@ -128,6 +129,7 @@ export function AiAssistantSection() {
         />
         <button
           type="button"
+          data-testid="ai-assistant-send"
           onClick={handleSend}
           aria-label="Send assistant prompt"
           disabled={!canSend}

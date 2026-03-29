@@ -245,6 +245,7 @@ export function TopBar() {
               <input
                 ref={inputRef}
                 id="project-name-input"
+                data-testid="project-name-input"
                 value={nameDraft}
                 onChange={(e) => setNameDraft(e.target.value)}
                 onBlur={() => commitName(nameDraft)}
@@ -262,6 +263,7 @@ export function TopBar() {
           ) : (
             <button
               type="button"
+              data-testid="project-name-trigger"
               onClick={() => {
                 setNameDraft(projectName)
                 setIsEditing(true)
