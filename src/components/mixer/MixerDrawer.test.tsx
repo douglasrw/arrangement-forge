@@ -250,6 +250,42 @@ describe('MixerDrawer', () => {
     expect(masterSlider?.getAttribute('aria-valuenow')).toBe('60');
   });
 
+  it('surfaces imported off-grid pan truth and lets the operator center it', () => {
+    useProjectStore.getState().setArrangement({
+      stems: [makeStem({ id: 'st-piano', instrument: 'piano', pan: 0.006 })],
+      sections: [],
+      blocks: [],
+      chords: [],
+    });
+
+    const mounted = renderMixer();
+    mountedRoot = mounted.root;
+    mountedContainer = mounted.container;
+
+    const pianoPan = mounted.container.querySelector(
+      'input[aria-label="PIANO pan"]'
+    ) as HTMLInputElement | null;
+    const pianoPanValue = mounted.container.querySelector(
+      '[aria-label="PIANO pan value"]'
+    ) as HTMLSpanElement | null;
+    const pianoPanReset = mounted.container.querySelector(
+      'button[aria-label="Center PIANO pan"]'
+    ) as HTMLButtonElement | null;
+
+    expect(useProjectStore.getState().stems.find((stem) => stem.instrument === 'piano')?.pan).toBe(0.01);
+    expect(pianoPan?.value).toBe('1');
+    expect(pianoPanValue?.textContent).toBe('R1');
+    expect(pianoPanReset?.disabled).toBe(false);
+
+    act(() => {
+      pianoPanReset?.dispatchEvent(new MouseEvent('click', { bubbles: true }));
+    });
+
+    expect(useProjectStore.getState().stems.find((stem) => stem.instrument === 'piano')?.pan).toBe(0);
+    expect(pianoPanValue?.textContent).toBe('C');
+    expect(pianoPanReset?.disabled).toBe(true);
+  });
+
   it('keeps pan changes honest alongside volume, mute, solo, reset, and master volume', () => {
     useProjectStore.setState({
       stems: [makeStem({ id: 'st-piano', instrument: 'piano', volume: 0.5 })],

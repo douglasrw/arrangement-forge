@@ -8,6 +8,40 @@ import { generateMidiForBlock } from '@/lib/midi-generator';
 import { resolveStyle } from '@/lib/style-cascade';
 
 const genId = () => crypto.randomUUID();
+const STEM_PAN_PRECISION = 100;
+
+function normalizeStemPan(pan: number): number {
+  if (!Number.isFinite(pan)) {
+    return 0;
+  }
+
+  const clamped = Math.max(-1, Math.min(1, pan));
+  const snapped = Math.round(clamped * STEM_PAN_PRECISION) / STEM_PAN_PRECISION;
+
+  return Object.is(snapped, -0) ? 0 : snapped;
+}
+
+function normalizeStem(stem: Stem): Stem {
+  return {
+    ...stem,
+    pan: normalizeStemPan(stem.pan),
+  };
+}
+
+function normalizeStems(stems: Stem[]): Stem[] {
+  return stems.map(normalizeStem);
+}
+
+function normalizeStemPartial(partial: Partial<Stem>): Partial<Stem> {
+  if (partial.pan === undefined) {
+    return partial;
+  }
+
+  return {
+    ...partial,
+    pan: normalizeStemPan(partial.pan),
+  };
+}
 
 function sortSectionsByTimeline(sections: Section[]): Section[] {
   return [...sections].sort((a, b) => a.sortOrder - b.sortOrder);
@@ -376,6 +410,8 @@ export const useProjectStore = create<ProjectStore>()((set, get) => ({
 
   hydrateProject: ({ project, stems, sections, blocks, chords, chatMessages }) =>
     {
+      const normalizedStems = normalizeStems(stems);
+
       if (get().project?.id !== project.id) {
         useSelectionStore.getState().clearSelection();
       }
@@ -386,7 +422,7 @@ export const useProjectStore = create<ProjectStore>()((set, get) => ({
 
       set({
         project,
-        stems,
+        stems: normalizedStems,
         sections,
         blocks,
         chords,
@@ -395,7 +431,7 @@ export const useProjectStore = create<ProjectStore>()((set, get) => ({
         allInstrumentsUpdate: false,
       });
 
-      reconcileSelectionWithArrangement({ stems, sections, blocks });
+      reconcileSelectionWithArrangement({ stems: normalizedStems, sections, blocks });
     },
 
   updateProject: (partial) => {
@@ -404,8 +440,9 @@ export const useProjectStore = create<ProjectStore>()((set, get) => ({
   },
 
   setArrangement: ({ stems, sections, blocks, chords }) => {
-    set({ stems, sections, blocks, chords });
-    reconcileSelectionWithArrangement({ stems, sections, blocks });
+    const normalizedStems = normalizeStems(stems);
+    set({ stems: normalizedStems, sections, blocks, chords });
+    reconcileSelectionWithArrangement({ stems: normalizedStems, sections, blocks });
   },
 
   setDrumBlocks: (updatedBlocks) => {
@@ -430,8 +467,9 @@ export const useProjectStore = create<ProjectStore>()((set, get) => ({
   },
 
   updateStem: (stemId, partial) => {
+    const normalizedPartial = normalizeStemPartial(partial);
     set((state) => ({
-      stems: state.stems.map((s) => (s.id === stemId ? { ...s, ...partial } : s)),
+      stems: state.stems.map((s) => (s.id === stemId ? { ...s, ...normalizedPartial } : s)),
     }));
     useUiStore.getState().markDirty();
   },
@@ -441,7 +479,7 @@ export const useProjectStore = create<ProjectStore>()((set, get) => ({
   },
 
   addStem: (stem) => {
-    set((state) => ({ stems: [...state.stems, stem] }));
+    set((state) => ({ stems: [...state.stems, normalizeStem(stem)] }));
     useUiStore.getState().markDirty();
   },
 

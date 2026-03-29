@@ -94,6 +94,20 @@ describe('projectStore', () => {
     expect(useProjectStore.getState().blocks).toHaveLength(1);
   });
 
+  it('setArrangement normalizes imported stem pan to the mixer grid', () => {
+    useProjectStore.getState().setArrangement({
+      stems: [
+        makeStem({ pan: 0.006 }),
+        makeStem({ id: 'st2', instrument: 'bass', sortOrder: 1, pan: -1.4 }),
+      ],
+      sections: [],
+      blocks: [],
+      chords: [],
+    });
+
+    expect(useProjectStore.getState().stems.map((stem) => stem.pan)).toEqual([0.01, -1]);
+  });
+
   it('setArrangement clears stale block selection when the replacement snapshot omits it', () => {
     useProjectStore.getState().setArrangement({
       stems: [makeStem()],
@@ -1032,6 +1046,21 @@ describe('undo push coverage', () => {
     useUndoStore.setState({ undoStack: [], redoStack: [] });
     useProjectStore.getState().updateStem('st1', { volume: 0.5 });
     expect(useUndoStore.getState().undoStack).toHaveLength(0);
+  });
+
+  it('updateStem normalizes pan updates to the mixer grid', () => {
+    useProjectStore.getState().setArrangement({
+      stems: [makeStem()],
+      sections: [],
+      blocks: [],
+      chords: [],
+    });
+
+    useProjectStore.getState().updateStem('st1', { pan: -0.004 });
+    expect(useProjectStore.getState().stems[0]?.pan).toBe(0);
+
+    useProjectStore.getState().updateStem('st1', { pan: 0.006 });
+    expect(useProjectStore.getState().stems[0]?.pan).toBe(0.01);
   });
 
   it('setDrumBlocks does NOT push undo entry', () => {
