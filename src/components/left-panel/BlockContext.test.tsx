@@ -411,4 +411,127 @@ describe('BlockContext truth surface', () => {
     expect(dynamicsSlider?.value).toBe('76');
     expect(dynamicsResetButton?.disabled).toBe(true);
   });
+
+  it('refreshes override truth when selection moves between blocks with different saved state', () => {
+    useProjectStore.setState({
+      project: makeProject({ energy: 22, dynamics: 76 }),
+      stems: [makeStem()],
+      sections: [
+        makeSection({ id: 'section-1', energyOverride: 75, dynamicsOverride: 84 }),
+        makeSection({
+          id: 'section-2',
+          name: 'Chorus',
+          sortOrder: 1,
+          startBar: 9,
+          energyOverride: null,
+          dynamicsOverride: null,
+        }),
+      ],
+      blocks: [
+        makeBlock({ id: 'block-1', energyOverride: 33, dynamicsOverride: 18 }),
+        makeBlock({
+          id: 'block-2',
+          sectionId: 'section-2',
+          startBar: 9,
+          endBar: 12,
+          style: 'jazz_ballad_voicing',
+          energyOverride: null,
+          dynamicsOverride: null,
+        }),
+      ],
+      chords: [],
+      chatMessages: [],
+      drumOnlyUpdate: false,
+      allInstrumentsUpdate: false,
+    });
+
+    const mounted = renderBlockContext();
+    mountedRoot = mounted.root;
+    mountedContainer = mounted.container;
+
+    let energySlider = mounted.container.querySelector(
+      '#block-slider-Energy'
+    ) as HTMLInputElement | null;
+    let energyResetButton = mounted.container.querySelector(
+      '#block-reset-Energy'
+    ) as HTMLButtonElement | null;
+    let dynamicsSlider = mounted.container.querySelector(
+      '#block-slider-Dynamics'
+    ) as HTMLInputElement | null;
+    let dynamicsResetButton = mounted.container.querySelector(
+      '#block-reset-Dynamics'
+    ) as HTMLButtonElement | null;
+
+    expect(mounted.container.textContent).toContain('Bars 3 – 6');
+    expect(energySlider?.value).toBe('33');
+    expect(energyResetButton?.disabled).toBe(false);
+    expect(dynamicsSlider?.value).toBe('18');
+    expect(dynamicsResetButton?.disabled).toBe(false);
+    expect(mounted.container.textContent).toContain(
+      'This block is carrying its own saved energy override.'
+    );
+    expect(mounted.container.textContent).toContain(
+      'This block is carrying its own saved dynamics override.'
+    );
+
+    act(() => {
+      useSelectionStore.getState().selectBlock('block-2', 'stem-1');
+    });
+
+    energySlider = mounted.container.querySelector(
+      '#block-slider-Energy'
+    ) as HTMLInputElement | null;
+    energyResetButton = mounted.container.querySelector(
+      '#block-reset-Energy'
+    ) as HTMLButtonElement | null;
+    dynamicsSlider = mounted.container.querySelector(
+      '#block-slider-Dynamics'
+    ) as HTMLInputElement | null;
+    dynamicsResetButton = mounted.container.querySelector(
+      '#block-reset-Dynamics'
+    ) as HTMLButtonElement | null;
+
+    expect(mounted.container.textContent).toContain('Bars 9 – 12');
+    expect(energySlider?.value).toBe('22');
+    expect(energyResetButton?.disabled).toBe(true);
+    expect(dynamicsSlider?.value).toBe('76');
+    expect(dynamicsResetButton?.disabled).toBe(true);
+    expect(mounted.container.textContent).toContain(
+      'This block is inheriting the project energy default.'
+    );
+    expect(mounted.container.textContent).toContain(
+      'This block is inheriting the project dynamics default.'
+    );
+    expect(mounted.container.textContent).toContain('Project default: Laid (22)');
+    expect(mounted.container.textContent).toContain('Project default: f (76)');
+
+    act(() => {
+      useSelectionStore.getState().selectBlock('block-1', 'stem-1');
+    });
+
+    energySlider = mounted.container.querySelector(
+      '#block-slider-Energy'
+    ) as HTMLInputElement | null;
+    energyResetButton = mounted.container.querySelector(
+      '#block-reset-Energy'
+    ) as HTMLButtonElement | null;
+    dynamicsSlider = mounted.container.querySelector(
+      '#block-slider-Dynamics'
+    ) as HTMLInputElement | null;
+    dynamicsResetButton = mounted.container.querySelector(
+      '#block-reset-Dynamics'
+    ) as HTMLButtonElement | null;
+
+    expect(mounted.container.textContent).toContain('Bars 3 – 6');
+    expect(energySlider?.value).toBe('33');
+    expect(energyResetButton?.disabled).toBe(false);
+    expect(dynamicsSlider?.value).toBe('18');
+    expect(dynamicsResetButton?.disabled).toBe(false);
+    expect(mounted.container.textContent).toContain(
+      'This block is carrying its own saved energy override.'
+    );
+    expect(mounted.container.textContent).toContain(
+      'This block is carrying its own saved dynamics override.'
+    );
+  });
 });
