@@ -234,4 +234,42 @@ describe('SettingsPage truth surface', () => {
     expect(mounted.container.querySelector('#settings-autosave')).toBeNull();
     expect(mounted.container.querySelector('#settings-theme')).toBeNull();
   });
+
+  it('keeps saved profile settings editable while unsupported settings stay read-only truth', () => {
+    useAuthStore.setState({
+      profile: makeProfile({
+        displayName: 'Ashlyn',
+        chordDisplayMode: 'roman',
+        defaultGenre: 'Funk',
+      }),
+    });
+
+    const mounted = renderSettingsPage();
+    mountedRoot = mounted.root;
+    mountedContainer = mounted.container;
+
+    const displayNameInput = mounted.container.querySelector(
+      '#settings-display-name'
+    ) as HTMLInputElement | null;
+    const letterRadio = mounted.container.querySelector(
+      '#settings-chord-letter'
+    ) as HTMLInputElement | null;
+    const romanRadio = mounted.container.querySelector(
+      '#settings-chord-roman'
+    ) as HTMLInputElement | null;
+    const genreSelect = mounted.container.querySelector(
+      '#settings-genre'
+    ) as HTMLSelectElement | null;
+
+    expect(displayNameInput?.value).toBe('Ashlyn');
+    expect(letterRadio?.checked).toBe(false);
+    expect(romanRadio?.checked).toBe(true);
+    expect(genreSelect?.value).toBe('Funk');
+    expect(mounted.container.textContent).toContain('Device selection is not available in Settings yet.');
+    expect(mounted.container.textContent).toContain('The auto-save timing is fixed in this build.');
+    expect(mounted.container.textContent).toContain('Theme switching is not available in this build.');
+    expect(mounted.container.querySelector('#settings-audio-output')).toBeNull();
+    expect(mounted.container.querySelector('#settings-autosave')).toBeNull();
+    expect(mounted.container.querySelector('#settings-theme')).toBeNull();
+  });
 });
