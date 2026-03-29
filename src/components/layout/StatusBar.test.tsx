@@ -66,6 +66,16 @@ describe('deriveStatusBarStatus', () => {
 
     expect(status).toBe('offline');
   });
+
+  it('preserves error truth instead of falling back to generation or save-state copy', () => {
+    const status = deriveStatusBarStatus({
+      generationState: 'generating',
+      systemStatus: 'error',
+      unsavedChanges: true,
+    });
+
+    expect(status).toBe('error');
+  });
 });
 
 describe('StatusBar', () => {
