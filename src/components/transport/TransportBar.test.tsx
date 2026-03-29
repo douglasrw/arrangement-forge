@@ -5,6 +5,7 @@ import { createRoot, type Root } from 'react-dom/client';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { TransportBar } from './TransportBar';
 import { useProjectStore } from '@/store/project-store';
+import { useUiStore } from '@/store/ui-store';
 import type { AudioEngineConfig, Project, Section, TransportState } from '@/types';
 
 const playMock = vi.hoisted(() => vi.fn(async () => undefined));
@@ -149,6 +150,11 @@ beforeEach(() => {
     drumOnlyUpdate: false,
     allInstrumentsUpdate: false,
   });
+  useUiStore.setState({
+    generationState: 'complete',
+    systemStatus: 'ready',
+    errorMessage: null,
+  });
 });
 
 afterEach(() => {
@@ -285,7 +291,7 @@ describe('TransportBar transport controls', () => {
       'button[aria-label="Stop"]'
     ) as HTMLButtonElement | null;
     const playButton = mounted.container.querySelector(
-      'button[aria-label="Play"]'
+      'button[aria-label="Play unavailable"]'
     ) as HTMLButtonElement | null;
     const skipEndButton = mounted.container.querySelector(
       'button[aria-label="Skip to end"]'
@@ -313,5 +319,43 @@ describe('TransportBar transport controls', () => {
     expect(scrubber?.value).toBe('0');
     expect(mounted.container.textContent).toContain('No timeline');
     expect(mounted.container.textContent).not.toContain('Bar 4');
+  });
+
+  it('surfaces loading readiness truth before playback is ready', () => {
+    useAudioState.transportState = {
+      ...useAudioState.transportState,
+      totalSeconds: 0,
+    };
+    useUiStore.setState({
+      systemStatus: 'ready',
+    });
+
+    const mounted = renderTransportBar();
+    mountedRoot = mounted.root;
+    mountedContainer = mounted.container;
+
+    const skipStartButton = mounted.container.querySelector(
+      'button[aria-label="Skip to start"]'
+    ) as HTMLButtonElement | null;
+    const playButton = mounted.container.querySelector(
+      'button[aria-label="Load and play"]'
+    ) as HTMLButtonElement | null;
+    const loopButton = mounted.container.querySelector(
+      'button[aria-label="Toggle loop"]'
+    ) as HTMLButtonElement | null;
+    const metronomeButton = mounted.container.querySelector(
+      'button[aria-label="Toggle metronome"]'
+    ) as HTMLButtonElement | null;
+    const scrubber = mounted.container.querySelector(
+      'input[aria-label="Transport scrubber"]'
+    ) as HTMLInputElement | null;
+
+    expect(skipStartButton?.disabled).toBe(true);
+    expect(playButton?.disabled).toBe(false);
+    expect(loopButton?.disabled).toBe(true);
+    expect(metronomeButton?.disabled).toBe(true);
+    expect(scrubber?.disabled).toBe(true);
+    expect(mounted.container.textContent).toContain('Loading');
+    expect(mounted.container.textContent).toContain('Load to play');
   });
 });

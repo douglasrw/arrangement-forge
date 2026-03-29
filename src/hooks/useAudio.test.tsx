@@ -453,4 +453,41 @@ describe('useAudio transport config', () => {
       expect.any(Error)
     );
   });
+
+  it('marks the UI as loading while play bootstraps arrangement audio', async () => {
+    let resolveLoad: (() => void) | null = null;
+    loadArrangementMock.mockImplementationOnce(
+      () =>
+        new Promise<void>((resolve) => {
+          resolveLoad = resolve;
+        })
+    );
+
+    useProjectStore.setState({
+      project: makeProject(),
+      stems: [makeStem()],
+      sections: [makeSection()],
+      blocks: [makeBlock()],
+      chords: [],
+      chatMessages: [],
+      drumOnlyUpdate: false,
+      allInstrumentsUpdate: false,
+    });
+
+    const mounted = renderHarness();
+    mountedRoot = mounted.root;
+    mountedContainer = mounted.container;
+
+    await act(async () => {
+      const playPromise = hookValue?.play();
+      await Promise.resolve();
+      await Promise.resolve();
+      expect(useUiStore.getState().systemStatus).toBe('loading-samples');
+      resolveLoad?.();
+      await playPromise;
+    });
+
+    expect(playMock).toHaveBeenCalledTimes(1);
+    expect(useUiStore.getState().systemStatus).toBe('ready');
+  });
 });

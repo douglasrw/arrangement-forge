@@ -238,6 +238,7 @@ export function useAudio() {
       if (!engine.isInitialized) await initEngine();
       // Ensure arrangement is loaded before playing
       if (stems.length > 0 && project) {
+        setSystemStatus('loading-samples');
         engine.setTempo(project.tempo);
         await engine.loadArrangement(blocks, stems, sections, project.timeSignature);
         lastArrangementSignatureRef.current = arrangementSignature;

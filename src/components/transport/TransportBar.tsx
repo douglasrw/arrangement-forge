@@ -11,6 +11,7 @@ import {
 import { useAudio } from "@/hooks/useAudio"
 import { Scrubber } from "@/components/transport/Scrubber"
 import { useProjectStore } from "@/store/project-store"
+import { useUiStore } from "@/store/ui-store"
 
 /* ------------------------------------------------------------------ */
 /*  Metronome icon (not available in lucide)                           */
@@ -57,6 +58,7 @@ export function TransportBar() {
     setLoopEnabled,
   } = useAudio()
   const { project, sections, updateProject } = useProjectStore()
+  const systemStatus = useUiStore((state) => state.systemStatus)
 
   const isPlaying = transportState.playbackState === "playing"
   const bar = transportState.currentBar
@@ -69,13 +71,44 @@ export function TransportBar() {
   const loopActive = audioConfig.loopEnabled
   const metronomeActive = audioConfig.metronomeEnabled
   const totalBars = sections.reduce((sum, section) => sum + section.barCount, 0)
-  const hasTimeline = Boolean(project?.hasArrangement) && totalBars > 0 && totalSeconds > 0
-  const playbackActive = hasTimeline && isPlaying
-  const loopPressed = hasTimeline && loopActive
-  const metronomePressed = hasTimeline && metronomeActive
-  const transportUnavailableTitle = hasTimeline
-    ? undefined
-    : "No arrangement timeline available yet"
+  const hasArrangementTruth = Boolean(project?.hasArrangement) && totalBars > 0
+  const audioLoading = systemStatus === "loading-samples"
+  const playbackReady =
+    hasArrangementTruth &&
+    totalSeconds > 0 &&
+    systemStatus !== "error" &&
+    !audioLoading
+  const playbackNeedsLoad = hasArrangementTruth && !playbackReady
+  const playbackActive = playbackReady && isPlaying
+  const loopPressed = playbackReady && loopActive
+  const metronomePressed = playbackReady && metronomeActive
+  const playButtonDisabled = !hasArrangementTruth || audioLoading
+  const playButtonLabel = playbackActive
+    ? "Pause"
+    : audioLoading
+      ? "Loading audio"
+      : playbackReady
+        ? "Play"
+        : hasArrangementTruth
+          ? "Load and play"
+          : "Play unavailable"
+  const transportUnavailableTitle = !hasArrangementTruth
+    ? "No arrangement timeline available yet"
+    : audioLoading
+      ? "Arrangement audio is still loading"
+      : playbackNeedsLoad
+        ? "Arrangement audio will load before playback starts"
+        : undefined
+  const readinessLabel = playbackReady
+    ? "Ready"
+    : hasArrangementTruth
+      ? "Loading"
+      : "Unavailable"
+  const readinessClassName = playbackReady
+    ? "bg-emerald-500/10 text-emerald-300"
+    : hasArrangementTruth
+      ? "bg-amber-500/10 text-amber-300"
+      : "bg-zinc-800 text-zinc-500"
 
   /* BPM inline editing — local draft only */
   const [editingBpm, setEditingBpm] = useState(false)
@@ -107,9 +140,13 @@ export function TransportBar() {
     setEditingBpm(false)
     updateProject({ tempo: val })
   }
-  const timeStr = hasTimeline
+  const timeStr = playbackReady
     ? `${formatClock(elapsedSeconds)} / ${formatClock(totalSeconds)}`
-    : "No timeline"
+    : audioLoading
+      ? "Loading audio"
+      : playbackNeedsLoad
+        ? "Load to play"
+        : "Unavailable"
 
   return (
     <footer className="flex h-16 w-full shrink-0 items-center gap-4 border-t border-border bg-secondary px-4">
@@ -119,7 +156,7 @@ export function TransportBar() {
         <button
           type="button"
           onClick={() => seek(1)}
-          disabled={!hasTimeline}
+          disabled={!playbackReady}
           title={transportUnavailableTitle}
           className="flex size-9 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:text-foreground disabled:cursor-not-allowed disabled:text-zinc-700 disabled:hover:text-zinc-700"
           aria-label="Skip to start"
@@ -141,17 +178,19 @@ export function TransportBar() {
         <button
           type="button"
           onClick={handlePlayPause}
-          disabled={!hasTimeline}
+          disabled={playButtonDisabled}
           title={transportUnavailableTitle}
           className={cn(
             "flex size-8 items-center justify-center rounded-full transition-all",
-            !hasTimeline
+            !hasArrangementTruth || audioLoading
               ? "bg-zinc-800 text-zinc-600 shadow-none"
+              : playbackNeedsLoad
+                ? "border border-border bg-background text-zinc-200 hover:bg-secondary"
               : playbackActive
-              ? "bg-primary text-primary-foreground shadow-[0_0_12px_rgba(6,182,212,0.4)]"
-              : "bg-primary text-primary-foreground hover:bg-primary/90"
+                ? "bg-primary text-primary-foreground shadow-[0_0_12px_rgba(6,182,212,0.4)]"
+                : "bg-primary text-primary-foreground hover:bg-primary/90"
           )}
-          aria-label={playbackActive ? "Pause" : "Play"}
+          aria-label={playButtonLabel}
         >
           {playbackActive ? (
             <Pause className="size-4.5 fill-current" />
@@ -166,7 +205,7 @@ export function TransportBar() {
           onClick={() => {
             seek(Math.max(totalBars, 1))
           }}
-          disabled={!hasTimeline}
+          disabled={!playbackReady}
           title={transportUnavailableTitle}
           className="flex size-9 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:text-foreground disabled:cursor-not-allowed disabled:text-zinc-700 disabled:hover:text-zinc-700"
           aria-label="Skip to end"
@@ -178,20 +217,22 @@ export function TransportBar() {
       {/* ---- CENTER: Transport clock + scrubber ---- */}
       <div className="flex h-12 min-w-0 flex-1 items-center gap-3 rounded-xl border border-border bg-background px-4 py-2">
         <div className="flex shrink-0 items-center gap-2 rounded-lg bg-secondary px-3 py-1 font-mono text-xs">
-          {hasTimeline ? (
+          {playbackReady ? (
             <>
               <span className="font-semibold text-zinc-200">{`Bar ${bar}`}</span>
               <span className="text-zinc-600">|</span>
               <span className="text-zinc-500">{`Beat ${beat}`}</span>
             </>
           ) : (
-            <span className="font-semibold text-zinc-500">No timeline</span>
+            <span className="font-semibold text-zinc-500">
+              {audioLoading ? "Loading audio" : playbackNeedsLoad ? "Load to play" : "No timeline"}
+            </span>
           )}
         </div>
         <Scrubber
-          value={hasTimeline ? elapsedSeconds : 0}
+          value={playbackReady ? elapsedSeconds : 0}
           max={Math.max(totalSeconds, 0)}
-          disabled={!hasTimeline}
+          disabled={!playbackReady}
           onChange={seekToSeconds}
         />
         <span className="min-w-[88px] text-right font-mono text-xs text-zinc-500">
@@ -244,14 +285,22 @@ export function TransportBar() {
         </div>
 
         <span className="text-sm text-zinc-500">{timeSig}</span>
+        <span
+          className={cn(
+            "rounded-full px-2 py-0.5 text-[11px] font-medium uppercase tracking-wide",
+            readinessClassName
+          )}
+        >
+          {readinessLabel}
+        </span>
         <button
           type="button"
-          disabled={!hasTimeline}
+          disabled={!playbackReady}
           title={transportUnavailableTitle}
           onClick={() => setLoopEnabled(!loopActive)}
           className={cn(
             "flex size-7 items-center justify-center rounded-md transition-colors",
-            !hasTimeline
+            !playbackReady
               ? "cursor-not-allowed text-zinc-700"
               : loopPressed
               ? "bg-instrument-strings/15 text-playhead-light"
@@ -265,12 +314,12 @@ export function TransportBar() {
 
         <button
           type="button"
-          disabled={!hasTimeline}
+          disabled={!playbackReady}
           title={transportUnavailableTitle}
           onClick={() => setMetronomeEnabled(!metronomeActive)}
           className={cn(
             "flex size-7 items-center justify-center rounded-md transition-colors",
-            !hasTimeline
+            !playbackReady
               ? "cursor-not-allowed text-zinc-700"
               : metronomePressed
               ? "bg-instrument-strings/15 text-playhead-light"
