@@ -140,6 +140,17 @@ function setRangeValue(input: HTMLInputElement, value: string) {
   input.dispatchEvent(new Event('change', { bubbles: true }));
 }
 
+function expectNoLegacyUnavailablePanel(text: string) {
+  expect(text).not.toContain('Unavailable In This Build');
+  expect(text).not.toContain(
+    'Volume, pan, and custom chord overrides are not editable per block here yet.'
+  );
+  expect(text).not.toContain(
+    'This inspector now edits saved pattern, energy, and dynamics truth. Other block-specific controls still inherit from the mixer, section style cascade, or chord chart defaults.'
+  );
+  expect(text).not.toContain('Custom Chord Overrides');
+}
+
 let mountedRoot: Root | null = null;
 let mountedContainer: HTMLDivElement | null = null;
 
@@ -552,14 +563,95 @@ describe('BlockContext truth surface', () => {
     expect(text).toContain(
       'This block is currently following the chord chart across bars 3 – 6.'
     );
-    expect(text).not.toContain('Unavailable In This Build');
+    expectNoLegacyUnavailablePanel(text);
+  });
+
+  it('distinguishes missing arrangement audio from stem-missing truth and generic unavailable copy', () => {
+    useProjectStore.setState({
+      project: makeProject({ hasArrangement: false }),
+      stems: [],
+      sections: [makeSection()],
+      blocks: [makeBlock({ stemId: 'missing-stem' })],
+      chords: [],
+      chatMessages: [],
+      drumOnlyUpdate: false,
+      allInstrumentsUpdate: false,
+    });
+
+    const mounted = renderBlockContext();
+    mountedRoot = mounted.root;
+    mountedContainer = mounted.container;
+
+    const text = mounted.container.textContent ?? '';
+
+    expect(text).toContain('Inherited Audio Truth');
+    expect(text).toContain(
+      'This block has no arrangement audio yet, so block audio truth is missing rather than hidden.'
+    );
+    expect(text).toContain('Arrangement audio missing');
     expect(text).not.toContain(
-      'Volume, pan, and custom chord overrides are not editable per block here yet.'
+      'No current piano stem is loaded for this arrangement, so block audio truth is missing rather than hidden.'
     );
     expect(text).not.toContain(
-      'This inspector now edits saved pattern, energy, and dynamics truth. Other block-specific controls still inherit from the mixer, section style cascade, or chord chart defaults.'
+      'Restore the matching mixer lane before expecting inherited block volume or pan truth here.'
     );
-    expect(text).not.toContain('Custom Chord Overrides');
+    expect(text).toContain(
+      'Generate or import an arrangement to create inherited mixer volume and pan truth for this block.'
+    );
+    expect(
+      (
+        mounted.container.querySelector('#block-audio-volume-value') as
+          | HTMLSpanElement
+          | null
+      )?.textContent
+    ).toBe('--');
+    expect(
+      (
+        mounted.container.querySelector('#block-audio-pan-value') as
+          | HTMLSpanElement
+          | null
+      )?.textContent
+    ).toBe('--');
+    expectNoLegacyUnavailablePanel(text);
+  });
+
+  it('distinguishes chart truth outside the block range from missing chart truth and generic unavailable copy', () => {
+    useProjectStore.setState({
+      project: makeProject({ chordChartRaw: 'ii-7 | V7 | Imaj7' }),
+      stems: [makeStem()],
+      sections: [makeSection()],
+      blocks: [makeBlock()],
+      chords: [
+        makeChord({ id: 'chord-1', barNumber: 1, degree: 'ii', quality: 'min7' }),
+        makeChord({ id: 'chord-2', barNumber: 8, degree: 'I', quality: 'maj7' }),
+      ],
+      chatMessages: [],
+      drumOnlyUpdate: false,
+      allInstrumentsUpdate: false,
+    });
+
+    const mounted = renderBlockContext();
+    mountedRoot = mounted.root;
+    mountedContainer = mounted.container;
+
+    const text = mounted.container.textContent ?? '';
+
+    expect(text).toContain('Chord Scope Truth');
+    expect(text).toContain(
+      'The chord chart has no entries inside bars 3 – 6, so this block has no chart-derived chord changes to follow right now.'
+    );
+    expect(text).toContain('Range');
+    expect(text).toContain('No chord entries');
+    expect(text).not.toContain(
+      'No chord chart truth is loaded for bars 3 – 6, so scope is missing rather than hidden.'
+    );
+    expect(text).not.toContain(
+      'Add or generate chord chart data before expecting chart-derived block chord scope here.'
+    );
+    expect(text).toContain(
+      'Per-block chord overrides are still unavailable here, so there is no narrower block-specific scope to reveal instead.'
+    );
+    expectNoLegacyUnavailablePanel(text);
   });
 
   it('refreshes override truth when selection moves between blocks with different saved state', () => {
