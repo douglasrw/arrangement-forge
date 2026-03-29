@@ -55,6 +55,11 @@ function sliderValueToPan(value: number): number {
   return Math.max(-1, Math.min(1, value / PAN_SLIDER_VALUE))
 }
 
+function formatPanValue(value: number): string {
+  if (value === 0) return "C"
+  return `${value < 0 ? "L" : "R"}${Math.abs(value)}`
+}
+
 function toChannelState(stem?: Stem): ChannelState {
   if (!stem) {
     return {
@@ -284,6 +289,7 @@ export function MixerDrawer() {
   const errorMessage = useUiStore((s) => s.errorMessage)
   const stems = useProjectStore((s) => s.stems)
   const updateStem = useProjectStore((s) => s.updateStem)
+  const centerStemPan = useProjectStore((s) => s.centerStemPan)
   const [drumSubOpen, setDrumSubOpen] = useState(false)
   const { engine, transportState, audioConfig, setMasterVolume } = useAudio()
 
@@ -365,7 +371,7 @@ export function MixerDrawer() {
             </div>
           )}
 
-          <div className="flex h-[186px] px-2">
+          <div className="flex h-[206px] px-2">
             {INSTRUMENTS.map((inst) => {
               const stem = stemByInstrument.get(inst.key)
               const ch = toChannelState(stem)
@@ -472,6 +478,31 @@ export function MixerDrawer() {
                       style={{ accentColor: inst.color }}
                     />
                     <span className="text-[9px] font-medium uppercase text-zinc-500">R</span>
+                  </div>
+
+                  <div className="flex w-full items-center justify-between px-2">
+                    <span
+                      aria-label={`${inst.label} pan value`}
+                      className={cn(
+                        "font-mono text-[9px] text-zinc-500",
+                        !ch.available && "opacity-40"
+                      )}
+                    >
+                      {ch.available ? formatPanValue(ch.pan) : "--"}
+                    </span>
+                    <button
+                      type="button"
+                      aria-label={`Center ${inst.label} pan`}
+                      disabled={!stem || ch.pan === 0}
+                      onClick={() => {
+                        if (stem) {
+                          centerStemPan(stem.id)
+                        }
+                      }}
+                      className="rounded border border-border/70 px-1.5 py-0.5 text-[8px] font-semibold uppercase tracking-wider text-zinc-500 transition-colors hover:bg-secondary disabled:cursor-not-allowed disabled:opacity-40"
+                    >
+                      C
+                    </button>
                   </div>
                 </div>
               )

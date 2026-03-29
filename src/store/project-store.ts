@@ -338,6 +338,7 @@ interface ProjectStore {
   clearArrangement: () => void;
 
   updateStem: (stemId: string, partial: Partial<Stem>) => void;
+  centerStemPan: (stemId: string) => void;
   addStem: (stem: Stem) => void;
   reorderStems: (stemIds: string[]) => void;
 
@@ -433,6 +434,10 @@ export const useProjectStore = create<ProjectStore>()((set, get) => ({
       stems: state.stems.map((s) => (s.id === stemId ? { ...s, ...partial } : s)),
     }));
     useUiStore.getState().markDirty();
+  },
+
+  centerStemPan: (stemId) => {
+    get().updateStem(stemId, { pan: 0 });
   },
 
   addStem: (stem) => {
