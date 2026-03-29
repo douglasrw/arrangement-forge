@@ -22,6 +22,7 @@ type InstrumentKey = (typeof INSTRUMENTS)[number]["key"]
 
 interface ChannelState {
   volume: number // 0-100
+  pan: number // -100 (L) to 100 (R)
   muted: boolean
   solo: boolean
   available: boolean
@@ -29,6 +30,7 @@ interface ChannelState {
 
 const UNITY_SLIDER_VALUE = 80
 const MAX_SLIDER_VALUE = 100
+const PAN_SLIDER_VALUE = 100
 const DEFAULT_GROUP_LEVEL = 50
 
 function volumeToDb(v: number): string {
@@ -45,10 +47,19 @@ function sliderValueToGain(value: number): number {
   return value / UNITY_SLIDER_VALUE
 }
 
+function panToSliderValue(pan: number): number {
+  return Math.max(-PAN_SLIDER_VALUE, Math.min(PAN_SLIDER_VALUE, Math.round(pan * PAN_SLIDER_VALUE)))
+}
+
+function sliderValueToPan(value: number): number {
+  return Math.max(-1, Math.min(1, value / PAN_SLIDER_VALUE))
+}
+
 function toChannelState(stem?: Stem): ChannelState {
   if (!stem) {
     return {
       volume: 0,
+      pan: 0,
       muted: false,
       solo: false,
       available: false,
@@ -57,6 +68,7 @@ function toChannelState(stem?: Stem): ChannelState {
 
   return {
     volume: gainToSliderValue(stem.volume),
+    pan: panToSliderValue(stem.pan),
     muted: stem.isMuted,
     solo: stem.isSolo,
     available: true,
@@ -306,6 +318,11 @@ export function MixerDrawer() {
       return
     }
 
+    if (field === "pan") {
+      updateStem(stem.id, { pan: sliderValueToPan(value as number) })
+      return
+    }
+
     if (field === "muted") {
       updateStem(stem.id, { isMuted: value as boolean })
       return
@@ -348,7 +365,7 @@ export function MixerDrawer() {
             </div>
           )}
 
-          <div className="flex h-[160px] px-2">
+          <div className="flex h-[186px] px-2">
             {INSTRUMENTS.map((inst) => {
               const stem = stemByInstrument.get(inst.key)
               const ch = toChannelState(stem)
@@ -434,6 +451,28 @@ export function MixerDrawer() {
                   <span className="font-mono text-[10px] text-zinc-500">
                     {!ch.available ? "--" : ch.muted ? "-inf" : volumeToDb(ch.volume)}
                   </span>
+
+                  <div
+                    className={cn(
+                      "flex w-full items-center gap-1 px-2",
+                      !ch.available && "opacity-40"
+                    )}
+                  >
+                    <span className="text-[9px] font-medium uppercase text-zinc-500">L</span>
+                    <input
+                      type="range"
+                      min={-PAN_SLIDER_VALUE}
+                      max={PAN_SLIDER_VALUE}
+                      step={1}
+                      value={ch.pan}
+                      disabled={!ch.available}
+                      onChange={(e) => updateChannel(inst.key, "pan", Number(e.target.value))}
+                      aria-label={`${inst.label} pan`}
+                      className="h-1 w-full cursor-pointer appearance-none rounded-full bg-input disabled:cursor-not-allowed disabled:opacity-60"
+                      style={{ accentColor: inst.color }}
+                    />
+                    <span className="text-[9px] font-medium uppercase text-zinc-500">R</span>
+                  </div>
                 </div>
               )
             })}

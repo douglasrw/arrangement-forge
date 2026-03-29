@@ -188,7 +188,14 @@ describe('MixerDrawer', () => {
     useProjectStore.setState({
       stems: [
         makeStem({ id: 'st-drums', instrument: 'drums', sortOrder: 0 }),
-        makeStem({ id: 'st-piano', instrument: 'piano', sortOrder: 1, volume: 0.5, isMuted: true }),
+        makeStem({
+          id: 'st-piano',
+          instrument: 'piano',
+          sortOrder: 1,
+          volume: 0.5,
+          pan: -0.4,
+          isMuted: true,
+        }),
       ],
     });
 
@@ -202,20 +209,28 @@ describe('MixerDrawer', () => {
     const pianoSlider = mounted.container.querySelector(
       '[aria-label="PIANO volume fader"]'
     ) as HTMLDivElement | null;
+    const pianoPan = mounted.container.querySelector(
+      'input[aria-label="PIANO pan"]'
+    ) as HTMLInputElement | null;
     const stringsMuteButton = mounted.container.querySelector(
       'button[aria-label="Toggle STRINGS mute"]'
     ) as HTMLButtonElement | null;
     const stringsSlider = mounted.container.querySelector(
       '[aria-label="STRINGS volume fader"]'
     ) as HTMLDivElement | null;
+    const stringsPan = mounted.container.querySelector(
+      'input[aria-label="STRINGS pan"]'
+    ) as HTMLInputElement | null;
     const masterSlider = mounted.container.querySelector(
       '[aria-label="Master volume fader"]'
     ) as HTMLDivElement | null;
 
     expect(pianoMuteButton?.getAttribute('aria-pressed')).toBe('true');
     expect(pianoSlider?.getAttribute('aria-valuenow')).toBe('40');
+    expect(pianoPan?.value).toBe('-40');
     expect(stringsMuteButton?.disabled).toBe(true);
     expect(stringsSlider?.getAttribute('aria-disabled')).toBe('true');
+    expect(stringsPan?.disabled).toBe(true);
     expect(masterSlider?.getAttribute('aria-valuenow')).toBe('60');
   });
 
@@ -234,6 +249,9 @@ describe('MixerDrawer', () => {
     const pianoSlider = mounted.container.querySelector(
       '[aria-label="PIANO volume fader"]'
     ) as HTMLDivElement | null;
+    const pianoPan = mounted.container.querySelector(
+      'input[aria-label="PIANO pan"]'
+    ) as HTMLInputElement | null;
     const masterSlider = mounted.container.querySelector(
       '[aria-label="Master volume fader"]'
     ) as HTMLDivElement | null;
@@ -241,6 +259,15 @@ describe('MixerDrawer', () => {
     act(() => {
       pianoMuteButton?.dispatchEvent(new MouseEvent('click', { bubbles: true }));
       pianoSlider?.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowUp', bubbles: true }));
+      if (pianoPan) {
+        const valueSetter = Object.getOwnPropertyDescriptor(
+          HTMLInputElement.prototype,
+          'value'
+        )?.set;
+        valueSetter?.call(pianoPan, '25');
+        pianoPan.dispatchEvent(new Event('input', { bubbles: true }));
+        pianoPan.dispatchEvent(new Event('change', { bubbles: true }));
+      }
       masterSlider?.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowUp', bubbles: true }));
     });
 
@@ -248,6 +275,7 @@ describe('MixerDrawer', () => {
 
     expect(pianoStem?.isMuted).toBe(true);
     expect(pianoStem?.volume).toBeCloseTo(42 / 80);
+    expect(pianoStem?.pan).toBeCloseTo(0.25);
     expect(setMasterVolumeMock).toHaveBeenCalledTimes(1);
     expect(setMasterVolumeMock.mock.calls[0]?.[0]).toBeCloseTo(62 / 80);
   });
