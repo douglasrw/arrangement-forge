@@ -197,9 +197,6 @@ describe('SectionContext truth surface', () => {
     expect(mounted.container.textContent).toContain(
       'Project default: mp (50)'
     );
-    expect(mounted.container.textContent).toContain(
-      'Swing is not editable per section here yet.'
-    );
     expect(energySlider?.value).toBe('75');
     expect(grooveSlider?.value).toBe('50');
     expect(feelSlider?.value).toBe('50');
@@ -344,6 +341,68 @@ describe('SectionContext truth surface', () => {
     );
     expect(mounted.container.textContent).toContain(
       'This section is inheriting the project dynamics default.'
+    );
+  });
+
+  it('shows the section swing override path for swing-valid genres and returns to project swing truth', () => {
+    useProjectStore.setState({
+      project: makeProject({ genre: 'Jazz', subStyle: 'Swing', swingPct: 58 }),
+      sections: [makeSection({ swingPctOverride: null })],
+    });
+
+    const mounted = renderSectionContext();
+    mountedRoot = mounted.root;
+    mountedContainer = mounted.container;
+
+    const swingSlider = mounted.container.querySelector(
+      '#section-slider-Swing'
+    ) as HTMLInputElement | null;
+    const swingResetButton = mounted.container.querySelector(
+      '#section-reset-Swing'
+    ) as HTMLButtonElement | null;
+
+    expect(swingSlider?.value).toBe('58');
+    expect(swingResetButton?.disabled).toBe(true);
+    expect(mounted.container.textContent).toContain('Section Swing Override');
+    expect(mounted.container.textContent).toContain(
+      'This section is inheriting the project swing default.'
+    );
+    expect(mounted.container.textContent).toContain(
+      'Project default: 58%'
+    );
+    expect(mounted.container.textContent).not.toContain(
+      'Swing is not editable per section here yet.'
+    );
+
+    act(() => {
+      if (swingSlider) {
+        setRangeValue(swingSlider, '71');
+      }
+    });
+
+    expect(useProjectStore.getState().sections[0]).toMatchObject({
+      swingPctOverride: 71,
+    });
+    expect(swingSlider?.value).toBe('71');
+    expect(swingResetButton?.disabled).toBe(false);
+    expect(mounted.container.textContent).toContain(
+      'This section is carrying its own saved swing override.'
+    );
+    expect(mounted.container.textContent).toContain('71%');
+
+    act(() => {
+      swingResetButton?.dispatchEvent(
+        new MouseEvent('click', { bubbles: true })
+      );
+    });
+
+    expect(useProjectStore.getState().sections[0]).toMatchObject({
+      swingPctOverride: null,
+    });
+    expect(swingSlider?.value).toBe('58');
+    expect(swingResetButton?.disabled).toBe(true);
+    expect(mounted.container.textContent).toContain(
+      'This section is inheriting the project swing default.'
     );
   });
 

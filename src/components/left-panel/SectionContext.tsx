@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react"
 import { cn } from "@/lib/utils"
+import { isGenreSwingEnabled } from "@/lib/genre-config"
 import { useProjectStore } from "@/store/project-store"
 import { useSelectionStore } from "@/store/selection-store"
 import { ConfirmDialog } from "@/components/shared/ConfirmDialog"
@@ -39,6 +40,28 @@ function getStyleDisplayValue(
   return "Max"
 }
 
+const DEFAULT_SWING_PCT = 50
+
+function getSwingDisplayState(swingPct: number | null | undefined): {
+  value: number
+  displayValue: string
+  ariaValueText: string
+} {
+  if (swingPct == null) {
+    return {
+      value: DEFAULT_SWING_PCT,
+      displayValue: "Straight",
+      ariaValueText: "Straight default at 50 percent swing",
+    }
+  }
+
+  return {
+    value: swingPct,
+    displayValue: `${swingPct}%`,
+    ariaValueText: `${swingPct}%`,
+  }
+}
+
 /* ------------------------------------------------------------------ */
 /*  SectionContext                                                      */
 /* ------------------------------------------------------------------ */
@@ -63,18 +86,25 @@ export function SectionContext({
   const projectEnergy = project?.energy ?? 50
   const projectGroove = project?.groove ?? 50
   const projectFeel = project?.feel ?? 50
+  const projectSwingPct = project?.swingPct ?? null
   const projectDynamics = project?.dynamics ?? 50
   const effectiveEnergy = liveSection?.energyOverride ?? projectEnergy
   const effectiveGroove = liveSection?.grooveOverride ?? projectGroove
   const effectiveFeel = liveSection?.feelOverride ?? projectFeel
+  const effectiveSwingPct = liveSection?.swingPctOverride ?? projectSwingPct
   const effectiveDynamics = liveSection?.dynamicsOverride ?? projectDynamics
+  const swingEnabled = isGenreSwingEnabled(project?.genre)
   const isEnergyInherited = liveSection?.energyOverride == null
   const isGrooveInherited = liveSection?.grooveOverride == null
   const isFeelInherited = liveSection?.feelOverride == null
+  const isSwingInherited = liveSection?.swingPctOverride == null
   const isDynamicsInherited = liveSection?.dynamicsOverride == null
-  const hasHiddenStyleOverrides = liveSection
-    ? [liveSection.swingPctOverride].some((value) => value !== null)
-    : false
+  const hasHiddenSwingOverride = liveSection?.swingPctOverride != null
+  const swingDisplay = getSwingDisplayState(effectiveSwingPct)
+  const projectSwingDefaultLabel =
+    projectSwingPct == null
+      ? "Straight (50%)"
+      : getSwingDisplayState(projectSwingPct).displayValue
 
   /* Local draft for the name input */
   const [nameDraft, setNameDraft] = useState(currentName)
@@ -126,6 +156,16 @@ export function SectionContext({
   function resetFeelOverride() {
     if (!liveSection || liveSection.feelOverride == null) return
     updateSection(liveSection.id, { feelOverride: null })
+  }
+
+  function updateSwingOverride(value: number) {
+    if (!liveSection) return
+    updateSection(liveSection.id, { swingPctOverride: value })
+  }
+
+  function resetSwingOverride() {
+    if (!liveSection || liveSection.swingPctOverride == null) return
+    updateSection(liveSection.id, { swingPctOverride: null })
   }
 
   function updateDynamicsOverride(value: number) {
@@ -449,6 +489,99 @@ export function SectionContext({
           <div className="flex items-start justify-between gap-3">
             <div className="flex flex-col gap-1">
               <h3 className="text-[10px] font-medium uppercase tracking-widest text-zinc-500">
+                Section Swing Override
+              </h3>
+              <p className="text-xs text-muted-foreground">
+                {swingEnabled
+                  ? (
+                      isSwingInherited
+                        ? "This section is inheriting the project swing default."
+                        : "This section is carrying its own saved swing override."
+                    )
+                  : "Swing is not editable per section here yet."}
+              </p>
+            </div>
+            <span className="rounded border border-border/70 px-2 py-0.5 text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
+              {swingEnabled
+                ? (isSwingInherited ? "Project" : "Section")
+                : "Unavailable"}
+            </span>
+          </div>
+
+          {swingEnabled ? (
+            <>
+              <div className="mt-3 flex items-center justify-between gap-3">
+                <label
+                  htmlFor="section-slider-Swing"
+                  className="text-[11px] font-medium text-muted-foreground"
+                >
+                  Swing %
+                </label>
+                <span className="min-w-[4rem] shrink-0 text-right text-[11px] font-semibold text-foreground">
+                  {swingDisplay.displayValue}
+                </span>
+              </div>
+
+              <div className="group relative mt-2 h-1.5 w-full rounded-full bg-secondary">
+                <div
+                  className="absolute inset-y-0 left-0 rounded-full bg-ring"
+                  style={{ width: `${swingDisplay.value}%` }}
+                />
+                <input
+                  type="range"
+                  id="section-slider-Swing"
+                  aria-label="Section swing override"
+                  aria-valuetext={swingDisplay.ariaValueText}
+                  min={0}
+                  max={100}
+                  value={swingDisplay.value}
+                  disabled={!liveSection}
+                  onChange={(e) => updateSwingOverride(Number(e.target.value))}
+                  className={cn(
+                    "absolute inset-0 h-full w-full cursor-pointer appearance-none bg-transparent",
+                    "disabled:cursor-not-allowed disabled:opacity-40",
+                    "[&::-webkit-slider-thumb]:h-3 [&::-webkit-slider-thumb]:w-3",
+                    "[&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:rounded-full",
+                    "[&::-webkit-slider-thumb]:border [&::-webkit-slider-thumb]:border-ring",
+                    "[&::-webkit-slider-thumb]:bg-foreground [&::-webkit-slider-thumb]:shadow-sm",
+                    "[&::-webkit-slider-thumb]:opacity-0 [&::-webkit-slider-thumb]:transition-opacity",
+                    "group-hover:[&::-webkit-slider-thumb]:opacity-100",
+                    "[&::-moz-range-thumb]:h-3 [&::-moz-range-thumb]:w-3",
+                    "[&::-moz-range-thumb]:appearance-none [&::-moz-range-thumb]:rounded-full",
+                    "[&::-moz-range-thumb]:border [&::-moz-range-thumb]:border-ring",
+                    "[&::-moz-range-thumb]:bg-foreground [&::-moz-range-thumb]:shadow-sm"
+                  )}
+                />
+              </div>
+
+              <div className="mt-3 flex items-center justify-between gap-3">
+                <p className="text-xs text-muted-foreground">
+                  Project default: {projectSwingDefaultLabel}
+                </p>
+                <button
+                  type="button"
+                  id="section-reset-Swing"
+                  onClick={resetSwingOverride}
+                  disabled={!liveSection || isSwingInherited}
+                  className="rounded border border-border/70 px-2 py-1 text-[10px] font-medium uppercase tracking-wider text-foreground transition-colors hover:bg-secondary disabled:cursor-not-allowed disabled:text-muted-foreground"
+                >
+                  Use project default
+                </button>
+              </div>
+            </>
+          ) : (
+            hasHiddenSwingOverride && (
+              <p className="mt-2 text-xs text-muted-foreground">
+                This section still carries saved override data for fields that remain hidden in this inspector.
+              </p>
+            )
+          )}
+        </div>
+
+        <div className="mt-3 rounded-lg border border-border/70 bg-secondary/30 p-3">
+          <div className="flex items-start justify-between gap-3">
+            <div className="flex flex-col gap-1">
+              <h3 className="text-[10px] font-medium uppercase tracking-widest text-zinc-500">
                 Section Dynamics Override
               </h3>
               <p className="text-xs text-muted-foreground">
@@ -519,20 +652,6 @@ export function SectionContext({
               Use project default
             </button>
           </div>
-        </div>
-
-        <div className="mt-3 rounded-lg border border-border/70 bg-secondary/20 p-3">
-          <h3 className="text-[10px] font-medium uppercase tracking-widest text-zinc-500">
-            More Overrides Unavailable
-          </h3>
-          <p className="mt-2 text-sm text-foreground">
-            Swing is not editable per section here yet.
-          </p>
-          {hasHiddenStyleOverrides && (
-            <p className="mt-2 text-xs text-muted-foreground">
-              This section still carries saved override data for fields that remain hidden in this inspector.
-            </p>
-          )}
         </div>
 
         {/* Delete Section */}
