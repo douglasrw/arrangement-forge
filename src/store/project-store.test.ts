@@ -4,6 +4,7 @@ import { useSelectionStore } from './selection-store';
 import { useUiStore } from './ui-store';
 import { useUndoStore } from './undo-store';
 import { parseSnapshot } from '@/lib/undo-helpers';
+import { generateMidiForBlock } from '@/lib/midi-generator';
 import type { Project, Section, Block, Stem, Chord, AiChatMessage } from '@/types';
 
 const makeProject = (partial: Partial<Project> = {}): Project => ({
@@ -487,6 +488,98 @@ describe('projectStore', () => {
     const updatedBlock = useProjectStore.getState().blocks[0];
     expect(updatedBlock?.style).toBe('arpeggiated');
     expect(updatedBlock?.midiData).toHaveLength(8);
+  });
+
+  it('updateSection regenerates drum MIDI when section style overrides change', () => {
+    const project = makeProject({ hasArrangement: true });
+    const stem = makeStem({ id: 'st-drums', instrument: 'drums' });
+    const section = makeSection({ barCount: 1 });
+    const baseMidi = generateMidiForBlock(
+      'drums',
+      1,
+      [{ bar_number: 1, degree: 'I', quality: 'maj7', bass_degree: null }],
+      project.key,
+      project.genre,
+      {
+        substyle: project.subStyle,
+        energy: project.energy,
+        dynamics: project.dynamics,
+        swingPct: project.swingPct,
+        groove: project.groove,
+        feel: project.feel,
+        beatsPerBar: 4,
+        sectionType: section.name,
+        sectionIndex: section.sortOrder,
+        isLastSection: true,
+        totalBarsInSection: section.barCount,
+        barNumberGlobal: section.startBar,
+      },
+      1,
+      'jazz_brush_swing'
+    );
+    const block = makeBlock({
+      stemId: stem.id,
+      startBar: 1,
+      endBar: 1,
+      style: 'jazz_brush_swing',
+      midiData: baseMidi,
+    });
+
+    useProjectStore.getState().setProject(project);
+    useProjectStore.getState().setArrangement({
+      stems: [stem],
+      sections: [section],
+      blocks: [block],
+      chords: [makeChord({ barNumber: 1 })],
+    });
+
+    useProjectStore.getState().updateSection('s1', {
+      energyOverride: 90,
+      dynamicsOverride: 20,
+    });
+
+    const updatedBlock = useProjectStore.getState().blocks[0];
+    const expectedMidi = generateMidiForBlock(
+      'drums',
+      1,
+      [{ bar_number: 1, degree: 'I', quality: 'maj7', bass_degree: null }],
+      project.key,
+      project.genre,
+      {
+        substyle: project.subStyle,
+        energy: 90,
+        dynamics: 20,
+        swingPct: project.swingPct,
+        groove: project.groove,
+        feel: project.feel,
+        beatsPerBar: 4,
+        sectionType: section.name,
+        sectionIndex: section.sortOrder,
+        isLastSection: true,
+        totalBarsInSection: section.barCount,
+        barNumberGlobal: section.startBar,
+      },
+      1,
+      'jazz_brush_swing'
+    );
+
+    expect(useProjectStore.getState().sections[0]).toMatchObject({
+      energyOverride: 90,
+      dynamicsOverride: 20,
+    });
+    expect(updatedBlock?.midiData).toEqual(expectedMidi);
+    expect(updatedBlock?.midiData).not.toEqual(block.midiData);
+
+    useProjectStore.getState().updateSection('s1', {
+      energyOverride: null,
+      dynamicsOverride: null,
+    });
+
+    expect(useProjectStore.getState().sections[0]).toMatchObject({
+      energyOverride: null,
+      dynamicsOverride: null,
+    });
+    expect(useProjectStore.getState().blocks[0]?.midiData).toEqual(baseMidi);
   });
 
   it('getTotalBars sums section barCounts', () => {

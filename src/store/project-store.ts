@@ -124,12 +124,26 @@ function applySectionUpdate(state: {
   };
 }
 
+const SECTION_STYLE_OVERRIDE_FIELDS = [
+  'energyOverride',
+  'dynamicsOverride',
+  'grooveOverride',
+  'feelOverride',
+  'swingPctOverride',
+] as const;
+
+function updatesSectionStyleOverrides(partial: Partial<Section>): boolean {
+  return SECTION_STYLE_OVERRIDE_FIELDS.some((field) =>
+    Object.prototype.hasOwnProperty.call(partial, field)
+  );
+}
+
 function regenerateBlockWithProjectState(state: {
   project: Project | null;
   stems: Stem[];
   sections: Section[];
   chords: Chord[];
-}, currentBlock: Block, nextBlock: Block): Block {
+}, currentBlock: Block, nextBlock: Block, forceMidiRefresh: boolean = false): Block {
   if (!state.project || !state.project.hasArrangement) {
     return nextBlock;
   }
@@ -142,6 +156,7 @@ function regenerateBlockWithProjectState(state: {
   }
 
   const needsMidiRefresh =
+    forceMidiRefresh ||
     nextBlock.style !== currentBlock.style ||
     nextBlock.startBar !== currentBlock.startBar ||
     nextBlock.endBar !== currentBlock.endBar ||
@@ -442,9 +457,36 @@ export const useProjectStore = create<ProjectStore>()((set, get) => ({
 
   updateSection: (sectionId, partial) => {
     const before = snapshotArrangement(get());
-    set((state) => ({
-      ...applySectionUpdate(state, sectionId, partial),
-    }));
+    set((state) => {
+      const nextArrangement = applySectionUpdate(state, sectionId, partial);
+
+      if (!updatesSectionStyleOverrides(partial)) {
+        return {
+          ...nextArrangement,
+        };
+      }
+
+      return {
+        ...nextArrangement,
+        blocks: nextArrangement.blocks.map((block) => {
+          if (block.sectionId !== sectionId) {
+            return block;
+          }
+
+          return regenerateBlockWithProjectState(
+            {
+              project: state.project,
+              stems: state.stems,
+              sections: nextArrangement.sections,
+              chords: nextArrangement.chords,
+            },
+            block,
+            block,
+            true
+          );
+        }),
+      };
+    });
     reconcileSelectionWithArrangement(get());
     const after = snapshotArrangement(get());
     useUndoStore.getState().pushUndo('Update section', before, after);
