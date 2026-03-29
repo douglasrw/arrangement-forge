@@ -301,6 +301,54 @@ describe('useGenerate assistant prompt flow', () => {
     expect(saveProjectMock).not.toHaveBeenCalled();
   });
 
+  it('drops stored swing_pct from generation requests for straight-time genres', async () => {
+    useProjectStore.setState({
+      project: makeProject({
+        genre: 'Rock',
+        subStyle: 'Classic',
+        swingPct: 67,
+      }),
+    });
+
+    parseChordChartMock.mockReturnValue({
+      chords: [{ bar_number: 1, degree: 'I', quality: 'maj7', bass_degree: null }],
+    });
+    generateMock.mockReturnValue({
+      sections: [{ name: 'Verse', sort_order: 0, bar_count: 4, start_bar: 1 }],
+      stems: [{ instrument: 'drums', sort_order: 0 }],
+      blocks: [
+        {
+          stem_instrument: 'drums',
+          section_name: 'Verse',
+          start_bar: 1,
+          end_bar: 4,
+          chord_degree: 'I',
+          chord_quality: 'maj7',
+          style: 'rock_straight',
+          midi_data: [],
+        },
+      ],
+      chords: [{ bar_number: 1, degree: 'I', quality: 'maj7', bass_degree: null }],
+    });
+
+    const mounted = renderHarness();
+    mountedRoot = mounted.root;
+    mountedContainer = mounted.container;
+
+    await act(async () => {
+      await hookValue!.runGeneration();
+      await Promise.resolve();
+    });
+
+    expect(generateMock).toHaveBeenCalledWith(
+      expect.objectContaining({
+        genre: 'Rock',
+        sub_style: 'Classic',
+        swing_pct: null,
+      })
+    );
+  });
+
   it('treats assistant revisions on an existing arrangement as regenerations with undo history', async () => {
     parseChordChartMock.mockReturnValue({
       chords: [{ bar_number: 1, degree: 'ii', quality: 'min7', bass_degree: null }],

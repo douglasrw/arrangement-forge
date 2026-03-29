@@ -2,7 +2,7 @@
 // Contains pattern data for all 9 genres, fill library, and the buildDrumMidi() orchestrator.
 
 import type { MidiNoteData } from '@/types';
-import { getDrumPatternId } from '@/lib/genre-config';
+import { getDrumPatternId, getEffectiveSwingPct } from '@/lib/genre-config';
 
 // ---------- Type Definitions ----------
 
@@ -962,8 +962,9 @@ export function buildDrumMidi(params: {
   const shouldCrash = isFirstBarOfSection && params.sectionIndex > 0;
 
   // Swing conversion: swing_pct (50-80 int) -> swingAmount (0.5-0.75 float)
-  const swingAmount = params.swingPct !== null
-    ? params.swingPct / 100
+  const effectiveSwingPct = getEffectiveSwingPct(params.genre, params.swingPct);
+  const swingAmount = effectiveSwingPct !== null
+    ? effectiveSwingPct / 100
     : pattern.swing;
 
   let hits: DrumHit[];

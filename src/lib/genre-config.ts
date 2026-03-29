@@ -114,6 +114,17 @@ export function isGenreSwingEnabled(genre: string | null | undefined): boolean {
   return GENRE_SLIDERS[normalizedGenre]?.swing ?? true;
 }
 
+export function getEffectiveSwingPct(
+  genre: string | null | undefined,
+  swingPct: number | null | undefined
+): number | null {
+  if (!isGenreSwingEnabled(genre)) {
+    return null;
+  }
+
+  return swingPct ?? null;
+}
+
 // ---------- Drum Pattern Mapping ----------
 
 /** Maps genre + substyle to a drum pattern ID used by drum-patterns.ts */

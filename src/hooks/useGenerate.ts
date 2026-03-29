@@ -8,6 +8,7 @@ import { useUndoStore } from '@/store/undo-store';
 import { useProject } from '@/hooks/useProject';
 import { generate, generateMidiForBlock } from '@/lib/midi-generator';
 import { parseChordChart } from '@/lib/chord-chart-parser';
+import { getEffectiveSwingPct } from '@/lib/genre-config';
 import { snapshotArrangement } from '@/lib/undo-helpers';
 import type {
   AiChatMessage,
@@ -131,7 +132,7 @@ export function useGenerate() {
         energy: project.energy,
         groove: project.groove,
         feel: project.feel ?? 50,
-        swing_pct: project.swingPct,
+        swing_pct: getEffectiveSwingPct(project.genre, project.swingPct),
         dynamics: project.dynamics,
         chords: parsedChords,
         generation_hints: [project.generationHints, trimmedAssistantPrompt]

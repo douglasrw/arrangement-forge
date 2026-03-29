@@ -124,6 +124,29 @@ describe('drum-patterns', () => {
     }
   });
 
+  it('ignores stored swingPct for straight-time genres', () => {
+    const straight = buildDrumMidi(makeParams({
+      genre: 'Rock',
+      substyle: 'Classic',
+      swingPct: null,
+      groove: 0,
+      feel: 0,
+      energy: 50,
+      dynamics: 50,
+    }));
+    const hiddenSwing = buildDrumMidi(makeParams({
+      genre: 'Rock',
+      substyle: 'Classic',
+      swingPct: 67,
+      groove: 0,
+      feel: 0,
+      energy: 50,
+      dynamics: 50,
+    }));
+
+    expect(hiddenSwing).toEqual(straight);
+  });
+
   // ---- Dynamics ----
 
   it('dynamics: velocity spread at dynamics=20 < velocity spread at dynamics=80', () => {
