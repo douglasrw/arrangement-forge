@@ -84,6 +84,31 @@ export const GENRES: string[] = Object.keys(GENRE_SUBSTYLES);
 
 export const DEFAULT_GENRE = 'Jazz';
 
+export function normalizeGenrePreference(genre: string | null | undefined): string {
+  if (genre && GENRE_SUBSTYLES[genre]) {
+    return genre;
+  }
+
+  return DEFAULT_GENRE;
+}
+
+export function getDefaultSubStyleForGenre(genre: string | null | undefined): string {
+  const normalizedGenre = normalizeGenrePreference(genre);
+  return GENRE_SUBSTYLES[normalizedGenre]?.[0] ?? 'Swing';
+}
+
+export function getDefaultProjectStyle(genre: string | null | undefined): {
+  genre: string;
+  subStyle: string;
+} {
+  const normalizedGenre = normalizeGenrePreference(genre);
+
+  return {
+    genre: normalizedGenre,
+    subStyle: getDefaultSubStyleForGenre(normalizedGenre),
+  };
+}
+
 // ---------- Drum Pattern Mapping ----------
 
 /** Maps genre + substyle to a drum pattern ID used by drum-patterns.ts */

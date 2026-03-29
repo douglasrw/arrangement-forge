@@ -4,6 +4,7 @@ import { act, createElement } from 'react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { createRoot, type Root } from 'react-dom/client';
 import { useProject } from './useProject';
+import { useAuthStore } from '@/store/auth-store';
 import { useProjectStore } from '@/store/project-store';
 import { useSelectionStore } from '@/store/selection-store';
 import { useUiStore } from '@/store/ui-store';
@@ -272,6 +273,12 @@ beforeEach(() => {
     unsavedChanges: false,
     lastSavedAt: null,
   });
+  useAuthStore.setState({
+    user: null,
+    profile: null,
+    isLoading: false,
+    isAuthenticated: false,
+  });
 });
 
 afterEach(() => {
@@ -491,5 +498,96 @@ describe('useProject save paths', () => {
       unsavedChanges: false,
       systemStatus: 'ready',
     });
+  });
+});
+
+describe('useProject createProject', () => {
+  it('uses the loaded profile default genre and matching sub-style for new projects', async () => {
+    const insert = vi.fn(() => ({
+      select: () => ({
+        single: () =>
+          Promise.resolve({
+            data: { id: 'project-pop' },
+            error: null,
+          }),
+      }),
+    }));
+
+    supabaseMock.from.mockImplementation((table: string) => {
+      if (table === 'projects') {
+        return { insert };
+      }
+
+      return createTableQuery(tableResponses[table]);
+    });
+
+    useAuthStore.setState({
+      profile: {
+        id: 'profile-1',
+        displayName: 'Ashlyn',
+        chordDisplayMode: 'roman',
+        defaultGenre: 'Pop',
+        createdAt: '2026-03-29T00:00:00Z',
+        updatedAt: '2026-03-29T00:00:00Z',
+      },
+    });
+
+    const mounted = renderHarness();
+    mountedRoot = mounted.root;
+    mountedContainer = mounted.container;
+
+    let projectId: string | null = null;
+
+    await act(async () => {
+      projectId = await hookValue!.createProject();
+      await Promise.resolve();
+    });
+
+    expect(projectId).toBe('project-pop');
+    expect(insert).toHaveBeenCalledWith(
+      expect.objectContaining({
+        genre: 'Pop',
+        sub_style: 'Synth Pop',
+      })
+    );
+  });
+
+  it('falls back to the canonical defaults when no saved profile genre exists', async () => {
+    const insert = vi.fn(() => ({
+      select: () => ({
+        single: () =>
+          Promise.resolve({
+            data: { id: 'project-default' },
+            error: null,
+          }),
+      }),
+    }));
+
+    supabaseMock.from.mockImplementation((table: string) => {
+      if (table === 'projects') {
+        return { insert };
+      }
+
+      return createTableQuery(tableResponses[table]);
+    });
+
+    const mounted = renderHarness();
+    mountedRoot = mounted.root;
+    mountedContainer = mounted.container;
+
+    let projectId: string | null = null;
+
+    await act(async () => {
+      projectId = await hookValue!.createProject();
+      await Promise.resolve();
+    });
+
+    expect(projectId).toBe('project-default');
+    expect(insert).toHaveBeenCalledWith(
+      expect.objectContaining({
+        genre: 'Jazz',
+        sub_style: 'Swing',
+      })
+    );
   });
 });

@@ -2,7 +2,9 @@
 // Bridges Zustand project store with Supabase database.
 
 import { useCallback } from 'react';
+import { getDefaultProjectStyle } from '@/lib/genre-config';
 import { supabase } from '@/lib/supabase';
+import { useAuthStore } from '@/store/auth-store';
 import { useProjectStore } from '@/store/project-store';
 import { useUiStore } from '@/store/ui-store';
 import type {
@@ -177,6 +179,10 @@ export function useProject() {
 
   const createProject = useCallback(async (): Promise<string | null> => {
     try {
+      const { genre, subStyle } = getDefaultProjectStyle(
+        useAuthStore.getState().profile?.defaultGenre
+      );
+
       const { data, error } = await supabase
         .from('projects')
         .insert({
@@ -184,8 +190,8 @@ export function useProject() {
           key: 'C',
           tempo: 120,
           time_signature: '4/4',
-          genre: 'Jazz',
-          sub_style: 'Swing',
+          genre,
+          sub_style: subStyle,
           energy: 50,
           groove: 50,
           feel: 50,

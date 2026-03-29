@@ -1,5 +1,13 @@
 import { describe, it, expect } from 'vitest';
-import { GENRE_SUBSTYLES, GENRE_SLIDERS, GENRES, DEFAULT_GENRE } from './genre-config';
+import {
+  DEFAULT_GENRE,
+  GENRES,
+  GENRE_SLIDERS,
+  GENRE_SUBSTYLES,
+  getDefaultProjectStyle,
+  getDefaultSubStyleForGenre,
+  normalizeGenrePreference,
+} from './genre-config';
 
 describe('GENRE_SUBSTYLES', () => {
   it('contains Jazz with Swing', () => {
@@ -51,4 +59,19 @@ describe('GENRES', () => {
 
 describe('DEFAULT_GENRE', () => {
   it('is Jazz', () => expect(DEFAULT_GENRE).toBe('Jazz'));
+});
+
+describe('project style defaults', () => {
+  it('keeps supported genre preferences intact', () => {
+    expect(normalizeGenrePreference('Pop')).toBe('Pop');
+    expect(getDefaultSubStyleForGenre('Pop')).toBe('Synth Pop');
+  });
+
+  it('falls back to the canonical default for missing or unsupported genres', () => {
+    expect(normalizeGenrePreference(null)).toBe('Jazz');
+    expect(getDefaultProjectStyle('Unsupported')).toEqual({
+      genre: 'Jazz',
+      subStyle: 'Swing',
+    });
+  });
 });
