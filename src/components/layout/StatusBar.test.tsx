@@ -79,6 +79,13 @@ describe('deriveStatusBarStatus', () => {
 });
 
 describe('StatusBar', () => {
+  it('renders route-level project loading as a distinct shell status', () => {
+    const container = renderStatusBar('loading-project');
+
+    expect(container.textContent).toContain('Loading project');
+    expect(container.textContent).not.toContain('Saved');
+  });
+
   it('renders sample loading as a distinct visible status', () => {
     const container = renderStatusBar('loading-samples');
 

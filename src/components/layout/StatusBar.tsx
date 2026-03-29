@@ -7,6 +7,7 @@ export type AppStatus =
   | 'unsaved'
   | 'saving'
   | 'generating'
+  | 'loading-project'
   | 'loading-samples'
   | 'offline'
   | 'error';
@@ -62,6 +63,10 @@ const STATUS_CONFIG: Record<
   generating: {
     dot: 'bg-status-unsaved animate-pulse',
     label: 'Generating…',
+  },
+  'loading-project': {
+    dot: 'bg-status-saving animate-pulse',
+    label: 'Loading project…',
   },
   'loading-samples': {
     dot: 'bg-status-saving animate-pulse',

@@ -103,17 +103,19 @@ function renderEditor(projectId: string) {
 }
 
 function queryLoadingGate() {
-  return document.querySelector('[data-testid="editor-loading-gate"]');
+  return document.querySelector('[data-testid="editor-shell-loading-state"]');
 }
 
 function queryAppShell() {
   return document.querySelector('[data-testid="editor-shell"]');
 }
 
-function queryErrorHeading() {
-  return Array.from(document.querySelectorAll('h1')).find(
-    (element) => element.textContent === 'Unable to open project'
-  );
+function queryErrorState() {
+  return document.querySelector('[data-testid="editor-shell-error-state"]');
+}
+
+function getStatusBarText(): string {
+  return document.querySelector('[data-testid="status-bar"]')?.textContent ?? '';
 }
 
 let mountedRoot: Root | null = null;
@@ -181,7 +183,8 @@ describe('EditorPage route loading gate', () => {
 
     expect(loadProjectMock).toHaveBeenCalledWith('project-b');
     expect(queryLoadingGate()).not.toBeNull();
-    expect(queryAppShell()).toBeNull();
+    expect(queryAppShell()).not.toBeNull();
+    expect(getStatusBarText()).toContain('Loading project');
 
     await act(async () => {
       resolveLoad?.();
@@ -217,7 +220,8 @@ describe('EditorPage route loading gate', () => {
 
     expect(loadProjectMock).toHaveBeenCalledWith('project-b');
     expect(queryLoadingGate()).not.toBeNull();
-    expect(queryAppShell()).toBeNull();
+    expect(queryAppShell()).not.toBeNull();
+    expect(getStatusBarText()).toContain('Loading project');
   });
 
   it('shows a route error when the requested project cannot be loaded', async () => {
@@ -238,8 +242,9 @@ describe('EditorPage route loading gate', () => {
 
     expect(loadProjectMock).toHaveBeenCalledWith('missing-project');
     expect(queryLoadingGate()).toBeNull();
-    expect(queryAppShell()).toBeNull();
-    expect(queryErrorHeading()).not.toBeUndefined();
+    expect(queryAppShell()).not.toBeNull();
+    expect(queryErrorState()).not.toBeNull();
+    expect(getStatusBarText()).toContain('Error: Project not found');
     expect(document.body.textContent).toContain('Project not found');
   });
 

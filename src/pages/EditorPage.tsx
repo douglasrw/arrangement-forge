@@ -5,36 +5,38 @@ import { useProject } from '@/hooks/useProject';
 import { useProjectStore } from '@/store/project-store';
 import { useUiStore } from '@/store/ui-store';
 
-function EditorLoadingGate() {
+function EditorShellState({
+  title,
+  message,
+  testId,
+  tone = 'loading',
+}: {
+  title: string;
+  message: string;
+  testId: string;
+  tone?: 'loading' | 'error';
+}) {
   return (
     <div
-      className="flex min-h-screen items-center justify-center bg-background px-6"
-      data-testid="editor-loading-gate"
+      className="flex max-w-sm flex-col items-center gap-4 text-center"
+      data-testid={testId}
     >
-      <div className="flex flex-col items-center gap-4 text-center">
+      {tone === 'loading' ? (
         <div
           className="h-8 w-8 rounded-full border-2 border-primary border-t-transparent animate-spin"
           aria-hidden="true"
         />
-        <div className="space-y-1">
-          <p className="text-sm font-medium text-foreground">Loading project...</p>
-          <p className="text-xs text-muted-foreground">
-            Preparing the editor for this arrangement.
-          </p>
+      ) : (
+        <div
+          className="flex h-8 w-8 items-center justify-center rounded-full bg-destructive/10 text-sm font-semibold text-destructive"
+          aria-hidden="true"
+        >
+          !
         </div>
-      </div>
-    </div>
-  );
-}
-
-function EditorLoadError({ message }: { message: string | null }) {
-  return (
-    <div className="flex min-h-screen items-center justify-center bg-background px-6">
-      <div className="max-w-sm space-y-2 text-center">
-        <h1 className="text-lg font-semibold text-foreground">Unable to open project</h1>
-        <p className="text-sm text-muted-foreground">
-          {message ?? 'The requested project could not be loaded.'}
-        </p>
+      )}
+      <div className="space-y-1">
+        <p className="text-sm font-medium text-foreground">{title}</p>
+        <p className="text-xs text-muted-foreground">{message}</p>
       </div>
     </div>
   );
@@ -53,10 +55,33 @@ export default function EditorPage() {
 
   if (id && loadedProjectId !== id) {
     if (systemStatus === 'error') {
-      return <EditorLoadError message={errorMessage} />;
+      return (
+        <AppShell
+          shellStatus="error"
+          shellBody={
+            <EditorShellState
+              title="Unable to open project"
+              message={errorMessage ?? 'The requested project could not be loaded.'}
+              testId="editor-shell-error-state"
+              tone="error"
+            />
+          }
+        />
+      );
     }
 
-    return <EditorLoadingGate />;
+    return (
+      <AppShell
+        shellStatus="loading-project"
+        shellBody={
+          <EditorShellState
+            title="Loading project..."
+            message="Preparing the editor for this arrangement."
+            testId="editor-shell-loading-state"
+          />
+        }
+      />
+    );
   }
 
   return <AppShell />;
