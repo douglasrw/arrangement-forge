@@ -282,6 +282,8 @@ describe('useAuth session bootstrap truth', () => {
   });
 
   it('exits bootstrap loading without authenticating a session that has no profile row', async () => {
+    useUiStore.getState().setChordDisplayMode('roman');
+
     supabaseMock.auth.getSession.mockResolvedValue({
       data: {
         session: {
@@ -365,6 +367,7 @@ describe('useAuth session bootstrap truth', () => {
 
     act(() => {
       useAuthStore.getState().setLoading(true);
+      useUiStore.getState().setChordDisplayMode('roman');
       authStateChangeHandler?.('SIGNED_OUT', null);
     });
 
@@ -374,6 +377,7 @@ describe('useAuth session bootstrap truth', () => {
       isAuthenticated: false,
       isLoading: false,
     });
+    expect(useUiStore.getState().chordDisplayMode).toBe('letter');
   });
 });
 
@@ -401,6 +405,7 @@ describe('useAuth signOut', () => {
       isAuthenticated: true,
       isLoading: false,
     });
+    useUiStore.getState().setChordDisplayMode('roman');
 
     const mounted = renderHarness();
     mountedRoot = mounted.root;
@@ -425,6 +430,7 @@ describe('useAuth signOut', () => {
       isAuthenticated: false,
       isLoading: false,
     });
+    expect(useUiStore.getState().chordDisplayMode).toBe('letter');
     expect(redirectHref).toBe('/login');
   });
 });

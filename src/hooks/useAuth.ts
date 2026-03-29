@@ -10,6 +10,11 @@ import { useUiStore } from '@/store/ui-store';
 export function useAuth() {
   const authStore = useAuthStore();
 
+  const clearSessionState = useCallback(() => {
+    useAuthStore.getState().signOut();
+    useUiStore.getState().setChordDisplayMode('letter');
+  }, []);
+
   const loadProfile = useCallback(async (userId?: string) => {
     let resolvedUserId = userId;
 
@@ -60,16 +65,16 @@ export function useAuth() {
             await hydrateSession(session.user);
           } catch {
             if (isActive) {
-              useAuthStore.getState().signOut();
+              clearSessionState();
             }
           }
         } else {
-          useAuthStore.getState().signOut();
+          clearSessionState();
         }
       })
       .catch(() => {
         if (isActive) {
-          useAuthStore.getState().signOut();
+          clearSessionState();
         }
       })
       .finally(() => {
@@ -85,14 +90,13 @@ export function useAuth() {
         useAuthStore.getState().setUser(session.user);
         void loadProfile(session.user.id).then((profile) => {
           if (!profile) {
-            useAuthStore.getState().signOut();
+            clearSessionState();
           }
         }).catch(() => {
-          useAuthStore.getState().signOut();
+          clearSessionState();
         });
       } else if (event === 'SIGNED_OUT') {
-        useAuthStore.getState().signOut();
-        useAuthStore.getState().setLoading(false);
+        clearSessionState();
       }
     });
 
@@ -100,7 +104,7 @@ export function useAuth() {
       isActive = false;
       subscription.unsubscribe();
     };
-  }, [hydrateSession, loadProfile]);
+  }, [clearSessionState, hydrateSession, loadProfile]);
 
   const signIn = useCallback(async (email: string, password: string) => {
     const { error } = await supabase.auth.signInWithPassword({ email, password });
@@ -119,9 +123,9 @@ export function useAuth() {
 
   const signOut = useCallback(async () => {
     await supabase.auth.signOut();
-    useAuthStore.getState().signOut();
+    clearSessionState();
     window.location.href = '/login';
-  }, []);
+  }, [clearSessionState]);
 
   return {
     ...authStore,
