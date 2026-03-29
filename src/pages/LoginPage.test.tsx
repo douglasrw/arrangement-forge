@@ -193,6 +193,7 @@ describe('LoginPage failure truth', () => {
     });
 
     expect(authApi.signIn).toHaveBeenCalledWith('ash@example.com', 'secret-1');
+    expect(mounted.container.textContent).toContain('Email sign-in failed');
     expect(mounted.container.textContent).toContain('Invalid email or password');
     expect(navigateMock).not.toHaveBeenCalled();
 
@@ -245,6 +246,7 @@ describe('LoginPage failure truth', () => {
     });
 
     expect(authApi.signUp).toHaveBeenCalledWith('ash@example.com', 'secret-1');
+    expect(mounted.container.textContent).toContain('Account creation failed');
     expect(mounted.container.textContent).toContain('Email already registered');
 
     act(() => {
@@ -304,11 +306,13 @@ describe('LoginPage failure truth', () => {
     expect((mounted.container.querySelector('button[type="submit"]') as HTMLButtonElement | null)?.disabled).toBe(true);
 
     await act(async () => {
-      googleRequest.reject?.(new Error('Google popup blocked'));
+      googleRequest.reject?.(new Error('Authentication failed'));
       await Promise.resolve();
     });
 
-    expect(mounted.container.textContent).toContain('Google popup blocked');
+    expect(mounted.container.textContent).toContain('Google sign-in failed');
+    expect(mounted.container.textContent).toContain('Authentication failed');
+    expect(mounted.container.textContent).not.toContain('Email sign-in failed');
     expect(findButtonByText(mounted.container, 'Continue with Google')?.disabled).toBe(false);
     expect((mounted.container.querySelector('button[type="submit"]') as HTMLButtonElement | null)?.disabled).toBe(false);
     expect(navigateMock).not.toHaveBeenCalled();

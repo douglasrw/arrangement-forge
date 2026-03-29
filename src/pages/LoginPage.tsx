@@ -4,7 +4,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 
 function resolveRecoveryPath(state: unknown) {
   if (state && typeof state === 'object' && 'redirectTo' in state) {
@@ -36,6 +36,17 @@ function AuthLoadingScreen() {
   );
 }
 
+function getFailureTitle(path: 'signin' | 'signup' | 'google') {
+  switch (path) {
+    case 'signup':
+      return 'Account creation failed';
+    case 'google':
+      return 'Google sign-in failed';
+    default:
+      return 'Email sign-in failed';
+  }
+}
+
 export default function LoginPage() {
   const navigate = useNavigate();
   const location = useLocation();
@@ -51,7 +62,7 @@ export default function LoginPage() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [activeSubmissionPath, setActiveSubmissionPath] = useState<'signin' | 'signup' | 'google' | null>(null);
-  const [error, setError] = useState<string | null>(null);
+  const [error, setError] = useState<{ path: 'signin' | 'signup' | 'google'; message: string } | null>(null);
   const recoveryPath = resolveRecoveryPath(location.state);
   const isSubmitting = activeSubmissionPath !== null;
 
@@ -74,7 +85,10 @@ export default function LoginPage() {
       }
       navigate(recoveryPath, { replace: true });
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Authentication failed');
+      setError({
+        path: submissionPath,
+        message: err instanceof Error ? err.message : 'Authentication failed',
+      });
     } finally {
       setActiveSubmissionPath(null);
     }
@@ -87,7 +101,10 @@ export default function LoginPage() {
       await signInWithGoogle();
       // OAuth redirects externally; no navigate() needed
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Google sign-in failed');
+      setError({
+        path: 'google',
+        message: err instanceof Error ? err.message : 'Authentication failed',
+      });
       setActiveSubmissionPath(null);
     }
   }
@@ -167,7 +184,8 @@ export default function LoginPage() {
 
             {error && (
               <Alert variant="destructive">
-                <AlertDescription>{error}</AlertDescription>
+                <AlertTitle>{getFailureTitle(error.path)}</AlertTitle>
+                <AlertDescription>{error.message}</AlertDescription>
               </Alert>
             )}
 
