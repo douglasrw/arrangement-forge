@@ -289,6 +289,35 @@ describe('InputSection upload tab', () => {
     );
   });
 
+  it('surfaces when a no-note import keeps the existing description in place', async () => {
+    useProjectStore.setState({
+      project: makeProject({
+        chordChartRaw: 'Am7 | D7 | Gmaj7 | Cmaj7',
+        generationHints: 'Keep the brushes light',
+      }),
+    });
+
+    const mounted = renderSection();
+    mountedRoot = mounted.root;
+    mountedContainer = mounted.container;
+
+    openUploadTab(mounted.container);
+    const fileInput = getUploadFileInput(mounted.container);
+
+    const file = new File(['placeholder'], 'fresh-chart.txt', { type: 'text/plain' });
+    vi.spyOn(file, 'text').mockResolvedValue('[Verse]\nDm7 | G7 | Cmaj7 | Cmaj7');
+
+    await importFile(fileInput, file);
+
+    expect(useProjectStore.getState().project).toMatchObject({
+      chordChartRaw: '[Verse]\nDm7 | G7 | Cmaj7 | Cmaj7',
+      generationHints: 'Keep the brushes light',
+    });
+    expect(mounted.container.textContent).toContain(
+      'Imported fresh-chart.txt into the current chord chart. Existing Description was kept.'
+    );
+  });
+
   it('surfaces an explicit error for unreadable uploads', async () => {
     useProjectStore.setState({
       project: makeProject({

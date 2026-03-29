@@ -149,13 +149,21 @@ function parseImportedChordChartUpload(text: string, key: string): ImportedChord
   }
 }
 
-function formatImportedNotesFeedback(fileName: string, generationHints: string) {
+function formatImportedNotesFeedback(
+  fileName: string,
+  generationHints: string,
+  existingGenerationHints: string
+) {
   const noteCount = generationHints
     .split("\n")
     .map((line) => line.trim())
     .filter(Boolean).length
 
   if (noteCount === 0) {
+    if (existingGenerationHints.trim()) {
+      return `Imported ${fileName} into the current chord chart. Existing Description was kept.`
+    }
+
     return `Imported ${fileName} into the current chord chart.`
   }
 
@@ -204,6 +212,7 @@ export function InputSection() {
     setIsImporting(true)
 
     try {
+      const existingGenerationHints = project?.generationHints ?? ""
       const importedUpload = parseImportedChordChartUpload(await file.text(), project?.key ?? "C")
 
       if (!importedUpload.chordChartRaw.trim()) {
@@ -222,7 +231,11 @@ export function InputSection() {
       })
       setUploadFeedback({
         tone: "success",
-        message: formatImportedNotesFeedback(file.name, importedUpload.generationHints),
+        message: formatImportedNotesFeedback(
+          file.name,
+          importedUpload.generationHints,
+          existingGenerationHints
+        ),
       })
     } catch (error) {
       console.error("Failed to import chord chart file", error)
@@ -322,7 +335,7 @@ export function InputSection() {
           <div className="space-y-1">
             <p className="text-xs font-medium text-foreground">Import a chord chart text file</p>
             <p className="text-xs leading-relaxed text-muted-foreground">
-              Choose a plain-text file to replace the current chord chart. Note lines are copied into Description when they do not read like chord bars.
+              Choose a plain-text file to replace the current chord chart. Note lines are copied into Description when they do not read like chord bars. If the file has no note lines, the current Description stays unchanged.
             </p>
           </div>
 
