@@ -71,40 +71,51 @@ export function TransportBar() {
   const loopActive = audioConfig.loopEnabled
   const metronomeActive = audioConfig.metronomeEnabled
   const totalBars = sections.reduce((sum, section) => sum + section.barCount, 0)
-  const hasArrangementTruth = Boolean(project?.hasArrangement) && totalBars > 0
+  const timelineAvailable = Boolean(project?.hasArrangement) && totalBars > 0
   const playbackReady = playbackReadiness === "ready"
   const playbackNeedsLoad = playbackReadiness === "loading"
   const playbackUnavailable = playbackReadiness === "unavailable"
-  const playbackActive = playbackReady && isPlaying
-  const loopPressed = playbackReady && loopActive
-  const metronomePressed = playbackReady && metronomeActive
-  const playButtonDisabled = playbackUnavailable || isLoadingAudio
+  const transportReady = timelineAvailable && playbackReady
+  const transportNeedsLoad = timelineAvailable && playbackNeedsLoad
+  const playbackActive = transportReady && isPlaying
+  const loopPressed = transportReady && loopActive
+  const metronomePressed = transportReady && metronomeActive
+  const playButtonDisabled = !timelineAvailable || playbackUnavailable || isLoadingAudio
   const playButtonLabel = playbackActive
     ? "Pause"
-    : isLoadingAudio
+    : !timelineAvailable
+      ? "Play unavailable"
+      : isLoadingAudio
       ? "Loading audio"
-      : playbackReady
+      : transportReady
         ? "Play"
-        : playbackNeedsLoad
+        : transportNeedsLoad
           ? "Load and play"
           : "Play unavailable"
-  const transportUnavailableTitle = !hasArrangementTruth
+  const transportUnavailableTitle = !timelineAvailable
     ? "No arrangement timeline available yet"
     : isLoadingAudio
       ? "Arrangement audio is still loading"
-      : playbackNeedsLoad
+      : transportNeedsLoad
         ? "Arrangement audio will load before playback starts"
         : playbackUnavailable
           ? "Arrangement audio is unavailable right now"
           : undefined
-  const readinessLabel = playbackReady
+  const timelineStatusLabel = !timelineAvailable
+    ? "No timeline"
+    : isLoadingAudio
+      ? "Loading audio"
+      : transportNeedsLoad
+        ? "Load to play"
+        : "Unavailable"
+  const readinessLabel = transportReady
     ? "Ready"
-    : playbackNeedsLoad
+    : transportNeedsLoad
       ? "Loading"
       : "Unavailable"
-  const readinessClassName = playbackReady
+  const readinessClassName = transportReady
     ? "bg-emerald-500/10 text-emerald-300"
-    : playbackNeedsLoad
+    : transportNeedsLoad
       ? "bg-amber-500/10 text-amber-300"
       : "bg-zinc-800 text-zinc-500"
 
@@ -138,13 +149,10 @@ export function TransportBar() {
     setEditingBpm(false)
     updateProject({ tempo: val })
   }
-  const timeStr = playbackReady
+  const timeStr = transportReady
     ? `${formatClock(elapsedSeconds)} / ${formatClock(totalSeconds)}`
-    : isLoadingAudio
-      ? "Loading audio"
-      : playbackNeedsLoad
-        ? "Load to play"
-        : "Unavailable"
+    : timelineStatusLabel
+  const scrubberMax = timelineAvailable ? Math.max(totalSeconds, 0) : 0
 
   return (
     <footer className="flex h-16 w-full shrink-0 items-center gap-4 border-t border-border bg-secondary px-4">
@@ -154,7 +162,7 @@ export function TransportBar() {
         <button
           type="button"
           onClick={() => seek(1)}
-          disabled={!playbackReady}
+          disabled={!transportReady}
           title={transportUnavailableTitle}
           className="flex size-9 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:text-foreground disabled:cursor-not-allowed disabled:text-zinc-700 disabled:hover:text-zinc-700"
           aria-label="Skip to start"
@@ -180,9 +188,9 @@ export function TransportBar() {
           title={transportUnavailableTitle}
           className={cn(
             "flex size-8 items-center justify-center rounded-full transition-all",
-            playbackUnavailable || isLoadingAudio
+            playButtonDisabled
               ? "bg-zinc-800 text-zinc-600 shadow-none"
-              : playbackNeedsLoad
+              : transportNeedsLoad
                 ? "border border-border bg-background text-zinc-200 hover:bg-secondary"
               : playbackActive
                 ? "bg-primary text-primary-foreground shadow-[0_0_12px_rgba(6,182,212,0.4)]"
@@ -203,7 +211,7 @@ export function TransportBar() {
           onClick={() => {
             seek(Math.max(totalBars, 1))
           }}
-          disabled={!playbackReady}
+          disabled={!transportReady}
           title={transportUnavailableTitle}
           className="flex size-9 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:text-foreground disabled:cursor-not-allowed disabled:text-zinc-700 disabled:hover:text-zinc-700"
           aria-label="Skip to end"
@@ -215,28 +223,20 @@ export function TransportBar() {
       {/* ---- CENTER: Transport clock + scrubber ---- */}
       <div className="flex h-12 min-w-0 flex-1 items-center gap-3 rounded-xl border border-border bg-background px-4 py-2">
         <div className="flex shrink-0 items-center gap-2 rounded-lg bg-secondary px-3 py-1 font-mono text-xs">
-          {playbackReady ? (
+          {transportReady ? (
             <>
               <span className="font-semibold text-zinc-200">{`Bar ${bar}`}</span>
               <span className="text-zinc-600">|</span>
               <span className="text-zinc-500">{`Beat ${beat}`}</span>
             </>
           ) : (
-            <span className="font-semibold text-zinc-500">
-              {!hasArrangementTruth
-                ? "No timeline"
-                : isLoadingAudio
-                  ? "Loading audio"
-                  : playbackNeedsLoad
-                    ? "Load to play"
-                    : "Unavailable"}
-            </span>
+            <span className="font-semibold text-zinc-500">{timelineStatusLabel}</span>
           )}
         </div>
         <Scrubber
-          value={playbackReady ? elapsedSeconds : 0}
-          max={Math.max(totalSeconds, 0)}
-          disabled={!playbackReady}
+          value={transportReady ? elapsedSeconds : 0}
+          max={scrubberMax}
+          disabled={!transportReady}
           onChange={seekToSeconds}
         />
         <span className="min-w-[88px] text-right font-mono text-xs text-zinc-500">
@@ -299,12 +299,12 @@ export function TransportBar() {
         </span>
         <button
           type="button"
-          disabled={!playbackReady}
+          disabled={!transportReady}
           title={transportUnavailableTitle}
           onClick={() => setLoopEnabled(!loopActive)}
           className={cn(
             "flex size-7 items-center justify-center rounded-md transition-colors",
-            !playbackReady
+            !transportReady
               ? "cursor-not-allowed text-zinc-700"
               : loopPressed
               ? "bg-instrument-strings/15 text-playhead-light"
@@ -318,12 +318,12 @@ export function TransportBar() {
 
         <button
           type="button"
-          disabled={!playbackReady}
+          disabled={!transportReady}
           title={transportUnavailableTitle}
           onClick={() => setMetronomeEnabled(!metronomeActive)}
           className={cn(
             "flex size-7 items-center justify-center rounded-md transition-colors",
-            !playbackReady
+            !transportReady
               ? "cursor-not-allowed text-zinc-700"
               : metronomePressed
               ? "bg-instrument-strings/15 text-playhead-light"

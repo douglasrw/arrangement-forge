@@ -328,6 +328,74 @@ describe('TransportBar transport controls', () => {
     expect(mounted.container.textContent).not.toContain('Bar 4');
   });
 
+  it.each(['ready', 'loading'] as const)(
+    'keeps no-timeline truth when playback readiness drifts to %s',
+    (readiness) => {
+      useAudioState.transportState = {
+        ...useAudioState.transportState,
+        playbackState: 'playing',
+        currentBar: 4,
+        currentBeat: 3,
+        elapsedSeconds: 18,
+        totalSeconds: 64,
+      };
+      useAudioState.audioConfig = {
+        ...useAudioState.audioConfig,
+        loopEnabled: true,
+        metronomeEnabled: true,
+      };
+      useAudioState.playbackReadiness = readiness;
+
+      useProjectStore.setState({
+        project: makeProject({
+          hasArrangement: false,
+          generatedAt: null,
+          generatedTempo: null,
+        }),
+        sections: [],
+      });
+
+      const mounted = renderTransportBar();
+      mountedRoot = mounted.root;
+      mountedContainer = mounted.container;
+
+      const skipStartButton = mounted.container.querySelector(
+        'button[aria-label="Skip to start"]'
+      ) as HTMLButtonElement | null;
+      const playButton = mounted.container.querySelector(
+        'button[aria-label="Play unavailable"]'
+      ) as HTMLButtonElement | null;
+      const skipEndButton = mounted.container.querySelector(
+        'button[aria-label="Skip to end"]'
+      ) as HTMLButtonElement | null;
+      const loopButton = mounted.container.querySelector(
+        'button[aria-label="Toggle loop"]'
+      ) as HTMLButtonElement | null;
+      const metronomeButton = mounted.container.querySelector(
+        'button[aria-label="Toggle metronome"]'
+      ) as HTMLButtonElement | null;
+      const scrubber = mounted.container.querySelector(
+        'input[aria-label="Transport scrubber"]'
+      ) as HTMLInputElement | null;
+
+      expect(skipStartButton?.disabled).toBe(true);
+      expect(playButton?.disabled).toBe(true);
+      expect(skipEndButton?.disabled).toBe(true);
+      expect(loopButton?.disabled).toBe(true);
+      expect(metronomeButton?.disabled).toBe(true);
+      expect(loopButton?.getAttribute('aria-pressed')).toBe('false');
+      expect(metronomeButton?.getAttribute('aria-pressed')).toBe('false');
+      expect(scrubber?.disabled).toBe(true);
+      expect(scrubber?.max).toBe('0');
+      expect(scrubber?.value).toBe('0');
+      expect(mounted.container.textContent).toContain('No timeline');
+      expect(mounted.container.textContent).not.toContain('Load to play');
+      expect(mounted.container.textContent).not.toContain('Loading audio');
+      expect(mounted.container.textContent).not.toContain('Bar 4');
+      expect(mounted.container.textContent).not.toContain('1:04');
+    }
+  );
+
   it('surfaces loading readiness truth before playback is ready', () => {
     useAudioState.transportState = {
       ...useAudioState.transportState,
