@@ -77,6 +77,12 @@ function setInputValue(input: HTMLInputElement, value: string) {
   input.dispatchEvent(new Event('input', { bubbles: true }));
 }
 
+function setSelectValue(select: HTMLSelectElement, value: string) {
+  const valueSetter = Object.getOwnPropertyDescriptor(HTMLSelectElement.prototype, 'value')?.set;
+  valueSetter?.call(select, value);
+  select.dispatchEvent(new Event('change', { bubbles: true }));
+}
+
 function getVisibleProjectNames(container: HTMLElement): string[] {
   return Array.from(container.querySelectorAll('h3')).map((heading) => heading.textContent ?? '');
 }
@@ -271,5 +277,99 @@ describe('LibraryPage', () => {
     expect(mounted.container.textContent).toContain('Delete blocked by policy');
     expect(mounted.container.textContent).not.toContain('No projects yet.');
     expect(useUiStore.getState().libraryCount).toBe(1);
+  });
+
+  it('debounces library search and matches name, genre, and key fields', async () => {
+    projectApi.listProjects.mockResolvedValue([
+      makeProject({ id: 'project-pulse', name: 'Pulse Driver', genre: 'EDM', key: 'F#' }),
+      makeProject({ id: 'project-moon', name: 'Moonlight Hymn', genre: 'Folk', key: 'Dm' }),
+      makeProject({ id: 'project-solo', name: 'Solo Sketch', genre: 'Jazz', key: 'Bb' }),
+    ]);
+
+    const mounted = renderLibrary();
+    mountedRoot = mounted.root;
+    mountedContainer = mounted.container;
+
+    await act(async () => {
+      await Promise.resolve();
+    });
+
+    const searchInput = mounted.container.querySelector('#library-search') as HTMLInputElement | null;
+    expect(searchInput).not.toBeNull();
+
+    act(() => {
+      setInputValue(searchInput!, 'pulse');
+    });
+
+    expect(getVisibleProjectNames(mounted.container)).toEqual([
+      'Pulse Driver',
+      'Moonlight Hymn',
+      'Solo Sketch',
+    ]);
+
+    act(() => {
+      vi.advanceTimersByTime(300);
+    });
+
+    expect(getVisibleProjectNames(mounted.container)).toEqual(['Pulse Driver']);
+
+    act(() => {
+      setInputValue(searchInput!, 'folk');
+      vi.advanceTimersByTime(300);
+    });
+
+    expect(getVisibleProjectNames(mounted.container)).toEqual(['Moonlight Hymn']);
+
+    act(() => {
+      setInputValue(searchInput!, 'bb');
+      vi.advanceTimersByTime(300);
+    });
+
+    expect(getVisibleProjectNames(mounted.container)).toEqual(['Solo Sketch']);
+  });
+
+  it('reorders the visible library grid when the sort mode changes', async () => {
+    projectApi.listProjects.mockResolvedValue([
+      makeProject({ id: 'project-bravo', name: 'Bravo Sunset', tempo: 132, updatedAt: '2026-03-28T00:00:00Z' }),
+      makeProject({ id: 'project-alpha', name: 'Alpha Dawn', tempo: 90, updatedAt: '2026-03-29T00:00:00Z' }),
+      makeProject({ id: 'project-charlie', name: 'Charlie Echo', tempo: 100, updatedAt: '2026-03-27T00:00:00Z' }),
+    ]);
+
+    const mounted = renderLibrary();
+    mountedRoot = mounted.root;
+    mountedContainer = mounted.container;
+
+    await act(async () => {
+      await Promise.resolve();
+    });
+
+    const sortSelect = mounted.container.querySelector('#library-sort') as HTMLSelectElement | null;
+    expect(sortSelect).not.toBeNull();
+
+    expect(getVisibleProjectNames(mounted.container)).toEqual([
+      'Alpha Dawn',
+      'Bravo Sunset',
+      'Charlie Echo',
+    ]);
+
+    act(() => {
+      setSelectValue(sortSelect!, 'name-desc');
+    });
+
+    expect(getVisibleProjectNames(mounted.container)).toEqual([
+      'Charlie Echo',
+      'Bravo Sunset',
+      'Alpha Dawn',
+    ]);
+
+    act(() => {
+      setSelectValue(sortSelect!, 'tempo');
+    });
+
+    expect(getVisibleProjectNames(mounted.container)).toEqual([
+      'Alpha Dawn',
+      'Charlie Echo',
+      'Bravo Sunset',
+    ]);
   });
 });
