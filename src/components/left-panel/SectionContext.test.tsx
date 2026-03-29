@@ -112,7 +112,7 @@ afterEach(() => {
 });
 
 describe('SectionContext truth surface', () => {
-  it('keeps saved section edits active while removing fake style controls', () => {
+  it('keeps saved section edits active while exposing a real energy override path', () => {
     const mounted = renderSectionContext();
     mountedRoot = mounted.root;
     mountedContainer = mounted.container;
@@ -123,22 +123,28 @@ describe('SectionContext truth surface', () => {
     const plusButton = Array.from(
       mounted.container.querySelectorAll('button')
     ).find((button) => button.textContent?.trim() === '+');
+    const projectDefaultButton = Array.from(
+      mounted.container.querySelectorAll('button')
+    ).find((button) => button.textContent?.trim() === 'Use project default');
+    const energySlider = mounted.container.querySelector(
+      '#section-slider-Energy'
+    ) as HTMLInputElement | null;
 
     expect(nameInput?.value).toBe('Verse');
     expect(mounted.container.textContent).toContain('8 bars');
-    expect(mounted.container.textContent).toContain('Style Overrides Unavailable');
     expect(mounted.container.textContent).toContain(
-      'This inspector updates the saved section name and length only.'
+      'Section Energy Override'
     );
     expect(mounted.container.textContent).toContain(
-      'Per-section genre, sub-style, energy, groove, feel, swing, and dynamics are not editable here yet.'
+      'This section is carrying its own saved energy override.'
     );
     expect(mounted.container.textContent).toContain(
-      'This section already carries saved style override data, but this build does not expose those fields in the inspector.'
+      'Project default: Med (50)'
     );
-    expect(mounted.container.querySelector('#section-genre-select')).toBeNull();
-    expect(mounted.container.querySelector('#section-substyle-select')).toBeNull();
-    expect(mounted.container.querySelector('#section-slider-Energy')).toBeNull();
+    expect(mounted.container.textContent).toContain(
+      'Groove, feel, swing, and dynamics are not editable per section here yet.'
+    );
+    expect(energySlider?.value).toBe('75');
 
     act(() => {
       if (nameInput) {
@@ -158,8 +164,37 @@ describe('SectionContext truth surface', () => {
       plusButton?.dispatchEvent(new MouseEvent('click', { bubbles: true }));
     });
 
+    act(() => {
+      if (energySlider) {
+        const valueSetter = Object.getOwnPropertyDescriptor(
+          HTMLInputElement.prototype,
+          'value'
+        )?.set;
+        valueSetter?.call(energySlider, '33');
+        energySlider.dispatchEvent(new Event('input', { bubbles: true }));
+        energySlider.dispatchEvent(new Event('change', { bubbles: true }));
+      }
+    });
+
     const updatedSection = useProjectStore.getState().sections[0];
     expect(updatedSection?.name).toBe('Bridge');
     expect(updatedSection?.barCount).toBe(12);
+    expect(updatedSection?.energyOverride).toBe(33);
+
+    act(() => {
+      projectDefaultButton?.dispatchEvent(
+        new MouseEvent('click', { bubbles: true })
+      );
+    });
+
+    const resetSection = useProjectStore.getState().sections[0];
+    const resetEnergySlider = mounted.container.querySelector(
+      '#section-slider-Energy'
+    ) as HTMLInputElement | null;
+    expect(resetSection?.energyOverride).toBeNull();
+    expect(resetEnergySlider?.value).toBe('50');
+    expect(mounted.container.textContent).toContain(
+      'This section is inheriting the project energy default.'
+    );
   });
 });

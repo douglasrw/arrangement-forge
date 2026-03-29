@@ -180,13 +180,13 @@ describe('LeftPanel inspector truth regression', () => {
     mountedContainer = mounted.container;
 
     expect(mounted.container.textContent).toContain('Section Inspector');
-    expect(mounted.container.textContent).toContain('Style Overrides Unavailable');
     expect(mounted.container.textContent).toContain(
-      'This inspector updates the saved section name and length only.'
+      'Section Energy Override'
     );
-    expect(mounted.container.querySelector('#section-genre-select')).toBeNull();
-    expect(mounted.container.querySelector('#section-substyle-select')).toBeNull();
-    expect(mounted.container.querySelector('#section-slider-Energy')).toBeNull();
+    expect(mounted.container.textContent).toContain(
+      'Groove, feel, swing, and dynamics are not editable per section here yet.'
+    );
+    expect(mounted.container.querySelector('#section-slider-Energy')).not.toBeNull();
     expect(mounted.container.textContent).toContain('Close inspector');
 
     act(() => {

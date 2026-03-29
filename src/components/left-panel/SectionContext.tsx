@@ -4,6 +4,14 @@ import { useProjectStore } from "@/store/project-store"
 import { useSelectionStore } from "@/store/selection-store"
 import { ConfirmDialog } from "@/components/shared/ConfirmDialog"
 
+function getEnergyDisplayValue(value: number): string {
+  if (value <= 20) return "Low"
+  if (value <= 40) return "Laid"
+  if (value <= 60) return "Med"
+  if (value <= 80) return "High"
+  return "Max"
+}
+
 /* ------------------------------------------------------------------ */
 /*  SectionContext                                                      */
 /* ------------------------------------------------------------------ */
@@ -18,16 +26,18 @@ export function SectionContext({
   sectionBars = 16,
   onClose,
 }: SectionContextProps) {
-  const { sections, updateSection, removeSection } = useProjectStore()
+  const { project, sections, updateSection, removeSection } = useProjectStore()
   const { sectionId, selectSong } = useSelectionStore()
 
   /* Derive live section from store using sectionId */
   const liveSection = sections.find((s) => s.id === sectionId)
   const currentName = liveSection?.name ?? sectionName
   const currentBars = liveSection?.barCount ?? sectionBars
-  const hasSavedStyleOverrides = liveSection
+  const projectEnergy = project?.energy ?? 50
+  const effectiveEnergy = liveSection?.energyOverride ?? projectEnergy
+  const isEnergyInherited = liveSection?.energyOverride == null
+  const hasHiddenStyleOverrides = liveSection
     ? [
-        liveSection.energyOverride,
         liveSection.grooveOverride,
         liveSection.feelOverride,
         liveSection.swingPctOverride,
@@ -55,6 +65,16 @@ export function SectionContext({
     if (!liveSection) return
     const newBarCount = Math.min(64, Math.max(1, currentBars + delta))
     updateSection(liveSection.id, { barCount: newBarCount })
+  }
+
+  function updateEnergyOverride(value: number) {
+    if (!liveSection) return
+    updateSection(liveSection.id, { energyOverride: value })
+  }
+
+  function resetEnergyOverride() {
+    if (!liveSection || liveSection.energyOverride == null) return
+    updateSection(liveSection.id, { energyOverride: null })
   }
 
   /* Confirm dialog for delete section */
@@ -140,22 +160,87 @@ export function SectionContext({
           <div className="flex items-start justify-between gap-3">
             <div className="flex flex-col gap-1">
               <h3 className="text-[10px] font-medium uppercase tracking-widest text-zinc-500">
-                Style Overrides Unavailable
+                Section Energy Override
               </h3>
               <p className="text-xs text-muted-foreground">
-                This inspector updates the saved section name and length only.
+                {isEnergyInherited
+                  ? "This section is inheriting the project energy default."
+                  : "This section is carrying its own saved energy override."}
               </p>
             </div>
             <span className="rounded border border-border/70 px-2 py-0.5 text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
-              Truth
+              {isEnergyInherited ? "Project" : "Section"}
             </span>
           </div>
-          <p className="mt-3 text-sm text-foreground">
-            Per-section genre, sub-style, energy, groove, feel, swing, and dynamics are not editable here yet.
+
+          <div className="mt-3 flex items-center justify-between gap-3">
+            <label
+              htmlFor="section-slider-Energy"
+              className="text-[11px] font-medium text-muted-foreground"
+            >
+              Energy
+            </label>
+            <span className="min-w-[4rem] shrink-0 text-right text-[11px] font-semibold text-foreground">
+              {getEnergyDisplayValue(effectiveEnergy)} ({effectiveEnergy})
+            </span>
+          </div>
+
+          <div className="group relative mt-2 h-1.5 w-full rounded-full bg-secondary">
+            <div
+              className="absolute inset-y-0 left-0 rounded-full bg-ring"
+              style={{ width: `${effectiveEnergy}%` }}
+            />
+            <input
+              type="range"
+              id="section-slider-Energy"
+              aria-label="Section energy override"
+              min={0}
+              max={100}
+              value={effectiveEnergy}
+              disabled={!liveSection}
+              onChange={(e) => updateEnergyOverride(Number(e.target.value))}
+              className={cn(
+                "absolute inset-0 h-full w-full cursor-pointer appearance-none bg-transparent",
+                "disabled:cursor-not-allowed disabled:opacity-40",
+                "[&::-webkit-slider-thumb]:h-3 [&::-webkit-slider-thumb]:w-3",
+                "[&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:rounded-full",
+                "[&::-webkit-slider-thumb]:border [&::-webkit-slider-thumb]:border-ring",
+                "[&::-webkit-slider-thumb]:bg-foreground [&::-webkit-slider-thumb]:shadow-sm",
+                "[&::-webkit-slider-thumb]:opacity-0 [&::-webkit-slider-thumb]:transition-opacity",
+                "group-hover:[&::-webkit-slider-thumb]:opacity-100",
+                "[&::-moz-range-thumb]:h-3 [&::-moz-range-thumb]:w-3",
+                "[&::-moz-range-thumb]:appearance-none [&::-moz-range-thumb]:rounded-full",
+                "[&::-moz-range-thumb]:border [&::-moz-range-thumb]:border-ring",
+                "[&::-moz-range-thumb]:bg-foreground [&::-moz-range-thumb]:shadow-sm"
+              )}
+            />
+          </div>
+
+          <div className="mt-3 flex items-center justify-between gap-3">
+            <p className="text-xs text-muted-foreground">
+              Project default: {getEnergyDisplayValue(projectEnergy)} ({projectEnergy})
+            </p>
+            <button
+              type="button"
+              onClick={resetEnergyOverride}
+              disabled={!liveSection || isEnergyInherited}
+              className="rounded border border-border/70 px-2 py-1 text-[10px] font-medium uppercase tracking-wider text-foreground transition-colors hover:bg-secondary disabled:cursor-not-allowed disabled:text-muted-foreground"
+            >
+              Use project default
+            </button>
+          </div>
+        </div>
+
+        <div className="mt-3 rounded-lg border border-border/70 bg-secondary/20 p-3">
+          <h3 className="text-[10px] font-medium uppercase tracking-widest text-zinc-500">
+            More Overrides Unavailable
+          </h3>
+          <p className="mt-2 text-sm text-foreground">
+            Groove, feel, swing, and dynamics are not editable per section here yet.
           </p>
-          {hasSavedStyleOverrides && (
+          {hasHiddenStyleOverrides && (
             <p className="mt-2 text-xs text-muted-foreground">
-              This section already carries saved style override data, but this build does not expose those fields in the inspector.
+              This section still carries saved override data for fields that remain hidden in this inspector.
             </p>
           )}
         </div>
