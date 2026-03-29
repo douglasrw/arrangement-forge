@@ -66,9 +66,11 @@ function renderLibrary() {
 }
 
 function findButtonByText(container: HTMLElement, text: string): HTMLButtonElement | null {
-  return Array.from(container.querySelectorAll('button')).find(
-    (button): button is HTMLButtonElement => button.textContent?.trim() === text
-  ) ?? null;
+  return (
+    Array.from(container.querySelectorAll('button')).find(
+      (button): button is HTMLButtonElement => button.textContent?.trim() === text
+    ) ?? null
+  );
 }
 
 function setInputValue(input: HTMLInputElement, value: string) {
@@ -85,6 +87,10 @@ function setSelectValue(select: HTMLSelectElement, value: string) {
 
 function getVisibleProjectNames(container: HTMLElement): string[] {
   return Array.from(container.querySelectorAll('h3')).map((heading) => heading.textContent ?? '');
+}
+
+function getProjectCard(container: HTMLElement, projectId: string): HTMLElement | null {
+  return container.querySelector(`[data-project-id="${projectId}"]`);
 }
 
 let mountedRoot: Root | null = null;
@@ -153,7 +159,12 @@ describe('LibraryPage', () => {
   it('updates filtered delete state and library count honestly after removing a visible project', async () => {
     projectApi.listProjects.mockResolvedValue([
       makeProject({ id: 'project-solo', name: 'Solo Sketch', genre: 'Jazz' }),
-      makeProject({ id: 'project-band', name: 'Band Suite', genre: 'Pop', updatedAt: '2026-03-28T00:00:00Z' }),
+      makeProject({
+        id: 'project-band',
+        name: 'Band Suite',
+        genre: 'Pop',
+        updatedAt: '2026-03-28T00:00:00Z',
+      }),
     ]);
 
     useUiStore.setState({ libraryCount: 2 });
@@ -166,7 +177,9 @@ describe('LibraryPage', () => {
       await Promise.resolve();
     });
 
-    const searchInput = mounted.container.querySelector('#library-search') as HTMLInputElement | null;
+    const searchInput = mounted.container.querySelector(
+      '#library-search'
+    ) as HTMLInputElement | null;
 
     expect(searchInput).not.toBeNull();
 
@@ -202,7 +215,9 @@ describe('LibraryPage', () => {
   });
 
   it('shows the empty state after deleting the final project in the library', async () => {
-    projectApi.listProjects.mockResolvedValue([makeProject({ id: 'project-last', name: 'Last Project' })]);
+    projectApi.listProjects.mockResolvedValue([
+      makeProject({ id: 'project-last', name: 'Last Project' }),
+    ]);
 
     useUiStore.setState({ libraryCount: 1 });
 
@@ -238,7 +253,9 @@ describe('LibraryPage', () => {
   });
 
   it('keeps the project visible and surfaces the failure when delete does not persist', async () => {
-    projectApi.listProjects.mockResolvedValue([makeProject({ id: 'project-stuck', name: 'Stuck Delete' })]);
+    projectApi.listProjects.mockResolvedValue([
+      makeProject({ id: 'project-stuck', name: 'Stuck Delete' }),
+    ]);
     projectApi.deleteProject.mockImplementation(async () => {
       useUiStore.getState().setSystemStatus('error', 'Delete blocked by policy');
       return false;
@@ -294,7 +311,9 @@ describe('LibraryPage', () => {
       await Promise.resolve();
     });
 
-    const searchInput = mounted.container.querySelector('#library-search') as HTMLInputElement | null;
+    const searchInput = mounted.container.querySelector(
+      '#library-search'
+    ) as HTMLInputElement | null;
     expect(searchInput).not.toBeNull();
 
     act(() => {
@@ -328,11 +347,100 @@ describe('LibraryPage', () => {
     expect(getVisibleProjectNames(mounted.container)).toEqual(['Solo Sketch']);
   });
 
+  it('shows fresh, stale, and incomplete metadata truth on library cards', async () => {
+    projectApi.listProjects.mockResolvedValue([
+      makeProject({
+        id: 'project-fresh',
+        name: 'Fresh Cut',
+        chordChartRaw: 'Cmaj7 | Fmaj7 | G7 | Cmaj7',
+        generationHints: 'Brushes on snare',
+        hasArrangement: true,
+        generatedAt: '2026-03-29T00:00:00Z',
+        generatedTempo: 120,
+        updatedAt: '2026-03-29T00:00:00Z',
+        tempo: 120,
+      }),
+      makeProject({
+        id: 'project-stale',
+        name: 'Stale Cut',
+        chordChartRaw: 'Am7 | D7 | Gmaj7 | Cmaj7',
+        generationHints: '',
+        hasArrangement: true,
+        generatedAt: '2026-03-28T00:00:00Z',
+        generatedTempo: 100,
+        updatedAt: '2026-03-29T00:00:00Z',
+        tempo: 120,
+      }),
+      makeProject({
+        id: 'project-incomplete',
+        name: 'Incomplete Idea',
+        chordChartRaw: 'Dm7 | G7 | Cmaj7 | Cmaj7',
+        generationHints: 'Keep it sparse',
+        hasArrangement: false,
+        generatedAt: null,
+        generatedTempo: null,
+      }),
+    ]);
+
+    const mounted = renderLibrary();
+    mountedRoot = mounted.root;
+    mountedContainer = mounted.container;
+
+    await act(async () => {
+      await Promise.resolve();
+    });
+
+    const freshCard = getProjectCard(mounted.container, 'project-fresh');
+    const staleCard = getProjectCard(mounted.container, 'project-stale');
+    const incompleteCard = getProjectCard(mounted.container, 'project-incomplete');
+
+    expect(freshCard).not.toBeNull();
+    expect(staleCard).not.toBeNull();
+    expect(incompleteCard).not.toBeNull();
+
+    expect(freshCard?.textContent).toContain('Fresh');
+    expect(freshCard?.textContent).toContain(
+      'The saved arrangement matches the latest generated snapshot.'
+    );
+    expect(freshCard?.textContent).toContain('Last saved');
+    expect(freshCard?.textContent).toContain('Generated tempo');
+    expect(freshCard?.textContent).toContain('Chord chart');
+    expect(freshCard?.textContent).toContain('Notes');
+    expect(freshCard?.textContent).toContain('Arrangement');
+
+    expect(staleCard?.textContent).toContain('Stale');
+    expect(staleCard?.textContent).toContain(
+      'Saved edits and tempo changes are newer than the last generation.'
+    );
+    expect(staleCard?.textContent).toContain('100 BPM');
+
+    expect(incompleteCard?.textContent).toContain('Incomplete');
+    expect(incompleteCard?.textContent).toContain(
+      'Chord chart and notes are saved, but no arrangement is generated yet.'
+    );
+    expect(incompleteCard?.textContent).toContain('Not yet');
+  });
+
   it('reorders the visible library grid when the sort mode changes', async () => {
     projectApi.listProjects.mockResolvedValue([
-      makeProject({ id: 'project-bravo', name: 'Bravo Sunset', tempo: 132, updatedAt: '2026-03-28T00:00:00Z' }),
-      makeProject({ id: 'project-alpha', name: 'Alpha Dawn', tempo: 90, updatedAt: '2026-03-29T00:00:00Z' }),
-      makeProject({ id: 'project-charlie', name: 'Charlie Echo', tempo: 100, updatedAt: '2026-03-27T00:00:00Z' }),
+      makeProject({
+        id: 'project-bravo',
+        name: 'Bravo Sunset',
+        tempo: 132,
+        updatedAt: '2026-03-28T00:00:00Z',
+      }),
+      makeProject({
+        id: 'project-alpha',
+        name: 'Alpha Dawn',
+        tempo: 90,
+        updatedAt: '2026-03-29T00:00:00Z',
+      }),
+      makeProject({
+        id: 'project-charlie',
+        name: 'Charlie Echo',
+        tempo: 100,
+        updatedAt: '2026-03-27T00:00:00Z',
+      }),
     ]);
 
     const mounted = renderLibrary();

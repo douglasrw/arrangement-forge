@@ -1,5 +1,6 @@
 import { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { ProjectCard } from '@/components/library/ProjectCard';
 import { useProject } from '@/hooks/useProject';
 import { ConfirmDialog } from '@/components/shared/ConfirmDialog';
 import { useUiStore } from '@/store/ui-store';
@@ -14,14 +15,6 @@ function useDebounce<T>(value: T, delay: number): T {
     return () => clearTimeout(t);
   }, [value, delay]);
   return debounced;
-}
-
-function formatDate(iso: string): string {
-  try {
-    return new Date(iso).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' });
-  } catch {
-    return iso;
-  }
 }
 
 export default function LibraryPage() {
@@ -125,9 +118,11 @@ export default function LibraryPage() {
             onClick={handleCreate}
             disabled={creating}
           >
-            {creating
-              ? <span className="inline-block h-3 w-3 rounded-full border-2 border-primary-foreground border-t-transparent animate-spin" />
-              : '+ New Project'}
+            {creating ? (
+              <span className="inline-block h-3 w-3 rounded-full border-2 border-primary-foreground border-t-transparent animate-spin" />
+            ) : (
+              '+ New Project'
+            )}
           </button>
         </div>
       </div>
@@ -135,7 +130,9 @@ export default function LibraryPage() {
       <div className="px-8 py-6 flex flex-col gap-6 max-w-6xl">
         {/* Search + Sort */}
         <div className="flex gap-3 items-center">
-          <label htmlFor="library-search" className="sr-only">Search projects</label>
+          <label htmlFor="library-search" className="sr-only">
+            Search projects
+          </label>
           <input
             id="library-search"
             data-testid="library-search-input"
@@ -145,14 +142,16 @@ export default function LibraryPage() {
             value={searchInput}
             onChange={(e) => setSearchInput(e.target.value)}
           />
-          <label htmlFor="library-sort" className="sr-only">Sort projects</label>
+          <label htmlFor="library-sort" className="sr-only">
+            Sort projects
+          </label>
           <select
             id="library-sort"
             className="rounded border border-border bg-card px-3 py-1.5 text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-ring"
             value={sortKey}
             onChange={(e) => setSortKey(e.target.value as SortKey)}
           >
-            <option value="updatedAt">Last Edited</option>
+            <option value="updatedAt">Last Saved</option>
             <option value="name-asc">Name A-Z</option>
             <option value="name-desc">Name Z-A</option>
             <option value="genre">Genre</option>
@@ -183,7 +182,8 @@ export default function LibraryPage() {
                   {projects.length === 0 ? 'Unable to load library' : 'Library action failed'}
                 </p>
                 <p className="text-sm text-muted-foreground">
-                  {errorMessage ?? 'Arrangement Forge could not finish the requested library action.'}
+                  {errorMessage ??
+                    'Arrangement Forge could not finish the requested library action.'}
                 </p>
               </div>
               <button
@@ -207,7 +207,11 @@ export default function LibraryPage() {
               onClick={handleCreate}
               disabled={creating}
             >
-              {creating ? <span className="inline-block h-3 w-3 rounded-full border-2 border-primary-foreground border-t-transparent animate-spin" /> : '+ New Project'}
+              {creating ? (
+                <span className="inline-block h-3 w-3 rounded-full border-2 border-primary-foreground border-t-transparent animate-spin" />
+              ) : (
+                '+ New Project'
+              )}
             </button>
           </div>
         )}
@@ -223,46 +227,12 @@ export default function LibraryPage() {
         {!loading && filtered.length > 0 && (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
             {filtered.map((project) => (
-              <div
-                key={project.id}
-                data-testid="library-project-card"
-                data-project-id={project.id}
-                className="rounded-lg bg-card border border-border hover:border-primary/50 cursor-pointer transition-colors"
-                onClick={() => navigate(`/project/${project.id}`)}
-              >
-                <div className="p-4 flex flex-col gap-2">
-                  <div className="flex items-start justify-between gap-2">
-                    <h3 className="font-semibold text-foreground text-sm leading-tight line-clamp-2 flex-1">
-                      {project.name}
-                    </h3>
-                    <button
-                      type="button"
-                      data-testid="library-delete-project"
-                      className="rounded p-0.5 text-muted-foreground/50 hover:text-destructive shrink-0 transition-colors"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        setDeleteTarget(project);
-                      }}
-                      aria-label={`Delete ${project.name}`}
-                      title="Delete project"
-                    >
-                      ✕
-                    </button>
-                  </div>
-
-                  <div className="flex flex-wrap gap-1 mt-1">
-                    <span className="rounded px-1.5 py-0.5 text-[10px] font-medium bg-secondary text-secondary-foreground">{project.genre}</span>
-                    <span className="rounded px-1.5 py-0.5 text-[10px] font-medium bg-secondary text-secondary-foreground">{project.key}</span>
-                    <span className="rounded px-1.5 py-0.5 text-[10px] font-medium bg-secondary text-secondary-foreground">{project.tempo} BPM</span>
-                    {project.hasArrangement && (
-                      <span className="rounded px-1.5 py-0.5 text-[10px] font-medium bg-primary/20 text-primary">Generated</span>
-                    )}
-                  </div>
-
-                  <p className="text-xs text-muted-foreground/60 mt-1">
-                    {formatDate(project.updatedAt)}
-                  </p>
-                </div>
+              <div key={project.id} data-testid="library-project-card" data-project-id={project.id}>
+                <ProjectCard
+                  project={project}
+                  onOpen={() => navigate(`/project/${project.id}`)}
+                  onDelete={() => setDeleteTarget(project)}
+                />
               </div>
             ))}
           </div>

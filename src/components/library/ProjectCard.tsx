@@ -1,91 +1,265 @@
-import { cn } from "@/lib/utils"
+import { cn } from '@/lib/utils';
+import type { Project } from '@/types';
 
-const INSTRUMENT_COLORS = [
-  "var(--instrument-drums)",
-  "var(--instrument-bass)",
-  "var(--instrument-piano)",
-  "var(--instrument-guitar)",
-  "var(--instrument-strings)",
-]
+type ProjectCardStatusTone = 'fresh' | 'stale' | 'incomplete';
 
-export interface ProjectData {
-  id: string
-  name: string
-  genre: string
-  key: string
-  tempo: number
-  lastEdited: string
-  sections: number
-  bars: number
-  /** 5 values 0-1 representing density per stem */
-  stemDensity: number[]
+type ProjectCardStatus = {
+  tone: ProjectCardStatusTone;
+  label: string;
+  detail: string;
+};
+
+const STATUS_STYLES: Record<ProjectCardStatusTone, string> = {
+  fresh: 'border-primary/30 bg-primary/10 text-primary',
+  stale: 'border-destructive/30 bg-destructive/10 text-destructive',
+  incomplete: 'border-border bg-secondary text-secondary-foreground',
+};
+
+function getProjectDisplayName(project: Project) {
+  return project.name.trim() || 'Untitled Project';
+}
+
+function hasChordChartTruth(project: Project) {
+  return Boolean(project.chordChartRaw.trim());
+}
+
+function hasNotesTruth(project: Project) {
+  return Boolean(project.generationHints.trim());
+}
+
+function parseTimestamp(iso: string | null) {
+  if (!iso) {
+    return null;
+  }
+
+  const timestamp = new Date(iso).getTime();
+
+  return Number.isNaN(timestamp) ? null : timestamp;
+}
+
+function formatLibraryDate(iso: string | null) {
+  if (!iso) {
+    return 'Not yet';
+  }
+
+  const date = new Date(iso);
+
+  if (Number.isNaN(date.getTime())) {
+    return iso;
+  }
+
+  return date.toLocaleDateString(undefined, {
+    month: 'short',
+    day: 'numeric',
+    year: 'numeric',
+  });
+}
+
+function getSavedInputCopy(project: Project) {
+  const hasChordChart = hasChordChartTruth(project);
+  const hasNotes = hasNotesTruth(project);
+
+  if (hasChordChart && hasNotes) {
+    return 'Chord chart and notes';
+  }
+
+  if (hasChordChart) {
+    return 'Chord chart';
+  }
+
+  if (hasNotes) {
+    return 'Notes only';
+  }
+
+  return 'Project shell only';
+}
+
+function getProjectTruthBadges(project: Project) {
+  const badges: string[] = [];
+
+  if (hasChordChartTruth(project)) {
+    badges.push('Chord chart');
+  }
+
+  if (hasNotesTruth(project)) {
+    badges.push('Notes');
+  }
+
+  if (project.hasArrangement) {
+    badges.push('Arrangement');
+  }
+
+  return badges.length ? badges : ['Project shell'];
+}
+
+export function getProjectCardStatus(project: Project): ProjectCardStatus {
+  const updatedAt = parseTimestamp(project.updatedAt);
+  const generatedAt = parseTimestamp(project.generatedAt);
+  const updatedSinceGeneration =
+    project.hasArrangement && updatedAt !== null && generatedAt !== null && updatedAt > generatedAt;
+  const tempoChangedSinceGeneration =
+    project.hasArrangement &&
+    project.generatedTempo !== null &&
+    project.generatedTempo !== project.tempo;
+
+  if (!project.hasArrangement) {
+    if (hasChordChartTruth(project) && hasNotesTruth(project)) {
+      return {
+        tone: 'incomplete',
+        label: 'Incomplete',
+        detail: 'Chord chart and notes are saved, but no arrangement is generated yet.',
+      };
+    }
+
+    if (hasChordChartTruth(project)) {
+      return {
+        tone: 'incomplete',
+        label: 'Incomplete',
+        detail: 'A chord chart is saved, but the arrangement still needs generation.',
+      };
+    }
+
+    if (hasNotesTruth(project)) {
+      return {
+        tone: 'incomplete',
+        label: 'Incomplete',
+        detail: 'Notes are saved, but the project still needs a chord chart and generation.',
+      };
+    }
+
+    return {
+      tone: 'incomplete',
+      label: 'Incomplete',
+      detail: 'Only the saved project shell exists right now.',
+    };
+  }
+
+  if (updatedSinceGeneration && tempoChangedSinceGeneration) {
+    return {
+      tone: 'stale',
+      label: 'Stale',
+      detail: 'Saved edits and tempo changes are newer than the last generation.',
+    };
+  }
+
+  if (updatedSinceGeneration) {
+    return {
+      tone: 'stale',
+      label: 'Stale',
+      detail: 'Saved edits are newer than the last generation.',
+    };
+  }
+
+  if (tempoChangedSinceGeneration) {
+    return {
+      tone: 'stale',
+      label: 'Stale',
+      detail: `Project tempo is ${project.tempo} BPM, but the arrangement was generated at ${project.generatedTempo} BPM.`,
+    };
+  }
+
+  if (generatedAt === null) {
+    return {
+      tone: 'stale',
+      label: 'Stale',
+      detail: 'This arrangement is missing generation metadata.',
+    };
+  }
+
+  return {
+    tone: 'fresh',
+    label: 'Fresh',
+    detail: 'The saved arrangement matches the latest generated snapshot.',
+  };
 }
 
 interface ProjectCardProps {
-  project: ProjectData
-  onClick?: () => void
+  project: Project;
+  onOpen?: () => void;
+  onDelete?: () => void;
 }
 
-export function ProjectCard({ project, onClick }: ProjectCardProps) {
+export function ProjectCard({ project, onOpen, onDelete }: ProjectCardProps) {
+  const status = getProjectCardStatus(project);
+  const generatedAtLabel = project.generatedAt ? formatLibraryDate(project.generatedAt) : 'Not yet';
+  const generatedTempoLabel =
+    project.generatedTempo !== null ? `${project.generatedTempo} BPM` : 'Not yet';
+  const displayName = getProjectDisplayName(project);
+
   return (
-    <button
-      type="button"
-      onClick={onClick}
-      className={cn(
-        "group flex w-full flex-col rounded-2xl border border-zinc-700/40 bg-zinc-800/50 p-5 text-left",
-        "cursor-pointer transition-all duration-200",
-        "hover:border-zinc-600 hover:bg-zinc-800/80"
-      )}
-    >
-      {/* Row 1: name + date */}
-      <div className="flex w-full items-start justify-between">
-        <span className="text-sm font-semibold text-zinc-100 leading-snug">
-          {project.name}
-        </span>
-        <span className="shrink-0 text-xs text-zinc-500">{project.lastEdited}</span>
-      </div>
-
-      {/* Row 2: badges */}
-      <div className="mt-2 flex gap-1.5">
-        <span className="rounded-md bg-ring/10 px-2 py-0.5 text-[10px] font-medium text-primary">
-          {project.genre}
-        </span>
-        <span className="rounded-md bg-zinc-700 px-2 py-0.5 text-[10px] font-medium text-zinc-300">
-          {project.key}
-        </span>
-        <span className="rounded-md bg-zinc-700 px-2 py-0.5 text-[10px] font-medium text-zinc-300">
-          {"♩ "}{project.tempo}
-        </span>
-      </div>
-
-      {/* Row 3: mini stem barcode */}
-      <div className="mt-3 flex flex-col gap-px overflow-hidden rounded-md">
-        {project.stemDensity.map((density, i) => (
-          <div key={i} className="h-[3px] w-full bg-zinc-900">
-            <div
-              className="h-full rounded-r-sm transition-all duration-300"
-              style={{
-                width: `${Math.max(density * 100, 8)}%`,
-                backgroundColor: INSTRUMENT_COLORS[i],
-                opacity: 0.35 + density * 0.65,
-              }}
-            />
+    <article className="group relative flex h-full flex-col rounded-2xl border border-border bg-card transition-colors hover:border-primary/40">
+      <button
+        type="button"
+        onClick={onOpen}
+        className="flex h-full w-full flex-col gap-4 p-4 pr-12 text-left"
+      >
+        <div className="flex items-start justify-between gap-3">
+          <div className="space-y-1">
+            <h3 className="text-sm font-semibold leading-tight text-foreground line-clamp-2">
+              {displayName}
+            </h3>
+            <p className="text-xs text-muted-foreground">
+              {project.genre} · {project.key} · {project.tempo} BPM
+            </p>
           </div>
-        ))}
-      </div>
+          <span
+            className={cn(
+              'shrink-0 rounded-full border px-2.5 py-1 text-[10px] font-semibold uppercase tracking-wide',
+              STATUS_STYLES[status.tone]
+            )}
+          >
+            {status.label}
+          </span>
+        </div>
 
-      {/* Row 4: stats + menu */}
-      <div className="mt-3 flex w-full items-center justify-between">
-        <span className="text-xs text-zinc-500">
-          {project.sections} sections &middot; {project.bars} bars
-        </span>
-        <span
-          className="text-zinc-600 transition-colors group-hover:text-zinc-300"
-          aria-label="More options"
+        <p className="text-xs leading-relaxed text-muted-foreground">{status.detail}</p>
+
+        <dl className="grid gap-3 text-xs sm:grid-cols-2">
+          <div className="space-y-1">
+            <dt className="text-muted-foreground/70">Last saved</dt>
+            <dd className="text-foreground">{formatLibraryDate(project.updatedAt)}</dd>
+          </div>
+          <div className="space-y-1">
+            <dt className="text-muted-foreground/70">Generated</dt>
+            <dd className="text-foreground">{generatedAtLabel}</dd>
+          </div>
+          <div className="space-y-1">
+            <dt className="text-muted-foreground/70">Generated tempo</dt>
+            <dd className="text-foreground">{generatedTempoLabel}</dd>
+          </div>
+          <div className="space-y-1">
+            <dt className="text-muted-foreground/70">Saved input</dt>
+            <dd className="text-foreground">{getSavedInputCopy(project)}</dd>
+          </div>
+        </dl>
+
+        <div className="mt-auto flex flex-wrap gap-1.5">
+          {getProjectTruthBadges(project).map((badge) => (
+            <span
+              key={badge}
+              className="rounded-full border border-border bg-background px-2 py-1 text-[10px] font-medium text-muted-foreground"
+            >
+              {badge}
+            </span>
+          ))}
+        </div>
+      </button>
+
+      {onDelete && (
+        <button
+          type="button"
+          data-testid="library-delete-project"
+          className="absolute right-3 top-3 rounded p-0.5 text-muted-foreground/50 transition-colors hover:text-destructive"
+          onClick={(event) => {
+            event.stopPropagation();
+            onDelete();
+          }}
+          aria-label={`Delete ${displayName}`}
+          title="Delete project"
         >
-          &middot;&middot;&middot;
-        </span>
-      </div>
-    </button>
-  )
+          ✕
+        </button>
+      )}
+    </article>
+  );
 }
