@@ -1,52 +1,88 @@
-import { cn } from "@/lib/utils"
+import type { GenerationState, SystemStatus } from '@/types';
+import { cn } from '@/lib/utils';
 
-export type AppStatus = "saved" | "unsaved" | "saving" | "generating" | "error"
+export type AppStatus =
+  | 'saved'
+  | 'unsaved'
+  | 'saving'
+  | 'generating'
+  | 'loading-samples'
+  | 'offline'
+  | 'error';
+
+interface StatusBarStateInput {
+  generationState: GenerationState;
+  systemStatus: SystemStatus;
+  unsavedChanges: boolean;
+}
+
+export function deriveStatusBarStatus({
+  generationState,
+  systemStatus,
+  unsavedChanges,
+}: StatusBarStateInput): AppStatus {
+  if (systemStatus === 'error') return 'error';
+  if (systemStatus === 'offline') return 'offline';
+  if (systemStatus === 'loading-samples') return 'loading-samples';
+  if (generationState === 'generating' || systemStatus === 'generating') return 'generating';
+  if (systemStatus === 'saving') return 'saving';
+  if (unsavedChanges) return 'unsaved';
+  return 'saved';
+}
 
 const STATUS_CONFIG: Record<
   AppStatus,
   { dot: string; label: string }
 > = {
   saved: {
-    dot: "bg-status-ready",
-    label: "Saved",
+    dot: 'bg-status-ready',
+    label: 'Saved',
   },
   unsaved: {
-    dot: "bg-status-unsaved",
-    label: "Unsaved changes",
+    dot: 'bg-status-unsaved',
+    label: 'Unsaved changes',
   },
   saving: {
-    dot: "bg-status-saving animate-pulse",
-    label: "Saving\u2026",
+    dot: 'bg-status-saving animate-pulse',
+    label: 'Saving…',
   },
   generating: {
-    dot: "bg-status-unsaved animate-pulse",
-    label: "Generating\u2026",
+    dot: 'bg-status-unsaved animate-pulse',
+    label: 'Generating…',
+  },
+  'loading-samples': {
+    dot: 'bg-status-saving animate-pulse',
+    label: 'Loading samples…',
+  },
+  offline: {
+    dot: 'bg-muted-foreground',
+    label: 'Offline',
   },
   error: {
-    dot: "bg-destructive",
-    label: "Error",
+    dot: 'bg-destructive',
+    label: 'Error',
   },
-}
+};
 
 interface StatusBarProps {
-  status?: AppStatus
-  className?: string
+  status?: AppStatus;
+  className?: string;
 }
 
-export function StatusBar({ status = "saved", className }: StatusBarProps) {
-  const cfg = STATUS_CONFIG[status]
+export function StatusBar({ status = 'saved', className }: StatusBarProps) {
+  const cfg = STATUS_CONFIG[status];
 
   return (
     <div
       data-testid="status-bar"
       className={cn(
-        "flex h-6 shrink-0 items-center border-t border-border bg-secondary/50 px-4",
+        'flex h-6 shrink-0 items-center border-t border-border bg-secondary/50 px-4',
         className
       )}
     >
       {/* Left: status indicator */}
       <div className="flex items-center gap-1.5">
-        <span className={cn("size-1.5 rounded-full", cfg.dot)} />
+        <span className={cn('size-1.5 rounded-full', cfg.dot)} />
         <span className="text-xs text-zinc-500">{cfg.label}</span>
       </div>
 
@@ -58,5 +94,5 @@ export function StatusBar({ status = "saved", className }: StatusBarProps) {
       {/* Right: version */}
       <span className="text-[10px] text-zinc-600">v0.1.0</span>
     </div>
-  )
+  );
 }

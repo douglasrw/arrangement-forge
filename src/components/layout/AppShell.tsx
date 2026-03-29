@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { ChevronRight } from 'lucide-react';
 import { TopBar } from './TopBar';
-import { StatusBar } from './StatusBar';
+import { StatusBar, deriveStatusBarStatus } from './StatusBar';
 import { LeftPanel, type PanelContext } from '@/components/left-panel/LeftPanel';
 import { ArrangementView } from '@/components/arrangement/ArrangementView';
 import { TransportBar } from '@/components/transport/TransportBar';
@@ -12,7 +12,6 @@ import { useKeyboardShortcuts } from '@/hooks/useKeyboardShortcuts';
 import { useAutoSave } from '@/hooks/useAutoSave';
 import { useSelectionStore } from '@/store/selection-store';
 import { useUiStore } from '@/store/ui-store';
-import type { AppStatus } from './StatusBar';
 
 export function AppShell() {
   useKeyboardShortcuts();
@@ -35,12 +34,11 @@ export function AppShell() {
   const toggleLeftPanel = useUiStore((s) => s.toggleLeftPanel);
 
   /* Derive StatusBar status from uiStore */
-  const derivedStatus: AppStatus =
-    systemStatus === 'error' ? 'error' :
-    generationState === 'generating' ? 'generating' :
-    systemStatus === 'saving' ? 'saving' :
-    unsavedChanges ? 'unsaved' :
-    'saved';
+  const derivedStatus = deriveStatusBarStatus({
+    generationState,
+    systemStatus,
+    unsavedChanges,
+  });
 
   /* Sync panel context when selection is cleared (e.g. Escape key) */
   useEffect(() => {
