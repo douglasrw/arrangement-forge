@@ -523,6 +523,45 @@ describe('BlockContext truth surface', () => {
     );
   });
 
+  it('keeps inherited audio truth and chord scope truth out of the old generic unavailable panel', () => {
+    useProjectStore.setState({
+      project: makeProject(),
+      stems: [makeStem({ volume: 0.8, pan: 0.25 })],
+      sections: [makeSection()],
+      blocks: [makeBlock()],
+      chords: [
+        makeChord({ id: 'chord-1', barNumber: 3, degree: 'ii', quality: 'min7' }),
+        makeChord({ id: 'chord-2', barNumber: 5, degree: 'V', quality: 'dom7' }),
+      ],
+      chatMessages: [],
+      drumOnlyUpdate: false,
+      allInstrumentsUpdate: false,
+    });
+
+    const mounted = renderBlockContext();
+    mountedRoot = mounted.root;
+    mountedContainer = mounted.container;
+
+    const text = mounted.container.textContent ?? '';
+
+    expect(text).toContain('Inherited Audio Truth');
+    expect(text).toContain(
+      'This block inherits volume and pan from the current piano mixer lane.'
+    );
+    expect(text).toContain('Chord Scope Truth');
+    expect(text).toContain(
+      'This block is currently following the chord chart across bars 3 – 6.'
+    );
+    expect(text).not.toContain('Unavailable In This Build');
+    expect(text).not.toContain(
+      'Volume, pan, and custom chord overrides are not editable per block here yet.'
+    );
+    expect(text).not.toContain(
+      'This inspector now edits saved pattern, energy, and dynamics truth. Other block-specific controls still inherit from the mixer, section style cascade, or chord chart defaults.'
+    );
+    expect(text).not.toContain('Custom Chord Overrides');
+  });
+
   it('refreshes override truth when selection moves between blocks with different saved state', () => {
     useProjectStore.setState({
       project: makeProject({ energy: 22, dynamics: 76 }),
