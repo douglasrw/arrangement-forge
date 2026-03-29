@@ -228,4 +228,17 @@ describe('MixerDrawer', () => {
     expect(setMasterVolumeMock).toHaveBeenCalledTimes(1);
     expect(setMasterVolumeMock.mock.calls[0]?.[0]).toBeCloseTo(62 / 80);
   });
+
+  it('surfaces audio load failures in the mixer itself', () => {
+    useUiStore.setState({
+      systemStatus: 'error',
+      errorMessage: 'Salamander drum samples missing',
+    });
+
+    const mounted = renderMixer();
+    mountedRoot = mounted.root;
+    mountedContainer = mounted.container;
+
+    expect(mounted.container.textContent).toContain('Audio unavailable: Salamander drum samples missing');
+  });
 });

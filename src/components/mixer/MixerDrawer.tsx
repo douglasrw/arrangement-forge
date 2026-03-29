@@ -268,6 +268,8 @@ function DrumSubMix({ drumKit }: { drumKit: DrumKitLike | null }) {
 export function MixerDrawer() {
   const open = useUiStore((s) => s.mixerExpanded)
   const toggleMixer = useUiStore((s) => s.toggleMixer)
+  const systemStatus = useUiStore((s) => s.systemStatus)
+  const errorMessage = useUiStore((s) => s.errorMessage)
   const stems = useProjectStore((s) => s.stems)
   const updateStem = useProjectStore((s) => s.updateStem)
   const [drumSubOpen, setDrumSubOpen] = useState(false)
@@ -331,6 +333,21 @@ export function MixerDrawer() {
 
       {open && (
         <div>
+          {(systemStatus === "loading-samples" || systemStatus === "error") && (
+            <div
+              className={cn(
+                "mx-2 mb-2 rounded-md border px-3 py-2 text-[11px]",
+                systemStatus === "error"
+                  ? "border-destructive/40 bg-destructive/10 text-destructive"
+                  : "border-border bg-card/80 text-muted-foreground"
+              )}
+            >
+              {systemStatus === "error"
+                ? `Audio unavailable: ${errorMessage ?? "Instrument samples could not be loaded."}`
+                : "Loading instrument samples. Mixer changes will apply when audio is ready."}
+            </div>
+          )}
+
           <div className="flex h-[160px] px-2">
             {INSTRUMENTS.map((inst) => {
               const stem = stemByInstrument.get(inst.key)
