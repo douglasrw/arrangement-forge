@@ -8,10 +8,6 @@ import { useProjectStore } from '@/store/project-store';
 import { useSelectionStore } from '@/store/selection-store';
 import { useUiStore } from '@/store/ui-store';
 
-vi.mock('./InputSection', () => ({
-  InputSection: () => <div data-testid="input-section">Input</div>,
-}));
-
 vi.mock('./StyleControlsSection', () => ({
   StyleControlsSection: () => <div data-testid="style-controls-section">Style Controls</div>,
 }));
@@ -231,9 +227,13 @@ describe('LeftPanel inspector truth regression', () => {
     expect(mounted.container.textContent).toContain(
       'This block is inheriting the project dynamics default.'
     );
-    expect(mounted.container.textContent).toContain('Unavailable In This Build');
+    expect(mounted.container.textContent).toContain('Inherited Audio Truth');
     expect(mounted.container.textContent).toContain(
-      'Volume, pan, and custom chord overrides are not editable per block here yet.'
+      'Use the mixer drawer to change this lane truth. Block-level audio overrides are not editable here yet.'
+    );
+    expect(mounted.container.textContent).toContain('Chord Scope Truth');
+    expect(mounted.container.textContent).toContain(
+      'No chord chart truth is loaded for bars 3 – 6, so scope is missing rather than hidden.'
     );
     expect(mounted.container.querySelector('#block-slider-Energy')).not.toBeNull();
     expect(mounted.container.querySelector('#block-slider-Dynamics')).not.toBeNull();
@@ -245,5 +245,37 @@ describe('LeftPanel inspector truth regression', () => {
     ).toBeNull();
     expect(mounted.container.querySelector('#block-chord-override')).toBeNull();
     expect(mounted.container.textContent).toContain('Close inspector');
+  });
+
+  it('keeps chord palette selection truth visible after the panel returns to default mode', () => {
+    useSelectionStore.setState({
+      level: 'block',
+      sectionId: null,
+      blockId: 'block-1',
+      stemId: 'stem-1',
+    });
+
+    const mounted = renderLeftPanel({ mode: 'default' });
+    mountedRoot = mounted.root;
+    mountedContainer = mounted.container;
+
+    expect(mounted.container.textContent).toContain('Collapse');
+    expect(mounted.container.textContent).not.toContain('Close inspector');
+    expect(mounted.container.textContent).toContain('Block selected');
+    expect(mounted.container.textContent).toContain(
+      'The arrangement is currently focused on Bars 3-6, but block chord overrides are unavailable here today.'
+    );
+    expect(mounted.container.textContent).toContain('Piano block');
+
+    act(() => {
+      useSelectionStore.getState().selectSong();
+    });
+
+    expect(mounted.container.textContent).not.toContain('Block selected');
+    expect(mounted.container.textContent).toContain('Empty chart');
+    expect(mounted.container.textContent).toContain(
+      'No song chord chart is loaded yet.'
+    );
+    expect(mounted.container.textContent).toContain('Whole song');
   });
 });
