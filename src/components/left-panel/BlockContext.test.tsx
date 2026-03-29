@@ -254,12 +254,33 @@ describe('BlockContext truth surface', () => {
       'This block is inheriting the section dynamics default.'
     );
     expect(mounted.container.textContent).toContain('Section default: f (76)');
-    expect(mounted.container.textContent).toContain('Unavailable In This Build');
+    expect(mounted.container.textContent).toContain('Inherited Audio Truth');
     expect(mounted.container.textContent).toContain(
-      'Volume, pan, and custom chord overrides are not editable per block here yet.'
+      'This block inherits volume and pan from the current piano mixer lane.'
     );
     expect(mounted.container.textContent).toContain(
-      'This inspector now edits saved pattern, energy, and dynamics truth. Other block-specific controls still inherit from the mixer, section style cascade, or chord chart defaults.'
+      'Use the mixer drawer to change this lane truth. Block-level audio overrides are not editable here yet.'
+    );
+    expect(
+      (
+        mounted.container.querySelector('#block-audio-volume-value') as
+          | HTMLSpanElement
+          | null
+      )?.textContent
+    ).toBe('-2 dB');
+    expect(
+      (
+        mounted.container.querySelector('#block-audio-pan-value') as
+          | HTMLSpanElement
+          | null
+      )?.textContent
+    ).toBe('C');
+    expect(mounted.container.textContent).toContain('Custom Chord Overrides');
+    expect(mounted.container.textContent).toContain(
+      'Per-block chord overrides are not editable here yet.'
+    );
+    expect(mounted.container.textContent).toContain(
+      'Pattern, energy, dynamics, and inherited audio truth are visible above. This panel still does not expose block-specific chord override truth.'
     );
     expect(mounted.container.querySelector('#block-pattern-select')).not.toBeNull();
     expect(energySlider?.value).toBe('75');
@@ -410,6 +431,45 @@ describe('BlockContext truth surface', () => {
     expect(energyResetButton?.disabled).toBe(true);
     expect(dynamicsSlider?.value).toBe('76');
     expect(dynamicsResetButton?.disabled).toBe(true);
+  });
+
+  it('distinguishes missing block audio data from inherited mixer truth when the matching stem is absent', () => {
+    useProjectStore.setState({
+      project: makeProject({ hasArrangement: true }),
+      stems: [],
+      sections: [makeSection()],
+      blocks: [makeBlock({ stemId: 'missing-stem' })],
+      chords: [],
+      chatMessages: [],
+      drumOnlyUpdate: false,
+      allInstrumentsUpdate: false,
+    });
+
+    const mounted = renderBlockContext();
+    mountedRoot = mounted.root;
+    mountedContainer = mounted.container;
+
+    expect(mounted.container.textContent).toContain('Inherited Audio Truth');
+    expect(mounted.container.textContent).toContain(
+      'No current piano stem is loaded for this arrangement, so block audio truth is missing rather than hidden.'
+    );
+    expect(
+      (
+        mounted.container.querySelector('#block-audio-volume-value') as
+          | HTMLSpanElement
+          | null
+      )?.textContent
+    ).toBe('--');
+    expect(
+      (
+        mounted.container.querySelector('#block-audio-pan-value') as
+          | HTMLSpanElement
+          | null
+      )?.textContent
+    ).toBe('--');
+    expect(mounted.container.textContent).toContain(
+      'Restore the matching mixer lane before expecting inherited block volume or pan truth here.'
+    );
   });
 
   it('refreshes override truth when selection moves between blocks with different saved state', () => {

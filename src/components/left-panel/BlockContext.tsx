@@ -1,5 +1,6 @@
 import { useState } from "react"
 import type { Instrument } from "@/components/sequencer-block"
+import type { Stem } from "@/types"
 import { useProjectStore } from "@/store/project-store"
 import { useSelectionStore } from "@/store/selection-store"
 import { ConfirmDialog } from "@/components/shared/ConfirmDialog"
@@ -49,6 +50,73 @@ function getStyleDisplayValue(field: "energy" | "dynamics", value: number): stri
   return "Max"
 }
 
+interface BlockAudioTruth {
+  badge: string
+  summary: string
+  sourceLabel: string
+  volumeValue: string
+  panValue: string
+  footer: string
+  tone: "default" | "missing"
+}
+
+function formatMixerVolume(gain: number): string {
+  if (gain <= 0) return "-inf"
+  const db = 20 * Math.log10(gain)
+  return `${db >= 0 ? "+" : ""}${Math.round(db)} dB`
+}
+
+function formatMixerPan(pan: number): string {
+  const snappedPan = Math.round(Math.max(-1, Math.min(1, pan)) * 100)
+
+  if (snappedPan === 0) return "C"
+  return `${snappedPan < 0 ? "L" : "R"}${Math.abs(snappedPan)}`
+}
+
+function getBlockAudioTruth({
+  stem,
+  instrumentLabel,
+  hasArrangementAudio,
+}: {
+  stem?: Stem
+  instrumentLabel: string
+  hasArrangementAudio: boolean
+}): BlockAudioTruth {
+  if (stem) {
+    return {
+      badge: "Mixer",
+      summary: `This block inherits volume and pan from the current ${instrumentLabel.toLowerCase()} mixer lane.`,
+      sourceLabel: `${instrumentLabel} mixer lane`,
+      volumeValue: formatMixerVolume(stem.volume),
+      panValue: formatMixerPan(stem.pan),
+      footer: "Use the mixer drawer to change this lane truth. Block-level audio overrides are not editable here yet.",
+      tone: "default",
+    }
+  }
+
+  if (hasArrangementAudio) {
+    return {
+      badge: "No stem",
+      summary: `No current ${instrumentLabel.toLowerCase()} stem is loaded for this arrangement, so block audio truth is missing rather than hidden.`,
+      sourceLabel: `${instrumentLabel} stem missing`,
+      volumeValue: "--",
+      panValue: "--",
+      footer: "Restore the matching mixer lane before expecting inherited block volume or pan truth here.",
+      tone: "missing",
+    }
+  }
+
+  return {
+    badge: "No arrangement",
+    summary: "This block has no arrangement audio yet, so block audio truth is missing rather than hidden.",
+    sourceLabel: "Arrangement audio missing",
+    volumeValue: "--",
+    panValue: "--",
+    footer: "Generate or import an arrangement to create inherited mixer volume and pan truth for this block.",
+    tone: "missing",
+  }
+}
+
 /* ------------------------------------------------------------------ */
 /*  BlockContext                                                        */
 /* ------------------------------------------------------------------ */
@@ -67,8 +135,16 @@ export function BlockContext({
   endBar = 12,
   onClose,
 }: BlockContextProps) {
-  const { project, sections, blocks, deleteBlock, duplicateBlock, updateBlock } = useProjectStore()
-  const { blockId } = useSelectionStore()
+  const {
+    project,
+    stems,
+    sections,
+    blocks,
+    deleteBlock,
+    duplicateBlock,
+    updateBlock,
+  } = useProjectStore()
+  const { blockId, stemId } = useSelectionStore()
 
   /* Derive live block from store */
   const liveBlock = blocks.find((b) => b.id === blockId)
@@ -81,6 +157,15 @@ export function BlockContext({
   const color = INSTRUMENT_COLORS[instrument]
   const label = INSTRUMENT_LABELS[instrument]
   const activePattern = liveBlock?.style ?? styleName
+  const liveStem =
+    stems.find((stem) => stem.id === (liveBlock?.stemId ?? stemId)) ??
+    stems.find((stem) => stem.instrument === instrument)
+  const hasArrangementAudio = Boolean(project?.hasArrangement || stems.length > 0)
+  const blockAudioTruth = getBlockAudioTruth({
+    stem: liveStem,
+    instrumentLabel: label,
+    hasArrangementAudio,
+  })
   const fallbackProjectEnergy = project?.energy ?? 50
   const fallbackProjectDynamics = project?.dynamics ?? 50
   const effectiveEnergy =
@@ -357,18 +442,74 @@ export function BlockContext({
           <div className="flex items-start justify-between gap-3">
             <div className="flex flex-col gap-1">
               <h3 className="text-[10px] font-medium uppercase tracking-widest text-zinc-500">
-                Unavailable In This Build
+                Inherited Audio Truth
               </h3>
               <p className="text-xs text-muted-foreground">
-                Volume, pan, and custom chord overrides are not editable per block here yet.
+                {blockAudioTruth.summary}
+              </p>
+            </div>
+            <span
+              className={`rounded border border-border/70 px-2 py-0.5 text-[10px] font-medium uppercase tracking-wider ${
+                blockAudioTruth.tone === "missing" ? "text-muted-foreground" : "text-foreground"
+              }`}
+            >
+              {blockAudioTruth.badge}
+            </span>
+          </div>
+
+          <div className="mt-3 grid gap-2">
+            <div className="flex items-center justify-between gap-3 rounded-md border border-border/60 bg-card/40 px-3 py-2">
+              <div className="flex flex-col gap-0.5">
+                <span className="text-[11px] font-medium text-foreground">Volume</span>
+                <span className="text-[11px] text-muted-foreground">
+                  {blockAudioTruth.sourceLabel}
+                </span>
+              </div>
+              <span
+                id="block-audio-volume-value"
+                className="font-mono text-[11px] text-foreground"
+              >
+                {blockAudioTruth.volumeValue}
+              </span>
+            </div>
+
+            <div className="flex items-center justify-between gap-3 rounded-md border border-border/60 bg-card/40 px-3 py-2">
+              <div className="flex flex-col gap-0.5">
+                <span className="text-[11px] font-medium text-foreground">Pan</span>
+                <span className="text-[11px] text-muted-foreground">
+                  {blockAudioTruth.sourceLabel}
+                </span>
+              </div>
+              <span
+                id="block-audio-pan-value"
+                className="font-mono text-[11px] text-foreground"
+              >
+                {blockAudioTruth.panValue}
+              </span>
+            </div>
+          </div>
+
+          <p className="mt-3 text-sm text-foreground">
+            {blockAudioTruth.footer}
+          </p>
+        </div>
+
+        <div className="mt-4 rounded-lg border border-border/70 bg-secondary/30 p-3">
+          <div className="flex items-start justify-between gap-3">
+            <div className="flex flex-col gap-1">
+              <h3 className="text-[10px] font-medium uppercase tracking-widest text-zinc-500">
+                Custom Chord Overrides
+              </h3>
+              <p className="text-xs text-muted-foreground">
+                Per-block chord overrides are not editable here yet.
               </p>
             </div>
             <span className="rounded border border-border/70 px-2 py-0.5 text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
-              Truth
+              Unavailable
             </span>
           </div>
           <p className="mt-3 text-sm text-foreground">
-            This inspector now edits saved pattern, energy, and dynamics truth. Other block-specific controls still inherit from the mixer, section style cascade, or chord chart defaults.
+            Pattern, energy, dynamics, and inherited audio truth are visible above. This panel still does not expose block-specific chord override truth.
           </p>
         </div>
 
