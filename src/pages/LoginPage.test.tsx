@@ -6,12 +6,20 @@ import { createRoot, type Root } from 'react-dom/client';
 import LoginPage from './LoginPage';
 
 const authApi = vi.hoisted(() => ({
+  isAuthenticated: false,
+  isLoading: false,
   signIn: vi.fn<(email: string, password: string) => Promise<void>>(),
   signUp: vi.fn<(email: string, password: string) => Promise<void>>(),
   signInWithGoogle: vi.fn<() => Promise<void>>(),
 }));
 
 const navigateMock = vi.hoisted(() => vi.fn());
+const locationMock = vi.hoisted(() => ({
+  pathname: '/login',
+  search: '',
+  hash: '',
+  state: null as unknown,
+}));
 
 vi.mock('@/hooks/useAuth', () => ({
   useAuth: () => authApi,
@@ -19,6 +27,7 @@ vi.mock('@/hooks/useAuth', () => ({
 
 vi.mock('react-router-dom', () => ({
   useNavigate: () => navigateMock,
+  useLocation: () => locationMock,
 }));
 
 const reactActEnv = globalThis as typeof globalThis & {
@@ -87,7 +96,13 @@ beforeEach(() => {
   authApi.signIn.mockReset();
   authApi.signUp.mockReset();
   authApi.signInWithGoogle.mockReset();
+  authApi.isAuthenticated = false;
+  authApi.isLoading = false;
   navigateMock.mockReset();
+  locationMock.pathname = '/login';
+  locationMock.search = '';
+  locationMock.hash = '';
+  locationMock.state = null;
 
   authApi.signIn.mockResolvedValue(undefined);
   authApi.signUp.mockResolvedValue(undefined);
@@ -107,6 +122,47 @@ afterEach(() => {
 });
 
 describe('LoginPage failure truth', () => {
+  it('returns successful sign-ins to the originally requested protected route', async () => {
+    locationMock.state = {
+      redirectTo: '/project/project-1?tab=arrangement#bridge',
+    };
+
+    const mounted = renderLoginPage();
+    mountedRoot = mounted.root;
+    mountedContainer = mounted.container;
+
+    fillCredentials(mounted.container, 'ash@example.com', 'secret-1');
+
+    await act(async () => {
+      submitLoginForm(mounted.container);
+      await Promise.resolve();
+    });
+
+    expect(authApi.signIn).toHaveBeenCalledWith('ash@example.com', 'secret-1');
+    expect(navigateMock).toHaveBeenCalledWith('/project/project-1?tab=arrangement#bridge', {
+      replace: true,
+    });
+  });
+
+  it('falls back to the library when no safe recovery route is present', async () => {
+    locationMock.state = {
+      redirectTo: '//evil.example/session',
+    };
+
+    const mounted = renderLoginPage();
+    mountedRoot = mounted.root;
+    mountedContainer = mounted.container;
+
+    fillCredentials(mounted.container, 'ash@example.com', 'secret-1');
+
+    await act(async () => {
+      submitLoginForm(mounted.container);
+      await Promise.resolve();
+    });
+
+    expect(navigateMock).toHaveBeenCalledWith('/library', { replace: true });
+  });
+
   it('surfaces sign-in failures without navigating away', async () => {
     authApi.signIn.mockRejectedValueOnce(new Error('Invalid email or password'));
 
@@ -190,5 +246,25 @@ describe('LoginPage failure truth', () => {
     expect(findButtonByText(mounted.container, 'Continue with Google')?.disabled).toBe(false);
     expect((mounted.container.querySelector('button[type="submit"]') as HTMLButtonElement | null)?.disabled).toBe(false);
     expect(navigateMock).not.toHaveBeenCalled();
+  });
+
+  it('holds authenticated sessions off the login form and recovers them forward', async () => {
+    authApi.isAuthenticated = true;
+    locationMock.state = {
+      redirectTo: '/settings',
+    };
+
+    const mounted = renderLoginPage();
+    mountedRoot = mounted.root;
+    mountedContainer = mounted.container;
+
+    expect(mounted.container.querySelector('[data-testid="auth-loading-screen"]')).not.toBeNull();
+    expect(mounted.container.querySelector('form')).toBeNull();
+
+    await act(async () => {
+      await Promise.resolve();
+    });
+
+    expect(navigateMock).toHaveBeenCalledWith('/settings', { replace: true });
   });
 });

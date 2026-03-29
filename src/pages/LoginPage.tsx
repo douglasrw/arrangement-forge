@@ -1,20 +1,64 @@
-import { useState, FormEvent } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useState, useEffect, FormEvent } from 'react';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 
+function resolveRecoveryPath(state: unknown) {
+  if (state && typeof state === 'object' && 'redirectTo' in state) {
+    const redirectTo = (state as { redirectTo?: unknown }).redirectTo;
+
+    if (
+      typeof redirectTo === 'string'
+      && redirectTo.startsWith('/')
+      && !redirectTo.startsWith('//')
+      && redirectTo !== '/login'
+      && !redirectTo.startsWith('/login?')
+      && !redirectTo.startsWith('/login#')
+    ) {
+      return redirectTo;
+    }
+  }
+
+  return '/library';
+}
+
+function AuthLoadingScreen() {
+  return (
+    <div
+      data-testid="auth-loading-screen"
+      className="min-h-screen bg-background flex items-center justify-center"
+    >
+      <div className="h-8 w-8 rounded-full border-2 border-primary border-t-transparent animate-spin" />
+    </div>
+  );
+}
+
 export default function LoginPage() {
   const navigate = useNavigate();
-  const { signIn, signUp, signInWithGoogle } = useAuth();
+  const location = useLocation();
+  const {
+    isAuthenticated,
+    isLoading,
+    signIn,
+    signUp,
+    signInWithGoogle,
+  } = useAuth();
 
   const [mode, setMode] = useState<'signin' | 'signup'>('signin');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const recoveryPath = resolveRecoveryPath(location.state);
+
+  useEffect(() => {
+    if (!isLoading && isAuthenticated) {
+      navigate(recoveryPath, { replace: true });
+    }
+  }, [isAuthenticated, isLoading, navigate, recoveryPath]);
 
   async function handleSubmit(e: FormEvent) {
     e.preventDefault();
@@ -26,7 +70,7 @@ export default function LoginPage() {
       } else {
         await signUp(email, password);
       }
-      navigate('/library');
+      navigate(recoveryPath, { replace: true });
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Authentication failed');
     } finally {
@@ -44,6 +88,10 @@ export default function LoginPage() {
       setError(err instanceof Error ? err.message : 'Google sign-in failed');
       setLoading(false);
     }
+  }
+
+  if (isLoading || isAuthenticated) {
+    return <AuthLoadingScreen />;
   }
 
   return (

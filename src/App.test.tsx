@@ -29,7 +29,21 @@ const reactActEnv = globalThis as typeof globalThis & {
 
 function LocationProbe() {
   const location = useLocation();
-  return <div data-testid="location-path">{location.pathname}</div>;
+  const redirectTo = (
+    location.state
+    && typeof location.state === 'object'
+    && 'redirectTo' in location.state
+    && typeof (location.state as { redirectTo?: unknown }).redirectTo === 'string'
+  )
+    ? (location.state as { redirectTo: string }).redirectTo
+    : '';
+
+  return (
+    <>
+      <div data-testid="location-path">{location.pathname}</div>
+      <div data-testid="location-redirect">{redirectTo}</div>
+    </>
+  );
 }
 
 function renderRoute(initialEntry: string) {
@@ -101,8 +115,8 @@ afterEach(() => {
 });
 
 describe('App protected route recovery truth', () => {
-  it('redirects unauthenticated users from protected routes back to login', async () => {
-    const mounted = renderRoute('/library');
+  it('redirects unauthenticated users from protected routes back to login with the original destination', async () => {
+    const mounted = renderRoute('/project/project-1?tab=arrangement#bridge');
     mountedRoot = mounted.root;
     mountedContainer = mounted.container;
 
@@ -111,6 +125,7 @@ describe('App protected route recovery truth', () => {
     });
 
     expect(mounted.container.querySelector('[data-testid="location-path"]')?.textContent).toBe('/login');
+    expect(mounted.container.querySelector('[data-testid="location-redirect"]')?.textContent).toBe('/project/project-1?tab=arrangement#bridge');
     expect(mounted.container.querySelector('[data-testid="login-page"]')).not.toBeNull();
     expect(mounted.container.querySelector('[data-testid="library-page"]')).toBeNull();
   });
