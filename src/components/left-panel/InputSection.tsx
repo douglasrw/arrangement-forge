@@ -7,11 +7,28 @@ import { useUiStore } from "@/store/ui-store"
 
 const INPUT_TABS = ["Chord", "Text", "Upload"] as const
 type InputTab = (typeof INPUT_TABS)[number]
+type UploadFeedbackTone = "neutral" | "success" | "error"
+
+const DEFAULT_UPLOAD_FEEDBACK = "Accepted format: plain-text chord chart (.txt)."
+
+function isSupportedChordChartFile(file: File) {
+  return file.type.startsWith("text/") || file.name.toLowerCase().endsWith(".txt")
+}
+
+function normalizeImportedChordChart(text: string) {
+  return text.replace(/\r\n?/g, "\n")
+}
 
 export function InputSection() {
   const [activeTab, setActiveTab] = useState<InputTab>("Chord")
   const [isImporting, setIsImporting] = useState(false)
-  const [lastImportedFileName, setLastImportedFileName] = useState<string | null>(null)
+  const [uploadFeedback, setUploadFeedback] = useState<{
+    tone: UploadFeedbackTone
+    message: string
+  }>({
+    tone: "neutral",
+    message: DEFAULT_UPLOAD_FEEDBACK,
+  })
 
   const { project, updateProject } = useProjectStore()
   const { runGeneration } = useGenerate()
@@ -33,14 +50,38 @@ export function InputSection() {
       return
     }
 
+    if (!isSupportedChordChartFile(file)) {
+      setUploadFeedback({
+        tone: "error",
+        message: "Unsupported file type. Upload a plain-text chord chart file (.txt).",
+      })
+      return
+    }
+
     setIsImporting(true)
 
     try {
-      const importedChordChart = await file.text()
+      const importedChordChart = normalizeImportedChordChart(await file.text())
+
+      if (!importedChordChart.trim()) {
+        setUploadFeedback({
+          tone: "error",
+          message: "Imported file is empty. Current chord chart was left unchanged.",
+        })
+        return
+      }
+
       updateProject({ chordChartRaw: importedChordChart })
-      setLastImportedFileName(file.name)
+      setUploadFeedback({
+        tone: "success",
+        message: `Imported ${file.name} into the current chord chart.`,
+      })
     } catch (error) {
       console.error("Failed to import chord chart file", error)
+      setUploadFeedback({
+        tone: "error",
+        message: "Could not read that file. Current chord chart was left unchanged.",
+      })
     } finally {
       setIsImporting(false)
     }
@@ -140,7 +181,7 @@ export function InputSection() {
           <input
             id="upload-chord-chart-input"
             type="file"
-            accept=".txt,text/plain"
+            accept=".txt,text/*"
             onChange={(event) => void handleUploadChange(event)}
             disabled={!hasProject || isImporting}
             className={cn(
@@ -151,12 +192,19 @@ export function InputSection() {
             )}
           />
 
-          <p className="text-xs text-muted-foreground">
-            {isImporting
-              ? "Importing chord chart..."
-              : lastImportedFileName
-                ? `Last imported: ${lastImportedFileName}`
-                : "Accepted format: plain-text chord chart (.txt)."}
+          <p
+            className={cn(
+              "text-xs",
+              isImporting
+                ? "text-muted-foreground"
+                : uploadFeedback.tone === "error"
+                  ? "text-destructive"
+                  : uploadFeedback.tone === "success"
+                    ? "text-foreground"
+                    : "text-muted-foreground"
+            )}
+          >
+            {isImporting ? "Importing chord chart..." : uploadFeedback.message}
           </p>
         </div>
       )}

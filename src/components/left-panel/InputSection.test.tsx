@@ -62,12 +62,46 @@ function renderSection() {
   return { container, root };
 }
 
+function openUploadTab(container: HTMLDivElement) {
+  const uploadTabButton = Array.from(container.querySelectorAll('button')).find(
+    (button) => button.textContent === 'Upload'
+  ) as HTMLButtonElement | undefined;
+
+  expect(uploadTabButton).not.toBeUndefined();
+
+  act(() => {
+    uploadTabButton?.dispatchEvent(new MouseEvent('click', { bubbles: true }));
+  });
+}
+
+function getUploadFileInput(container: HTMLDivElement) {
+  const fileInput = container.querySelector('#upload-chord-chart-input') as HTMLInputElement | null;
+
+  expect(fileInput).not.toBeNull();
+  return fileInput as HTMLInputElement;
+}
+
+async function importFile(fileInput: HTMLInputElement, file: File) {
+  Object.defineProperty(fileInput, 'files', {
+    configurable: true,
+    value: [file],
+  });
+
+  await act(async () => {
+    fileInput.dispatchEvent(new Event('change', { bubbles: true }));
+    await Promise.resolve();
+    await Promise.resolve();
+  });
+}
+
 let mountedRoot: Root | null = null;
 let mountedContainer: HTMLDivElement | null = null;
+let consoleErrorSpy: ReturnType<typeof vi.spyOn> | null = null;
 
 beforeEach(() => {
   reactActEnv.IS_REACT_ACT_ENVIRONMENT = true;
   runGenerationMock.mockReset();
+  consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
 
   useProjectStore.setState({
     project: makeProject(),
@@ -90,6 +124,9 @@ beforeEach(() => {
 });
 
 afterEach(() => {
+  consoleErrorSpy?.mockRestore();
+  consoleErrorSpy = null;
+
   if (mountedRoot && mountedContainer) {
     act(() => {
       mountedRoot?.unmount();
@@ -107,44 +144,98 @@ describe('InputSection upload tab', () => {
     mountedRoot = mounted.root;
     mountedContainer = mounted.container;
 
-    const uploadTabButton = Array.from(mounted.container.querySelectorAll('button')).find(
-      (button) => button.textContent === 'Upload'
-    ) as HTMLButtonElement | undefined;
-
-    expect(uploadTabButton).not.toBeUndefined();
-
-    act(() => {
-      uploadTabButton?.dispatchEvent(new MouseEvent('click', { bubbles: true }));
-    });
-
-    const fileInput = mounted.container.querySelector(
-      '#upload-chord-chart-input'
-    ) as HTMLInputElement | null;
-
-    expect(fileInput).not.toBeNull();
+    openUploadTab(mounted.container);
+    const fileInput = getUploadFileInput(mounted.container);
 
     const importedChordChart = '[Verse]\nCmaj7 | Dm7 | G7 | Cmaj7';
     const file = new File(['placeholder'], 'bridge-chart.txt', { type: 'text/plain' });
     vi.spyOn(file, 'text').mockResolvedValue(importedChordChart);
 
-    Object.defineProperty(fileInput, 'files', {
-      configurable: true,
-      value: [file],
-    });
-
-    await act(async () => {
-      fileInput?.dispatchEvent(new Event('change', { bubbles: true }));
-      await Promise.resolve();
-      await Promise.resolve();
-    });
+    await importFile(fileInput, file);
 
     expect(useProjectStore.getState().project?.chordChartRaw).toBe(importedChordChart);
-    expect(mounted.container.textContent).toContain('Last imported: bridge-chart.txt');
+    expect(mounted.container.textContent).toContain(
+      'Imported bridge-chart.txt into the current chord chart.'
+    );
 
     const generateButton = Array.from(mounted.container.querySelectorAll('button')).find(
       (button) => button.textContent === 'Generate'
     ) as HTMLButtonElement | undefined;
 
     expect(generateButton?.disabled).toBe(false);
+  });
+
+  it('rejects empty imports without overwriting the current chord chart', async () => {
+    useProjectStore.setState({
+      project: makeProject({
+        chordChartRaw: 'Cmaj7 | Fmaj7 | G7 | Cmaj7',
+      }),
+    });
+
+    const mounted = renderSection();
+    mountedRoot = mounted.root;
+    mountedContainer = mounted.container;
+
+    openUploadTab(mounted.container);
+    const fileInput = getUploadFileInput(mounted.container);
+
+    const file = new File(['placeholder'], 'empty-chart.txt', { type: 'text/plain' });
+    vi.spyOn(file, 'text').mockResolvedValue(' \n\t ');
+
+    await importFile(fileInput, file);
+
+    expect(useProjectStore.getState().project?.chordChartRaw).toBe('Cmaj7 | Fmaj7 | G7 | Cmaj7');
+    expect(mounted.container.textContent).toContain(
+      'Imported file is empty. Current chord chart was left unchanged.'
+    );
+  });
+
+  it('surfaces an explicit error for unreadable uploads', async () => {
+    useProjectStore.setState({
+      project: makeProject({
+        chordChartRaw: 'Dm7 | G7 | Cmaj7 | Cmaj7',
+      }),
+    });
+
+    const mounted = renderSection();
+    mountedRoot = mounted.root;
+    mountedContainer = mounted.container;
+
+    openUploadTab(mounted.container);
+    const fileInput = getUploadFileInput(mounted.container);
+
+    const file = new File(['placeholder'], 'broken-chart.txt', { type: 'text/plain' });
+    vi.spyOn(file, 'text').mockRejectedValue(new Error('Disk read failed'));
+
+    await importFile(fileInput, file);
+
+    expect(useProjectStore.getState().project?.chordChartRaw).toBe('Dm7 | G7 | Cmaj7 | Cmaj7');
+    expect(mounted.container.textContent).toContain(
+      'Could not read that file. Current chord chart was left unchanged.'
+    );
+  });
+
+  it('surfaces an explicit error for unsupported uploads', async () => {
+    useProjectStore.setState({
+      project: makeProject({
+        chordChartRaw: 'Am7 | D7 | Gmaj7 | Cmaj7',
+      }),
+    });
+
+    const mounted = renderSection();
+    mountedRoot = mounted.root;
+    mountedContainer = mounted.container;
+
+    openUploadTab(mounted.container);
+    const fileInput = getUploadFileInput(mounted.container);
+
+    const file = new File(['{"chart":"C"}'], 'chart.json', { type: 'application/json' });
+
+    await importFile(fileInput, file);
+
+    expect(useProjectStore.getState().project?.chordChartRaw).toBe('Am7 | D7 | Gmaj7 | Cmaj7');
+    expect(mounted.container.textContent).toContain(
+      'Unsupported file type. Upload a plain-text chord chart file (.txt).'
+    );
   });
 });
