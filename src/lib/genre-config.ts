@@ -109,6 +109,11 @@ export function getDefaultProjectStyle(genre: string | null | undefined): {
   };
 }
 
+export function isGenreSwingEnabled(genre: string | null | undefined): boolean {
+  const normalizedGenre = normalizeGenrePreference(genre);
+  return GENRE_SLIDERS[normalizedGenre]?.swing ?? true;
+}
+
 // ---------- Drum Pattern Mapping ----------
 
 /** Maps genre + substyle to a drum pattern ID used by drum-patterns.ts */

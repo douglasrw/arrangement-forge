@@ -123,4 +123,27 @@ describe('StyleControlsSection swing semantics', () => {
     expect(useProjectStore.getState().project?.swingPct).toBe(67);
     expect(mounted.container.textContent).toContain('67%');
   });
+
+  it('replaces the swing slider with a straight-time note for genres where swing is unavailable', () => {
+    useProjectStore.setState({
+      project: makeProject({
+        genre: 'Rock',
+        subStyle: 'Classic',
+        swingPct: 67,
+      }),
+    });
+
+    const mounted = renderStyleControls();
+    mountedRoot = mounted.root;
+    mountedContainer = mounted.container;
+
+    expect(
+      mounted.container.querySelector('input[aria-label="Swing %"]')
+    ).toBeNull();
+    expect(mounted.container.textContent).toContain('Swing %');
+    expect(mounted.container.textContent).toContain('Straight only');
+    expect(mounted.container.textContent).toContain(
+      "Rock is straight-time only, so swing isn't available here."
+    );
+  });
 });

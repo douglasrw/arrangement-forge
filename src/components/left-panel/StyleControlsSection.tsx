@@ -7,9 +7,19 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 import { useProjectStore } from "@/store/project-store"
-import { GENRE_SUBSTYLES } from "@/lib/genre-config"
+import { GENRE_SUBSTYLES, isGenreSwingEnabled } from "@/lib/genre-config"
 
 const DEFAULT_SWING_PCT = 50
+
+type SliderConfig = {
+  label: string
+  value: number
+  field: string
+  min: number
+  max: number
+  displayValue?: string
+  ariaValueText?: string
+}
 
 function getDisplayValue(label: string, value: number): string {
   if (label === "Swing %") return `${value}%`
@@ -72,28 +82,100 @@ export function StyleControlsSection() {
   const feel = project?.feel ?? 50
   const swingPct = project?.swingPct ?? null
   const dynamics = project?.dynamics ?? 50
+  const swingEnabled = isGenreSwingEnabled(genre)
   const swingDisplay = getSwingDisplayState(swingPct)
 
   const subStyleOptions = GENRE_SUBSTYLES[genre] ?? []
 
-  const sliders = [
+  const coreSliders: SliderConfig[] = [
     { label: "Energy", value: energy, field: "energy", min: 0, max: 100 },
     { label: "Groove", value: groove, field: "groove", min: 0, max: 100 },
     { label: "Feel", value: feel, field: "feel", min: 0, max: 100 },
-    {
-      label: "Swing %",
-      value: swingDisplay.value,
-      field: "swingPct",
-      min: 0,
-      max: 100,
-      displayValue: swingDisplay.displayValue,
-      ariaValueText: swingDisplay.ariaValueText,
-    },
-    { label: "Dynamics", value: dynamics, field: "dynamics", min: 0, max: 100 },
   ]
+
+  const swingSlider: SliderConfig = {
+    label: "Swing %",
+    value: swingDisplay.value,
+    field: "swingPct",
+    min: 0,
+    max: 100,
+    displayValue: swingDisplay.displayValue,
+    ariaValueText: swingDisplay.ariaValueText,
+  }
+
+  const dynamicsSlider: SliderConfig = {
+    label: "Dynamics",
+    value: dynamics,
+    field: "dynamics",
+    min: 0,
+    max: 100,
+  }
 
   function handleSliderChange(field: string, newValue: number) {
     updateProject({ [field]: newValue })
+  }
+
+  function renderSlider(slider: SliderConfig) {
+    return (
+      <div key={slider.label} className="flex flex-col gap-1">
+        <div className="flex items-center justify-between">
+          <span className="text-[11px] font-medium text-muted-foreground">
+            {slider.label}
+          </span>
+          <span className="min-w-[3.5rem] shrink-0 whitespace-nowrap text-right text-[11px] font-semibold text-foreground">
+            {slider.displayValue ?? getDisplayValue(slider.label, slider.value)}
+          </span>
+        </div>
+        {/* Custom slider with teal accent fill */}
+        <div
+          className="group relative h-1.5 w-full cursor-pointer rounded-full bg-secondary"
+          role="slider"
+          aria-label={slider.label}
+          aria-valuemin={slider.min}
+          aria-valuemax={slider.max}
+          aria-valuenow={slider.value}
+          aria-valuetext={slider.ariaValueText}
+          tabIndex={0}
+          onKeyDown={(e) => {
+            if (e.key === "ArrowRight" || e.key === "ArrowUp") {
+              e.preventDefault()
+              handleSliderChange(slider.field, Math.min(slider.max, slider.value + 1))
+            }
+            if (e.key === "ArrowLeft" || e.key === "ArrowDown") {
+              e.preventDefault()
+              handleSliderChange(slider.field, Math.max(slider.min, slider.value - 1))
+            }
+          }}
+        >
+          <div
+            className="absolute inset-y-0 left-0 rounded-full bg-ring"
+            style={{ width: `${slider.value}%` }}
+          />
+          <input
+            type="range"
+            id={`slider-${slider.label}`}
+            aria-label={slider.label}
+            min={slider.min}
+            max={slider.max}
+            value={slider.value}
+            onChange={(e) => handleSliderChange(slider.field, Number(e.target.value))}
+            className={cn(
+              "absolute inset-0 h-full w-full cursor-pointer appearance-none bg-transparent",
+              "[&::-webkit-slider-thumb]:h-3 [&::-webkit-slider-thumb]:w-3",
+              "[&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:rounded-full",
+              "[&::-webkit-slider-thumb]:border [&::-webkit-slider-thumb]:border-ring",
+              "[&::-webkit-slider-thumb]:bg-foreground [&::-webkit-slider-thumb]:shadow-sm",
+              "[&::-webkit-slider-thumb]:opacity-0 [&::-webkit-slider-thumb]:transition-opacity",
+              "group-hover:[&::-webkit-slider-thumb]:opacity-100",
+              "[&::-moz-range-thumb]:h-3 [&::-moz-range-thumb]:w-3",
+              "[&::-moz-range-thumb]:appearance-none [&::-moz-range-thumb]:rounded-full",
+              "[&::-moz-range-thumb]:border [&::-moz-range-thumb]:border-ring",
+              "[&::-moz-range-thumb]:bg-foreground [&::-moz-range-thumb]:shadow-sm"
+            )}
+          />
+        </div>
+      </div>
+    )
   }
 
   return (
@@ -140,66 +222,23 @@ export function StyleControlsSection() {
 
       {/* Sliders */}
       <div className="flex flex-col gap-2.5">
-        {sliders.map((slider) => (
-          <div key={slider.label} className="flex flex-col gap-1">
-            <div className="flex items-center justify-between">
+        {coreSliders.map(renderSlider)}
+        {swingEnabled ? renderSlider(swingSlider) : (
+          <div className="flex flex-col gap-1 rounded-md border border-border/70 bg-secondary/40 px-2.5 py-2">
+            <div className="flex items-center justify-between gap-3">
               <span className="text-[11px] font-medium text-muted-foreground">
-                {slider.label}
+                Swing %
               </span>
-              <span className="min-w-[3.5rem] shrink-0 whitespace-nowrap text-right text-[11px] font-semibold text-foreground">
-                {slider.displayValue ?? getDisplayValue(slider.label, slider.value)}
+              <span className="whitespace-nowrap text-right text-[11px] font-semibold text-foreground">
+                Straight only
               </span>
             </div>
-            {/* Custom slider with teal accent fill */}
-            <div
-              className="group relative h-1.5 w-full cursor-pointer rounded-full bg-secondary"
-              role="slider"
-              aria-label={slider.label}
-              aria-valuemin={slider.min}
-              aria-valuemax={slider.max}
-              aria-valuenow={slider.value}
-              aria-valuetext={slider.ariaValueText}
-              tabIndex={0}
-              onKeyDown={(e) => {
-                if (e.key === "ArrowRight" || e.key === "ArrowUp") {
-                  e.preventDefault()
-                  handleSliderChange(slider.field, Math.min(slider.max, slider.value + 1))
-                }
-                if (e.key === "ArrowLeft" || e.key === "ArrowDown") {
-                  e.preventDefault()
-                  handleSliderChange(slider.field, Math.max(slider.min, slider.value - 1))
-                }
-              }}
-            >
-              <div
-                className="absolute inset-y-0 left-0 rounded-full bg-ring"
-                style={{ width: `${slider.value}%` }}
-              />
-              <input
-                type="range"
-                id={`slider-${slider.label}`}
-                aria-label={slider.label}
-                min={slider.min}
-                max={slider.max}
-                value={slider.value}
-                onChange={(e) => handleSliderChange(slider.field, Number(e.target.value))}
-                className={cn(
-                  "absolute inset-0 h-full w-full cursor-pointer appearance-none bg-transparent",
-                  "[&::-webkit-slider-thumb]:h-3 [&::-webkit-slider-thumb]:w-3",
-                  "[&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:rounded-full",
-                  "[&::-webkit-slider-thumb]:border [&::-webkit-slider-thumb]:border-ring",
-                  "[&::-webkit-slider-thumb]:bg-foreground [&::-webkit-slider-thumb]:shadow-sm",
-                  "[&::-webkit-slider-thumb]:opacity-0 [&::-webkit-slider-thumb]:transition-opacity",
-                  "group-hover:[&::-webkit-slider-thumb]:opacity-100",
-                  "[&::-moz-range-thumb]:h-3 [&::-moz-range-thumb]:w-3",
-                  "[&::-moz-range-thumb]:appearance-none [&::-moz-range-thumb]:rounded-full",
-                  "[&::-moz-range-thumb]:border [&::-moz-range-thumb]:border-ring",
-                  "[&::-moz-range-thumb]:bg-foreground [&::-moz-range-thumb]:shadow-sm"
-                )}
-              />
-            </div>
+            <p className="text-[11px] leading-relaxed text-muted-foreground">
+              {genre} is straight-time only, so swing isn&apos;t available here.
+            </p>
           </div>
-        ))}
+        )}
+        {renderSlider(dynamicsSlider)}
       </div>
     </div>
   )
