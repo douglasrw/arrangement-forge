@@ -89,6 +89,7 @@ const reactActEnv = globalThis as typeof globalThis & {
 };
 
 let hookValue: ReturnType<typeof useAudio> | null = null;
+let consoleErrorSpy: ReturnType<typeof vi.spyOn> | null = null;
 
 function makeProject(partial: Partial<Project> = {}): Project {
   return {
@@ -193,6 +194,7 @@ let mountedContainer: HTMLDivElement | null = null;
 beforeEach(() => {
   reactActEnv.IS_REACT_ACT_ENVIRONMENT = true;
   hookValue = null;
+  consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
   engineState.isInitialized = false;
   engineState.audioConfig = {
     metronomeEnabled: false,
@@ -258,6 +260,8 @@ afterEach(() => {
     mountedContainer.remove();
   }
 
+  consoleErrorSpy?.mockRestore();
+  consoleErrorSpy = null;
   mountedRoot = null;
   mountedContainer = null;
 });
@@ -338,5 +342,115 @@ describe('useAudio transport config', () => {
     expect(setPanMock).toHaveBeenCalledWith('piano', -0.25);
     expect(setMuteMock).toHaveBeenCalledWith('piano', true);
     expect(setSoloMock).toHaveBeenCalledWith('piano', true);
+  });
+
+  it('surfaces arrangement load failures with the real sampler error', async () => {
+    engineState.isInitialized = true;
+    loadArrangementMock.mockRejectedValueOnce(new Error('Salamander drum samples missing'));
+
+    useProjectStore.setState({
+      project: makeProject(),
+      stems: [makeStem()],
+      sections: [makeSection()],
+      blocks: [makeBlock()],
+      chords: [],
+      chatMessages: [],
+      drumOnlyUpdate: false,
+      allInstrumentsUpdate: false,
+    });
+
+    const mounted = renderHarness();
+    mountedRoot = mounted.root;
+    mountedContainer = mounted.container;
+
+    await act(async () => {
+      await Promise.resolve();
+      await Promise.resolve();
+    });
+
+    expect(useUiStore.getState().systemStatus).toBe('error');
+    expect(useUiStore.getState().errorMessage).toBe('Salamander drum samples missing');
+    expect(consoleErrorSpy).toHaveBeenCalledWith(
+      'Failed to load arrangement samples:',
+      expect.any(Error)
+    );
+  });
+
+  it('surfaces hot-swap failures instead of only logging them', async () => {
+    engineState.isInitialized = true;
+
+    useProjectStore.setState({
+      project: makeProject(),
+      stems: [makeStem()],
+      sections: [makeSection()],
+      blocks: [makeBlock()],
+      chords: [],
+      chatMessages: [],
+      drumOnlyUpdate: false,
+      allInstrumentsUpdate: false,
+    });
+
+    const mounted = renderHarness();
+    mountedRoot = mounted.root;
+    mountedContainer = mounted.container;
+
+    await act(async () => {
+      await Promise.resolve();
+      await Promise.resolve();
+    });
+
+    expect(loadArrangementMock).toHaveBeenCalledTimes(1);
+
+    loadArrangementMock.mockClear();
+    hotSwapInstrumentMock.mockImplementation(() => {
+      throw new Error('Piano sampler hot-swap failed');
+    });
+
+    act(() => {
+      useProjectStore.setState({
+        allInstrumentsUpdate: true,
+      });
+    });
+
+    await act(async () => {
+      await Promise.resolve();
+    });
+
+    expect(useProjectStore.getState().allInstrumentsUpdate).toBe(false);
+    expect(useUiStore.getState().systemStatus).toBe('error');
+    expect(useUiStore.getState().errorMessage).toBe('Piano sampler hot-swap failed');
+    expect(loadArrangementMock).not.toHaveBeenCalled();
+  });
+
+  it('captures play-triggered arrangement load failures and prevents playback', async () => {
+    initMock.mockImplementationOnce(async () => undefined);
+    loadArrangementMock.mockRejectedValueOnce(new Error('Piano samples unavailable'));
+
+    useProjectStore.setState({
+      project: makeProject(),
+      stems: [makeStem()],
+      sections: [makeSection()],
+      blocks: [makeBlock()],
+      chords: [],
+      chatMessages: [],
+      drumOnlyUpdate: false,
+      allInstrumentsUpdate: false,
+    });
+
+    const mounted = renderHarness();
+    mountedRoot = mounted.root;
+    mountedContainer = mounted.container;
+
+    await act(async () => {
+      await hookValue?.play();
+    });
+
+    expect(playMock).not.toHaveBeenCalled();
+    expect(useUiStore.getState().systemStatus).toBe('error');
+    expect(useUiStore.getState().errorMessage).toBe('Piano samples unavailable');
+    expect(consoleErrorSpy).toHaveBeenCalledWith(
+      'Failed to start audio playback:',
+      expect.any(Error)
+    );
   });
 });

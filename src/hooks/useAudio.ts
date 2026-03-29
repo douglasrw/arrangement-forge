@@ -23,6 +23,18 @@ const defaultTransportState: TransportState = {
   isCountingIn: false,
 };
 
+function getErrorMessage(error: unknown, fallback: string): string {
+  if (error instanceof Error && error.message.trim().length > 0) {
+    return error.message;
+  }
+
+  if (typeof error === 'string' && error.trim().length > 0) {
+    return error;
+  }
+
+  return fallback;
+}
+
 export function useAudio() {
   const [isReady, setIsReady] = useState(false);
   const [transportState, setTransportState] = useState<TransportState>(defaultTransportState);
@@ -81,6 +93,24 @@ export function useAudio() {
     lastMixerSignatureRef.current = mixerSignature;
   }, [engine, mixerSignature, stems]);
 
+  const reportAudioFailure = useCallback(
+    (
+      logMessage: string,
+      error: unknown,
+      options: {
+        fallback: string;
+        resetArrangement?: boolean;
+      }
+    ) => {
+      console.error(logMessage, error);
+      if (options.resetArrangement) {
+        lastArrangementSignatureRef.current = '';
+      }
+      setSystemStatus('error', getErrorMessage(error, options.fallback));
+    },
+    [setSystemStatus]
+  );
+
   const initEngine = useCallback(async () => {
     await engine.init();
     setIsReady(true);
@@ -108,7 +138,9 @@ export function useAudio() {
         lastArrangementSignatureRef.current = arrangementSignature;
         syncStemMixerState();
       } catch (err) {
-        console.error('Failed to hot-swap instruments:', err);
+        reportAudioFailure('Failed to hot-swap instruments:', err, {
+          fallback: 'Instrument update failed.',
+        });
       }
       return;
     }
@@ -121,7 +153,9 @@ export function useAudio() {
         lastArrangementSignatureRef.current = arrangementSignature;
         syncStemMixerState();
       } catch (err) {
-        console.error('Failed to hot-swap drum instrument:', err);
+        reportAudioFailure('Failed to hot-swap drum instrument:', err, {
+          fallback: 'Drum instrument update failed.',
+        });
       }
       return;
     }
@@ -143,9 +177,12 @@ export function useAudio() {
           setSystemStatus('ready');
         }
       } catch (err) {
-        console.error('Failed to load arrangement samples:', err);
-        lastArrangementSignatureRef.current = '';
-        if (!cancelled) setSystemStatus('error');
+        if (!cancelled) {
+          reportAudioFailure('Failed to load arrangement samples:', err, {
+            fallback: 'Instrument samples could not be loaded.',
+            resetArrangement: true,
+          });
+        }
       }
     }
 
@@ -163,6 +200,7 @@ export function useAudio() {
     isReady,
     project,
     sections,
+    reportAudioFailure,
     setSystemStatus,
     stems,
     syncStemMixerState,
@@ -196,14 +234,35 @@ export function useAudio() {
   }, [engine, isReady]);
 
   const play = useCallback(async () => {
-    if (!engine.isInitialized) await initEngine();
-    // Ensure arrangement is loaded before playing
-    if (stems.length > 0 && project) {
-      engine.setTempo(project.tempo);
-      await engine.loadArrangement(blocks, stems, sections, project.timeSignature);
+    try {
+      if (!engine.isInitialized) await initEngine();
+      // Ensure arrangement is loaded before playing
+      if (stems.length > 0 && project) {
+        engine.setTempo(project.tempo);
+        await engine.loadArrangement(blocks, stems, sections, project.timeSignature);
+        lastArrangementSignatureRef.current = arrangementSignature;
+        syncStemMixerState();
+        setSystemStatus('ready');
+      }
+      engine.play();
+    } catch (err) {
+      reportAudioFailure('Failed to start audio playback:', err, {
+        fallback: 'Instrument samples could not be loaded.',
+        resetArrangement: true,
+      });
     }
-    engine.play();
-  }, [engine, initEngine, blocks, stems, sections, project]);
+  }, [
+    arrangementSignature,
+    blocks,
+    engine,
+    initEngine,
+    project,
+    reportAudioFailure,
+    sections,
+    setSystemStatus,
+    stems,
+    syncStemMixerState,
+  ]);
 
   const pause = useCallback(() => engine.pause(), [engine]);
   const stop = useCallback(() => engine.stop(), [engine]);
