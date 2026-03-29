@@ -49,8 +49,14 @@ export const useUiStore = create<UiStore>()((set) => ({
 
   setGenerationState: (state) => set({ generationState: state }),
 
-  setSystemStatus: (status, errorMsg) =>
-    set({ systemStatus: status, errorMessage: errorMsg ?? null }),
+  setSystemStatus: (status, errorMsg) => {
+    const normalizedErrorMessage = errorMsg?.trim();
+
+    set({
+      systemStatus: status,
+      errorMessage: normalizedErrorMessage ? normalizedErrorMessage : null,
+    });
+  },
 
   toggleMixer: () => set((state) => ({ mixerExpanded: !state.mixerExpanded })),
 

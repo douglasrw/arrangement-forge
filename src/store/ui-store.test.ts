@@ -90,4 +90,11 @@ describe('uiStore', () => {
     expect(useUiStore.getState().systemStatus).toBe('error');
     expect(useUiStore.getState().errorMessage).toBe('Something went wrong');
   });
+
+  it('setSystemStatus trims error detail before surfacing it', () => {
+    useUiStore.getState().setSystemStatus('error', '  Generator offline  ');
+
+    expect(useUiStore.getState().systemStatus).toBe('error');
+    expect(useUiStore.getState().errorMessage).toBe('Generator offline');
+  });
 });

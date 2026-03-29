@@ -2,6 +2,7 @@
 
 import { act, createElement } from 'react';
 import { createRoot, type Root } from 'react-dom/client';
+import { useUiStore } from '@/store/ui-store';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { deriveStatusBarStatus, StatusBar, type AppStatus } from './StatusBar';
 
@@ -28,6 +29,9 @@ function renderStatusBar(status: AppStatus) {
 
 beforeEach(() => {
   reactActEnv.IS_REACT_ACT_ENVIRONMENT = true;
+  useUiStore.setState({
+    errorMessage: null,
+  });
 });
 
 afterEach(() => {
@@ -77,5 +81,16 @@ describe('StatusBar', () => {
 
     expect(container.textContent).toContain('Offline');
     expect(container.textContent).not.toContain('Saved');
+  });
+
+  it('renders concise failure detail when the current state is error', () => {
+    useUiStore.setState({
+      errorMessage: '  Generation failed: Generator offline  ',
+    });
+
+    const container = renderStatusBar('error');
+
+    expect(container.textContent).toContain('Error: Generator offline');
+    expect(container.textContent).not.toContain('Loading samples');
   });
 });

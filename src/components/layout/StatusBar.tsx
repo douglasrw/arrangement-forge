@@ -1,5 +1,6 @@
 import type { GenerationState, SystemStatus } from '@/types';
 import { cn } from '@/lib/utils';
+import { useUiStore } from '@/store/ui-store';
 
 export type AppStatus =
   | 'saved'
@@ -28,6 +29,18 @@ export function deriveStatusBarStatus({
   if (systemStatus === 'saving') return 'saving';
   if (unsavedChanges) return 'unsaved';
   return 'saved';
+}
+
+function formatErrorStatusLabel(errorMessage: string | null): string {
+  if (!errorMessage) return 'Error';
+
+  const detail = errorMessage
+    .trim()
+    .replace(/^error:\s*/i, '')
+    .replace(/^generation failed:\s*/i, '')
+    .trim();
+
+  return detail ? `Error: ${detail}` : 'Error';
 }
 
 const STATUS_CONFIG: Record<
@@ -70,7 +83,10 @@ interface StatusBarProps {
 }
 
 export function StatusBar({ status = 'saved', className }: StatusBarProps) {
+  const errorMessage = useUiStore((state) => state.errorMessage);
   const cfg = STATUS_CONFIG[status];
+  const label = status === 'error' ? formatErrorStatusLabel(errorMessage) : cfg.label;
+  const labelTitle = status === 'error' && errorMessage ? errorMessage : label;
 
   return (
     <div
@@ -81,9 +97,11 @@ export function StatusBar({ status = 'saved', className }: StatusBarProps) {
       )}
     >
       {/* Left: status indicator */}
-      <div className="flex items-center gap-1.5">
+      <div className="flex min-w-0 max-w-[40%] items-center gap-1.5">
         <span className={cn('size-1.5 rounded-full', cfg.dot)} />
-        <span className="text-xs text-zinc-500">{cfg.label}</span>
+        <span className="truncate text-xs text-zinc-500" title={labelTitle}>
+          {label}
+        </span>
       </div>
 
       {/* Center: branding */}
