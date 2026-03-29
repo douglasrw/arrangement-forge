@@ -112,7 +112,7 @@ afterEach(() => {
 });
 
 describe('SectionContext truth surface', () => {
-  it('keeps saved section edits active while exposing saved energy, groove, and dynamics override paths', () => {
+  it('keeps saved section edits active while exposing saved energy, groove, feel, and dynamics override paths', () => {
     const mounted = renderSectionContext();
     mountedRoot = mounted.root;
     mountedContainer = mounted.container;
@@ -129,6 +129,9 @@ describe('SectionContext truth surface', () => {
     const grooveResetButton = mounted.container.querySelector(
       '#section-reset-Groove'
     ) as HTMLButtonElement | null;
+    const feelResetButton = mounted.container.querySelector(
+      '#section-reset-Feel'
+    ) as HTMLButtonElement | null;
     const dynamicsResetButton = mounted.container.querySelector(
       '#section-reset-Dynamics'
     ) as HTMLButtonElement | null;
@@ -137,6 +140,9 @@ describe('SectionContext truth surface', () => {
     ) as HTMLInputElement | null;
     const grooveSlider = mounted.container.querySelector(
       '#section-slider-Groove'
+    ) as HTMLInputElement | null;
+    const feelSlider = mounted.container.querySelector(
+      '#section-slider-Feel'
     ) as HTMLInputElement | null;
     const dynamicsSlider = mounted.container.querySelector(
       '#section-slider-Dynamics'
@@ -163,6 +169,15 @@ describe('SectionContext truth surface', () => {
       'Project default: Standard (50)'
     );
     expect(mounted.container.textContent).toContain(
+      'Section Feel Override'
+    );
+    expect(mounted.container.textContent).toContain(
+      'This section is inheriting the project feel default.'
+    );
+    expect(mounted.container.textContent).toContain(
+      'Project default: Natural (50)'
+    );
+    expect(mounted.container.textContent).toContain(
       'Section Dynamics Override'
     );
     expect(mounted.container.textContent).toContain(
@@ -172,10 +187,11 @@ describe('SectionContext truth surface', () => {
       'Project default: mp (50)'
     );
     expect(mounted.container.textContent).toContain(
-      'Feel and swing are not editable per section here yet.'
+      'Swing is not editable per section here yet.'
     );
     expect(energySlider?.value).toBe('75');
     expect(grooveSlider?.value).toBe('50');
+    expect(feelSlider?.value).toBe('50');
     expect(dynamicsSlider?.value).toBe('50');
 
     act(() => {
@@ -221,6 +237,18 @@ describe('SectionContext truth surface', () => {
     });
 
     act(() => {
+      if (feelSlider) {
+        const valueSetter = Object.getOwnPropertyDescriptor(
+          HTMLInputElement.prototype,
+          'value'
+        )?.set;
+        valueSetter?.call(feelSlider, '74');
+        feelSlider.dispatchEvent(new Event('input', { bubbles: true }));
+        feelSlider.dispatchEvent(new Event('change', { bubbles: true }));
+      }
+    });
+
+    act(() => {
       if (dynamicsSlider) {
         const valueSetter = Object.getOwnPropertyDescriptor(
           HTMLInputElement.prototype,
@@ -237,9 +265,13 @@ describe('SectionContext truth surface', () => {
     expect(updatedSection?.barCount).toBe(12);
     expect(updatedSection?.energyOverride).toBe(33);
     expect(updatedSection?.grooveOverride).toBe(68);
+    expect(updatedSection?.feelOverride).toBe(74);
     expect(updatedSection?.dynamicsOverride).toBe(82);
     expect(mounted.container.textContent).toContain(
       'This section is carrying its own saved groove override.'
+    );
+    expect(mounted.container.textContent).toContain(
+      'This section is carrying its own saved feel override.'
     );
     expect(mounted.container.textContent).toContain(
       'This section is carrying its own saved dynamics override.'
@@ -258,6 +290,12 @@ describe('SectionContext truth surface', () => {
     });
 
     act(() => {
+      feelResetButton?.dispatchEvent(
+        new MouseEvent('click', { bubbles: true })
+      );
+    });
+
+    act(() => {
       dynamicsResetButton?.dispatchEvent(
         new MouseEvent('click', { bubbles: true })
       );
@@ -270,20 +308,28 @@ describe('SectionContext truth surface', () => {
     const resetGrooveSlider = mounted.container.querySelector(
       '#section-slider-Groove'
     ) as HTMLInputElement | null;
+    const resetFeelSlider = mounted.container.querySelector(
+      '#section-slider-Feel'
+    ) as HTMLInputElement | null;
     const resetDynamicsSlider = mounted.container.querySelector(
       '#section-slider-Dynamics'
     ) as HTMLInputElement | null;
     expect(resetSection?.energyOverride).toBeNull();
     expect(resetSection?.grooveOverride).toBeNull();
+    expect(resetSection?.feelOverride).toBeNull();
     expect(resetSection?.dynamicsOverride).toBeNull();
     expect(resetEnergySlider?.value).toBe('50');
     expect(resetGrooveSlider?.value).toBe('50');
+    expect(resetFeelSlider?.value).toBe('50');
     expect(resetDynamicsSlider?.value).toBe('50');
     expect(mounted.container.textContent).toContain(
       'This section is inheriting the project energy default.'
     );
     expect(mounted.container.textContent).toContain(
       'This section is inheriting the project groove default.'
+    );
+    expect(mounted.container.textContent).toContain(
+      'This section is inheriting the project feel default.'
     );
     expect(mounted.container.textContent).toContain(
       'This section is inheriting the project dynamics default.'

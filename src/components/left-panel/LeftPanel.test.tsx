@@ -187,10 +187,14 @@ describe('LeftPanel inspector truth regression', () => {
       'Section Groove Override'
     );
     expect(mounted.container.textContent).toContain(
+      'Section Feel Override'
+    );
+    expect(mounted.container.textContent).toContain(
       'Section Dynamics Override'
     );
     expect(mounted.container.querySelector('#section-slider-Energy')).not.toBeNull();
     expect(mounted.container.querySelector('#section-slider-Groove')).not.toBeNull();
+    expect(mounted.container.querySelector('#section-slider-Feel')).not.toBeNull();
     expect(mounted.container.querySelector('#section-slider-Dynamics')).not.toBeNull();
     expect(mounted.container.textContent).toContain('Close inspector');
 
