@@ -137,7 +137,7 @@ export function getProjectSnapshotFilename(project: Project): string {
   );
 }
 
-export type TopBarSaveIndicatorState = 'saved' | 'saving' | 'unsaved';
+export type TopBarSaveIndicatorState = 'error' | 'saved' | 'saving' | 'unsaved';
 
 export function deriveTopBarSaveIndicatorState({
   systemStatus,
@@ -146,6 +146,10 @@ export function deriveTopBarSaveIndicatorState({
   systemStatus: SystemStatus;
   unsavedChanges: boolean;
 }): TopBarSaveIndicatorState {
+  if (systemStatus === 'error') {
+    return 'error';
+  }
+
   if (systemStatus === 'saving') {
     return 'saving';
   }
@@ -191,11 +195,34 @@ export function formatRecentSaveLabel(lastSavedAt: string | null, now = new Date
   return days === 1 ? 'Saved yesterday' : `Saved ${days}d ago`;
 }
 
+export function formatTopBarErrorLabel(errorMessage: string | null): string {
+  if (!errorMessage) {
+    return 'Error';
+  }
+
+  const detail = errorMessage
+    .trim()
+    .replace(/^error:\s*/i, '')
+    .replace(/^generation failed:\s*/i, '')
+    .replace(/^save failed:\s*/i, '')
+    .trim();
+
+  return detail ? `Error: ${detail}` : 'Error';
+}
+
 export function getTopBarSaveIndicatorCopy(
   indicatorState: TopBarSaveIndicatorState,
   lastSavedAt: string | null,
+  errorMessage: string | null,
   now = new Date()
 ): { label: string; tooltip: string } {
+  if (indicatorState === 'error') {
+    return {
+      label: formatTopBarErrorLabel(errorMessage),
+      tooltip: errorMessage?.trim() || 'Project save or system error',
+    };
+  }
+
   if (indicatorState === 'saving') {
     return {
       label: 'Saving…',
@@ -381,7 +408,14 @@ function ChordDisplayToggle({
 /* ------------------------------------------------------------------ */
 export function TopBar() {
   const { project, stems, sections, blocks, chords, updateProject } = useProjectStore();
-  const { unsavedChanges, systemStatus, lastSavedAt, chordDisplayMode, toggleChordDisplay } =
+  const {
+    unsavedChanges,
+    systemStatus,
+    errorMessage,
+    lastSavedAt,
+    chordDisplayMode,
+    toggleChordDisplay,
+  } =
     useUiStore();
   const { signOut } = useAuth();
 
@@ -509,7 +543,11 @@ export function TopBar() {
     systemStatus,
     unsavedChanges,
   });
-  const saveIndicatorCopy = getTopBarSaveIndicatorCopy(saveIndicatorState, lastSavedAt);
+  const saveIndicatorCopy = getTopBarSaveIndicatorCopy(
+    saveIndicatorState,
+    lastSavedAt,
+    errorMessage
+  );
 
   function commitName(newName: string) {
     setIsEditing(false);
@@ -576,7 +614,9 @@ export function TopBar() {
               data-testid="topbar-save-dot"
               className={cn(
                 'size-1.5 rounded-full transition-colors',
-                saveIndicatorState === 'saving'
+                saveIndicatorState === 'error'
+                  ? 'bg-destructive'
+                  : saveIndicatorState === 'saving'
                   ? 'bg-status-saving animate-pulse'
                   : saveIndicatorState === 'unsaved'
                     ? 'bg-status-unsaved'
@@ -585,7 +625,7 @@ export function TopBar() {
             />
             <span
               data-testid="topbar-save-label"
-              className="text-xs text-muted-foreground"
+              className="max-w-40 truncate text-xs text-muted-foreground"
               title={saveIndicatorCopy.tooltip}
             >
               {saveIndicatorCopy.label}

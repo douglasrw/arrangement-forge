@@ -309,6 +309,26 @@ describe('TopBar save indicator truth', () => {
     expect(label?.title).toContain('Last saved');
     expect(dot?.className).toContain('bg-status-ready');
   });
+
+  it('surfaces concise failure detail when the save/system state enters error', () => {
+    useUiStore.setState({
+      unsavedChanges: false,
+      lastSavedAt: '2026-03-29T11:55:00Z',
+    });
+    useUiStore
+      .getState()
+      .setSystemStatus('error', '  Generation failed: Supabase unavailable  ');
+
+    const mounted = renderTopBar();
+    mountedRoot = mounted.root;
+    mountedContainer = mounted.container;
+
+    const { dot, label } = getTopBarSaveIndicator(mounted.container);
+
+    expect(label?.textContent).toBe('Error: Supabase unavailable');
+    expect(label?.title).toBe('Generation failed: Supabase unavailable');
+    expect(dot?.className).toContain('bg-destructive');
+  });
 });
 
 describe('TopBar export baseline', () => {
