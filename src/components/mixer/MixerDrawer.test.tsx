@@ -250,7 +250,7 @@ describe('MixerDrawer', () => {
     expect(masterSlider?.getAttribute('aria-valuenow')).toBe('60');
   });
 
-  it('writes mixer changes back to stem state, including pan reset truth, and master volume', () => {
+  it('keeps pan changes honest alongside volume, mute, solo, reset, and master volume', () => {
     useProjectStore.setState({
       stems: [makeStem({ id: 'st-piano', instrument: 'piano', volume: 0.5 })],
     });
@@ -261,6 +261,9 @@ describe('MixerDrawer', () => {
 
     const pianoMuteButton = mounted.container.querySelector(
       'button[aria-label="Toggle PIANO mute"]'
+    ) as HTMLButtonElement | null;
+    const pianoSoloButton = mounted.container.querySelector(
+      'button[aria-label="Toggle PIANO solo"]'
     ) as HTMLButtonElement | null;
     const pianoSlider = mounted.container.querySelector(
       '[aria-label="PIANO volume fader"]'
@@ -280,6 +283,7 @@ describe('MixerDrawer', () => {
 
     act(() => {
       pianoMuteButton?.dispatchEvent(new MouseEvent('click', { bubbles: true }));
+      pianoSoloButton?.dispatchEvent(new MouseEvent('click', { bubbles: true }));
       pianoSlider?.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowUp', bubbles: true }));
       if (pianoPan) {
         const valueSetter = Object.getOwnPropertyDescriptor(
@@ -303,6 +307,7 @@ describe('MixerDrawer', () => {
     const pianoStem = useProjectStore.getState().stems.find((stem) => stem.instrument === 'piano');
 
     expect(pianoStem?.isMuted).toBe(true);
+    expect(pianoStem?.isSolo).toBe(true);
     expect(pianoStem?.volume).toBeCloseTo(42 / 80);
     expect(pianoStem?.pan).toBe(0);
     expect(pianoPanValue?.textContent).toBe('C');
@@ -324,7 +329,7 @@ describe('MixerDrawer', () => {
     expect(mounted.container.textContent).toContain('Audio unavailable: Salamander drum samples missing');
   });
 
-  it('hydrates drum sub-mix controls from the live drum kit and writes normalized gains back', () => {
+  it('keeps drum pan controls honest while the drum sub-mix stays functional', () => {
     const setVoiceGroupGain = vi.fn();
     const getVoiceGroupGain = vi.fn((groupName: string) => {
       if (groupName === 'kick') return 1.4;
@@ -348,11 +353,41 @@ describe('MixerDrawer', () => {
     mountedRoot = mounted.root;
     mountedContainer = mounted.container;
 
+    const drumPan = mounted.container.querySelector(
+      'input[aria-label="DRUMS pan"]'
+    ) as HTMLInputElement | null;
+    const drumPanValue = mounted.container.querySelector(
+      '[aria-label="DRUMS pan value"]'
+    ) as HTMLSpanElement | null;
+    const drumPanReset = mounted.container.querySelector(
+      'button[aria-label="Center DRUMS pan"]'
+    ) as HTMLButtonElement | null;
     const drumButton = findButtonByText(mounted.container, 'DRUMS');
 
     act(() => {
+      if (drumPan) {
+        const valueSetter = Object.getOwnPropertyDescriptor(
+          HTMLInputElement.prototype,
+          'value'
+        )?.set;
+        valueSetter?.call(drumPan, '-35');
+        drumPan.dispatchEvent(new Event('input', { bubbles: true }));
+        drumPan.dispatchEvent(new Event('change', { bubbles: true }));
+      }
       drumButton?.dispatchEvent(new MouseEvent('click', { bubbles: true }));
     });
+
+    expect(useProjectStore.getState().stems.find((stem) => stem.instrument === 'drums')?.pan).toBeCloseTo(-0.35);
+    expect(drumPanValue?.textContent).toBe('L35');
+    expect(drumPanReset?.disabled).toBe(false);
+
+    act(() => {
+      drumPanReset?.dispatchEvent(new MouseEvent('click', { bubbles: true }));
+    });
+
+    expect(useProjectStore.getState().stems.find((stem) => stem.instrument === 'drums')?.pan).toBe(0);
+    expect(drumPanValue?.textContent).toBe('C');
+    expect(drumPanReset?.disabled).toBe(true);
 
     const kickSlider = mounted.container.querySelector('#drum-sub-kick') as HTMLInputElement | null;
     const snareSlider = mounted.container.querySelector('#drum-sub-snare') as HTMLInputElement | null;
