@@ -116,6 +116,17 @@ function renderBlockContext() {
   return { container, root };
 }
 
+function setRangeValue(input: HTMLInputElement, value: string) {
+  const valueSetter = Object.getOwnPropertyDescriptor(
+    HTMLInputElement.prototype,
+    'value'
+  )?.set;
+
+  valueSetter?.call(input, value);
+  input.dispatchEvent(new Event('input', { bubbles: true }));
+  input.dispatchEvent(new Event('change', { bubbles: true }));
+}
+
 let mountedRoot: Root | null = null;
 let mountedContainer: HTMLDivElement | null = null;
 
@@ -155,23 +166,48 @@ afterEach(() => {
 });
 
 describe('BlockContext truth surface', () => {
-  it('shows the saved block edit and replaces unsupported local-only controls with explicit status', () => {
+  it('keeps block energy override truth visible across inherit, save, and clear', () => {
+    useProjectStore.setState({
+      project: makeProject(),
+      stems: [makeStem()],
+      sections: [makeSection({ energyOverride: 75 })],
+      blocks: [makeBlock()],
+      chords: [],
+      chatMessages: [],
+      drumOnlyUpdate: false,
+      allInstrumentsUpdate: false,
+    });
+
     const mounted = renderBlockContext();
     mountedRoot = mounted.root;
     mountedContainer = mounted.container;
 
+    const energySlider = mounted.container.querySelector(
+      '#block-slider-Energy'
+    ) as HTMLInputElement | null;
+    const energyResetButton = mounted.container.querySelector(
+      '#block-reset-Energy'
+    ) as HTMLButtonElement | null;
+
     expect(mounted.container.textContent).toContain('Bars 3 – 6');
     expect(mounted.container.textContent).toContain(
-      'Pattern is the only saved block setting here today.'
+      'Pattern and energy override are the saved block settings here today.'
     );
+    expect(mounted.container.textContent).toContain('Block Energy Override');
+    expect(mounted.container.textContent).toContain(
+      'This block is inheriting the section energy default.'
+    );
+    expect(mounted.container.textContent).toContain('Section default: High (75)');
     expect(mounted.container.textContent).toContain('Unavailable In This Build');
     expect(mounted.container.textContent).toContain(
-      'Volume, pan, and custom chord overrides are not saved per block yet.'
+      'Volume, pan, dynamics, and custom chord overrides are not editable per block here yet.'
     );
     expect(mounted.container.textContent).toContain(
-      'Block playback follows the mixer and section chord chart today, so this inspector only edits the saved pattern assignment.'
+      'This inspector now edits saved pattern and energy truth. Other block-specific controls still inherit from the mixer, section style cascade, or chord chart defaults.'
     );
     expect(mounted.container.querySelector('#block-pattern-select')).not.toBeNull();
+    expect(energySlider?.value).toBe('75');
+    expect(energyResetButton?.disabled).toBe(true);
     expect(
       mounted.container.querySelector('label[for="block-volume-slider"]')
     ).toBeNull();
@@ -179,5 +215,89 @@ describe('BlockContext truth surface', () => {
       mounted.container.querySelector('label[for="block-pan-slider"]')
     ).toBeNull();
     expect(mounted.container.querySelector('#block-chord-override')).toBeNull();
+
+    act(() => {
+      if (energySlider) {
+        setRangeValue(energySlider, '33');
+      }
+    });
+
+    expect(useProjectStore.getState().blocks[0]).toMatchObject({
+      energyOverride: 33,
+    });
+    expect(energySlider?.value).toBe('33');
+    expect(energyResetButton?.disabled).toBe(false);
+    expect(mounted.container.textContent).toContain(
+      'This block is carrying its own saved energy override.'
+    );
+
+    act(() => {
+      energyResetButton?.dispatchEvent(
+        new MouseEvent('click', { bubbles: true })
+      );
+    });
+
+    expect(useProjectStore.getState().blocks[0]).toMatchObject({
+      energyOverride: null,
+    });
+    expect(energySlider?.value).toBe('75');
+    expect(energyResetButton?.disabled).toBe(true);
+    expect(mounted.container.textContent).toContain(
+      'This block is inheriting the section energy default.'
+    );
+  });
+
+  it('falls back to the project energy default when the section does not override it', () => {
+    useProjectStore.setState({
+      project: makeProject({ energy: 22 }),
+      stems: [makeStem()],
+      sections: [makeSection({ energyOverride: null })],
+      blocks: [makeBlock()],
+      chords: [],
+      chatMessages: [],
+      drumOnlyUpdate: false,
+      allInstrumentsUpdate: false,
+    });
+
+    const mounted = renderBlockContext();
+    mountedRoot = mounted.root;
+    mountedContainer = mounted.container;
+
+    const energySlider = mounted.container.querySelector(
+      '#block-slider-Energy'
+    ) as HTMLInputElement | null;
+    const energyResetButton = mounted.container.querySelector(
+      '#block-reset-Energy'
+    ) as HTMLButtonElement | null;
+
+    expect(energySlider?.value).toBe('22');
+    expect(energyResetButton?.disabled).toBe(true);
+    expect(mounted.container.textContent).toContain(
+      'This block is inheriting the project energy default.'
+    );
+    expect(mounted.container.textContent).toContain('Project default: Laid (22)');
+
+    act(() => {
+      if (energySlider) {
+        setRangeValue(energySlider, '91');
+      }
+    });
+
+    expect(useProjectStore.getState().blocks[0]).toMatchObject({
+      energyOverride: 91,
+    });
+    expect(energyResetButton?.disabled).toBe(false);
+
+    act(() => {
+      energyResetButton?.dispatchEvent(
+        new MouseEvent('click', { bubbles: true })
+      );
+    });
+
+    expect(useProjectStore.getState().blocks[0]).toMatchObject({
+      energyOverride: null,
+    });
+    expect(energySlider?.value).toBe('22');
+    expect(energyResetButton?.disabled).toBe(true);
   });
 });

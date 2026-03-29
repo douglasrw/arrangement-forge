@@ -221,12 +221,17 @@ describe('LeftPanel inspector truth regression', () => {
 
     expect(mounted.container.textContent).toContain('Bars 3 – 6');
     expect(mounted.container.textContent).toContain(
-      'Pattern is the only saved block setting here today.'
+      'Pattern and energy override are the saved block settings here today.'
+    );
+    expect(mounted.container.textContent).toContain('Block Energy Override');
+    expect(mounted.container.textContent).toContain(
+      'This block is inheriting the section energy default.'
     );
     expect(mounted.container.textContent).toContain('Unavailable In This Build');
     expect(mounted.container.textContent).toContain(
-      'Volume, pan, and custom chord overrides are not saved per block yet.'
+      'Volume, pan, dynamics, and custom chord overrides are not editable per block here yet.'
     );
+    expect(mounted.container.querySelector('#block-slider-Energy')).not.toBeNull();
     expect(
       mounted.container.querySelector('label[for="block-volume-slider"]')
     ).toBeNull();

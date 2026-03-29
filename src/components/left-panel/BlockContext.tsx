@@ -4,6 +4,7 @@ import { useProjectStore } from "@/store/project-store"
 import { useSelectionStore } from "@/store/selection-store"
 import { ConfirmDialog } from "@/components/shared/ConfirmDialog"
 import { INSTRUMENT_STYLE_OPTIONS } from "@/lib/genre-config"
+import { isInherited, resolveStyle } from "@/lib/style-cascade"
 import type { InstrumentType } from "@/types"
 import {
   Select,
@@ -32,6 +33,22 @@ const INSTRUMENT_LABELS: Record<Instrument, string> = {
   strings: "Strings",
 }
 
+function getStyleDisplayValue(field: "energy" | "dynamics", value: number): string {
+  if (field === "dynamics") {
+    if (value <= 20) return "pp"
+    if (value <= 40) return "p"
+    if (value <= 60) return "mp"
+    if (value <= 80) return "f"
+    return "ff"
+  }
+
+  if (value <= 20) return "Low"
+  if (value <= 40) return "Laid"
+  if (value <= 60) return "Med"
+  if (value <= 80) return "High"
+  return "Max"
+}
+
 /* ------------------------------------------------------------------ */
 /*  BlockContext                                                        */
 /* ------------------------------------------------------------------ */
@@ -50,11 +67,12 @@ export function BlockContext({
   endBar = 12,
   onClose,
 }: BlockContextProps) {
-  const { blocks, deleteBlock, duplicateBlock, updateBlock } = useProjectStore()
+  const { project, sections, blocks, deleteBlock, duplicateBlock, updateBlock } = useProjectStore()
   const { blockId } = useSelectionStore()
 
   /* Derive live block from store */
   const liveBlock = blocks.find((b) => b.id === blockId)
+  const liveSection = sections.find((section) => section.id === liveBlock?.sectionId)
 
   /* Use live block data if available, otherwise fall back to props */
   const resolvedStartBar = liveBlock?.startBar ?? startBar
@@ -63,6 +81,26 @@ export function BlockContext({
   const color = INSTRUMENT_COLORS[instrument]
   const label = INSTRUMENT_LABELS[instrument]
   const activePattern = liveBlock?.style ?? styleName
+  const fallbackProjectEnergy = project?.energy ?? 50
+  const effectiveEnergy =
+    project && liveSection
+      ? resolveStyle(project, liveSection, liveBlock ?? null, "energy")
+      : {
+          value: liveBlock?.energyOverride ?? fallbackProjectEnergy,
+          source: liveBlock?.energyOverride != null ? ("block" as const) : ("project" as const),
+        }
+  const inheritedEnergy =
+    project && liveSection
+      ? resolveStyle(project, liveSection, null, "energy")
+      : {
+          value: fallbackProjectEnergy,
+          source: "project" as const,
+        }
+  const isEnergyInherited = liveSection
+    ? isInherited(liveSection, liveBlock ?? null, "energy", "block")
+    : liveBlock?.energyOverride == null
+  const inheritedEnergySourceLabel =
+    inheritedEnergy.source === "section" ? "Section" : "Project"
 
   /* Confirm dialog for delete block */
   const [confirmDeleteOpen, setConfirmDeleteOpen] = useState(false)
@@ -77,6 +115,16 @@ export function BlockContext({
   function handleDuplicateBlock() {
     if (!blockId) return
     duplicateBlock(blockId)
+  }
+
+  function updateEnergyOverride(value: number) {
+    if (!liveBlock) return
+    updateBlock(liveBlock.id, { energyOverride: value })
+  }
+
+  function resetEnergyOverride() {
+    if (!liveBlock || liveBlock.energyOverride == null) return
+    updateBlock(liveBlock.id, { energyOverride: null })
   }
 
   return (
@@ -145,8 +193,71 @@ export function BlockContext({
             </SelectContent>
           </Select>
           <p className="mt-2 text-xs text-muted-foreground">
-            Pattern is the only saved block setting here today.
+            Pattern and energy override are the saved block settings here today.
           </p>
+        </div>
+
+        <div className="mt-4 rounded-lg border border-border/70 bg-secondary/30 p-3">
+          <div className="flex items-start justify-between gap-3">
+            <div className="flex flex-col gap-1">
+              <h3 className="text-[10px] font-medium uppercase tracking-widest text-zinc-500">
+                Block Energy Override
+              </h3>
+              <p className="text-xs text-muted-foreground">
+                {isEnergyInherited
+                  ? `This block is inheriting the ${inheritedEnergy.source === "section" ? "section" : "project"} energy default.`
+                  : "This block is carrying its own saved energy override."}
+              </p>
+            </div>
+            <span className="rounded border border-border/70 px-2 py-0.5 text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
+              {isEnergyInherited ? inheritedEnergySourceLabel : "Block"}
+            </span>
+          </div>
+
+          <div className="mt-3 flex items-center justify-between gap-3">
+            <label
+              htmlFor="block-slider-Energy"
+              className="text-[11px] font-medium text-muted-foreground"
+            >
+              Energy
+            </label>
+            <span className="min-w-[4rem] shrink-0 text-right text-[11px] font-semibold text-foreground">
+              {getStyleDisplayValue("energy", effectiveEnergy.value)} ({effectiveEnergy.value})
+            </span>
+          </div>
+
+          <div className="group relative mt-2 h-1.5 w-full rounded-full bg-secondary">
+            <div
+              className="absolute inset-y-0 left-0 rounded-full bg-ring"
+              style={{ width: `${effectiveEnergy.value}%` }}
+            />
+            <input
+              type="range"
+              id="block-slider-Energy"
+              aria-label="Block energy override"
+              min={0}
+              max={100}
+              value={effectiveEnergy.value}
+              onChange={(e) => updateEnergyOverride(Number(e.target.value))}
+              className="absolute inset-0 h-full w-full cursor-pointer opacity-0"
+            />
+          </div>
+
+          <div className="mt-3 flex items-center justify-between gap-3">
+            <p className="text-xs text-muted-foreground">
+              {inheritedEnergySourceLabel} default:{" "}
+              {getStyleDisplayValue("energy", inheritedEnergy.value)} ({inheritedEnergy.value})
+            </p>
+            <button
+              type="button"
+              id="block-reset-Energy"
+              onClick={resetEnergyOverride}
+              disabled={isEnergyInherited}
+              className="rounded border border-border/70 px-2 py-1 text-[11px] font-medium text-muted-foreground transition-colors hover:border-ring/50 hover:text-foreground disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              Clear override
+            </button>
+          </div>
         </div>
 
         <div className="mt-4 rounded-lg border border-border/70 bg-secondary/30 p-3">
@@ -156,7 +267,7 @@ export function BlockContext({
                 Unavailable In This Build
               </h3>
               <p className="text-xs text-muted-foreground">
-                Volume, pan, and custom chord overrides are not saved per block yet.
+                Volume, pan, dynamics, and custom chord overrides are not editable per block here yet.
               </p>
             </div>
             <span className="rounded border border-border/70 px-2 py-0.5 text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
@@ -164,7 +275,7 @@ export function BlockContext({
             </span>
           </div>
           <p className="mt-3 text-sm text-foreground">
-            Block playback follows the mixer and section chord chart today, so this inspector only edits the saved pattern assignment.
+            This inspector now edits saved pattern and energy truth. Other block-specific controls still inherit from the mixer, section style cascade, or chord chart defaults.
           </p>
         </div>
 

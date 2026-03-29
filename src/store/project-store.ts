@@ -5,6 +5,7 @@ import { useUiStore } from './ui-store';
 import { useSelectionStore } from './selection-store';
 import { snapshotArrangement } from '@/lib/undo-helpers';
 import { generateMidiForBlock } from '@/lib/midi-generator';
+import { resolveStyle } from '@/lib/style-cascade';
 
 const genId = () => crypto.randomUUID();
 
@@ -160,7 +161,8 @@ function regenerateBlockWithProjectState(state: {
     nextBlock.style !== currentBlock.style ||
     nextBlock.startBar !== currentBlock.startBar ||
     nextBlock.endBar !== currentBlock.endBar ||
-    nextBlock.sectionId !== currentBlock.sectionId;
+    nextBlock.sectionId !== currentBlock.sectionId ||
+    nextBlock.energyOverride !== currentBlock.energyOverride;
 
   if (!needsMidiRefresh) {
     return nextBlock;
@@ -176,6 +178,7 @@ function regenerateBlockWithProjectState(state: {
       bass_degree: chord.bassDegree,
     }));
 
+  const effectiveEnergy = resolveStyle(state.project, section, nextBlock, 'energy').value;
   const midiData = generateMidiForBlock(
     stem.instrument,
     nextBlock.endBar - nextBlock.startBar + 1,
@@ -185,7 +188,7 @@ function regenerateBlockWithProjectState(state: {
     stem.instrument === 'drums'
       ? {
           substyle: state.project.subStyle,
-          energy: section.energyOverride ?? state.project.energy,
+          energy: effectiveEnergy,
           dynamics: section.dynamicsOverride ?? state.project.dynamics,
           swingPct: section.swingPctOverride ?? state.project.swingPct,
           groove: section.grooveOverride ?? state.project.groove,
@@ -199,7 +202,7 @@ function regenerateBlockWithProjectState(state: {
         }
       : {
           substyle: state.project.subStyle,
-          energy: section.energyOverride ?? state.project.energy,
+          energy: effectiveEnergy,
           dynamics: section.dynamicsOverride ?? state.project.dynamics,
           swingPct: section.swingPctOverride ?? state.project.swingPct,
           groove: section.grooveOverride ?? state.project.groove,
