@@ -212,15 +212,18 @@ export function useProject() {
   }, [handleError]);
 
   const deleteProject = useCallback(
-    async (projectId: string) => {
+    async (projectId: string): Promise<boolean> => {
       try {
         const { error } = await supabase.from('projects').delete().eq('id', projectId);
         if (error) throw error;
+        setSystemStatus('ready');
+        return true;
       } catch (err) {
         handleError(err);
+        return false;
       }
     },
-    [handleError]
+    [handleError, setSystemStatus]
   );
 
   const listProjects = useCallback(async (): Promise<Project[]> => {
@@ -232,12 +235,13 @@ export function useProject() {
       if (error) throw error;
       const projects = (data ?? []).map((r) => rowToProject(r as Record<string, unknown>));
       setLibraryCount(projects.length);
+      setSystemStatus('ready');
       return projects;
     } catch (err) {
       handleError(err);
       return [];
     }
-  }, [setLibraryCount, handleError]);
+  }, [setLibraryCount, setSystemStatus, handleError]);
 
   const saveArrangement = useCallback(async () => {
     const { project, stems, sections, blocks, chords, chatMessages } = useProjectStore.getState();

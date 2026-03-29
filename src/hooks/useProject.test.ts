@@ -501,6 +501,117 @@ describe('useProject save paths', () => {
   });
 });
 
+describe('useProject library management', () => {
+  it('listProjects clears stale library errors and syncs the library count on success', async () => {
+    const projectRows = [buildStoredProject('project-list-a'), buildStoredProject('project-list-b')];
+
+    supabaseMock.from.mockImplementation((table: string) => {
+      if (table === 'projects') {
+        return {
+          select: () => ({
+            order: () => Promise.resolve({ data: projectRows, error: null }),
+          }),
+        };
+      }
+
+      return createTableQuery(tableResponses[table]);
+    });
+
+    useUiStore.setState({
+      systemStatus: 'error',
+      errorMessage: 'Old library failure',
+      libraryCount: 99,
+    });
+
+    const mounted = renderHarness();
+    mountedRoot = mounted.root;
+    mountedContainer = mounted.container;
+
+    let projects: Project[] = [];
+
+    await act(async () => {
+      projects = await hookValue!.listProjects();
+      await Promise.resolve();
+    });
+
+    expect(projects.map((project) => project.id)).toEqual(['project-list-a', 'project-list-b']);
+    expect(useUiStore.getState()).toMatchObject({
+      systemStatus: 'ready',
+      errorMessage: null,
+      libraryCount: 2,
+    });
+  });
+
+  it('deleteProject returns true and clears stale errors after a successful delete', async () => {
+    const deleteEq = vi.fn(() => Promise.resolve({ error: null }));
+    const deleteProjectRow = vi.fn(() => ({ eq: deleteEq }));
+
+    supabaseMock.from.mockImplementation((table: string) => {
+      if (table === 'projects') {
+        return { delete: deleteProjectRow };
+      }
+
+      return createTableQuery(tableResponses[table]);
+    });
+
+    useUiStore.setState({
+      systemStatus: 'error',
+      errorMessage: 'Delete previously failed',
+    });
+
+    const mounted = renderHarness();
+    mountedRoot = mounted.root;
+    mountedContainer = mounted.container;
+
+    let deleted = false;
+
+    await act(async () => {
+      deleted = await hookValue!.deleteProject('project-delete-success');
+      await Promise.resolve();
+    });
+
+    expect(deleteProjectRow).toHaveBeenCalledTimes(1);
+    expect(deleteEq).toHaveBeenCalledWith('id', 'project-delete-success');
+    expect(deleted).toBe(true);
+    expect(useUiStore.getState()).toMatchObject({
+      systemStatus: 'ready',
+      errorMessage: null,
+    });
+  });
+
+  it('deleteProject returns false and surfaces the Supabase failure', async () => {
+    const deleteEq = vi.fn(() => Promise.resolve({ error: new Error('Delete blocked') }));
+    const deleteProjectRow = vi.fn(() => ({ eq: deleteEq }));
+
+    supabaseMock.from.mockImplementation((table: string) => {
+      if (table === 'projects') {
+        return { delete: deleteProjectRow };
+      }
+
+      return createTableQuery(tableResponses[table]);
+    });
+
+    const mounted = renderHarness();
+    mountedRoot = mounted.root;
+    mountedContainer = mounted.container;
+
+    let deleted = true;
+
+    await act(async () => {
+      deleted = await hookValue!.deleteProject('project-delete-failure');
+      await Promise.resolve();
+    });
+
+    expect(deleteProjectRow).toHaveBeenCalledTimes(1);
+    expect(deleteEq).toHaveBeenCalledWith('id', 'project-delete-failure');
+    expect(deleted).toBe(false);
+    expect(useUiStore.getState()).toMatchObject({
+      systemStatus: 'error',
+      errorMessage: 'Delete blocked',
+    });
+  });
+});
+
 describe('useProject createProject', () => {
   it('uses the loaded profile default genre and matching sub-style for new projects', async () => {
     const insert = vi.fn(() => ({

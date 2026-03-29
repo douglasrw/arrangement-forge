@@ -2,6 +2,7 @@ import { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useProject } from '@/hooks/useProject';
 import { ConfirmDialog } from '@/components/shared/ConfirmDialog';
+import { useUiStore } from '@/store/ui-store';
 import type { Project } from '@/types';
 
 type SortKey = 'updatedAt' | 'name-asc' | 'name-desc' | 'genre' | 'key' | 'tempo';
@@ -26,6 +27,9 @@ function formatDate(iso: string): string {
 export default function LibraryPage() {
   const navigate = useNavigate();
   const { listProjects, createProject, deleteProject } = useProject();
+  const systemStatus = useUiStore((state) => state.systemStatus);
+  const errorMessage = useUiStore((state) => state.errorMessage);
+  const setLibraryCount = useUiStore((state) => state.setLibraryCount);
 
   const [projects, setProjects] = useState<Project[]>([]);
   const [loading, setLoading] = useState(true);
@@ -37,11 +41,25 @@ export default function LibraryPage() {
   const search = useDebounce(searchInput, 300);
 
   useEffect(() => {
-    listProjects().then((p) => {
-      setProjects(p);
+    let active = true;
+
+    void listProjects().then((loadedProjects) => {
+      if (!active) return;
+      setProjects(loadedProjects);
       setLoading(false);
     });
+
+    return () => {
+      active = false;
+    };
   }, [listProjects]);
+
+  async function handleRetry() {
+    setLoading(true);
+    const loadedProjects = await listProjects();
+    setProjects(loadedProjects);
+    setLoading(false);
+  }
 
   async function handleCreate() {
     setCreating(true);
@@ -51,9 +69,13 @@ export default function LibraryPage() {
   }
 
   async function handleDelete(project: Project) {
-    await deleteProject(project.id);
-    setProjects((prev) => prev.filter((p) => p.id !== project.id));
+    const deleted = await deleteProject(project.id);
     setDeleteTarget(null);
+    if (!deleted) return;
+
+    const nextProjects = projects.filter((candidate) => candidate.id !== project.id);
+    setProjects(nextProjects);
+    setLibraryCount(nextProjects.length);
   }
 
   const filtered = useMemo(() => {
@@ -147,8 +169,34 @@ export default function LibraryPage() {
           </div>
         )}
 
+        {/* Error state */}
+        {!loading && systemStatus === 'error' && (
+          <div
+            className="rounded-lg border border-destructive/30 bg-destructive/10 px-4 py-4"
+            role="alert"
+          >
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+              <div className="space-y-1">
+                <p className="text-sm font-semibold text-foreground">
+                  {projects.length === 0 ? 'Unable to load library' : 'Library action failed'}
+                </p>
+                <p className="text-sm text-muted-foreground">
+                  {errorMessage ?? 'Arrangement Forge could not finish the requested library action.'}
+                </p>
+              </div>
+              <button
+                type="button"
+                className="rounded border border-border bg-card px-3 py-1.5 text-sm font-medium text-foreground transition-colors hover:bg-secondary"
+                onClick={handleRetry}
+              >
+                Retry
+              </button>
+            </div>
+          </div>
+        )}
+
         {/* Empty state */}
-        {!loading && projects.length === 0 && (
+        {!loading && systemStatus !== 'error' && projects.length === 0 && (
           <div className="flex flex-col items-center gap-4 py-24 text-center">
             <p className="text-muted-foreground text-lg">No projects yet.</p>
             <p className="text-muted-foreground/50 text-sm">Create your first arrangement!</p>
@@ -184,11 +232,13 @@ export default function LibraryPage() {
                       {project.name}
                     </h3>
                     <button
+                      type="button"
                       className="rounded p-0.5 text-muted-foreground/50 hover:text-destructive shrink-0 transition-colors"
                       onClick={(e) => {
                         e.stopPropagation();
                         setDeleteTarget(project);
                       }}
+                      aria-label={`Delete ${project.name}`}
                       title="Delete project"
                     >
                       ✕
