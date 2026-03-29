@@ -247,7 +247,27 @@ describe('MixerDrawer', () => {
     expect(stringsPan?.disabled).toBe(true);
     expect(stringsPanValue?.textContent).toBe('--');
     expect(stringsPanReset?.disabled).toBe(true);
+    expect(mounted.container.textContent).toContain('No stem');
     expect(masterSlider?.getAttribute('aria-valuenow')).toBe('60');
+  });
+
+  it('shows when disabled lanes are not in the project yet', () => {
+    useProjectStore.setState({
+      project: makeProject({ hasArrangement: false }),
+      stems: [],
+      sections: [],
+      blocks: [],
+      chords: [],
+    });
+
+    const mounted = renderMixer();
+    mountedRoot = mounted.root;
+    mountedContainer = mounted.container;
+
+    expect(mounted.container.textContent).toContain('No arrangement');
+    expect(
+      (mounted.container.querySelector('button[aria-label="Toggle PIANO mute"]') as HTMLButtonElement | null)?.disabled
+    ).toBe(true);
   });
 
   it('surfaces imported off-grid pan truth and lets the operator center it', () => {

@@ -2,7 +2,7 @@ import { useState, useCallback, useEffect } from "react"
 import { cn } from "@/lib/utils"
 import { X, ChevronDown, ChevronUp } from "lucide-react"
 import { useAudio } from "@/hooks/useAudio"
-import { useProjectStore } from "@/store/project-store"
+import { hasProjectArrangementTruth, useProjectStore } from "@/store/project-store"
 import { useUiStore } from "@/store/ui-store"
 import type { DrumKitLike } from "@/audio/drum-kit"
 import type { Stem, SystemStatus } from "@/types"
@@ -37,6 +37,12 @@ interface DrumSubMixTruth {
   status: "ready" | "loading" | "error" | "unavailable"
   badge: string | null
   message: string | null
+}
+
+interface LaneTruth {
+  badge: string | null
+  detail: string | null
+  tone: "default" | "error"
 }
 
 const UNITY_SLIDER_VALUE = 80
@@ -149,6 +155,50 @@ function getDrumSubMixTruth({
     status: "unavailable",
     badge: "Kit unavailable",
     message: "Drum sub-mix unavailable right now.",
+  }
+}
+
+function getLaneTruth({
+  stem,
+  instrumentLabel,
+  hasArrangementTruth,
+  isDrums,
+  drumSubMixTruth,
+}: {
+  stem?: Stem
+  instrumentLabel: string
+  hasArrangementTruth: boolean
+  isDrums: boolean
+  drumSubMixTruth: DrumSubMixTruth
+}): LaneTruth {
+  if (!stem) {
+    if (hasArrangementTruth) {
+      return {
+        badge: "No stem",
+        detail: `No ${instrumentLabel.toLowerCase()} stem is loaded for this arrangement.`,
+        tone: "default",
+      }
+    }
+
+    return {
+      badge: "No arrangement",
+      detail: `Generate or import an arrangement to enable ${instrumentLabel.toLowerCase()}.`,
+      tone: "default",
+    }
+  }
+
+  if (isDrums && drumSubMixTruth.badge) {
+    return {
+      badge: drumSubMixTruth.badge,
+      detail: drumSubMixTruth.message,
+      tone: drumSubMixTruth.status === "error" ? "error" : "default",
+    }
+  }
+
+  return {
+    badge: null,
+    detail: null,
+    tone: "default",
   }
 }
 
@@ -370,7 +420,11 @@ export function MixerDrawer() {
   const toggleMixer = useUiStore((s) => s.toggleMixer)
   const systemStatus = useUiStore((s) => s.systemStatus)
   const errorMessage = useUiStore((s) => s.errorMessage)
+  const project = useProjectStore((s) => s.project)
   const stems = useProjectStore((s) => s.stems)
+  const sections = useProjectStore((s) => s.sections)
+  const blocks = useProjectStore((s) => s.blocks)
+  const chords = useProjectStore((s) => s.chords)
   const updateStem = useProjectStore((s) => s.updateStem)
   const centerStemPan = useProjectStore((s) => s.centerStemPan)
   const [drumSubOpen, setDrumSubOpen] = useState(false)
@@ -379,6 +433,13 @@ export function MixerDrawer() {
   const drumKit = engine.getDrumKit()
   const mixerStatusNotice = getMixerStatusNotice(systemStatus, errorMessage)
   const drumSubMixTruth = getDrumSubMixTruth({ drumKit, systemStatus, errorMessage })
+  const hasArrangementTruth = hasProjectArrangementTruth({
+    project,
+    stems,
+    sections,
+    blocks,
+    chords,
+  })
   const isPlaying = transportState.playbackState === "playing"
   const stemByInstrument = new Map(stems.map((stem) => [stem.instrument, stem]))
   const masterVolume = gainToSliderValue(audioConfig.masterVolume)
@@ -459,6 +520,13 @@ export function MixerDrawer() {
               const stem = stemByInstrument.get(inst.key)
               const ch = toChannelState(stem)
               const isDrums = inst.key === "drums"
+              const laneTruth = getLaneTruth({
+                stem,
+                instrumentLabel: inst.label,
+                hasArrangementTruth,
+                isDrums,
+                drumSubMixTruth,
+              })
               return (
                 <div
                   key={inst.key}
@@ -469,8 +537,8 @@ export function MixerDrawer() {
                     borderTopStyle: "solid",
                   }}
                 >
-                  {isDrums ? (
-                    <div className="flex flex-col items-center gap-1">
+                  <div className="flex flex-col items-center gap-1">
+                    {isDrums ? (
                       <button
                         type="button"
                         onClick={() => setDrumSubOpen((v) => !v)}
@@ -485,30 +553,31 @@ export function MixerDrawer() {
                           <ChevronDown className="size-2.5" />
                         )}
                       </button>
-                      {ch.available && drumSubMixTruth.badge && (
-                        <span
-                          className={cn(
-                            "rounded-full px-1.5 py-0.5 text-[8px] font-semibold uppercase tracking-[0.18em]",
-                            drumSubMixTruth.status === "error"
-                              ? "bg-destructive/10 text-destructive"
-                              : "bg-card text-muted-foreground"
-                          )}
-                        >
-                          {drumSubMixTruth.badge}
-                        </span>
-                      )}
-                    </div>
-                  ) : (
-                    <span
-                      className={cn(
-                        "text-[10px] font-semibold uppercase",
-                        !ch.available && "opacity-40"
-                      )}
-                      style={{ color: inst.color, letterSpacing: "0.1em" }}
-                    >
-                      {inst.label}
-                    </span>
-                  )}
+                    ) : (
+                      <span
+                        className={cn(
+                          "text-[10px] font-semibold uppercase",
+                          !ch.available && "opacity-40"
+                        )}
+                        style={{ color: inst.color, letterSpacing: "0.1em" }}
+                      >
+                        {inst.label}
+                      </span>
+                    )}
+                    {laneTruth.badge && (
+                      <span
+                        title={laneTruth.detail ?? undefined}
+                        className={cn(
+                          "rounded-full px-1.5 py-0.5 text-[8px] font-semibold uppercase tracking-[0.18em]",
+                          laneTruth.tone === "error"
+                            ? "bg-destructive/10 text-destructive"
+                            : "bg-card text-muted-foreground"
+                        )}
+                      >
+                        {laneTruth.badge}
+                      </span>
+                    )}
+                  </div>
 
                   <div className="flex gap-1">
                     <button

@@ -267,6 +267,22 @@ export interface ProjectExportSnapshot {
   chords: Chord[];
 }
 
+export function hasProjectArrangementTruth(state: {
+  project: Project | null;
+  stems: Stem[];
+  sections: Section[];
+  blocks: Block[];
+  chords: Chord[];
+}): boolean {
+  return Boolean(
+    state.project?.hasArrangement ||
+    state.stems.length ||
+    state.sections.length ||
+    state.blocks.length ||
+    state.chords.length
+  );
+}
+
 export function serializeProjectExportSnapshot(
   state: {
     project: Project;
