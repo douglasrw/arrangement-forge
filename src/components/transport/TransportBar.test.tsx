@@ -5,8 +5,13 @@ import { createRoot, type Root } from 'react-dom/client';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { TransportBar } from './TransportBar';
 import { useProjectStore } from '@/store/project-store';
-import { useUiStore } from '@/store/ui-store';
-import type { AudioEngineConfig, Project, Section, TransportState } from '@/types';
+import type {
+  AudioEngineConfig,
+  PlaybackReadiness,
+  Project,
+  Section,
+  TransportState,
+} from '@/types';
 
 const playMock = vi.hoisted(() => vi.fn(async () => undefined));
 const pauseMock = vi.hoisted(() => vi.fn());
@@ -32,12 +37,16 @@ const useAudioState = vi.hoisted(() => ({
     loopStartBar: 1,
     loopEndBar: 4,
   } as AudioEngineConfig,
+  playbackReadiness: 'ready' as PlaybackReadiness,
+  isLoadingAudio: false,
 }));
 
 vi.mock('@/hooks/useAudio', () => ({
   useAudio: () => ({
     transportState: useAudioState.transportState,
     audioConfig: useAudioState.audioConfig,
+    playbackReadiness: useAudioState.playbackReadiness,
+    isLoadingAudio: useAudioState.isLoadingAudio,
     play: playMock,
     pause: pauseMock,
     stop: stopMock,
@@ -139,6 +148,8 @@ beforeEach(() => {
     loopStartBar: 1,
     loopEndBar: 4,
   };
+  useAudioState.playbackReadiness = 'ready';
+  useAudioState.isLoadingAudio = false;
 
   useProjectStore.setState({
     project: makeProject(),
@@ -149,11 +160,6 @@ beforeEach(() => {
     chatMessages: [],
     drumOnlyUpdate: false,
     allInstrumentsUpdate: false,
-  });
-  useUiStore.setState({
-    generationState: 'complete',
-    systemStatus: 'ready',
-    errorMessage: null,
   });
 });
 
@@ -270,6 +276,7 @@ describe('TransportBar transport controls', () => {
       loopEnabled: true,
       metronomeEnabled: true,
     };
+    useAudioState.playbackReadiness = 'unavailable';
 
     useProjectStore.setState({
       project: makeProject({
@@ -326,9 +333,7 @@ describe('TransportBar transport controls', () => {
       ...useAudioState.transportState,
       totalSeconds: 0,
     };
-    useUiStore.setState({
-      systemStatus: 'ready',
-    });
+    useAudioState.playbackReadiness = 'loading';
 
     const mounted = renderTransportBar();
     mountedRoot = mounted.root;
@@ -357,5 +362,55 @@ describe('TransportBar transport controls', () => {
     expect(scrubber?.disabled).toBe(true);
     expect(mounted.container.textContent).toContain('Loading');
     expect(mounted.container.textContent).toContain('Load to play');
+  });
+
+  it('disables play while arrangement audio is actively loading', () => {
+    useAudioState.playbackReadiness = 'loading';
+    useAudioState.isLoadingAudio = true;
+
+    const mounted = renderTransportBar();
+    mountedRoot = mounted.root;
+    mountedContainer = mounted.container;
+
+    const playButton = mounted.container.querySelector(
+      'button[aria-label="Loading audio"]'
+    ) as HTMLButtonElement | null;
+    const loopButton = mounted.container.querySelector(
+      'button[aria-label="Toggle loop"]'
+    ) as HTMLButtonElement | null;
+    const metronomeButton = mounted.container.querySelector(
+      'button[aria-label="Toggle metronome"]'
+    ) as HTMLButtonElement | null;
+
+    expect(playButton?.disabled).toBe(true);
+    expect(loopButton?.disabled).toBe(true);
+    expect(metronomeButton?.disabled).toBe(true);
+    expect(mounted.container.textContent).toContain('Loading audio');
+    expect(mounted.container.textContent).not.toContain('Load to play');
+  });
+
+  it('surfaces unavailable playback truth when arrangement audio is not playable', () => {
+    useAudioState.playbackReadiness = 'unavailable';
+
+    const mounted = renderTransportBar();
+    mountedRoot = mounted.root;
+    mountedContainer = mounted.container;
+
+    const playButton = mounted.container.querySelector(
+      'button[aria-label="Play unavailable"]'
+    ) as HTMLButtonElement | null;
+    const loopButton = mounted.container.querySelector(
+      'button[aria-label="Toggle loop"]'
+    ) as HTMLButtonElement | null;
+    const metronomeButton = mounted.container.querySelector(
+      'button[aria-label="Toggle metronome"]'
+    ) as HTMLButtonElement | null;
+
+    expect(playButton?.disabled).toBe(true);
+    expect(loopButton?.disabled).toBe(true);
+    expect(metronomeButton?.disabled).toBe(true);
+    expect(mounted.container.textContent).toContain('Unavailable');
+    expect(mounted.container.textContent).not.toContain('Loading');
+    expect(mounted.container.textContent).not.toContain('Load to play');
   });
 });

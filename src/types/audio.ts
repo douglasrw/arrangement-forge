@@ -1,6 +1,7 @@
 // audio.ts — Audio engine and transport state types.
 
 export type PlaybackState = 'stopped' | 'playing' | 'paused';
+export type PlaybackReadiness = 'ready' | 'loading' | 'unavailable';
 export type CountInSetting = 'off' | '1-bar' | '2-bars';
 
 export interface TransportState {

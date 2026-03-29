@@ -344,6 +344,48 @@ describe('useAudio transport config', () => {
     expect(setSoloMock).toHaveBeenCalledWith('piano', true);
   });
 
+  it('marks playback ready after arrangement audio loads and reuses that loaded arrangement on play', async () => {
+    engineState.isInitialized = true;
+    loadArrangementMock.mockImplementation(async () => {
+      engineState.transportState = {
+        ...engineState.transportState,
+        totalSeconds: 64,
+      };
+    });
+
+    useProjectStore.setState({
+      project: makeProject(),
+      stems: [makeStem()],
+      sections: [makeSection()],
+      blocks: [makeBlock()],
+      chords: [],
+      chatMessages: [],
+      drumOnlyUpdate: false,
+      allInstrumentsUpdate: false,
+    });
+
+    const mounted = renderHarness();
+    mountedRoot = mounted.root;
+    mountedContainer = mounted.container;
+
+    await act(async () => {
+      await Promise.resolve();
+      await Promise.resolve();
+    });
+
+    expect(loadArrangementMock).toHaveBeenCalledTimes(1);
+    expect(hookValue?.playbackReadiness).toBe('ready');
+
+    loadArrangementMock.mockClear();
+
+    await act(async () => {
+      await hookValue?.play();
+    });
+
+    expect(loadArrangementMock).not.toHaveBeenCalled();
+    expect(playMock).toHaveBeenCalledTimes(1);
+  });
+
   it('surfaces arrangement load failures with the real sampler error', async () => {
     engineState.isInitialized = true;
     loadArrangementMock.mockRejectedValueOnce(new Error('Salamander drum samples missing'));
@@ -374,6 +416,33 @@ describe('useAudio transport config', () => {
       'Failed to load arrangement samples:',
       expect.any(Error)
     );
+  });
+
+  it('marks playback unavailable after arrangement audio fails to load', async () => {
+    engineState.isInitialized = true;
+    loadArrangementMock.mockRejectedValueOnce(new Error('Piano samples unavailable'));
+
+    useProjectStore.setState({
+      project: makeProject(),
+      stems: [makeStem()],
+      sections: [makeSection()],
+      blocks: [makeBlock()],
+      chords: [],
+      chatMessages: [],
+      drumOnlyUpdate: false,
+      allInstrumentsUpdate: false,
+    });
+
+    const mounted = renderHarness();
+    mountedRoot = mounted.root;
+    mountedContainer = mounted.container;
+
+    await act(async () => {
+      await Promise.resolve();
+      await Promise.resolve();
+    });
+
+    expect(hookValue?.playbackReadiness).toBe('unavailable');
   });
 
   it('surfaces hot-swap failures instead of only logging them', async () => {

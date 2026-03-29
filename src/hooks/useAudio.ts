@@ -4,7 +4,7 @@ import { useState, useEffect, useRef, useCallback } from 'react';
 import { AudioEngine } from '@/audio/engine';
 import { useProjectStore } from '@/store/project-store';
 import { useUiStore } from '@/store/ui-store';
-import type { AudioEngineConfig, TransportState } from '@/types';
+import type { AudioEngineConfig, PlaybackReadiness, TransportState } from '@/types';
 
 // Module-level singleton — not stored in Zustand
 let engineInstance: AudioEngine | null = null;
@@ -38,6 +38,10 @@ function getErrorMessage(error: unknown, fallback: string): string {
 export function useAudio() {
   const [isReady, setIsReady] = useState(false);
   const [transportState, setTransportState] = useState<TransportState>(defaultTransportState);
+  const [playbackReadiness, setPlaybackReadiness] = useState<PlaybackReadiness>('unavailable');
+  const [loadingArrangementSignature, setLoadingArrangementSignature] = useState('');
+  const [loadedArrangementSignature, setLoadedArrangementSignature] = useState('');
+  const [failedArrangementSignature, setFailedArrangementSignature] = useState('');
   const engine = getEngine();
   const [audioConfig, setAudioConfig] = useState<AudioEngineConfig>(() => engine.getAudioConfig());
   const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
@@ -82,6 +86,9 @@ export function useAudio() {
       isSolo: stem.isSolo,
     }))
   );
+  const totalBars = sections.reduce((sum, section) => sum + section.barCount, 0);
+  const hasArrangementTruth = Boolean(project?.hasArrangement) && totalBars > 0;
+  const audioLoading = loadingArrangementSignature === arrangementSignature;
 
   const syncStemMixerState = useCallback(() => {
     for (const stem of stems) {
@@ -117,16 +124,40 @@ export function useAudio() {
   }, [engine]);
 
   useEffect(() => {
-    if (!project || stems.length === 0) {
+    if (!project || stems.length === 0 || !hasArrangementTruth) {
       lastArrangementSignatureRef.current = '';
       lastMixerSignatureRef.current = '';
+      setLoadingArrangementSignature('');
+      setLoadedArrangementSignature('');
+      setFailedArrangementSignature('');
+      setPlaybackReadiness('unavailable');
+      return;
     }
-  }, [project, stems.length]);
+
+    if (failedArrangementSignature === arrangementSignature) {
+      setPlaybackReadiness('unavailable');
+      return;
+    }
+
+    if (loadedArrangementSignature === arrangementSignature) {
+      setPlaybackReadiness('ready');
+      return;
+    }
+
+    setPlaybackReadiness('loading');
+  }, [
+    arrangementSignature,
+    failedArrangementSignature,
+    hasArrangementTruth,
+    loadedArrangementSignature,
+    project,
+    stems.length,
+  ]);
 
   // Auto-load arrangement into audio engine when structure changes.
   // Stem mix updates are handled separately so mixer moves do not reload samples.
   useEffect(() => {
-    if (!engine.isInitialized || stems.length === 0 || !project) return;
+    if (!engine.isInitialized || stems.length === 0 || !project || !hasArrangementTruth) return;
 
     // All-instruments update: hot-swap every instrument without full reload
     if (allInstrumentsUpdate) {
@@ -136,8 +167,12 @@ export function useAudio() {
           engine.hotSwapInstrument(stem.instrument, blocks, stems, sections);
         }
         lastArrangementSignatureRef.current = arrangementSignature;
+        setLoadedArrangementSignature(arrangementSignature);
+        setLoadingArrangementSignature('');
+        setFailedArrangementSignature('');
         syncStemMixerState();
       } catch (err) {
+        setFailedArrangementSignature(arrangementSignature);
         reportAudioFailure('Failed to hot-swap instruments:', err, {
           fallback: 'Instrument update failed.',
         });
@@ -151,8 +186,12 @@ export function useAudio() {
       try {
         engine.hotSwapInstrument('drums', blocks, stems, sections);
         lastArrangementSignatureRef.current = arrangementSignature;
+        setLoadedArrangementSignature(arrangementSignature);
+        setLoadingArrangementSignature('');
+        setFailedArrangementSignature('');
         syncStemMixerState();
       } catch (err) {
+        setFailedArrangementSignature(arrangementSignature);
         reportAudioFailure('Failed to hot-swap drum instrument:', err, {
           fallback: 'Drum instrument update failed.',
         });
@@ -166,6 +205,8 @@ export function useAudio() {
 
     let cancelled = false;
     lastArrangementSignatureRef.current = arrangementSignature;
+    setLoadingArrangementSignature(arrangementSignature);
+    setFailedArrangementSignature('');
 
     async function load() {
       try {
@@ -173,11 +214,16 @@ export function useAudio() {
         engine.setTempo(project!.tempo);
         await engine.loadArrangement(blocks, stems, sections, project!.timeSignature);
         if (!cancelled) {
+          setLoadedArrangementSignature(arrangementSignature);
+          setLoadingArrangementSignature('');
+          setFailedArrangementSignature('');
           syncStemMixerState();
           setSystemStatus('ready');
         }
       } catch (err) {
         if (!cancelled) {
+          setLoadingArrangementSignature('');
+          setFailedArrangementSignature(arrangementSignature);
           reportAudioFailure('Failed to load arrangement samples:', err, {
             fallback: 'Instrument samples could not be loaded.',
             resetArrangement: true,
@@ -198,6 +244,7 @@ export function useAudio() {
     drumOnlyUpdate,
     engine,
     isReady,
+    hasArrangementTruth,
     project,
     sections,
     reportAudioFailure,
@@ -236,17 +283,28 @@ export function useAudio() {
   const play = useCallback(async () => {
     try {
       if (!engine.isInitialized) await initEngine();
-      // Ensure arrangement is loaded before playing
-      if (stems.length > 0 && project) {
+      if (!project || !hasArrangementTruth) return;
+      if (audioLoading) return;
+
+      // Ensure arrangement is loaded before playing.
+      if (stems.length > 0 && loadedArrangementSignature !== arrangementSignature) {
+        lastArrangementSignatureRef.current = arrangementSignature;
+        setLoadingArrangementSignature(arrangementSignature);
+        setFailedArrangementSignature('');
         setSystemStatus('loading-samples');
         engine.setTempo(project.tempo);
         await engine.loadArrangement(blocks, stems, sections, project.timeSignature);
         lastArrangementSignatureRef.current = arrangementSignature;
+        setLoadedArrangementSignature(arrangementSignature);
+        setLoadingArrangementSignature('');
+        setFailedArrangementSignature('');
         syncStemMixerState();
         setSystemStatus('ready');
       }
       engine.play();
     } catch (err) {
+      setLoadingArrangementSignature('');
+      setFailedArrangementSignature(arrangementSignature);
       reportAudioFailure('Failed to start audio playback:', err, {
         fallback: 'Instrument samples could not be loaded.',
         resetArrangement: true,
@@ -254,9 +312,12 @@ export function useAudio() {
     }
   }, [
     arrangementSignature,
+    audioLoading,
     blocks,
     engine,
+    hasArrangementTruth,
     initEngine,
+    loadedArrangementSignature,
     project,
     reportAudioFailure,
     sections,
@@ -287,6 +348,8 @@ export function useAudio() {
     transportState,
     audioConfig,
     isReady,
+    playbackReadiness,
+    isLoadingAudio: audioLoading,
     play,
     pause,
     stop,

@@ -11,7 +11,6 @@ import {
 import { useAudio } from "@/hooks/useAudio"
 import { Scrubber } from "@/components/transport/Scrubber"
 import { useProjectStore } from "@/store/project-store"
-import { useUiStore } from "@/store/ui-store"
 
 /* ------------------------------------------------------------------ */
 /*  Metronome icon (not available in lucide)                           */
@@ -49,6 +48,8 @@ export function TransportBar() {
   const {
     transportState,
     audioConfig,
+    playbackReadiness,
+    isLoadingAudio,
     play,
     pause,
     stop,
@@ -58,7 +59,6 @@ export function TransportBar() {
     setLoopEnabled,
   } = useAudio()
   const { project, sections, updateProject } = useProjectStore()
-  const systemStatus = useUiStore((state) => state.systemStatus)
 
   const isPlaying = transportState.playbackState === "playing"
   const bar = transportState.currentBar
@@ -72,41 +72,39 @@ export function TransportBar() {
   const metronomeActive = audioConfig.metronomeEnabled
   const totalBars = sections.reduce((sum, section) => sum + section.barCount, 0)
   const hasArrangementTruth = Boolean(project?.hasArrangement) && totalBars > 0
-  const audioLoading = systemStatus === "loading-samples"
-  const playbackReady =
-    hasArrangementTruth &&
-    totalSeconds > 0 &&
-    systemStatus !== "error" &&
-    !audioLoading
-  const playbackNeedsLoad = hasArrangementTruth && !playbackReady
+  const playbackReady = playbackReadiness === "ready"
+  const playbackNeedsLoad = playbackReadiness === "loading"
+  const playbackUnavailable = playbackReadiness === "unavailable"
   const playbackActive = playbackReady && isPlaying
   const loopPressed = playbackReady && loopActive
   const metronomePressed = playbackReady && metronomeActive
-  const playButtonDisabled = !hasArrangementTruth || audioLoading
+  const playButtonDisabled = playbackUnavailable || isLoadingAudio
   const playButtonLabel = playbackActive
     ? "Pause"
-    : audioLoading
+    : isLoadingAudio
       ? "Loading audio"
       : playbackReady
         ? "Play"
-        : hasArrangementTruth
+        : playbackNeedsLoad
           ? "Load and play"
           : "Play unavailable"
   const transportUnavailableTitle = !hasArrangementTruth
     ? "No arrangement timeline available yet"
-    : audioLoading
+    : isLoadingAudio
       ? "Arrangement audio is still loading"
       : playbackNeedsLoad
         ? "Arrangement audio will load before playback starts"
-        : undefined
+        : playbackUnavailable
+          ? "Arrangement audio is unavailable right now"
+          : undefined
   const readinessLabel = playbackReady
     ? "Ready"
-    : hasArrangementTruth
+    : playbackNeedsLoad
       ? "Loading"
       : "Unavailable"
   const readinessClassName = playbackReady
     ? "bg-emerald-500/10 text-emerald-300"
-    : hasArrangementTruth
+    : playbackNeedsLoad
       ? "bg-amber-500/10 text-amber-300"
       : "bg-zinc-800 text-zinc-500"
 
@@ -142,7 +140,7 @@ export function TransportBar() {
   }
   const timeStr = playbackReady
     ? `${formatClock(elapsedSeconds)} / ${formatClock(totalSeconds)}`
-    : audioLoading
+    : isLoadingAudio
       ? "Loading audio"
       : playbackNeedsLoad
         ? "Load to play"
@@ -182,7 +180,7 @@ export function TransportBar() {
           title={transportUnavailableTitle}
           className={cn(
             "flex size-8 items-center justify-center rounded-full transition-all",
-            !hasArrangementTruth || audioLoading
+            playbackUnavailable || isLoadingAudio
               ? "bg-zinc-800 text-zinc-600 shadow-none"
               : playbackNeedsLoad
                 ? "border border-border bg-background text-zinc-200 hover:bg-secondary"
@@ -225,7 +223,13 @@ export function TransportBar() {
             </>
           ) : (
             <span className="font-semibold text-zinc-500">
-              {audioLoading ? "Loading audio" : playbackNeedsLoad ? "Load to play" : "No timeline"}
+              {!hasArrangementTruth
+                ? "No timeline"
+                : isLoadingAudio
+                  ? "Loading audio"
+                  : playbackNeedsLoad
+                    ? "Load to play"
+                    : "Unavailable"}
             </span>
           )}
         </div>
