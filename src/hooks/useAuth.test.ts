@@ -49,6 +49,9 @@ let mountedRoot: Root | null = null;
 let mountedContainer: HTMLDivElement | null = null;
 let profileRow: Row | null = null;
 let unsubscribeMock: ReturnType<typeof vi.fn>;
+let authStateChangeHandler:
+  | ((event: string, session: { user?: { id: string; email?: string } } | null) => void)
+  | null = null;
 
 async function flushAsyncWork() {
   await Promise.resolve();
@@ -79,6 +82,7 @@ beforeEach(() => {
   hookValue = null;
   profileRow = null;
   unsubscribeMock = vi.fn();
+  authStateChangeHandler = null;
 
   supabaseMock.auth.getUser.mockReset();
   supabaseMock.auth.getSession.mockReset();
@@ -99,12 +103,15 @@ beforeEach(() => {
       session: null,
     },
   });
-  supabaseMock.auth.onAuthStateChange.mockReturnValue({
-    data: {
-      subscription: {
-        unsubscribe: unsubscribeMock,
+  supabaseMock.auth.onAuthStateChange.mockImplementation((callback) => {
+    authStateChangeHandler = callback;
+    return {
+      data: {
+        subscription: {
+          unsubscribe: unsubscribeMock,
+        },
       },
-    },
+    };
   });
   supabaseMock.auth.signInWithPassword.mockResolvedValue({ error: null });
   supabaseMock.auth.signUp.mockResolvedValue({ error: null });
@@ -325,5 +332,99 @@ describe('useAuth session bootstrap truth', () => {
       isAuthenticated: false,
       isLoading: false,
     });
+  });
+
+  it('clears auth state and loading when Supabase emits a sign-out event', async () => {
+    profileRow = {
+      id: 'user-1',
+      display_name: 'Ashlyn',
+      chord_display_mode: 'roman',
+      default_genre: 'Pop',
+      created_at: '2026-03-29T00:00:00Z',
+      updated_at: '2026-03-29T01:00:00Z',
+    };
+    supabaseMock.auth.getSession.mockResolvedValue({
+      data: {
+        session: {
+          user: { id: 'user-1', email: 'ash@example.com' },
+        },
+      },
+    });
+
+    const mounted = renderHarness();
+    mountedRoot = mounted.root;
+    mountedContainer = mounted.container;
+
+    act(() => {
+      hookValue!.initAuth();
+    });
+
+    await act(async () => {
+      await flushAsyncWork();
+    });
+
+    act(() => {
+      useAuthStore.getState().setLoading(true);
+      authStateChangeHandler?.('SIGNED_OUT', null);
+    });
+
+    expect(useAuthStore.getState()).toMatchObject({
+      user: null,
+      profile: null,
+      isAuthenticated: false,
+      isLoading: false,
+    });
+  });
+});
+
+describe('useAuth signOut', () => {
+  it('clears auth state before redirecting to login', async () => {
+    const originalLocation = window.location;
+    const fakeLocation = { href: '/library' };
+    let redirectHref = originalLocation.href;
+
+    Object.defineProperty(window, 'location', {
+      configurable: true,
+      value: fakeLocation,
+    });
+
+    useAuthStore.setState({
+      user: { id: 'user-1', email: 'ash@example.com' },
+      profile: {
+        id: 'user-1',
+        displayName: 'Ashlyn',
+        chordDisplayMode: 'roman',
+        defaultGenre: 'Pop',
+        createdAt: '2026-03-29T00:00:00Z',
+        updatedAt: '2026-03-29T01:00:00Z',
+      },
+      isAuthenticated: true,
+      isLoading: false,
+    });
+
+    const mounted = renderHarness();
+    mountedRoot = mounted.root;
+    mountedContainer = mounted.container;
+
+    try {
+      await act(async () => {
+        await hookValue!.signOut();
+      });
+      redirectHref = fakeLocation.href;
+    } finally {
+      Object.defineProperty(window, 'location', {
+        configurable: true,
+        value: originalLocation,
+      });
+    }
+
+    expect(supabaseMock.auth.signOut).toHaveBeenCalledTimes(1);
+    expect(useAuthStore.getState()).toMatchObject({
+      user: null,
+      profile: null,
+      isAuthenticated: false,
+      isLoading: false,
+    });
+    expect(redirectHref).toBe('/login');
   });
 });

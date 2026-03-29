@@ -150,4 +150,30 @@ describe('App protected route recovery truth', () => {
     expect(mounted.container.querySelector('[data-testid="editor-page"]')).not.toBeNull();
     expect(mounted.container.querySelector('[data-testid="login-page"]')).toBeNull();
   });
+
+  it('removes protected content immediately after auth state is cleared', async () => {
+    useAuthStore.setState({
+      user: { id: 'user-1', email: 'ash@example.com' },
+      isAuthenticated: true,
+      isLoading: false,
+    });
+
+    const mounted = renderRoute('/settings');
+    mountedRoot = mounted.root;
+    mountedContainer = mounted.container;
+
+    expect(mounted.container.querySelector('[data-testid="settings-page"]')).not.toBeNull();
+
+    act(() => {
+      useAuthStore.getState().signOut();
+    });
+
+    await act(async () => {
+      await Promise.resolve();
+    });
+
+    expect(mounted.container.querySelector('[data-testid="location-path"]')?.textContent).toBe('/login');
+    expect(mounted.container.querySelector('[data-testid="login-page"]')).not.toBeNull();
+    expect(mounted.container.querySelector('[data-testid="settings-page"]')).toBeNull();
+  });
 });
