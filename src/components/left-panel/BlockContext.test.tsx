@@ -166,6 +166,51 @@ afterEach(() => {
 });
 
 describe('BlockContext truth surface', () => {
+  it('reads saved block energy and dynamics overrides from persisted block state on first render', () => {
+    useProjectStore.setState({
+      project: makeProject(),
+      stems: [makeStem()],
+      sections: [makeSection({ energyOverride: 75, dynamicsOverride: 76 })],
+      blocks: [makeBlock({ energyOverride: 33, dynamicsOverride: 18 })],
+      chords: [],
+      chatMessages: [],
+      drumOnlyUpdate: false,
+      allInstrumentsUpdate: false,
+    });
+
+    const mounted = renderBlockContext();
+    mountedRoot = mounted.root;
+    mountedContainer = mounted.container;
+
+    const energySlider = mounted.container.querySelector(
+      '#block-slider-Energy'
+    ) as HTMLInputElement | null;
+    const energyResetButton = mounted.container.querySelector(
+      '#block-reset-Energy'
+    ) as HTMLButtonElement | null;
+    const dynamicsSlider = mounted.container.querySelector(
+      '#block-slider-Dynamics'
+    ) as HTMLInputElement | null;
+    const dynamicsResetButton = mounted.container.querySelector(
+      '#block-reset-Dynamics'
+    ) as HTMLButtonElement | null;
+
+    expect(energySlider?.value).toBe('33');
+    expect(energyResetButton?.disabled).toBe(false);
+    expect(dynamicsSlider?.value).toBe('18');
+    expect(dynamicsResetButton?.disabled).toBe(false);
+    expect(mounted.container.textContent).toContain(
+      'This block is carrying its own saved energy override.'
+    );
+    expect(mounted.container.textContent).toContain(
+      'This block is carrying its own saved dynamics override.'
+    );
+    expect(mounted.container.textContent).toContain('Laid (33)');
+    expect(mounted.container.textContent).toContain('pp (18)');
+    expect(mounted.container.textContent).toContain('Section default: High (75)');
+    expect(mounted.container.textContent).toContain('Section default: f (76)');
+  });
+
   it('keeps block energy and dynamics override truth visible across inherit, save, and clear', () => {
     useProjectStore.setState({
       project: makeProject(),
