@@ -165,6 +165,42 @@ describe('InputSection upload tab', () => {
     expect(generateButton?.disabled).toBe(false);
   });
 
+  it('moves imported note text into the project description and keeps the chart generate-ready', async () => {
+    useProjectStore.setState({
+      project: makeProject({
+        generationHints: 'Old notes',
+      }),
+    });
+
+    const mounted = renderSection();
+    mountedRoot = mounted.root;
+    mountedContainer = mounted.container;
+
+    openUploadTab(mounted.container);
+    const fileInput = getUploadFileInput(mounted.container);
+
+    const file = new File(['placeholder'], 'arrangement-with-notes.txt', { type: 'text/plain' });
+    vi.spyOn(file, 'text').mockResolvedValue(
+      'Description: Jazz waltz, brushes on snare\n[Verse]\nCmaj7 | Dm7 | G7 | Cmaj7'
+    );
+
+    await importFile(fileInput, file);
+
+    expect(useProjectStore.getState().project).toMatchObject({
+      chordChartRaw: '[Verse]\nCmaj7 | Dm7 | G7 | Cmaj7',
+      generationHints: 'Jazz waltz, brushes on snare',
+    });
+    expect(mounted.container.textContent).toContain(
+      'Imported arrangement-with-notes.txt and updated Description with 1 note line.'
+    );
+
+    const generateButton = Array.from(mounted.container.querySelectorAll('button')).find(
+      (button) => button.textContent === 'Generate'
+    ) as HTMLButtonElement | undefined;
+
+    expect(generateButton?.disabled).toBe(false);
+  });
+
   it('rejects empty imports without overwriting the current chord chart', async () => {
     useProjectStore.setState({
       project: makeProject({
@@ -186,7 +222,7 @@ describe('InputSection upload tab', () => {
 
     expect(useProjectStore.getState().project?.chordChartRaw).toBe('Cmaj7 | Fmaj7 | G7 | Cmaj7');
     expect(mounted.container.textContent).toContain(
-      'Imported file is empty. Current chord chart was left unchanged.'
+      'No chord chart was found in that file. Current chord chart was left unchanged.'
     );
   });
 

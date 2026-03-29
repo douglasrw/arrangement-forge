@@ -133,6 +133,52 @@ afterEach(() => {
 });
 
 describe('useGenerate assistant prompt flow', () => {
+  it('passes imported upload notes into generation hints on the next generate run', async () => {
+    useProjectStore.setState({
+      project: makeProject({
+        chordChartRaw: '[Verse]\nCmaj7 | Dm7 | G7 | Cmaj7',
+        generationHints: 'Jazz waltz\nBrushes on snare',
+      }),
+    });
+
+    parseChordChartMock.mockReturnValue({
+      chords: [{ bar_number: 1, degree: 'I', quality: 'maj7', bass_degree: null }],
+    });
+    generateMock.mockReturnValue({
+      sections: [{ name: 'Verse', sort_order: 0, bar_count: 4, start_bar: 1 }],
+      stems: [{ instrument: 'piano', sort_order: 0 }],
+      blocks: [
+        {
+          stem_instrument: 'piano',
+          section_name: 'Verse',
+          start_bar: 1,
+          end_bar: 4,
+          chord_degree: 'I',
+          chord_quality: 'maj7',
+          style: 'swing_piano',
+          midi_data: [],
+        },
+      ],
+      chords: [{ bar_number: 1, degree: 'I', quality: 'maj7', bass_degree: null }],
+    });
+
+    const mounted = renderHarness();
+    mountedRoot = mounted.root;
+    mountedContainer = mounted.container;
+
+    await act(async () => {
+      await hookValue!.runGeneration();
+      await Promise.resolve();
+    });
+
+    expect(parseChordChartMock).toHaveBeenCalledWith('[Verse]\nCmaj7 | Dm7 | G7 | Cmaj7', 'C');
+    expect(generateMock).toHaveBeenCalledWith(
+      expect.objectContaining({
+        generation_hints: 'Jazz waltz\nBrushes on snare',
+      })
+    );
+  });
+
   it('records setup-scoped generation summaries even when the run did not start from an assistant prompt', async () => {
     parseChordChartMock.mockReturnValue({
       chords: [{ bar_number: 1, degree: 'I', quality: 'maj7', bass_degree: null }],

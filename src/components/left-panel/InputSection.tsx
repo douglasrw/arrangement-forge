@@ -1,5 +1,6 @@
 import { useState, type ChangeEvent } from "react"
 import { cn } from "@/lib/utils"
+import { parseChordInput } from "@/lib/chords"
 import { ChordPalette } from "./ChordPalette"
 import { useProjectStore } from "@/store/project-store"
 import { useGenerate } from "@/hooks/useGenerate"
@@ -8,8 +9,14 @@ import { useUiStore } from "@/store/ui-store"
 const INPUT_TABS = ["Chord", "Text", "Upload"] as const
 type InputTab = (typeof INPUT_TABS)[number]
 type UploadFeedbackTone = "neutral" | "success" | "error"
+type ImportedChordChartUpload = {
+  chordChartRaw: string
+  generationHints: string
+}
 
 const DEFAULT_UPLOAD_FEEDBACK = "Accepted format: plain-text chord chart (.txt)."
+const SECTION_HEADER_RE = /^(verse|chorus|bridge|intro|outro|tag|interlude|pre-chorus|prechorus)(\s+\d+)?\s*:?\s*$/i
+const HINT_BLOCK_RE = /^(description|notes|hints)\s*:\s*(.*)$/i
 
 function isSupportedChordChartFile(file: File) {
   return file.type.startsWith("text/") || file.name.toLowerCase().endsWith(".txt")
@@ -17,6 +24,142 @@ function isSupportedChordChartFile(file: File) {
 
 function normalizeImportedChordChart(text: string) {
   return text.replace(/\r\n?/g, "\n")
+}
+
+function isSectionHeaderLine(line: string) {
+  return /^\[.*\]$/.test(line) || SECTION_HEADER_RE.test(line)
+}
+
+function normalizeSectionHeader(line: string) {
+  const trimmed = line.trim()
+
+  if (/^\[.*\]$/.test(trimmed)) {
+    return trimmed
+  }
+
+  return SECTION_HEADER_RE.test(trimmed)
+    ? `[${trimmed.replace(/:\s*$/, "")}]`
+    : trimmed
+}
+
+function isChordToken(token: string, key: string) {
+  const trimmed = token.trim()
+
+  if (!trimmed) {
+    return false
+  }
+
+  return trimmed === "%" || trimmed === "/" || trimmed === "-" || trimmed.toLowerCase() === "nc" ||
+    trimmed.toLowerCase() === "n.c." || parseChordInput(trimmed, key) !== null
+}
+
+function isChordChartLine(line: string, key: string) {
+  const trimmed = line.trim()
+
+  if (!trimmed) {
+    return false
+  }
+
+  if (isSectionHeaderLine(trimmed)) {
+    return true
+  }
+
+  const segments = trimmed.includes("|") ? trimmed.split("|") : [trimmed]
+  let sawChordToken = false
+
+  for (const segment of segments) {
+    const tokens = segment
+      .trim()
+      .split(/\s+/)
+      .filter(Boolean)
+
+    if (tokens.length === 0) {
+      continue
+    }
+
+    sawChordToken = true
+
+    if (tokens.some((token) => !isChordToken(token, key))) {
+      return false
+    }
+  }
+
+  return sawChordToken
+}
+
+function trimEmptyChartLines(lines: string[]) {
+  const nextLines = [...lines]
+
+  while (nextLines[0] === "") {
+    nextLines.shift()
+  }
+
+  while (nextLines.at(-1) === "") {
+    nextLines.pop()
+  }
+
+  return nextLines
+}
+
+function parseImportedChordChartUpload(text: string, key: string): ImportedChordChartUpload {
+  const chartLines: string[] = []
+  const hintLines: string[] = []
+  const normalizedLines = normalizeImportedChordChart(text).split("\n")
+
+  let inHintBlock = false
+
+  for (const rawLine of normalizedLines) {
+    const trimmed = rawLine.trim()
+
+    if (!trimmed) {
+      if (chartLines.at(-1) !== "") {
+        chartLines.push("")
+      }
+      inHintBlock = false
+      continue
+    }
+
+    const hintMatch = trimmed.match(HINT_BLOCK_RE)
+    if (hintMatch) {
+      inHintBlock = true
+      if (hintMatch[2]) {
+        hintLines.push(hintMatch[2].trim())
+      }
+      continue
+    }
+
+    if (inHintBlock && !isChordChartLine(trimmed, key)) {
+      hintLines.push(trimmed)
+      continue
+    }
+
+    inHintBlock = false
+
+    if (isChordChartLine(trimmed, key)) {
+      chartLines.push(normalizeSectionHeader(trimmed))
+      continue
+    }
+
+    hintLines.push(trimmed)
+  }
+
+  return {
+    chordChartRaw: trimEmptyChartLines(chartLines).join("\n"),
+    generationHints: hintLines.join("\n"),
+  }
+}
+
+function formatImportedNotesFeedback(fileName: string, generationHints: string) {
+  const noteCount = generationHints
+    .split("\n")
+    .map((line) => line.trim())
+    .filter(Boolean).length
+
+  if (noteCount === 0) {
+    return `Imported ${fileName} into the current chord chart.`
+  }
+
+  return `Imported ${fileName} and updated Description with ${noteCount} note ${noteCount === 1 ? "line" : "lines"}.`
 }
 
 export function InputSection() {
@@ -61,20 +204,25 @@ export function InputSection() {
     setIsImporting(true)
 
     try {
-      const importedChordChart = normalizeImportedChordChart(await file.text())
+      const importedUpload = parseImportedChordChartUpload(await file.text(), project?.key ?? "C")
 
-      if (!importedChordChart.trim()) {
+      if (!importedUpload.chordChartRaw.trim()) {
         setUploadFeedback({
           tone: "error",
-          message: "Imported file is empty. Current chord chart was left unchanged.",
+          message: "No chord chart was found in that file. Current chord chart was left unchanged.",
         })
         return
       }
 
-      updateProject({ chordChartRaw: importedChordChart })
+      updateProject({
+        chordChartRaw: importedUpload.chordChartRaw,
+        ...(importedUpload.generationHints
+          ? { generationHints: importedUpload.generationHints }
+          : {}),
+      })
       setUploadFeedback({
         tone: "success",
-        message: `Imported ${file.name} into the current chord chart.`,
+        message: formatImportedNotesFeedback(file.name, importedUpload.generationHints),
       })
     } catch (error) {
       console.error("Failed to import chord chart file", error)
@@ -174,7 +322,7 @@ export function InputSection() {
           <div className="space-y-1">
             <p className="text-xs font-medium text-foreground">Import a chord chart text file</p>
             <p className="text-xs leading-relaxed text-muted-foreground">
-              Choose a plain-text file to replace the current chord chart in this project.
+              Choose a plain-text file to replace the current chord chart. Note lines are copied into Description when they do not read like chord bars.
             </p>
           </div>
 
