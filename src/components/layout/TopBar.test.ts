@@ -321,7 +321,7 @@ describe('TopBar export baseline', () => {
     expect(typeof snapshot.exportedAt).toBe('string');
   });
 
-  it('keeps export disabled until the project has chord chart or description truth', () => {
+  it('keeps export disabled when the project has no chart, description, or arrangement truth', () => {
     useProjectStore.setState({
       project: makeProject({
         chordChartRaw: '   ',
@@ -338,7 +338,57 @@ describe('TopBar export baseline', () => {
     ) as HTMLButtonElement | null;
 
     expect(exportButton?.disabled).toBe(true);
-    expect(exportButton?.title).toBe('Add a chord chart or Description to export');
+    expect(exportButton?.textContent).toBe('Nothing to export');
+    expect(exportButton?.title).toBe('Add a chord chart, description, or arrangement to export');
+  });
+
+  it('exports arrangement-only projects instead of treating them as an empty-state dead end', async () => {
+    useProjectStore.setState({
+      project: makeProject({
+        name: 'Arrangement Only',
+        chordChartRaw: '   ',
+        generationHints: '   ',
+        hasArrangement: true,
+      }),
+      stems: [makeStem()],
+      sections: [makeSection()],
+      blocks: [makeBlock()],
+      chords: [makeChord()],
+    });
+
+    const mounted = renderTopBar();
+    mountedRoot = mounted.root;
+    mountedContainer = mounted.container;
+
+    const exportButton = mounted.container.querySelector(
+      '[data-testid="topbar-export-button"]'
+    ) as HTMLButtonElement | null;
+
+    expect(exportButton).not.toBeNull();
+    expect(exportButton?.disabled).toBe(false);
+    expect(exportButton?.title).toBe('Download chord chart and arrangement snapshot');
+
+    await act(async () => {
+      exportButton?.dispatchEvent(new MouseEvent('click', { bubbles: true }));
+      await Promise.resolve();
+    });
+
+    expect(downloadRequests).toEqual([
+      {
+        href: 'blob:export-url-1',
+        download: 'arrangement-only-chord-chart.txt',
+      },
+      {
+        href: 'blob:export-url-2',
+        download: 'arrangement-only-arrangement-snapshot.json',
+      },
+    ]);
+
+    const chartBlob = createObjectUrlMock.mock.calls[0]?.[0] as Blob;
+    const exportText = await chartBlob.text();
+
+    expect(exportText).toContain('Project: Arrangement Only');
+    expect(exportText).toContain('Chord Chart\n(empty)');
   });
 });
 

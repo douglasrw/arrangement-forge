@@ -62,6 +62,65 @@ function rowToMessage(row: Record<string, unknown>): AiChatMessage {
 
 // ---------- Hook ----------
 
+export interface ProjectExportReadiness {
+  canExport: boolean;
+  hasTextTruth: boolean;
+  hasArrangementTruth: boolean;
+  message: string;
+}
+
+export function hasArrangementExportTruth(state: {
+  stems: Stem[];
+  sections: Section[];
+  blocks: Block[];
+  chords: Chord[];
+}): boolean {
+  return Boolean(
+    state.stems.length ||
+      state.sections.length ||
+      state.blocks.length ||
+      state.chords.length
+  );
+}
+
+export function getProjectExportReadiness(state: {
+  project: Project | null;
+  stems: Stem[];
+  sections: Section[];
+  blocks: Block[];
+  chords: Chord[];
+}): ProjectExportReadiness {
+  if (!state.project) {
+    return {
+      canExport: false,
+      hasTextTruth: false,
+      hasArrangementTruth: false,
+      message: 'Open a project to export',
+    };
+  }
+
+  const hasTextTruth = Boolean(
+    state.project.chordChartRaw.trim() || state.project.generationHints.trim()
+  );
+  const hasArrangementTruth = hasArrangementExportTruth(state);
+
+  if (hasTextTruth || hasArrangementTruth) {
+    return {
+      canExport: true,
+      hasTextTruth,
+      hasArrangementTruth,
+      message: 'Download chord chart and arrangement snapshot',
+    };
+  }
+
+  return {
+    canExport: false,
+    hasTextTruth: false,
+    hasArrangementTruth: false,
+    message: 'Add a chord chart, description, or arrangement to export',
+  };
+}
+
 export function useProject() {
   const { setSystemStatus, markSaved, setLibraryCount } = useUiStore();
 

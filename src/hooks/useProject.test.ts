@@ -3,12 +3,12 @@
 import { act, createElement } from 'react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { createRoot, type Root } from 'react-dom/client';
-import { useProject } from './useProject';
+import { getProjectExportReadiness, useProject } from './useProject';
 import { useAuthStore } from '@/store/auth-store';
 import { useProjectStore } from '@/store/project-store';
 import { useSelectionStore } from '@/store/selection-store';
 import { useUiStore } from '@/store/ui-store';
-import type { AiChatMessage, Project } from '@/types';
+import type { AiChatMessage, Chord, Project } from '@/types';
 
 type Row = Record<string, unknown>;
 type TableResponse = {
@@ -291,6 +291,59 @@ afterEach(() => {
 
   mountedRoot = null;
   mountedContainer = null;
+});
+
+describe('useProject export readiness', () => {
+  it('treats arrangement rows as exportable truth even when the chord chart and description are blank', () => {
+    const readiness = getProjectExportReadiness({
+      project: {
+        ...buildStoredProject('project-arrangement', true),
+        chordChartRaw: '   ',
+        generationHints: '   ',
+      },
+      stems: [],
+      sections: [],
+      blocks: [],
+      chords: [
+        {
+          id: 'chord-1',
+          projectId: 'project-arrangement',
+          barNumber: 1,
+          degree: 'I',
+          quality: 'maj7',
+          bassDegree: null,
+        } satisfies Chord,
+      ],
+    });
+
+    expect(readiness).toEqual({
+      canExport: true,
+      hasTextTruth: false,
+      hasArrangementTruth: true,
+      message: 'Download chord chart and arrangement snapshot',
+    });
+  });
+
+  it('stays disabled only when the current project has no exportable truth', () => {
+    const readiness = getProjectExportReadiness({
+      project: {
+        ...buildStoredProject('project-empty'),
+        chordChartRaw: '   ',
+        generationHints: '   ',
+      },
+      stems: [],
+      sections: [],
+      blocks: [],
+      chords: [],
+    });
+
+    expect(readiness).toEqual({
+      canExport: false,
+      hasTextTruth: false,
+      hasArrangementTruth: false,
+      message: 'Add a chord chart, description, or arrangement to export',
+    });
+  });
 });
 
 describe('useProject loadProject', () => {

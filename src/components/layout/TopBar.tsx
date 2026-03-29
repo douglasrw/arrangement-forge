@@ -2,6 +2,7 @@ import { useState, useRef, useEffect } from "react"
 import { cn } from "@/lib/utils"
 import { Settings } from "lucide-react"
 import type { Project } from "@/types"
+import { getProjectExportReadiness } from "@/hooks/useProject"
 import {
   serializeProjectExportSnapshot,
   useProjectStore,
@@ -286,7 +287,24 @@ export function TopBar() {
 
   useEffect(() => {
     setExportFeedback(null)
-  }, [project?.id, project?.name, project?.chordChartRaw, project?.generationHints])
+  }, [
+    project?.id,
+    project?.name,
+    project?.chordChartRaw,
+    project?.generationHints,
+    stems,
+    sections,
+    blocks,
+    chords,
+  ])
+
+  const exportReadiness = getProjectExportReadiness({
+    project,
+    stems,
+    sections,
+    blocks,
+    chords,
+  })
 
   function downloadExportFile(
     contents: BlobPart,
@@ -308,7 +326,7 @@ export function TopBar() {
   }
 
   function handleExport() {
-    if (!hasProjectExportTruth(project)) {
+    if (!project || !exportReadiness.canExport) {
       return
     }
 
@@ -334,13 +352,14 @@ export function TopBar() {
     setExportFeedback(`Exported ${chartFileName} and ${snapshotFileName}`)
   }
 
-  const canExport = hasProjectExportTruth(project)
+  const canExport = exportReadiness.canExport
   const exportTitle = exportFeedback ??
-    (project === null
-      ? "Open a project to export"
-      : canExport
-        ? "Download chord chart as text"
-        : "Add a chord chart or Description to export")
+    exportReadiness.message
+  const exportButtonLabel = exportFeedback
+    ? "Exported"
+    : project === null || canExport
+      ? "Export"
+      : "Nothing to export"
 
   function commitName(newName: string) {
     setIsEditing(false)
@@ -452,7 +471,7 @@ export function TopBar() {
               : "cursor-not-allowed text-muted-foreground opacity-40"
           )}
         >
-          {exportFeedback ? "Exported" : "Export"}
+          {exportButtonLabel}
         </button>
 
         {/* Gear icon */}
