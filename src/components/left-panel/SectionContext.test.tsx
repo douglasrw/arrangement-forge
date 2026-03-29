@@ -73,6 +73,17 @@ function renderSectionContext() {
   return { container, root };
 }
 
+function setRangeValue(input: HTMLInputElement, value: string) {
+  const valueSetter = Object.getOwnPropertyDescriptor(
+    HTMLInputElement.prototype,
+    'value'
+  )?.set;
+
+  valueSetter?.call(input, value);
+  input.dispatchEvent(new Event('input', { bubbles: true }));
+  input.dispatchEvent(new Event('change', { bubbles: true }));
+}
+
 let mountedRoot: Root | null = null;
 let mountedContainer: HTMLDivElement | null = null;
 
@@ -330,6 +341,104 @@ describe('SectionContext truth surface', () => {
     );
     expect(mounted.container.textContent).toContain(
       'This section is inheriting the project feel default.'
+    );
+    expect(mounted.container.textContent).toContain(
+      'This section is inheriting the project dynamics default.'
+    );
+  });
+
+  it('keeps energy and dynamics project fallback truth visible when overrides are added and cleared', () => {
+    useProjectStore.setState({
+      project: makeProject({ energy: 22, dynamics: 76 }),
+      sections: [
+        makeSection({
+          energyOverride: null,
+          dynamicsOverride: null,
+        }),
+      ],
+    });
+
+    const mounted = renderSectionContext();
+    mountedRoot = mounted.root;
+    mountedContainer = mounted.container;
+
+    const energySlider = mounted.container.querySelector(
+      '#section-slider-Energy'
+    ) as HTMLInputElement | null;
+    const dynamicsSlider = mounted.container.querySelector(
+      '#section-slider-Dynamics'
+    ) as HTMLInputElement | null;
+    const energyResetButton = mounted.container.querySelector(
+      '#section-reset-Energy'
+    ) as HTMLButtonElement | null;
+    const dynamicsResetButton = mounted.container.querySelector(
+      '#section-reset-Dynamics'
+    ) as HTMLButtonElement | null;
+
+    expect(energySlider?.value).toBe('22');
+    expect(dynamicsSlider?.value).toBe('76');
+    expect(energyResetButton?.disabled).toBe(true);
+    expect(dynamicsResetButton?.disabled).toBe(true);
+    expect(mounted.container.textContent).toContain(
+      'Project default: Laid (22)'
+    );
+    expect(mounted.container.textContent).toContain(
+      'Project default: f (76)'
+    );
+    expect(mounted.container.textContent).toContain(
+      'This section is inheriting the project energy default.'
+    );
+    expect(mounted.container.textContent).toContain(
+      'This section is inheriting the project dynamics default.'
+    );
+
+    act(() => {
+      if (energySlider) {
+        setRangeValue(energySlider, '91');
+      }
+    });
+
+    act(() => {
+      if (dynamicsSlider) {
+        setRangeValue(dynamicsSlider, '18');
+      }
+    });
+
+    expect(useProjectStore.getState().sections[0]).toMatchObject({
+      energyOverride: 91,
+      dynamicsOverride: 18,
+    });
+    expect(energyResetButton?.disabled).toBe(false);
+    expect(dynamicsResetButton?.disabled).toBe(false);
+    expect(mounted.container.textContent).toContain(
+      'This section is carrying its own saved energy override.'
+    );
+    expect(mounted.container.textContent).toContain(
+      'This section is carrying its own saved dynamics override.'
+    );
+
+    act(() => {
+      energyResetButton?.dispatchEvent(
+        new MouseEvent('click', { bubbles: true })
+      );
+    });
+
+    act(() => {
+      dynamicsResetButton?.dispatchEvent(
+        new MouseEvent('click', { bubbles: true })
+      );
+    });
+
+    expect(useProjectStore.getState().sections[0]).toMatchObject({
+      energyOverride: null,
+      dynamicsOverride: null,
+    });
+    expect(energySlider?.value).toBe('22');
+    expect(dynamicsSlider?.value).toBe('76');
+    expect(energyResetButton?.disabled).toBe(true);
+    expect(dynamicsResetButton?.disabled).toBe(true);
+    expect(mounted.container.textContent).toContain(
+      'This section is inheriting the project energy default.'
     );
     expect(mounted.container.textContent).toContain(
       'This section is inheriting the project dynamics default.'
