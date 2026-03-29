@@ -129,6 +129,69 @@ describe('AiAssistantSection', () => {
     expect(mounted.container.textContent).not.toContain('push swing to about 70%');
   });
 
+  it('keeps the blocked reason visible when no project is loaded', () => {
+    useProjectStore.setState({
+      project: null,
+      chatMessages: [makeMessage()],
+    });
+
+    const mounted = renderSection();
+    mountedRoot = mounted.root;
+    mountedContainer = mounted.container;
+
+    const composerState = mounted.container.querySelector(
+      '[data-testid="ai-assistant-composer-state"]'
+    );
+
+    expect(composerState?.textContent).toContain('Assistant blocked');
+    expect(composerState?.textContent).toContain('Load a project to enable the assistant composer.');
+
+    const input = mounted.container.querySelector('#ai-input') as HTMLInputElement | null;
+    expect(input?.disabled).toBe(true);
+  });
+
+  it('keeps the blocked reason visible when the project has no chord chart', () => {
+    useProjectStore.setState({
+      project: makeProject({ chordChartRaw: '   ' }),
+      chatMessages: [makeMessage()],
+    });
+
+    const mounted = renderSection();
+    mountedRoot = mounted.root;
+    mountedContainer = mounted.container;
+
+    const composerState = mounted.container.querySelector(
+      '[data-testid="ai-assistant-composer-state"]'
+    );
+
+    expect(composerState?.textContent).toContain('Chord chart required');
+    expect(composerState?.textContent).toContain('Add a chord chart to enable arrangement requests.');
+  });
+
+  it('shows an active generating readiness state beyond the input placeholder', () => {
+    useProjectStore.setState({
+      chatMessages: [makeMessage()],
+    });
+    useUiStore.setState({
+      generationState: 'generating',
+      systemStatus: 'generating',
+    });
+
+    const mounted = renderSection();
+    mountedRoot = mounted.root;
+    mountedContainer = mounted.container;
+
+    const composerState = mounted.container.querySelector(
+      '[data-testid="ai-assistant-composer-state"]'
+    );
+
+    expect(composerState?.textContent).toContain('Generating arrangement');
+    expect(composerState?.textContent).toContain('The assistant is working from your latest request.');
+
+    const input = mounted.container.querySelector('#ai-input') as HTMLInputElement | null;
+    expect(input?.disabled).toBe(true);
+  });
+
   it('renders stored chat history and forwards prompts into generation', () => {
     useProjectStore.setState({
       chatMessages: [makeMessage()],

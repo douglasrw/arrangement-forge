@@ -26,6 +26,12 @@ function getScopeLabel(message: AiChatMessage) {
   return message.scopeTarget ? `${label}: ${message.scopeTarget}` : label
 }
 
+type ComposerStatus = {
+  title: string
+  detail: string
+  tone: "blocked" | "active"
+}
+
 export function AiAssistantSection() {
   const [input, setInput] = useState("")
   const project = useProjectStore((state) => state.project)
@@ -44,6 +50,25 @@ export function AiAssistantSection() {
   const hasChordChart = Boolean(project?.chordChartRaw.trim())
   const isGenerating = generationState === "generating"
   const canSend = Boolean(project && hasChordChart && trimmedInput && !isGenerating)
+  const composerStatus: ComposerStatus | null = !project
+    ? {
+        title: "Assistant blocked",
+        detail: "Load a project to enable the assistant composer.",
+        tone: "blocked",
+      }
+    : !hasChordChart
+      ? {
+          title: "Chord chart required",
+          detail: "Add a chord chart to enable arrangement requests.",
+          tone: "blocked",
+        }
+      : isGenerating
+        ? {
+            title: "Generating arrangement",
+            detail: "The assistant is working from your latest request.",
+            tone: "active",
+          }
+        : null
 
   function handleSend() {
     if (!canSend) return
@@ -103,45 +128,75 @@ export function AiAssistantSection() {
 
       <div className="flex items-center gap-2 rounded-md border border-border bg-secondary px-2.5 py-1.5">
         <label htmlFor="ai-input" className="sr-only">Ask the AI assistant</label>
-        <input
-          id="ai-input"
-          data-testid="ai-assistant-input"
-          type="text"
-          value={input}
-          onChange={(e) => setInput(e.target.value)}
-          disabled={!project || isGenerating}
-          onKeyDown={(e) => {
-            if (e.key === "Enter" && !e.shiftKey) {
-              e.preventDefault()
-              handleSend()
-            }
-          }}
-          placeholder={
-            !project
-              ? "Load a project to use the assistant..."
-              : !hasChordChart
-                ? "Add a chord chart first..."
-                : isGenerating
-                  ? "Generating..."
-                  : "Describe the arrangement change you want..."
-          }
-          className="flex-1 bg-transparent text-xs text-foreground placeholder:text-muted-foreground focus:outline-none"
-        />
-        <button
-          type="button"
-          data-testid="ai-assistant-send"
-          onClick={handleSend}
-          aria-label="Send assistant prompt"
-          disabled={!canSend}
-          className={cn(
-            "flex size-6 shrink-0 items-center justify-center rounded-md transition-colors",
-            canSend
-              ? "bg-ring text-foreground hover:bg-ring/80"
-              : "bg-secondary text-muted-foreground"
-          )}
-        >
-          <ArrowUp className="size-3.5" />
-        </button>
+        <div className="flex min-w-0 flex-1 flex-col gap-1.5">
+          {composerStatus ? (
+            <div
+              data-testid="ai-assistant-composer-state"
+              role="status"
+              aria-live={composerStatus.tone === "active" ? "polite" : undefined}
+              className={cn(
+                "flex items-start gap-2 rounded-md border px-2 py-1.5 text-[11px] leading-relaxed",
+                composerStatus.tone === "active"
+                  ? "border-ring/30 bg-ring/10 text-foreground"
+                  : "border-warning/30 bg-warning/10 text-foreground"
+              )}
+            >
+              <span
+                aria-hidden="true"
+                className={cn(
+                  "mt-1 size-1.5 shrink-0 rounded-full",
+                  composerStatus.tone === "active" ? "bg-ring" : "bg-warning"
+                )}
+              />
+              <div className="min-w-0">
+                <div className="font-medium">{composerStatus.title}</div>
+                <div className="text-muted-foreground">{composerStatus.detail}</div>
+              </div>
+            </div>
+          ) : null}
+
+          <div className="flex items-center gap-2">
+            <input
+              id="ai-input"
+              data-testid="ai-assistant-input"
+              type="text"
+              value={input}
+              onChange={(e) => setInput(e.target.value)}
+              disabled={!project || isGenerating}
+              onKeyDown={(e) => {
+                if (e.key === "Enter" && !e.shiftKey) {
+                  e.preventDefault()
+                  handleSend()
+                }
+              }}
+              placeholder={
+                !project
+                  ? "Load a project to use the assistant..."
+                  : !hasChordChart
+                    ? "Add a chord chart first..."
+                    : isGenerating
+                      ? "Generating..."
+                      : "Describe the arrangement change you want..."
+              }
+              className="flex-1 bg-transparent text-xs text-foreground placeholder:text-muted-foreground focus:outline-none"
+            />
+            <button
+              type="button"
+              data-testid="ai-assistant-send"
+              onClick={handleSend}
+              aria-label="Send assistant prompt"
+              disabled={!canSend}
+              className={cn(
+                "flex size-6 shrink-0 items-center justify-center rounded-md transition-colors",
+                canSend
+                  ? "bg-ring text-foreground hover:bg-ring/80"
+                  : "bg-secondary text-muted-foreground"
+              )}
+            >
+              <ArrowUp className="size-3.5" />
+            </button>
+          </div>
+        </div>
       </div>
     </div>
   )
