@@ -210,6 +210,40 @@ describe('AiAssistantSection', () => {
     expect(failureBubble?.textContent).toContain('Generator offline');
   });
 
+  it('keeps successful assistant replies visually distinct from failed generations', () => {
+    useProjectStore.setState({
+      chatMessages: [
+        makeMessage({
+          id: 'm1',
+          content: 'Applied your latest request and generated 2 sections across 8 bars for piano.',
+          scope: 'song',
+          scopeTarget: null,
+        }),
+        makeMessage({
+          id: 'm2',
+          content: 'Generation failed: Generator offline',
+          scope: 'song',
+          scopeTarget: null,
+        }),
+      ],
+    });
+
+    const mounted = renderSection();
+    mountedRoot = mounted.root;
+    mountedContainer = mounted.container;
+
+    const failureBubbles = mounted.container.querySelectorAll(
+      '[data-testid="ai-assistant-failure-bubble"]'
+    );
+
+    expect(mounted.container.textContent).toContain(
+      'Applied your latest request and generated 2 sections across 8 bars for piano.'
+    );
+    expect(failureBubbles).toHaveLength(1);
+    expect(failureBubbles[0]?.textContent).toContain('Generation failed');
+    expect(failureBubbles[0]?.textContent).toContain('Generator offline');
+  });
+
   it('renders stored chat history and forwards prompts into generation', () => {
     useProjectStore.setState({
       chatMessages: [makeMessage()],
