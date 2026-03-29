@@ -1,10 +1,12 @@
 import { useState } from "react"
 import type { Instrument } from "@/components/sequencer-block"
-import type { Stem } from "@/types"
+import type { Chord, Stem } from "@/types"
 import { useProjectStore } from "@/store/project-store"
 import { useSelectionStore } from "@/store/selection-store"
+import { useUiStore } from "@/store/ui-store"
 import { ConfirmDialog } from "@/components/shared/ConfirmDialog"
 import { INSTRUMENT_STYLE_OPTIONS } from "@/lib/genre-config"
+import { formatChord } from "@/lib/chords"
 import { isInherited, resolveStyle } from "@/lib/style-cascade"
 import type { InstrumentType } from "@/types"
 import {
@@ -56,6 +58,17 @@ interface BlockAudioTruth {
   sourceLabel: string
   volumeValue: string
   panValue: string
+  footer: string
+  tone: "default" | "missing"
+}
+
+interface BlockChordTruth {
+  badge: string
+  summary: string
+  rows: Array<{
+    label: string
+    value: string
+  }>
   footer: string
   tone: "default" | "missing"
 }
@@ -117,6 +130,67 @@ function getBlockAudioTruth({
   }
 }
 
+function getBlockChordTruth({
+  chords,
+  projectKey,
+  chordDisplayMode,
+  startBar,
+  endBar,
+  hasChordChartTruth,
+}: {
+  chords: Chord[]
+  projectKey: string
+  chordDisplayMode: "letter" | "roman"
+  startBar: number
+  endBar: number
+  hasChordChartTruth: boolean
+}): BlockChordTruth {
+  const blockChords = chords
+    .filter((chord) => chord.barNumber >= startBar && chord.barNumber <= endBar)
+    .sort((a, b) => a.barNumber - b.barNumber)
+
+  if (blockChords.length > 0) {
+    return {
+      badge: "Chart",
+      summary: `This block is currently following the chord chart across bars ${startBar} – ${endBar}.`,
+      rows: blockChords.map((chord) => ({
+        label: `Bar ${chord.barNumber}`,
+        value: formatChord(chord, projectKey, chordDisplayMode),
+      })),
+      footer: "Per-block chord overrides are still unavailable here, so the chord chart remains the active chord source of truth.",
+      tone: "default",
+    }
+  }
+
+  if (hasChordChartTruth) {
+    return {
+      badge: "No chart bars",
+      summary: `The chord chart has no entries inside bars ${startBar} – ${endBar}, so this block has no chart-derived chord changes to follow right now.`,
+      rows: [
+        {
+          label: "Range",
+          value: "No chord entries",
+        },
+      ],
+      footer: "Per-block chord overrides are still unavailable here, so there is no narrower block-specific scope to reveal instead.",
+      tone: "missing",
+    }
+  }
+
+  return {
+    badge: "No chart",
+    summary: `No chord chart truth is loaded for bars ${startBar} – ${endBar}, so scope is missing rather than hidden.`,
+    rows: [
+      {
+        label: "Range",
+        value: "No chord chart",
+      },
+    ],
+    footer: "Add or generate chord chart data before expecting chart-derived block chord scope here.",
+    tone: "missing",
+  }
+}
+
 /* ------------------------------------------------------------------ */
 /*  BlockContext                                                        */
 /* ------------------------------------------------------------------ */
@@ -140,11 +214,13 @@ export function BlockContext({
     stems,
     sections,
     blocks,
+    chords,
     deleteBlock,
     duplicateBlock,
     updateBlock,
   } = useProjectStore()
   const { blockId, stemId } = useSelectionStore()
+  const chordDisplayMode = useUiStore((state) => state.chordDisplayMode)
 
   /* Derive live block from store */
   const liveBlock = blocks.find((b) => b.id === blockId)
@@ -165,6 +241,15 @@ export function BlockContext({
     stem: liveStem,
     instrumentLabel: label,
     hasArrangementAudio,
+  })
+  const hasChordChartTruth = Boolean(project?.chordChartRaw.trim() || chords.length > 0)
+  const blockChordTruth = getBlockChordTruth({
+    chords,
+    projectKey: project?.key ?? "C",
+    chordDisplayMode,
+    startBar: resolvedStartBar,
+    endBar: resolvedEndBar,
+    hasChordChartTruth,
   })
   const fallbackProjectEnergy = project?.energy ?? 50
   const fallbackProjectDynamics = project?.dynamics ?? 50
@@ -498,18 +583,35 @@ export function BlockContext({
           <div className="flex items-start justify-between gap-3">
             <div className="flex flex-col gap-1">
               <h3 className="text-[10px] font-medium uppercase tracking-widest text-zinc-500">
-                Custom Chord Overrides
+                Chord Scope Truth
               </h3>
               <p className="text-xs text-muted-foreground">
-                Per-block chord overrides are not editable here yet.
+                {blockChordTruth.summary}
               </p>
             </div>
-            <span className="rounded border border-border/70 px-2 py-0.5 text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
-              Unavailable
+            <span
+              className={`rounded border border-border/70 px-2 py-0.5 text-[10px] font-medium uppercase tracking-wider ${
+                blockChordTruth.tone === "missing" ? "text-muted-foreground" : "text-foreground"
+              }`}
+            >
+              {blockChordTruth.badge}
             </span>
           </div>
+
+          <div className="mt-3 grid gap-2">
+            {blockChordTruth.rows.map((row) => (
+              <div
+                key={row.label}
+                className="flex items-center justify-between gap-3 rounded-md border border-border/60 bg-card/40 px-3 py-2"
+              >
+                <span className="text-[11px] font-medium text-foreground">{row.label}</span>
+                <span className="font-mono text-[11px] text-foreground">{row.value}</span>
+              </div>
+            ))}
+          </div>
+
           <p className="mt-3 text-sm text-foreground">
-            Pattern, energy, dynamics, and inherited audio truth are visible above. This panel still does not expose block-specific chord override truth.
+            {blockChordTruth.footer}
           </p>
         </div>
 

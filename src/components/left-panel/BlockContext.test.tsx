@@ -3,9 +3,10 @@
 import { act } from 'react';
 import { createRoot, type Root } from 'react-dom/client';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
-import type { Block, Project, Section, Stem } from '@/types';
+import type { Block, Chord, Project, Section, Stem } from '@/types';
 import { useProjectStore } from '@/store/project-store';
 import { useSelectionStore } from '@/store/selection-store';
+import { useUiStore } from '@/store/ui-store';
 import { BlockContext } from './BlockContext';
 
 const reactActEnv = globalThis as typeof globalThis & {
@@ -97,6 +98,18 @@ function makeBlock(partial: Partial<Block> = {}): Block {
   };
 }
 
+function makeChord(partial: Partial<Chord> = {}): Chord {
+  return {
+    id: 'chord-1',
+    projectId: 'project-1',
+    barNumber: 3,
+    degree: 'ii',
+    quality: 'min7',
+    bassDegree: null,
+    ...partial,
+  };
+}
+
 function renderBlockContext() {
   const container = document.createElement('div');
   document.body.appendChild(container);
@@ -149,6 +162,10 @@ beforeEach(() => {
     sectionId: null,
     blockId: 'block-1',
     stemId: 'stem-1',
+  });
+
+  useUiStore.setState({
+    chordDisplayMode: 'letter',
   });
 });
 
@@ -217,7 +234,10 @@ describe('BlockContext truth surface', () => {
       stems: [makeStem()],
       sections: [makeSection({ energyOverride: 75, dynamicsOverride: 76 })],
       blocks: [makeBlock()],
-      chords: [],
+      chords: [
+        makeChord({ id: 'chord-1', barNumber: 3, degree: 'ii', quality: 'min7' }),
+        makeChord({ id: 'chord-2', barNumber: 5, degree: 'V', quality: 'dom7' }),
+      ],
       chatMessages: [],
       drumOnlyUpdate: false,
       allInstrumentsUpdate: false,
@@ -275,13 +295,17 @@ describe('BlockContext truth surface', () => {
           | null
       )?.textContent
     ).toBe('C');
-    expect(mounted.container.textContent).toContain('Custom Chord Overrides');
+    expect(mounted.container.textContent).toContain('Chord Scope Truth');
     expect(mounted.container.textContent).toContain(
-      'Per-block chord overrides are not editable here yet.'
+      'This block is currently following the chord chart across bars 3 – 6.'
     );
     expect(mounted.container.textContent).toContain(
-      'Pattern, energy, dynamics, and inherited audio truth are visible above. This panel still does not expose block-specific chord override truth.'
+      'Per-block chord overrides are still unavailable here, so the chord chart remains the active chord source of truth.'
     );
+    expect(mounted.container.textContent).toContain('Bar 3');
+    expect(mounted.container.textContent).toContain('Dm7');
+    expect(mounted.container.textContent).toContain('Bar 5');
+    expect(mounted.container.textContent).toContain('G7');
     expect(mounted.container.querySelector('#block-pattern-select')).not.toBeNull();
     expect(energySlider?.value).toBe('75');
     expect(energyResetButton?.disabled).toBe(true);
@@ -469,6 +493,33 @@ describe('BlockContext truth surface', () => {
     ).toBe('--');
     expect(mounted.container.textContent).toContain(
       'Restore the matching mixer lane before expecting inherited block volume or pan truth here.'
+    );
+  });
+
+  it('distinguishes missing chart-derived chord scope from hidden block override truth', () => {
+    useProjectStore.setState({
+      project: makeProject({ chordChartRaw: '' }),
+      stems: [makeStem()],
+      sections: [makeSection()],
+      blocks: [makeBlock()],
+      chords: [],
+      chatMessages: [],
+      drumOnlyUpdate: false,
+      allInstrumentsUpdate: false,
+    });
+
+    const mounted = renderBlockContext();
+    mountedRoot = mounted.root;
+    mountedContainer = mounted.container;
+
+    expect(mounted.container.textContent).toContain('Chord Scope Truth');
+    expect(mounted.container.textContent).toContain(
+      'No chord chart truth is loaded for bars 3 – 6, so scope is missing rather than hidden.'
+    );
+    expect(mounted.container.textContent).toContain('Range');
+    expect(mounted.container.textContent).toContain('No chord chart');
+    expect(mounted.container.textContent).toContain(
+      'Add or generate chord chart data before expecting chart-derived block chord scope here.'
     );
   });
 
