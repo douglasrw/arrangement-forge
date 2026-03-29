@@ -66,6 +66,18 @@ function renderTopBar() {
   return { container, root };
 }
 
+function getTopBarSaveIndicator(container: HTMLDivElement) {
+  const indicator = container.querySelector(
+    '[data-testid="topbar-save-indicator"]'
+  ) as HTMLDivElement | null;
+  const dot = container.querySelector('[data-testid="topbar-save-dot"]') as HTMLDivElement | null;
+  const label = container.querySelector(
+    '[data-testid="topbar-save-label"]'
+  ) as HTMLSpanElement | null;
+
+  return { indicator, dot, label };
+}
+
 function makeStem(partial: Partial<Stem> = {}): Stem {
   return {
     id: 'stem-1',
@@ -164,6 +176,7 @@ beforeEach(() => {
     chordDisplayMode: 'letter',
     systemStatus: 'ready',
     errorMessage: null,
+    lastSavedAt: null,
   });
 
   revokeObjectUrlMock = vi.fn();
@@ -196,6 +209,8 @@ beforeEach(() => {
 });
 
 afterEach(() => {
+  vi.useRealTimers();
+
   anchorClickSpy?.mockRestore();
   anchorClickSpy = null;
 
@@ -212,11 +227,7 @@ afterEach(() => {
 
 describe('TopBar project-name draft reconciliation', () => {
   it('refreshes the draft from external project updates when editing is inactive', () => {
-    const reconciled = reconcileProjectNameDraft(
-      'Local draft',
-      'Renamed from store',
-      false
-    );
+    const reconciled = reconcileProjectNameDraft('Local draft', 'Renamed from store', false);
 
     expect(reconciled).toBe('Renamed from store');
   });
@@ -237,6 +248,66 @@ describe('TopBar project-name draft reconciliation', () => {
 
   it('falls back to Untitled Project for blank committed names', () => {
     expect(normalizeProjectNameDraft('   ')).toBe('Untitled Project');
+  });
+});
+
+describe('TopBar save indicator truth', () => {
+  it('shows unsaved truth in the project identity surface', () => {
+    useUiStore.setState({
+      unsavedChanges: true,
+      systemStatus: 'ready',
+      lastSavedAt: null,
+    });
+
+    const mounted = renderTopBar();
+    mountedRoot = mounted.root;
+    mountedContainer = mounted.container;
+
+    const { dot, label } = getTopBarSaveIndicator(mounted.container);
+
+    expect(label?.textContent).toBe('Unsaved');
+    expect(label?.title).toBe('Unsaved changes');
+    expect(dot?.className).toContain('bg-status-unsaved');
+  });
+
+  it('shows active saving truth instead of collapsing back to a generic saved state', () => {
+    useUiStore.setState({
+      unsavedChanges: true,
+      systemStatus: 'saving',
+      lastSavedAt: '2026-03-29T11:55:00Z',
+    });
+
+    const mounted = renderTopBar();
+    mountedRoot = mounted.root;
+    mountedContainer = mounted.container;
+
+    const { dot, label } = getTopBarSaveIndicator(mounted.container);
+
+    expect(label?.textContent).toBe('Saving…');
+    expect(label?.title).toBe('Saving project changes');
+    expect(dot?.className).toContain('bg-status-saving');
+    expect(dot?.className).toContain('animate-pulse');
+  });
+
+  it('surfaces recent save timing from lastSavedAt once changes are saved', () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date('2026-03-29T12:00:00Z'));
+
+    useUiStore.setState({
+      unsavedChanges: false,
+      systemStatus: 'ready',
+      lastSavedAt: '2026-03-29T11:55:00Z',
+    });
+
+    const mounted = renderTopBar();
+    mountedRoot = mounted.root;
+    mountedContainer = mounted.container;
+
+    const { dot, label } = getTopBarSaveIndicator(mounted.container);
+
+    expect(label?.textContent).toBe('Saved 5m ago');
+    expect(label?.title).toContain('Last saved');
+    expect(dot?.className).toContain('bg-status-ready');
   });
 });
 
