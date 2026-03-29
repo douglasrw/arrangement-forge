@@ -446,7 +446,11 @@ describe('MixerDrawer', () => {
     expect(kickSlider?.value).toBe('65');
   });
 
-  it('shows the drum sub-mix unavailable state until the drum kit is loaded', () => {
+  it('shows drum sub-mix loading truth until the drum kit is loaded', () => {
+    useUiStore.setState({
+      systemStatus: 'loading-samples',
+    });
+
     useProjectStore.setState({
       stems: [makeStem({ id: 'st-drums', instrument: 'drums', sortOrder: 0 })],
     });
@@ -461,7 +465,40 @@ describe('MixerDrawer', () => {
       drumButton?.dispatchEvent(new MouseEvent('click', { bubbles: true }));
     });
 
-    expect(mounted.container.textContent).toContain('Drum kit unavailable until samples load.');
+    expect(mounted.container.textContent).toContain('Loading instrument samples. Mixer changes will apply when audio is ready.');
+    expect(mounted.container.textContent).toContain('Kit loading');
+    expect(mounted.container.textContent).toContain(
+      'Drum sub-mix loading. Drum group controls will unlock when samples are ready.'
+    );
+    expect(mounted.container.textContent).toContain('...');
+    expect((mounted.container.querySelector('#drum-sub-kick') as HTMLInputElement | null)?.disabled).toBe(true);
+  });
+
+  it('shows drum sub-mix error truth when sample loading fails', () => {
+    useUiStore.setState({
+      systemStatus: 'error',
+      errorMessage: 'Salamander drum samples missing',
+    });
+
+    useProjectStore.setState({
+      stems: [makeStem({ id: 'st-drums', instrument: 'drums', sortOrder: 0 })],
+    });
+
+    const mounted = renderMixer();
+    mountedRoot = mounted.root;
+    mountedContainer = mounted.container;
+
+    const drumButton = findButtonByText(mounted.container, 'DRUMS');
+
+    act(() => {
+      drumButton?.dispatchEvent(new MouseEvent('click', { bubbles: true }));
+    });
+
+    expect(mounted.container.textContent).toContain('Audio unavailable: Salamander drum samples missing');
+    expect(mounted.container.textContent).toContain('Kit error');
+    expect(mounted.container.textContent).toContain(
+      'Drum sub-mix unavailable: Salamander drum samples missing'
+    );
     expect((mounted.container.querySelector('#drum-sub-kick') as HTMLInputElement | null)?.disabled).toBe(true);
   });
 });

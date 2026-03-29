@@ -5,7 +5,7 @@ import { useAudio } from "@/hooks/useAudio"
 import { useProjectStore } from "@/store/project-store"
 import { useUiStore } from "@/store/ui-store"
 import type { DrumKitLike } from "@/audio/drum-kit"
-import type { Stem } from "@/types"
+import type { Stem, SystemStatus } from "@/types"
 
 /* ------------------------------------------------------------------ */
 /*  Instrument palette (matches sequencer-block.tsx)                   */
@@ -26,6 +26,17 @@ interface ChannelState {
   muted: boolean
   solo: boolean
   available: boolean
+}
+
+interface MixerStatusNotice {
+  tone: "loading" | "error"
+  message: string
+}
+
+interface DrumSubMixTruth {
+  status: "ready" | "loading" | "error" | "unavailable"
+  badge: string | null
+  message: string | null
 }
 
 const UNITY_SLIDER_VALUE = 80
@@ -77,6 +88,67 @@ function toChannelState(stem?: Stem): ChannelState {
     muted: stem.isMuted,
     solo: stem.isSolo,
     available: true,
+  }
+}
+
+function getMixerStatusNotice(
+  systemStatus: SystemStatus,
+  errorMessage: string | null
+): MixerStatusNotice | null {
+  if (systemStatus === "error") {
+    return {
+      tone: "error",
+      message: `Audio unavailable: ${errorMessage ?? "Instrument samples could not be loaded."}`,
+    }
+  }
+
+  if (systemStatus === "loading-samples") {
+    return {
+      tone: "loading",
+      message: "Loading instrument samples. Mixer changes will apply when audio is ready.",
+    }
+  }
+
+  return null
+}
+
+function getDrumSubMixTruth({
+  drumKit,
+  systemStatus,
+  errorMessage,
+}: {
+  drumKit: DrumKitLike | null
+  systemStatus: SystemStatus
+  errorMessage: string | null
+}): DrumSubMixTruth {
+  if (drumKit) {
+    return {
+      status: "ready",
+      badge: null,
+      message: null,
+    }
+  }
+
+  if (systemStatus === "loading-samples") {
+    return {
+      status: "loading",
+      badge: "Kit loading",
+      message: "Drum sub-mix loading. Drum group controls will unlock when samples are ready.",
+    }
+  }
+
+  if (systemStatus === "error") {
+    return {
+      status: "error",
+      badge: "Kit error",
+      message: `Drum sub-mix unavailable: ${errorMessage ?? "Instrument samples could not be loaded."}`,
+    }
+  }
+
+  return {
+    status: "unavailable",
+    badge: "Kit unavailable",
+    message: "Drum sub-mix unavailable right now.",
   }
 }
 
@@ -212,7 +284,13 @@ const DRUM_GROUPS = [
   { name: "toms", label: "Toms" },
 ]
 
-function DrumSubMix({ drumKit }: { drumKit: DrumKitLike | null }) {
+function DrumSubMix({
+  drumKit,
+  truth,
+}: {
+  drumKit: DrumKitLike | null
+  truth: DrumSubMixTruth
+}) {
   const [levels, setLevels] = useState<Record<string, number>>({
     kick: DEFAULT_GROUP_LEVEL,
     snare: DEFAULT_GROUP_LEVEL,
@@ -245,9 +323,14 @@ function DrumSubMix({ drumKit }: { drumKit: DrumKitLike | null }) {
 
   return (
     <div className="px-4 pb-2 pt-1">
-      {!drumKit && (
-        <p className="pb-2 text-[10px] uppercase tracking-wider text-muted-foreground">
-          Drum kit unavailable until samples load.
+      {truth.message && (
+        <p
+          className={cn(
+            "pb-2 text-[10px] uppercase tracking-wider",
+            truth.status === "error" ? "text-destructive" : "text-muted-foreground"
+          )}
+        >
+          {truth.message}
         </p>
       )}
       <div className="flex flex-wrap gap-x-4 gap-y-1">
@@ -270,7 +353,7 @@ function DrumSubMix({ drumKit }: { drumKit: DrumKitLike | null }) {
               className="h-1 w-20 cursor-pointer appearance-none rounded-full bg-input accent-primary disabled:cursor-not-allowed disabled:opacity-40 [&::-webkit-slider-thumb]:size-2.5 [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-primary"
             />
             <span className="w-8 text-right font-mono text-[9px] text-zinc-600">
-              {drumKit ? levels[group.name] : "--"}
+              {drumKit ? levels[group.name] : truth.status === "loading" ? "..." : "--"}
             </span>
           </div>
         ))}
@@ -294,6 +377,8 @@ export function MixerDrawer() {
   const { engine, transportState, audioConfig, setMasterVolume } = useAudio()
 
   const drumKit = engine.getDrumKit()
+  const mixerStatusNotice = getMixerStatusNotice(systemStatus, errorMessage)
+  const drumSubMixTruth = getDrumSubMixTruth({ drumKit, systemStatus, errorMessage })
   const isPlaying = transportState.playbackState === "playing"
   const stemByInstrument = new Map(stems.map((stem) => [stem.instrument, stem]))
   const masterVolume = gainToSliderValue(audioConfig.masterVolume)
@@ -356,18 +441,16 @@ export function MixerDrawer() {
 
       {open && (
         <div>
-          {(systemStatus === "loading-samples" || systemStatus === "error") && (
+          {mixerStatusNotice && (
             <div
               className={cn(
                 "mx-2 mb-2 rounded-md border px-3 py-2 text-[11px]",
-                systemStatus === "error"
+                mixerStatusNotice.tone === "error"
                   ? "border-destructive/40 bg-destructive/10 text-destructive"
                   : "border-border bg-card/80 text-muted-foreground"
               )}
             >
-              {systemStatus === "error"
-                ? `Audio unavailable: ${errorMessage ?? "Instrument samples could not be loaded."}`
-                : "Loading instrument samples. Mixer changes will apply when audio is ready."}
+              {mixerStatusNotice.message}
             </div>
           )}
 
@@ -387,20 +470,34 @@ export function MixerDrawer() {
                   }}
                 >
                   {isDrums ? (
-                    <button
-                      type="button"
-                      onClick={() => setDrumSubOpen((v) => !v)}
-                      disabled={!ch.available}
-                      className="flex items-center gap-0.5 text-[10px] font-semibold uppercase disabled:cursor-not-allowed disabled:opacity-40"
-                      style={{ color: inst.color, letterSpacing: "0.1em" }}
-                    >
-                      {inst.label}
-                      {drumSubOpen ? (
-                        <ChevronUp className="size-2.5" />
-                      ) : (
-                        <ChevronDown className="size-2.5" />
+                    <div className="flex flex-col items-center gap-1">
+                      <button
+                        type="button"
+                        onClick={() => setDrumSubOpen((v) => !v)}
+                        disabled={!ch.available}
+                        className="flex items-center gap-0.5 text-[10px] font-semibold uppercase disabled:cursor-not-allowed disabled:opacity-40"
+                        style={{ color: inst.color, letterSpacing: "0.1em" }}
+                      >
+                        {inst.label}
+                        {drumSubOpen ? (
+                          <ChevronUp className="size-2.5" />
+                        ) : (
+                          <ChevronDown className="size-2.5" />
+                        )}
+                      </button>
+                      {ch.available && drumSubMixTruth.badge && (
+                        <span
+                          className={cn(
+                            "rounded-full px-1.5 py-0.5 text-[8px] font-semibold uppercase tracking-[0.18em]",
+                            drumSubMixTruth.status === "error"
+                              ? "bg-destructive/10 text-destructive"
+                              : "bg-card text-muted-foreground"
+                          )}
+                        >
+                          {drumSubMixTruth.badge}
+                        </span>
                       )}
-                    </button>
+                    </div>
                   ) : (
                     <span
                       className={cn(
@@ -550,7 +647,7 @@ export function MixerDrawer() {
                   <X className="size-3" />
                 </button>
               </div>
-              <DrumSubMix drumKit={drumKit} />
+              <DrumSubMix drumKit={drumKit} truth={drumSubMixTruth} />
             </div>
           )}
         </div>
