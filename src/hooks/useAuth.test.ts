@@ -48,6 +48,13 @@ let hookValue: ReturnType<typeof useAuth> | null = null;
 let mountedRoot: Root | null = null;
 let mountedContainer: HTMLDivElement | null = null;
 let profileRow: Row | null = null;
+let unsubscribeMock: ReturnType<typeof vi.fn>;
+
+async function flushAsyncWork() {
+  await Promise.resolve();
+  await Promise.resolve();
+  await Promise.resolve();
+}
 
 function UseAuthHarness() {
   hookValue = useAuth();
@@ -71,6 +78,7 @@ beforeEach(() => {
   reactActEnv.IS_REACT_ACT_ENVIRONMENT = true;
   hookValue = null;
   profileRow = null;
+  unsubscribeMock = vi.fn();
 
   supabaseMock.auth.getUser.mockReset();
   supabaseMock.auth.getSession.mockReset();
@@ -84,6 +92,18 @@ beforeEach(() => {
   supabaseMock.auth.getUser.mockResolvedValue({
     data: {
       user: { id: 'user-1' },
+    },
+  });
+  supabaseMock.auth.getSession.mockResolvedValue({
+    data: {
+      session: null,
+    },
+  });
+  supabaseMock.auth.onAuthStateChange.mockReturnValue({
+    data: {
+      subscription: {
+        unsubscribe: unsubscribeMock,
+      },
     },
   });
   supabaseMock.auth.signInWithPassword.mockResolvedValue({ error: null });
@@ -197,6 +217,113 @@ describe('useAuth auth action failures', () => {
     await expect(hookValue!.signInWithGoogle()).rejects.toBe(failure);
     expect(supabaseMock.auth.signInWithOAuth).toHaveBeenCalledWith({
       provider: 'google',
+    });
+  });
+});
+
+describe('useAuth session bootstrap truth', () => {
+  it('restores the authenticated session only after the persisted profile is loaded', async () => {
+    profileRow = {
+      id: 'user-1',
+      display_name: 'Ashlyn',
+      chord_display_mode: 'roman',
+      default_genre: 'Pop',
+      created_at: '2026-03-29T00:00:00Z',
+      updated_at: '2026-03-29T01:00:00Z',
+    };
+    supabaseMock.auth.getSession.mockResolvedValue({
+      data: {
+        session: {
+          user: { id: 'user-1', email: 'ash@example.com' },
+        },
+      },
+    });
+
+    const mounted = renderHarness();
+    mountedRoot = mounted.root;
+    mountedContainer = mounted.container;
+
+    let cleanup: (() => void) | undefined;
+
+    act(() => {
+      cleanup = hookValue!.initAuth();
+    });
+
+    expect(useAuthStore.getState().isLoading).toBe(true);
+
+    await act(async () => {
+      await flushAsyncWork();
+    });
+
+    expect(useAuthStore.getState()).toMatchObject({
+      user: { id: 'user-1', email: 'ash@example.com' },
+      isAuthenticated: true,
+      isLoading: false,
+    });
+    expect(useAuthStore.getState().profile).toEqual({
+      id: 'user-1',
+      displayName: 'Ashlyn',
+      chordDisplayMode: 'roman',
+      defaultGenre: 'Pop',
+      createdAt: '2026-03-29T00:00:00Z',
+      updatedAt: '2026-03-29T01:00:00Z',
+    });
+    expect(useUiStore.getState().chordDisplayMode).toBe('roman');
+
+    cleanup?.();
+    expect(unsubscribeMock).toHaveBeenCalledTimes(1);
+  });
+
+  it('exits bootstrap loading without authenticating a session that has no profile row', async () => {
+    supabaseMock.auth.getSession.mockResolvedValue({
+      data: {
+        session: {
+          user: { id: 'user-1', email: 'ash@example.com' },
+        },
+      },
+    });
+
+    const mounted = renderHarness();
+    mountedRoot = mounted.root;
+    mountedContainer = mounted.container;
+
+    act(() => {
+      hookValue!.initAuth();
+    });
+
+    await act(async () => {
+      await flushAsyncWork();
+    });
+
+    expect(useAuthStore.getState()).toMatchObject({
+      user: null,
+      profile: null,
+      isAuthenticated: false,
+      isLoading: false,
+    });
+    expect(useUiStore.getState().chordDisplayMode).toBe('letter');
+  });
+
+  it('exits bootstrap loading when Supabase session lookup fails', async () => {
+    supabaseMock.auth.getSession.mockRejectedValue(new Error('Session lookup failed'));
+
+    const mounted = renderHarness();
+    mountedRoot = mounted.root;
+    mountedContainer = mounted.container;
+
+    act(() => {
+      hookValue!.initAuth();
+    });
+
+    await act(async () => {
+      await flushAsyncWork();
+    });
+
+    expect(useAuthStore.getState()).toMatchObject({
+      user: null,
+      profile: null,
+      isAuthenticated: false,
+      isLoading: false,
     });
   });
 });
