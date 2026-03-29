@@ -6,7 +6,7 @@ import { createRoot, type Root } from 'react-dom/client';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { useProjectStore } from '@/store/project-store';
 import { useUiStore } from '@/store/ui-store';
-import type { AudioEngineConfig, TransportState } from '@/types';
+import type { AudioEngineConfig, Block, Project, Section, Stem, TransportState } from '@/types';
 
 const engineState = vi.hoisted(() => ({
   isInitialized: false,
@@ -40,12 +40,19 @@ const setMetronomeEnabledMock = vi.hoisted(() => vi.fn((enabled: boolean) => {
 const setLoopEnabledMock = vi.hoisted(() => vi.fn((enabled: boolean) => {
   engineState.audioConfig.loopEnabled = enabled;
 }));
+const setMasterVolumeMock = vi.hoisted(() => vi.fn((volume: number) => {
+  engineState.audioConfig.masterVolume = volume;
+}));
 const playMock = vi.hoisted(() => vi.fn());
 const pauseMock = vi.hoisted(() => vi.fn());
 const stopMock = vi.hoisted(() => vi.fn());
 const seekMock = vi.hoisted(() => vi.fn());
 const seekToSecondsMock = vi.hoisted(() => vi.fn());
 const setTempoMock = vi.hoisted(() => vi.fn());
+const setVolumeMock = vi.hoisted(() => vi.fn());
+const setPanMock = vi.hoisted(() => vi.fn());
+const setMuteMock = vi.hoisted(() => vi.fn());
+const setSoloMock = vi.hoisted(() => vi.fn());
 const hotSwapInstrumentMock = vi.hoisted(() => vi.fn());
 const AudioEngineMock = vi.hoisted(() => vi.fn(() => ({
   get isInitialized() {
@@ -57,12 +64,17 @@ const AudioEngineMock = vi.hoisted(() => vi.fn(() => ({
   getAudioConfig: getAudioConfigMock,
   setMetronomeEnabled: setMetronomeEnabledMock,
   setLoopEnabled: setLoopEnabledMock,
+  setMasterVolume: setMasterVolumeMock,
   play: playMock,
   pause: pauseMock,
   stop: stopMock,
   seek: seekMock,
   seekToSeconds: seekToSecondsMock,
   setTempo: setTempoMock,
+  setVolume: setVolumeMock,
+  setPan: setPanMock,
+  setMute: setMuteMock,
+  setSolo: setSoloMock,
   hotSwapInstrument: hotSwapInstrumentMock,
 })));
 
@@ -77,6 +89,86 @@ const reactActEnv = globalThis as typeof globalThis & {
 };
 
 let hookValue: ReturnType<typeof useAudio> | null = null;
+
+function makeProject(partial: Partial<Project> = {}): Project {
+  return {
+    id: 'p1',
+    userId: 'u1',
+    name: 'Test Project',
+    key: 'C',
+    tempo: 120,
+    timeSignature: '4/4',
+    genre: 'Jazz',
+    subStyle: 'Swing',
+    energy: 60,
+    groove: 60,
+    feel: 50,
+    swingPct: null,
+    dynamics: 50,
+    generationHints: '',
+    chordChartRaw: '',
+    hasArrangement: true,
+    generatedAt: '2026-03-29T00:00:00Z',
+    generatedTempo: 120,
+    createdAt: '2026-03-29T00:00:00Z',
+    updatedAt: '2026-03-29T00:00:00Z',
+    ...partial,
+  };
+}
+
+function makeStem(partial: Partial<Stem> = {}): Stem {
+  return {
+    id: 'st-piano',
+    projectId: 'p1',
+    instrument: 'piano',
+    sortOrder: 0,
+    volume: 0.8,
+    pan: 0,
+    isMuted: false,
+    isSolo: false,
+    createdAt: '2026-03-29T00:00:00Z',
+    ...partial,
+  };
+}
+
+function makeSection(partial: Partial<Section> = {}): Section {
+  return {
+    id: 'sec-1',
+    projectId: 'p1',
+    name: 'Verse',
+    sortOrder: 0,
+    barCount: 4,
+    startBar: 1,
+    energyOverride: null,
+    grooveOverride: null,
+    feelOverride: null,
+    swingPctOverride: null,
+    dynamicsOverride: null,
+    createdAt: '2026-03-29T00:00:00Z',
+    ...partial,
+  };
+}
+
+function makeBlock(partial: Partial<Block> = {}): Block {
+  return {
+    id: 'blk-1',
+    stemId: 'st-piano',
+    sectionId: 'sec-1',
+    startBar: 1,
+    endBar: 4,
+    chordDegree: 'I',
+    chordQuality: 'maj7',
+    chordBassDegree: null,
+    style: 'jazz_comp',
+    energyOverride: null,
+    dynamicsOverride: null,
+    midiData: [
+      { note: 'C4', time: 0, duration: 1, velocity: 100 },
+    ],
+    createdAt: '2026-03-29T00:00:00Z',
+    ...partial,
+  };
+}
 
 function UseAudioHarness() {
   hookValue = useAudio();
@@ -125,12 +217,17 @@ beforeEach(() => {
   getAudioConfigMock.mockClear();
   setMetronomeEnabledMock.mockClear();
   setLoopEnabledMock.mockClear();
+  setMasterVolumeMock.mockClear();
   playMock.mockClear();
   pauseMock.mockClear();
   stopMock.mockClear();
   seekMock.mockClear();
   seekToSecondsMock.mockClear();
   setTempoMock.mockClear();
+  setVolumeMock.mockClear();
+  setPanMock.mockClear();
+  setMuteMock.mockClear();
+  setSoloMock.mockClear();
   hotSwapInstrumentMock.mockClear();
 
   useProjectStore.setState({
@@ -194,5 +291,52 @@ describe('useAudio transport config', () => {
 
     expect(setLoopEnabledMock).toHaveBeenCalledWith(true);
     expect(hookValue?.audioConfig.loopEnabled).toBe(true);
+  });
+
+  it('syncs stem mixer changes through the engine without reloading the arrangement', async () => {
+    engineState.isInitialized = true;
+
+    useProjectStore.setState({
+      project: makeProject(),
+      stems: [makeStem()],
+      sections: [makeSection()],
+      blocks: [makeBlock()],
+      chords: [],
+      chatMessages: [],
+      drumOnlyUpdate: false,
+      allInstrumentsUpdate: false,
+    });
+
+    const mounted = renderHarness();
+    mountedRoot = mounted.root;
+    mountedContainer = mounted.container;
+
+    await act(async () => {
+      await Promise.resolve();
+    });
+
+    expect(loadArrangementMock).toHaveBeenCalledTimes(1);
+
+    loadArrangementMock.mockClear();
+    setVolumeMock.mockClear();
+    setPanMock.mockClear();
+    setMuteMock.mockClear();
+    setSoloMock.mockClear();
+
+    act(() => {
+      useProjectStore.setState({
+        stems: [makeStem({ volume: 0.5, pan: -0.25, isMuted: true, isSolo: true })],
+      });
+    });
+
+    await act(async () => {
+      await Promise.resolve();
+    });
+
+    expect(loadArrangementMock).not.toHaveBeenCalled();
+    expect(setVolumeMock).toHaveBeenCalledWith('piano', 0.5);
+    expect(setPanMock).toHaveBeenCalledWith('piano', -0.25);
+    expect(setMuteMock).toHaveBeenCalledWith('piano', true);
+    expect(setSoloMock).toHaveBeenCalledWith('piano', true);
   });
 });

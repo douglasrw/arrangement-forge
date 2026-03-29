@@ -21,6 +21,7 @@ export class AudioEngine {
   private instruments = new Map<InstrumentType, Tone.Sampler | DrumKitLike>();
   private channelGains = new Map<InstrumentType, Tone.Gain>();
   private channelPanners = new Map<InstrumentType, Tone.Panner>();
+  private stemVolumes = new Map<InstrumentType, number>();
   private stemMuted = new Map<InstrumentType, boolean>();
   private stemSoloed = new Map<InstrumentType, boolean>();
   /** Scheduled Tone.js event IDs per instrument for selective cancellation */
@@ -71,6 +72,9 @@ export class AudioEngine {
     this.instruments.clear();
     this.channelGains.clear();
     this.channelPanners.clear();
+    this.stemVolumes.clear();
+    this.stemMuted.clear();
+    this.stemSoloed.clear();
     this._initialized = false;
   }
 
@@ -115,8 +119,8 @@ export class AudioEngine {
   }
 
   setVolume(instrument: InstrumentType, volume: number): void {
-    const gain = this.channelGains.get(instrument);
-    if (gain) gain.gain.value = volume;
+    this.stemVolumes.set(instrument, volume);
+    this.applyMixState();
   }
 
   setPan(instrument: InstrumentType, pan: number): void {
@@ -133,12 +137,12 @@ export class AudioEngine {
 
   setMute(instrument: InstrumentType, muted: boolean): void {
     this.stemMuted.set(instrument, muted);
-    this.applyMuteState();
+    this.applyMixState();
   }
 
   setSolo(instrument: InstrumentType, soloed: boolean): void {
     this.stemSoloed.set(instrument, soloed);
-    this.applyMuteState();
+    this.applyMixState();
   }
 
   setMasterVolume(volume: number): void {
@@ -197,6 +201,7 @@ export class AudioEngine {
       this.instruments.clear();
       this.channelGains.clear();
       this.channelPanners.clear();
+      this.stemVolumes.clear();
 
       // Load samplers (cached after first load — returns instantly on subsequent calls)
       for (const stem of stems) {
@@ -210,11 +215,12 @@ export class AudioEngine {
         this.instruments.set(stem.instrument, inst);
         this.channelGains.set(stem.instrument, gain);
         this.channelPanners.set(stem.instrument, panner);
+        this.stemVolumes.set(stem.instrument, stem.volume);
         this.stemMuted.set(stem.instrument, stem.isMuted);
         this.stemSoloed.set(stem.instrument, stem.isSolo);
       }
 
-      this.applyMuteState();
+      this.applyMixState();
 
       // Clear all tracked event IDs
       this.scheduledEventIds.clear();
@@ -377,18 +383,26 @@ export class AudioEngine {
     }, loopEndSeconds) as number;
   }
 
-  private applyMuteState(): void {
-    const anysoloed = Array.from(this.stemSoloed.values()).some(Boolean);
+  private applyMixState(): void {
+    const anySoloed = Array.from(this.stemSoloed.values()).some(Boolean);
     this.instruments.forEach((_, instrument) => {
       const gain = this.channelGains.get(instrument);
       if (!gain) return;
       const muted = this.stemMuted.get(instrument) ?? false;
       const soloed = this.stemSoloed.get(instrument) ?? false;
-      if (anysoloed) {
-        gain.gain.value = soloed ? gain.gain.value || 0.8 : 0;
-      } else {
-        gain.gain.value = muted ? 0 : gain.gain.value || 0.8;
+      const configuredVolume = this.stemVolumes.get(instrument) ?? 0.8;
+
+      if (muted) {
+        gain.gain.value = 0;
+        return;
       }
+
+      if (anySoloed) {
+        gain.gain.value = soloed ? configuredVolume : 0;
+        return;
+      }
+
+      gain.gain.value = configuredVolume;
     });
   }
 }

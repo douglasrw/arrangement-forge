@@ -1,19 +1,21 @@
-import { useState, useCallback } from "react"
+import { useState, useCallback, useEffect } from "react"
 import { cn } from "@/lib/utils"
 import { X, ChevronDown, ChevronUp } from "lucide-react"
 import { useAudio } from "@/hooks/useAudio"
+import { useProjectStore } from "@/store/project-store"
 import { useUiStore } from "@/store/ui-store"
 import type { DrumKitLike } from "@/audio/drum-kit"
+import type { Stem } from "@/types"
 
 /* ------------------------------------------------------------------ */
 /*  Instrument palette (matches sequencer-block.tsx)                   */
 /* ------------------------------------------------------------------ */
 const INSTRUMENTS = [
-  { key: "drums", label: "DRUMS", color: "var(--instrument-drums)", defaultDb: -3 },
-  { key: "bass", label: "BASS", color: "var(--instrument-bass)", defaultDb: -2 },
-  { key: "piano", label: "PIANO", color: "var(--instrument-piano)", defaultDb: -5 },
-  { key: "guitar", label: "GUITAR", color: "var(--instrument-guitar)", defaultDb: -4 },
-  { key: "strings", label: "STRINGS", color: "var(--instrument-strings)", defaultDb: -6 },
+  { key: "drums", label: "DRUMS", color: "var(--instrument-drums)" },
+  { key: "bass", label: "BASS", color: "var(--instrument-bass)" },
+  { key: "piano", label: "PIANO", color: "var(--instrument-piano)" },
+  { key: "guitar", label: "GUITAR", color: "var(--instrument-guitar)" },
+  { key: "strings", label: "STRINGS", color: "var(--instrument-strings)" },
 ] as const
 
 type InstrumentKey = (typeof INSTRUMENTS)[number]["key"]
@@ -22,21 +24,43 @@ interface ChannelState {
   volume: number // 0-100
   muted: boolean
   solo: boolean
+  available: boolean
 }
 
-const DEFAULT_CHANNELS: Record<InstrumentKey | "master", ChannelState> = {
-  drums: { volume: 75, muted: false, solo: false },
-  bass: { volume: 78, muted: false, solo: false },
-  piano: { volume: 65, muted: false, solo: false },
-  guitar: { volume: 70, muted: false, solo: false },
-  strings: { volume: 60, muted: false, solo: false },
-  master: { volume: 80, muted: false, solo: false },
-}
+const UNITY_SLIDER_VALUE = 80
+const MAX_SLIDER_VALUE = 100
+const DEFAULT_GROUP_LEVEL = 50
 
 function volumeToDb(v: number): string {
   if (v === 0) return "-inf"
-  const db = 20 * Math.log10(v / 80)
+  const db = 20 * Math.log10(v / UNITY_SLIDER_VALUE)
   return `${db >= 0 ? "+" : ""}${Math.round(db)} dB`
+}
+
+function gainToSliderValue(gain: number): number {
+  return Math.max(0, Math.min(MAX_SLIDER_VALUE, Math.round(gain * UNITY_SLIDER_VALUE)))
+}
+
+function sliderValueToGain(value: number): number {
+  return value / UNITY_SLIDER_VALUE
+}
+
+function toChannelState(stem?: Stem): ChannelState {
+  if (!stem) {
+    return {
+      volume: 0,
+      muted: false,
+      solo: false,
+      available: false,
+    }
+  }
+
+  return {
+    volume: gainToSliderValue(stem.volume),
+    muted: stem.isMuted,
+    solo: stem.isSolo,
+    available: true,
+  }
 }
 
 /* ------------------------------------------------------------------ */
@@ -46,10 +70,14 @@ function VerticalFader({
   value,
   onChange,
   thumbColor,
+  ariaLabel,
+  disabled = false,
 }: {
   value: number
   onChange: (v: number) => void
   thumbColor: string
+  ariaLabel: string
+  disabled?: boolean
 }) {
   const trackHeight = 80
   const thumbSize = 12
@@ -57,18 +85,24 @@ function VerticalFader({
 
   const handleInteraction = useCallback(
     (clientY: number, rect: DOMRect) => {
+      if (disabled) return
       const relativeY = rect.bottom - clientY
       const clamped = Math.max(0, Math.min(100, (relativeY / trackHeight) * 100))
       onChange(Math.round(clamped))
     },
-    [onChange]
+    [disabled, onChange]
   )
 
   return (
     <div
-      className="relative mx-auto flex cursor-pointer items-end justify-center"
+      className={cn(
+        "relative mx-auto flex items-end justify-center",
+        disabled ? "cursor-not-allowed opacity-40" : "cursor-pointer"
+      )}
       style={{ width: thumbSize + 8, height: trackHeight }}
       onMouseDown={(e) => {
+        if (disabled) return
+
         const rect = e.currentTarget.getBoundingClientRect()
         handleInteraction(e.clientY, rect)
 
@@ -84,17 +118,20 @@ function VerticalFader({
       aria-valuenow={value}
       aria-valuemin={0}
       aria-valuemax={100}
-      aria-label="Volume fader"
-      tabIndex={0}
+      aria-label={ariaLabel}
+      aria-disabled={disabled}
+      tabIndex={disabled ? -1 : 0}
       onKeyDown={(e) => {
+        if (disabled) return
         if (e.key === "ArrowUp") onChange(Math.min(100, value + 2))
         if (e.key === "ArrowDown") onChange(Math.max(0, value - 2))
       }}
     >
-      {/* Track */}
-      <div className="absolute left-1/2 -translate-x-1/2 rounded-full bg-input" style={{ width: 4, height: trackHeight }} />
+      <div
+        className="absolute left-1/2 -translate-x-1/2 rounded-full bg-input"
+        style={{ width: 4, height: trackHeight }}
+      />
 
-      {/* Fill */}
       <div
         className="absolute bottom-0 left-1/2 -translate-x-1/2 rounded-full"
         style={{
@@ -104,7 +141,6 @@ function VerticalFader({
         }}
       />
 
-      {/* Thumb */}
       <div
         className="absolute left-1/2 -translate-x-1/2 rounded-full"
         style={{
@@ -128,12 +164,17 @@ function LevelMeter({ fill }: { fill: number }) {
       {[fill, fill - 5].map((f, i) => {
         const h = Math.max(0, Math.min(100, f))
         return (
-          <div key={i} className="relative w-1 overflow-hidden rounded-full bg-secondary" style={{ height: 80 }}>
+          <div
+            key={i}
+            className="relative w-1 overflow-hidden rounded-full bg-secondary"
+            style={{ height: 80 }}
+          >
             <div
               className="absolute inset-x-0 bottom-0 rounded-full"
               style={{
                 height: `${h}%`,
-                background: "linear-gradient(to top, var(--meter-green), var(--meter-yellow) 70%, var(--meter-red) 95%)",
+                background:
+                  "linear-gradient(to top, var(--meter-green), var(--meter-yellow) 70%, var(--meter-red) 95%)",
               }}
             />
           </div>
@@ -155,49 +196,68 @@ const DRUM_GROUPS = [
 ]
 
 function DrumSubMix({ drumKit }: { drumKit: DrumKitLike | null }) {
-  // Local state for sub-mix levels (0-100, maps to gain 0-3)
   const [levels, setLevels] = useState<Record<string, number>>({
-    kick: 50,
-    snare: 50,
-    hihat: 50,
-    cymbals: 50,
-    toms: 50,
+    kick: DEFAULT_GROUP_LEVEL,
+    snare: DEFAULT_GROUP_LEVEL,
+    hihat: DEFAULT_GROUP_LEVEL,
+    cymbals: DEFAULT_GROUP_LEVEL,
+    toms: DEFAULT_GROUP_LEVEL,
   })
+
+  useEffect(() => {
+    if (!drumKit) return
+
+    setLevels(
+      Object.fromEntries(
+        DRUM_GROUPS.map((group) => [
+          group.name,
+          Math.max(0, Math.min(100, Math.round(drumKit.getVoiceGroupGain(group.name) * 50))),
+        ])
+      )
+    )
+  }, [drumKit])
 
   const handleChange = useCallback(
     (groupName: string, value: number) => {
+      if (!drumKit) return
       setLevels((prev) => ({ ...prev, [groupName]: value }))
-      // Map 0-100 slider to 0-3 gain range (50 = 1.0 = unity)
-      const gain = (value / 50) * 1.0
-      drumKit?.setVoiceGroupGain(groupName, gain)
+      drumKit.setVoiceGroupGain(groupName, value / DEFAULT_GROUP_LEVEL)
     },
     [drumKit]
   )
 
   return (
-    <div className="flex flex-wrap gap-x-4 gap-y-1 px-4 pb-2 pt-1">
-      {DRUM_GROUPS.map((group) => (
-        <div key={group.name} className="flex items-center gap-2" style={{ minWidth: 140 }}>
-          <label
-            htmlFor={`drum-sub-${group.name}`}
-            className="w-14 text-right text-[10px] font-medium text-muted-foreground"
-          >
-            {group.label}
-          </label>
-          <input
-            id={`drum-sub-${group.name}`}
-            type="range"
-            min={0}
-            max={100}
-            value={levels[group.name]}
-            onChange={(e) => handleChange(group.name, Number(e.target.value))}
-            className="h-1 w-20 cursor-pointer appearance-none rounded-full bg-input accent-primary [&::-webkit-slider-thumb]:size-2.5 [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-primary"
-          />
-          <span className="w-6 text-right font-mono text-[9px] text-zinc-600">
-            {levels[group.name]}
-          </span>
-        </div>
-      ))}
+    <div className="px-4 pb-2 pt-1">
+      {!drumKit && (
+        <p className="pb-2 text-[10px] uppercase tracking-wider text-muted-foreground">
+          Drum kit unavailable until samples load.
+        </p>
+      )}
+      <div className="flex flex-wrap gap-x-4 gap-y-1">
+        {DRUM_GROUPS.map((group) => (
+          <div key={group.name} className="flex items-center gap-2" style={{ minWidth: 140 }}>
+            <label
+              htmlFor={`drum-sub-${group.name}`}
+              className="w-14 text-right text-[10px] font-medium text-muted-foreground"
+            >
+              {group.label}
+            </label>
+            <input
+              id={`drum-sub-${group.name}`}
+              type="range"
+              min={0}
+              max={100}
+              value={levels[group.name]}
+              disabled={!drumKit}
+              onChange={(e) => handleChange(group.name, Number(e.target.value))}
+              className="h-1 w-20 cursor-pointer appearance-none rounded-full bg-input accent-primary disabled:cursor-not-allowed disabled:opacity-40 [&::-webkit-slider-thumb]:size-2.5 [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-primary"
+            />
+            <span className="w-8 text-right font-mono text-[9px] text-zinc-600">
+              {drumKit ? levels[group.name] : "--"}
+            </span>
+          </div>
+        ))}
+      </div>
     </div>
   )
 }
@@ -208,36 +268,52 @@ function DrumSubMix({ drumKit }: { drumKit: DrumKitLike | null }) {
 export function MixerDrawer() {
   const open = useUiStore((s) => s.mixerExpanded)
   const toggleMixer = useUiStore((s) => s.toggleMixer)
+  const stems = useProjectStore((s) => s.stems)
+  const updateStem = useProjectStore((s) => s.updateStem)
   const [drumSubOpen, setDrumSubOpen] = useState(false)
-  const [channels, setChannels] = useState(DEFAULT_CHANNELS)
-  const { engine, transportState } = useAudio()
+  const { engine, transportState, audioConfig, setMasterVolume } = useAudio()
 
   const drumKit = engine.getDrumKit()
   const isPlaying = transportState.playbackState === "playing"
+  const stemByInstrument = new Map(stems.map((stem) => [stem.instrument, stem]))
+  const masterVolume = gainToSliderValue(audioConfig.masterVolume)
 
-  const updateChannel = useCallback(
-    (key: InstrumentKey | "master", field: keyof ChannelState, value: boolean | number) => {
-      setChannels((prev) => {
-        const next = { ...prev, [key]: { ...prev[key], [field]: value } }
+  useEffect(() => {
+    if (!stemByInstrument.has("drums")) {
+      setDrumSubOpen(false)
+    }
+  }, [stemByInstrument])
 
-        // Wire through to audio engine
-        if (key === "master") {
-          if (field === "volume") engine.setMasterVolume((value as number) / 80)
-        } else {
-          if (field === "muted") engine.setMute(key, value as boolean)
-          if (field === "solo") engine.setSolo(key, value as boolean)
-          if (field === "volume") engine.setVolume(key, (value as number) / 80)
-        }
+  function updateChannel(
+    key: InstrumentKey | "master",
+    field: keyof Omit<ChannelState, "available">,
+    value: boolean | number
+  ) {
+    if (key === "master") {
+      if (field === "volume") {
+        setMasterVolume(sliderValueToGain(value as number))
+      }
+      return
+    }
 
-        return next
-      })
-    },
-    [engine]
-  )
+    const stem = stemByInstrument.get(key)
+    if (!stem) return
+
+    if (field === "volume") {
+      updateStem(stem.id, { volume: sliderValueToGain(value as number) })
+      return
+    }
+
+    if (field === "muted") {
+      updateStem(stem.id, { isMuted: value as boolean })
+      return
+    }
+
+    updateStem(stem.id, { isSolo: value as boolean })
+  }
 
   return (
     <div className="shrink-0 border-t-2 border-border bg-secondary">
-      {/* Header strip — always visible, acts as toggle */}
       <button
         type="button"
         onClick={toggleMixer}
@@ -255,25 +331,27 @@ export function MixerDrawer() {
 
       {open && (
         <div>
-
-          {/* Channel strip row */}
           <div className="flex h-[160px] px-2">
-            {/* Instrument channels */}
             {INSTRUMENTS.map((inst) => {
-              const ch = channels[inst.key]
+              const stem = stemByInstrument.get(inst.key)
+              const ch = toChannelState(stem)
               const isDrums = inst.key === "drums"
               return (
                 <div
                   key={inst.key}
                   className="flex flex-1 flex-col items-center gap-1.5 border-r border-secondary pt-1"
-                  style={{ borderTopWidth: 2, borderTopColor: inst.color, borderTopStyle: "solid" }}
+                  style={{
+                    borderTopWidth: 2,
+                    borderTopColor: inst.color,
+                    borderTopStyle: "solid",
+                  }}
                 >
-                  {/* Name — drums label is clickable to toggle sub-mix */}
                   {isDrums ? (
                     <button
                       type="button"
                       onClick={() => setDrumSubOpen((v) => !v)}
-                      className="flex items-center gap-0.5 text-[10px] font-semibold uppercase"
+                      disabled={!ch.available}
+                      className="flex items-center gap-0.5 text-[10px] font-semibold uppercase disabled:cursor-not-allowed disabled:opacity-40"
                       style={{ color: inst.color, letterSpacing: "0.1em" }}
                     >
                       {inst.label}
@@ -285,20 +363,25 @@ export function MixerDrawer() {
                     </button>
                   ) : (
                     <span
-                      className="text-[10px] font-semibold uppercase"
+                      className={cn(
+                        "text-[10px] font-semibold uppercase",
+                        !ch.available && "opacity-40"
+                      )}
                       style={{ color: inst.color, letterSpacing: "0.1em" }}
                     >
                       {inst.label}
                     </span>
                   )}
 
-                  {/* M/S buttons */}
                   <div className="flex gap-1">
                     <button
                       type="button"
+                      aria-label={`Toggle ${inst.label} mute`}
+                      aria-pressed={ch.muted}
+                      disabled={!ch.available}
                       onClick={() => updateChannel(inst.key, "muted", !ch.muted)}
                       className={cn(
-                        "rounded px-1.5 py-0.5 text-[10px] font-bold transition-colors",
+                        "rounded px-1.5 py-0.5 text-[10px] font-bold transition-colors disabled:cursor-not-allowed disabled:opacity-40",
                         ch.muted
                           ? "bg-warning/80 text-card"
                           : "bg-input text-muted-foreground hover:bg-secondary"
@@ -308,9 +391,12 @@ export function MixerDrawer() {
                     </button>
                     <button
                       type="button"
+                      aria-label={`Toggle ${inst.label} solo`}
+                      aria-pressed={ch.solo}
+                      disabled={!ch.available}
                       onClick={() => updateChannel(inst.key, "solo", !ch.solo)}
                       className={cn(
-                        "rounded px-1.5 py-0.5 text-[10px] font-bold transition-colors",
+                        "rounded px-1.5 py-0.5 text-[10px] font-bold transition-colors disabled:cursor-not-allowed disabled:opacity-40",
                         ch.solo
                           ? "bg-instrument-strings/80 text-card"
                           : "bg-input text-muted-foreground hover:bg-secondary"
@@ -320,52 +406,47 @@ export function MixerDrawer() {
                     </button>
                   </div>
 
-                  {/* Fader */}
                   <VerticalFader
                     value={ch.volume}
                     onChange={(v) => updateChannel(inst.key, "volume", v)}
                     thumbColor={inst.color}
+                    ariaLabel={`${inst.label} volume fader`}
+                    disabled={!ch.available}
                   />
 
-                  {/* dB readout */}
                   <span className="font-mono text-[10px] text-zinc-500">
-                    {ch.muted ? "-inf" : volumeToDb(ch.volume)}
+                    {!ch.available ? "--" : ch.muted ? "-inf" : volumeToDb(ch.volume)}
                   </span>
                 </div>
               )
             })}
 
-            {/* Master channel */}
             <div
               className="flex flex-[1.3] flex-col items-center gap-1.5 rounded-r-md bg-secondary/60 pt-1"
               style={{ borderTop: "2px solid var(--muted-foreground)" }}
             >
-              {/* Label */}
               <span className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">
                 Master
               </span>
 
-              {/* No M/S — spacer */}
               <div className="h-[22px]" />
 
-              {/* Fader + level meters side by side */}
               <div className="flex items-end gap-2">
-                <LevelMeter fill={isPlaying ? channels.master.volume * 0.9 : 0} />
+                <LevelMeter fill={isPlaying ? masterVolume * 0.9 : 0} />
                 <VerticalFader
-                  value={channels.master.volume}
+                  value={masterVolume}
                   onChange={(v) => updateChannel("master", "volume", v)}
                   thumbColor="var(--master-thumb)"
+                  ariaLabel="Master volume fader"
                 />
               </div>
 
-              {/* dB readout */}
               <span className="font-mono text-[10px] text-muted-foreground">
-                {volumeToDb(channels.master.volume)}
+                {volumeToDb(masterVolume)}
               </span>
             </div>
           </div>
 
-          {/* Drum sub-mix strip — collapsible below main mixer */}
           {drumSubOpen && (
             <div className="border-t border-secondary bg-card">
               <div className="flex items-center gap-2 px-4 pt-1.5">
