@@ -406,6 +406,44 @@ describe('SectionContext truth surface', () => {
     );
   });
 
+  it('shows explicit straight-time availability truth when section swing is disabled by genre semantics', () => {
+    useProjectStore.setState({
+      project: makeProject({
+        genre: 'Rock',
+        subStyle: 'Classic',
+        swingPct: 67,
+      }),
+      sections: [makeSection({ swingPctOverride: 71 })],
+    });
+
+    const mounted = renderSectionContext();
+    mountedRoot = mounted.root;
+    mountedContainer = mounted.container;
+
+    expect(
+      mounted.container.querySelector('#section-slider-Swing')
+    ).toBeNull();
+    expect(
+      mounted.container.querySelector('#section-reset-Swing')
+    ).toBeNull();
+    expect(mounted.container.textContent).toContain('Section Swing Override');
+    expect(mounted.container.textContent).toContain(
+      "This section is inheriting the project's straight-time default because the current genre does not allow swing."
+    );
+    expect(mounted.container.textContent).toContain(
+      "Rock is straight-time only, so section swing overrides aren't available."
+    );
+    expect(mounted.container.textContent).toContain(
+      'Saved swing override data still exists on this section, but Rock ignores it until swing becomes available again.'
+    );
+    expect(mounted.container.textContent).not.toContain(
+      'Swing is not editable per section here yet.'
+    );
+    expect(useProjectStore.getState().sections[0]).toMatchObject({
+      swingPctOverride: 71,
+    });
+  });
+
   it('keeps energy and dynamics project fallback truth visible when overrides are added and cleared', () => {
     useProjectStore.setState({
       project: makeProject({ energy: 22, dynamics: 76 }),

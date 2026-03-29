@@ -105,6 +105,12 @@ export function SectionContext({
     projectSwingPct == null
       ? "Straight (50%)"
       : getSwingDisplayState(projectSwingPct).displayValue
+  const swingUnavailableReason = project?.genre
+    ? `${project.genre} is straight-time only, so section swing overrides aren't available.`
+    : "This genre is straight-time only, so section swing overrides aren't available."
+  const hiddenSwingOverrideNote = project?.genre
+    ? `Saved swing override data still exists on this section, but ${project.genre} ignores it until swing becomes available again.`
+    : "Saved swing override data still exists on this section, but the current genre ignores it until swing becomes available again."
 
   /* Local draft for the name input */
   const [nameDraft, setNameDraft] = useState(currentName)
@@ -498,7 +504,7 @@ export function SectionContext({
                         ? "This section is inheriting the project swing default."
                         : "This section is carrying its own saved swing override."
                     )
-                  : "Swing is not editable per section here yet."}
+                  : "This section is inheriting the project's straight-time default because the current genre does not allow swing."}
               </p>
             </div>
             <span className="rounded border border-border/70 px-2 py-0.5 text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
@@ -570,11 +576,16 @@ export function SectionContext({
               </div>
             </>
           ) : (
-            hasHiddenSwingOverride && (
+            <>
               <p className="mt-2 text-xs text-muted-foreground">
-                This section still carries saved override data for fields that remain hidden in this inspector.
+                {swingUnavailableReason}
               </p>
-            )
+              {hasHiddenSwingOverride && (
+                <p className="mt-2 text-xs text-muted-foreground">
+                  {hiddenSwingOverrideNote}
+                </p>
+              )}
+            </>
           )}
         </div>
 
