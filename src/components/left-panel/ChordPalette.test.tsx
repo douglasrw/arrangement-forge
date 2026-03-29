@@ -185,6 +185,28 @@ describe("ChordPalette selection truth", () => {
     )
   })
 
+  it("shows unavailable section-scoped truth instead of implying a local override exists", () => {
+    useSelectionStore.setState({
+      level: "section",
+      sectionId: "section-1",
+      blockId: null,
+      stemId: null,
+    })
+
+    const mounted = renderChordPalette({ initialChords: ["Cmaj7", "Fmaj7"] })
+    mountedRoot = mounted.root
+    mountedContainer = mounted.container
+
+    expect(mounted.container.textContent).toContain("Section selected")
+    expect(mounted.container.textContent).toContain(
+      "Verse is selected in the arrangement, but section-scoped chord editing is unavailable here today."
+    )
+    expect(mounted.container.textContent).toContain("Verse (Bars 1-8)")
+    expect(mounted.container.textContent).toContain(
+      "Changes below still update the song chord chart instead of a section-only progression."
+    )
+  })
+
   it("shows unavailable block-scoped truth instead of implying a local override exists", () => {
     useSelectionStore.setState({
       level: "block",
@@ -205,5 +227,29 @@ describe("ChordPalette selection truth", () => {
     expect(mounted.container.textContent).toContain(
       "Changes below still update the song chord chart for the full project."
     )
+  })
+
+  it("falls back to explicit missing-selection truth when the selected block no longer resolves", () => {
+    useSelectionStore.setState({
+      level: "block",
+      sectionId: null,
+      blockId: "missing-block",
+      stemId: "stem-1",
+    })
+
+    const mounted = renderChordPalette({ initialChords: [] })
+    mountedRoot = mounted.root
+    mountedContainer = mounted.container
+
+    expect(mounted.container.textContent).toContain("Selection missing")
+    expect(mounted.container.textContent).toContain(
+      "The current arrangement selection no longer resolves to live data, so this palette is falling back to song-level chord truth."
+    )
+    expect(mounted.container.textContent).toContain("Fallback scope")
+    expect(mounted.container.textContent).toContain("Whole song")
+    expect(mounted.container.textContent).toContain(
+      "Add chords below to create the song-level chart truth the arrangement can follow."
+    )
+    expect(mounted.container.textContent).not.toContain("Empty chart")
   })
 })
