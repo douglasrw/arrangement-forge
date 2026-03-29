@@ -4,6 +4,7 @@ import { act } from 'react';
 import { createRoot, type Root } from 'react-dom/client';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { MixerDrawer } from './MixerDrawer';
+import type { DrumKitLike } from '@/audio/drum-kit';
 import { useProjectStore } from '@/store/project-store';
 import { useUiStore } from '@/store/ui-store';
 import type { AudioEngineConfig, Project, Stem, TransportState } from '@/types';
@@ -98,6 +99,28 @@ function renderMixer() {
   });
 
   return { container, root };
+}
+
+function findButtonByText(container: HTMLElement, text: string): HTMLButtonElement | null {
+  return Array.from(container.querySelectorAll('button')).find(
+    (button): button is HTMLButtonElement => button.textContent?.includes(text) ?? false
+  ) ?? null;
+}
+
+function makeDrumKit(overrides: Partial<DrumKitLike> = {}): DrumKitLike {
+  const drumKit: DrumKitLike = {
+    triggerAttackRelease: () => undefined,
+    connect: () => drumKit,
+    disconnect: () => drumKit,
+    releaseAll: () => undefined,
+    dispose: () => undefined,
+    getVoiceGroups: () => [],
+    getVoiceGroupGain: () => 1,
+    setVoiceGroupGain: () => undefined,
+    ...overrides,
+  };
+
+  return drumKit;
 }
 
 let mountedRoot: Root | null = null;
@@ -240,5 +263,75 @@ describe('MixerDrawer', () => {
     mountedContainer = mounted.container;
 
     expect(mounted.container.textContent).toContain('Audio unavailable: Salamander drum samples missing');
+  });
+
+  it('hydrates drum sub-mix controls from the live drum kit and writes normalized gains back', () => {
+    const setVoiceGroupGain = vi.fn();
+    const getVoiceGroupGain = vi.fn((groupName: string) => {
+      if (groupName === 'kick') return 1.4;
+      if (groupName === 'snare') return 0.6;
+      return 1;
+    });
+
+    useAudioState.engine = {
+      getDrumKit: () =>
+        makeDrumKit({
+          getVoiceGroupGain,
+          setVoiceGroupGain,
+        }),
+    };
+
+    useProjectStore.setState({
+      stems: [makeStem({ id: 'st-drums', instrument: 'drums', sortOrder: 0 })],
+    });
+
+    const mounted = renderMixer();
+    mountedRoot = mounted.root;
+    mountedContainer = mounted.container;
+
+    const drumButton = findButtonByText(mounted.container, 'DRUMS');
+
+    act(() => {
+      drumButton?.dispatchEvent(new MouseEvent('click', { bubbles: true }));
+    });
+
+    const kickSlider = mounted.container.querySelector('#drum-sub-kick') as HTMLInputElement | null;
+    const snareSlider = mounted.container.querySelector('#drum-sub-snare') as HTMLInputElement | null;
+
+    expect(kickSlider?.value).toBe('70');
+    expect(snareSlider?.value).toBe('30');
+
+    act(() => {
+      if (!kickSlider) return;
+      const valueSetter = Object.getOwnPropertyDescriptor(
+        HTMLInputElement.prototype,
+        'value'
+      )?.set;
+      valueSetter?.call(kickSlider, '65');
+      kickSlider.dispatchEvent(new Event('input', { bubbles: true }));
+      kickSlider.dispatchEvent(new Event('change', { bubbles: true }));
+    });
+
+    expect(setVoiceGroupGain).toHaveBeenCalledWith('kick', 1.3);
+    expect(kickSlider?.value).toBe('65');
+  });
+
+  it('shows the drum sub-mix unavailable state until the drum kit is loaded', () => {
+    useProjectStore.setState({
+      stems: [makeStem({ id: 'st-drums', instrument: 'drums', sortOrder: 0 })],
+    });
+
+    const mounted = renderMixer();
+    mountedRoot = mounted.root;
+    mountedContainer = mounted.container;
+
+    const drumButton = findButtonByText(mounted.container, 'DRUMS');
+
+    act(() => {
+      drumButton?.dispatchEvent(new MouseEvent('click', { bubbles: true }));
+    });
+
+    expect(mounted.container.textContent).toContain('Drum kit unavailable until samples load.');
+    expect((mounted.container.querySelector('#drum-sub-kick') as HTMLInputElement | null)?.disabled).toBe(true);
   });
 });
