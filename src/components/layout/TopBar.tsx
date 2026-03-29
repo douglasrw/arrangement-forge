@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect } from "react"
 import { cn } from "@/lib/utils"
 import { Settings } from "lucide-react"
-import type { Project } from "@/types"
+import type { Block, Chord, Project, Section, Stem } from "@/types"
 import { getProjectExportReadiness } from "@/hooks/useProject"
 import {
   serializeProjectExportSnapshot,
@@ -40,7 +40,74 @@ export function hasProjectExportTruth(project: Project | null): project is Proje
   )
 }
 
-export function formatProjectChordChartExport(project: Project): string {
+type ProjectArrangementExportState = {
+  stems: Stem[]
+  sections: Section[]
+  blocks: Block[]
+  chords: Chord[]
+}
+
+function formatSectionBarRange(section: Section): string {
+  const endBar = section.startBar + Math.max(0, section.barCount - 1)
+
+  return endBar === section.startBar
+    ? `bar ${section.startBar}`
+    : `bars ${section.startBar}-${endBar}`
+}
+
+function formatProjectArrangementSummaryExport(
+  arrangement?: ProjectArrangementExportState
+): string | null {
+  if (!arrangement) {
+    return null
+  }
+
+  const hasArrangementTruth = Boolean(
+    arrangement.stems.length ||
+      arrangement.sections.length ||
+      arrangement.blocks.length ||
+      arrangement.chords.length
+  )
+
+  if (!hasArrangementTruth) {
+    return null
+  }
+
+  const orderedStems = [...arrangement.stems].sort(
+    (left, right) => left.sortOrder - right.sortOrder
+  )
+  const orderedSections = [...arrangement.sections].sort((left, right) => {
+    if (left.sortOrder !== right.sortOrder) {
+      return left.sortOrder - right.sortOrder
+    }
+
+    return left.startBar - right.startBar
+  })
+  const sectionLines = orderedSections.length
+    ? orderedSections.map(
+        (section) => `- ${section.name} (${formatSectionBarRange(section)})`
+      )
+    : ["- (none)"]
+  const stemOrder = orderedStems.length
+    ? orderedStems.map((stem) => stem.instrument).join(", ")
+    : "(none)"
+
+  return [
+    "Arrangement Summary",
+    `Stem Count: ${arrangement.stems.length}`,
+    `Stem Order: ${stemOrder}`,
+    `Section Count: ${arrangement.sections.length}`,
+    `Block Count: ${arrangement.blocks.length}`,
+    `Chord Count: ${arrangement.chords.length}`,
+    "Section Timeline",
+    ...sectionLines,
+  ].join("\n")
+}
+
+export function formatProjectChordChartExport(
+  project: Project,
+  arrangement?: ProjectArrangementExportState
+): string {
   const chordChart = project.chordChartRaw.trim()
     ? project.chordChartRaw
     : "(empty)"
@@ -53,6 +120,12 @@ export function formatProjectChordChartExport(project: Project): string {
 
   if (generationHints) {
     sections.push(`Generation Hints\n${project.generationHints}`)
+  }
+
+  const arrangementSummary = formatProjectArrangementSummaryExport(arrangement)
+
+  if (arrangementSummary) {
+    sections.push(arrangementSummary)
   }
 
   return sections.join("\n\n")
@@ -334,7 +407,12 @@ export function TopBar() {
     const snapshotFileName = getProjectSnapshotFilename(project)
 
     downloadExportFile(
-      formatProjectChordChartExport(project),
+      formatProjectChordChartExport(project, {
+        stems,
+        sections,
+        blocks,
+        chords,
+      }),
       chartFileName,
       "text/plain;charset=utf-8"
     )

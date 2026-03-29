@@ -46,11 +46,18 @@ vi.mock('@/hooks/useAuth', () => ({
   }),
 }));
 
-vi.mock('@/hooks/useProject', () => ({
-  useProject: () => ({
-    loadProject: loadProjectMock,
-  }),
-}));
+vi.mock('@/hooks/useProject', async () => {
+  const actual = await vi.importActual<typeof import('@/hooks/useProject')>(
+    '@/hooks/useProject'
+  );
+
+  return {
+    ...actual,
+    useProject: () => ({
+      loadProject: loadProjectMock,
+    }),
+  };
+});
 
 vi.mock('react-router-dom', () => ({
   useParams: () => ({ id: routeProjectId }),

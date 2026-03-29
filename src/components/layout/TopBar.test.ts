@@ -296,6 +296,10 @@ describe('TopBar export baseline', () => {
     expect(exportText).toContain('Project: Midnight Changes / Demo');
     expect(exportText).toContain('Chord Chart\n[Verse]\nCmaj7 | Dm7 | G7 | Cmaj7');
     expect(exportText).toContain('Generation Hints\nKeep the voicings airy');
+    expect(exportText).toContain('Arrangement Summary');
+    expect(exportText).toContain('Stem Count: 1');
+    expect(exportText).toContain('Stem Order: piano');
+    expect(exportText).toContain('Section Timeline\n- Verse (bars 1-4)');
 
     const snapshotBlob = createObjectUrlMock.mock.calls[1]?.[0] as Blob;
     const snapshot = JSON.parse(await snapshotBlob.text()) as {
@@ -389,6 +393,8 @@ describe('TopBar export baseline', () => {
 
     expect(exportText).toContain('Project: Arrangement Only');
     expect(exportText).toContain('Chord Chart\n(empty)');
+    expect(exportText).toContain('Arrangement Summary');
+    expect(exportText).toContain('Section Timeline\n- Verse (bars 1-4)');
   });
 });
 
@@ -403,6 +409,21 @@ describe('formatProjectChordChartExport', () => {
 
     expect(exportText).toContain('Chord Chart\nDm7 | G7 | Cmaj7 | Cmaj7');
     expect(exportText).not.toContain('Generation Hints');
+  });
+
+  it('adds a human-readable arrangement summary when arrangement truth exists', () => {
+    const exportText = formatProjectChordChartExport(makeProject(), {
+      stems: [makeStem()],
+      sections: [makeSection()],
+      blocks: [makeBlock()],
+      chords: [makeChord()],
+    });
+
+    expect(exportText).toContain('Arrangement Summary');
+    expect(exportText).toContain('Stem Order: piano');
+    expect(exportText).toContain('Block Count: 1');
+    expect(exportText).toContain('Chord Count: 1');
+    expect(exportText).toContain('Section Timeline\n- Verse (bars 1-4)');
   });
 });
 
