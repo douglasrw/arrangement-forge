@@ -201,6 +201,69 @@ describe('InputSection upload tab', () => {
     expect(generateButton?.disabled).toBe(false);
   });
 
+  it('preserves imported upload state when switching between upload, text, and chord tabs', async () => {
+    const mounted = renderSection();
+    mountedRoot = mounted.root;
+    mountedContainer = mounted.container;
+
+    openUploadTab(mounted.container);
+    const fileInput = getUploadFileInput(mounted.container);
+
+    const file = new File(['placeholder'], 'tab-switch-import.txt', { type: 'text/plain' });
+    vi.spyOn(file, 'text').mockResolvedValue(
+      'Description: Brushes on snare\nVerse:\nCmaj7 | Dm7 | G7 | Cmaj7'
+    );
+
+    await importFile(fileInput, file);
+
+    const textTabButton = Array.from(mounted.container.querySelectorAll('button')).find(
+      (button) => button.textContent === 'Text'
+    ) as HTMLButtonElement | undefined;
+
+    expect(textTabButton).not.toBeUndefined();
+
+    act(() => {
+      textTabButton?.dispatchEvent(new MouseEvent('click', { bubbles: true }));
+    });
+
+    const chordChartTextarea = mounted.container.querySelector(
+      '#chord-chart-raw-input'
+    ) as HTMLTextAreaElement | null;
+    const descriptionTextarea = mounted.container.querySelector(
+      '#description-input'
+    ) as HTMLTextAreaElement | null;
+
+    expect(chordChartTextarea?.value).toBe('[Verse]\nCmaj7 | Dm7 | G7 | Cmaj7');
+    expect(descriptionTextarea?.value).toBe('Brushes on snare');
+
+    const chordTabButton = Array.from(mounted.container.querySelectorAll('button')).find(
+      (button) => button.textContent === 'Chord'
+    ) as HTMLButtonElement | undefined;
+
+    expect(chordTabButton).not.toBeUndefined();
+
+    act(() => {
+      chordTabButton?.dispatchEvent(new MouseEvent('click', { bubbles: true }));
+    });
+
+    expect(mounted.container.querySelector('#chord-chart-raw-input')).toBeNull();
+    expect(mounted.container.querySelector('#upload-chord-chart-input')).toBeNull();
+
+    act(() => {
+      textTabButton?.dispatchEvent(new MouseEvent('click', { bubbles: true }));
+    });
+
+    const chordChartTextareaAfterSwitch = mounted.container.querySelector(
+      '#chord-chart-raw-input'
+    ) as HTMLTextAreaElement | null;
+    const descriptionTextareaAfterSwitch = mounted.container.querySelector(
+      '#description-input'
+    ) as HTMLTextAreaElement | null;
+
+    expect(chordChartTextareaAfterSwitch?.value).toBe('[Verse]\nCmaj7 | Dm7 | G7 | Cmaj7');
+    expect(descriptionTextareaAfterSwitch?.value).toBe('Brushes on snare');
+  });
+
   it('rejects empty imports without overwriting the current chord chart', async () => {
     useProjectStore.setState({
       project: makeProject({
