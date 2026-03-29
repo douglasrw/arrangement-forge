@@ -1,65 +1,8 @@
 import { useState, useEffect } from "react"
 import { cn } from "@/lib/utils"
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select"
 import { useProjectStore } from "@/store/project-store"
 import { useSelectionStore } from "@/store/selection-store"
 import { ConfirmDialog } from "@/components/shared/ConfirmDialog"
-
-/* ------------------------------------------------------------------ */
-/*  Reusable slider — same pattern as StyleControlsSection             */
-/* ------------------------------------------------------------------ */
-interface SliderDef {
-  label: string
-  value: number
-  display: string
-  min: number
-  max: number
-}
-
-const INITIAL_SLIDERS: SliderDef[] = [
-  { label: "Energy", value: 45, display: "Med", min: 0, max: 100 },
-  { label: "Groove", value: 50, display: "Standard", min: 0, max: 100 },
-  { label: "Feel", value: 50, display: "Natural", min: 0, max: 100 },
-  { label: "Swing %", value: 65, display: "65%", min: 0, max: 100 },
-  { label: "Dynamics", value: 30, display: "p", min: 0, max: 100 },
-]
-
-function getDisplayValue(label: string, value: number): string {
-  if (label === "Swing %") return `${value}%`
-  if (label === "Dynamics") {
-    if (value <= 20) return "pp"
-    if (value <= 40) return "p"
-    if (value <= 60) return "mp"
-    if (value <= 80) return "f"
-    return "ff"
-  }
-  if (label === "Groove") {
-    if (value <= 20) return "Simple"
-    if (value <= 40) return "Basic"
-    if (value <= 60) return "Standard"
-    if (value <= 80) return "Busy"
-    return "Complex"
-  }
-  if (label === "Feel") {
-    if (value <= 20) return "Tight"
-    if (value <= 40) return "Steady"
-    if (value <= 60) return "Natural"
-    if (value <= 80) return "Loose"
-    return "Sloppy"
-  }
-  // Energy (default)
-  if (value <= 20) return "Low"
-  if (value <= 40) return "Laid"
-  if (value <= 60) return "Med"
-  if (value <= 80) return "High"
-  return "Max"
-}
 
 /* ------------------------------------------------------------------ */
 /*  SectionContext                                                      */
@@ -82,6 +25,15 @@ export function SectionContext({
   const liveSection = sections.find((s) => s.id === sectionId)
   const currentName = liveSection?.name ?? sectionName
   const currentBars = liveSection?.barCount ?? sectionBars
+  const hasSavedStyleOverrides = liveSection
+    ? [
+        liveSection.energyOverride,
+        liveSection.grooveOverride,
+        liveSection.feelOverride,
+        liveSection.swingPctOverride,
+        liveSection.dynamicsOverride,
+      ].some((value) => value !== null)
+    : false
 
   /* Local draft for the name input */
   const [nameDraft, setNameDraft] = useState(currentName)
@@ -90,20 +42,6 @@ export function SectionContext({
   useEffect(() => {
     setNameDraft(currentName)
   }, [currentName])
-
-  /* Style override toggle — cosmetic only for MVP */
-  const [isOverriding, setIsOverriding] = useState(false)
-  const [sliders, setSliders] = useState(INITIAL_SLIDERS)
-
-  function handleSliderChange(index: number, newValue: number) {
-    setSliders((prev) =>
-      prev.map((s, i) =>
-        i === index
-          ? { ...s, value: newValue, display: getDisplayValue(s.label, newValue) }
-          : s
-      )
-    )
-  }
 
   function commitName(newName: string) {
     const name = newName.trim() || "Untitled Section"
@@ -198,128 +136,28 @@ export function SectionContext({
           </button>
         </div>
 
-        {/* Style overrides — cosmetic only for MVP */}
-        <label className="mt-4 block text-[10px] font-medium uppercase tracking-widest text-zinc-500">
-          Style
-        </label>
-
-        {!isOverriding ? (
-          <div className="mt-1.5 flex items-center justify-between">
-            <span className="text-xs italic text-zinc-500">
-              Inherits from song
+        <div className="mt-4 rounded-lg border border-border/70 bg-secondary/30 p-3">
+          <div className="flex items-start justify-between gap-3">
+            <div className="flex flex-col gap-1">
+              <h3 className="text-[10px] font-medium uppercase tracking-widest text-zinc-500">
+                Style Overrides Unavailable
+              </h3>
+              <p className="text-xs text-muted-foreground">
+                This inspector updates the saved section name and length only.
+              </p>
+            </div>
+            <span className="rounded border border-border/70 px-2 py-0.5 text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
+              Truth
             </span>
-            <button
-              type="button"
-              onClick={() => setIsOverriding(true)}
-              className="text-xs text-ring transition-colors hover:text-primary"
-            >
-              Override
-            </button>
           </div>
-        ) : (
-          <div className="mt-1.5 flex items-center justify-between">
-            <span className="text-xs font-medium text-foreground">
-              Section override
-            </span>
-            <button
-              type="button"
-              onClick={() => setIsOverriding(false)}
-              className="text-xs text-zinc-500 transition-colors hover:text-foreground"
-            >
-              Clear
-            </button>
-          </div>
-        )}
-
-        {/* Inherited / overridden controls */}
-        <div
-          className={cn(
-            "mt-3 flex flex-col gap-3 transition-opacity duration-200",
-            !isOverriding && "pointer-events-none opacity-40"
+          <p className="mt-3 text-sm text-foreground">
+            Per-section genre, sub-style, energy, groove, feel, swing, and dynamics are not editable here yet.
+          </p>
+          {hasSavedStyleOverrides && (
+            <p className="mt-2 text-xs text-muted-foreground">
+              This section already carries saved style override data, but this build does not expose those fields in the inspector.
+            </p>
           )}
-        >
-          {/* Genre / Sub-style */}
-          <div className="flex gap-2">
-            <div className="flex flex-1 flex-col gap-1">
-              <label htmlFor="section-genre-select" className="text-[10px] font-medium uppercase tracking-widest text-zinc-500">
-                Genre
-              </label>
-              <Select defaultValue="jazz">
-                <SelectTrigger id="section-genre-select" className="h-7 w-full border-border bg-secondary text-[11px] text-foreground">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="jazz">Jazz</SelectItem>
-                  <SelectItem value="rock">Rock</SelectItem>
-                  <SelectItem value="pop">Pop</SelectItem>
-                  <SelectItem value="electronic">Electronic</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="flex flex-1 flex-col gap-1">
-              <label htmlFor="section-substyle-select" className="text-[10px] font-medium uppercase tracking-widest text-zinc-500">
-                Sub-style
-              </label>
-              <Select defaultValue="swing">
-                <SelectTrigger id="section-substyle-select" className="h-7 w-full border-border bg-secondary text-[11px] text-foreground">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="swing">Swing</SelectItem>
-                  <SelectItem value="bebop">Bebop</SelectItem>
-                  <SelectItem value="bossa">Bossa Nova</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-          </div>
-
-          {/* Sliders */}
-          <div className="flex flex-col gap-2">
-            {sliders.map((slider, i) => (
-              <div key={slider.label} className="flex flex-col gap-0.5">
-                <div className="flex items-center justify-between">
-                  <span className="text-[10px] font-medium text-zinc-500">
-                    {slider.label}
-                  </span>
-                  <span className="min-w-[3.5rem] shrink-0 whitespace-nowrap text-right text-[10px] font-semibold text-foreground">
-                    {slider.display}
-                  </span>
-                </div>
-                <div className="group relative h-1 w-full cursor-pointer rounded-full bg-secondary">
-                  <div
-                    className="absolute inset-y-0 left-0 rounded-full"
-                    style={{
-                      width: `${slider.value}%`,
-                      background: "var(--ring)",
-                    }}
-                  />
-                  <input
-                    type="range"
-                    id={`section-slider-${slider.label}`}
-                    min={slider.min}
-                    max={slider.max}
-                    value={slider.value}
-                    onChange={(e) =>
-                      handleSliderChange(i, Number(e.target.value))
-                    }
-                    className={cn(
-                      "absolute inset-0 h-full w-full cursor-pointer appearance-none bg-transparent",
-                      "[&::-webkit-slider-thumb]:h-2.5 [&::-webkit-slider-thumb]:w-2.5",
-                      "[&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:rounded-full",
-                      "[&::-webkit-slider-thumb]:border [&::-webkit-slider-thumb]:border-ring",
-                      "[&::-webkit-slider-thumb]:bg-foreground [&::-webkit-slider-thumb]:shadow-sm",
-                      "[&::-webkit-slider-thumb]:opacity-0 [&::-webkit-slider-thumb]:transition-opacity",
-                      "group-hover:[&::-webkit-slider-thumb]:opacity-100",
-                      "[&::-moz-range-thumb]:h-2.5 [&::-moz-range-thumb]:w-2.5",
-                      "[&::-moz-range-thumb]:appearance-none [&::-moz-range-thumb]:rounded-full",
-                      "[&::-moz-range-thumb]:border [&::-moz-range-thumb]:border-ring",
-                      "[&::-moz-range-thumb]:bg-foreground [&::-moz-range-thumb]:shadow-sm"
-                    )}
-                  />
-                </div>
-              </div>
-            ))}
-          </div>
         </div>
 
         {/* Delete Section */}
