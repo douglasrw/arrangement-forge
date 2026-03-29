@@ -9,6 +9,8 @@ import {
 import { useProjectStore } from "@/store/project-store"
 import { GENRE_SUBSTYLES } from "@/lib/genre-config"
 
+const DEFAULT_SWING_PCT = 50
+
 function getDisplayValue(label: string, value: number): string {
   if (label === "Swing %") return `${value}%`
   if (label === "Dynamics") {
@@ -40,6 +42,26 @@ function getDisplayValue(label: string, value: number): string {
   return "Max"
 }
 
+function getSwingDisplayState(swingPct: number | null | undefined): {
+  value: number
+  displayValue: string
+  ariaValueText: string
+} {
+  if (swingPct == null) {
+    return {
+      value: DEFAULT_SWING_PCT,
+      displayValue: "Straight",
+      ariaValueText: "Straight default at 50 percent swing",
+    }
+  }
+
+  return {
+    value: swingPct,
+    displayValue: `${swingPct}%`,
+    ariaValueText: `${swingPct}%`,
+  }
+}
+
 export function StyleControlsSection() {
   const { project, updateProject } = useProjectStore()
 
@@ -48,8 +70,9 @@ export function StyleControlsSection() {
   const energy = project?.energy ?? 50
   const groove = project?.groove ?? 50
   const feel = project?.feel ?? 50
-  const swingPct = project?.swingPct ?? 0
+  const swingPct = project?.swingPct ?? null
   const dynamics = project?.dynamics ?? 50
+  const swingDisplay = getSwingDisplayState(swingPct)
 
   const subStyleOptions = GENRE_SUBSTYLES[genre] ?? []
 
@@ -57,7 +80,15 @@ export function StyleControlsSection() {
     { label: "Energy", value: energy, field: "energy", min: 0, max: 100 },
     { label: "Groove", value: groove, field: "groove", min: 0, max: 100 },
     { label: "Feel", value: feel, field: "feel", min: 0, max: 100 },
-    { label: "Swing %", value: swingPct, field: "swingPct", min: 0, max: 100 },
+    {
+      label: "Swing %",
+      value: swingDisplay.value,
+      field: "swingPct",
+      min: 0,
+      max: 100,
+      displayValue: swingDisplay.displayValue,
+      ariaValueText: swingDisplay.ariaValueText,
+    },
     { label: "Dynamics", value: dynamics, field: "dynamics", min: 0, max: 100 },
   ]
 
@@ -116,7 +147,7 @@ export function StyleControlsSection() {
                 {slider.label}
               </span>
               <span className="min-w-[3.5rem] shrink-0 whitespace-nowrap text-right text-[11px] font-semibold text-foreground">
-                {getDisplayValue(slider.label, slider.value)}
+                {slider.displayValue ?? getDisplayValue(slider.label, slider.value)}
               </span>
             </div>
             {/* Custom slider with teal accent fill */}
@@ -127,6 +158,7 @@ export function StyleControlsSection() {
               aria-valuemin={slider.min}
               aria-valuemax={slider.max}
               aria-valuenow={slider.value}
+              aria-valuetext={slider.ariaValueText}
               tabIndex={0}
               onKeyDown={(e) => {
                 if (e.key === "ArrowRight" || e.key === "ArrowUp") {
