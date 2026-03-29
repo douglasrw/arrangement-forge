@@ -184,9 +184,10 @@ describe('LeftPanel inspector truth regression', () => {
       'Section Energy Override'
     );
     expect(mounted.container.textContent).toContain(
-      'Groove, feel, swing, and dynamics are not editable per section here yet.'
+      'Section Dynamics Override'
     );
     expect(mounted.container.querySelector('#section-slider-Energy')).not.toBeNull();
+    expect(mounted.container.querySelector('#section-slider-Dynamics')).not.toBeNull();
     expect(mounted.container.textContent).toContain('Close inspector');
 
     act(() => {

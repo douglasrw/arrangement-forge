@@ -112,7 +112,7 @@ afterEach(() => {
 });
 
 describe('SectionContext truth surface', () => {
-  it('keeps saved section edits active while exposing a real energy override path', () => {
+  it('keeps saved section edits active while exposing saved energy and dynamics override paths', () => {
     const mounted = renderSectionContext();
     mountedRoot = mounted.root;
     mountedContainer = mounted.container;
@@ -123,11 +123,17 @@ describe('SectionContext truth surface', () => {
     const plusButton = Array.from(
       mounted.container.querySelectorAll('button')
     ).find((button) => button.textContent?.trim() === '+');
-    const projectDefaultButton = Array.from(
-      mounted.container.querySelectorAll('button')
-    ).find((button) => button.textContent?.trim() === 'Use project default');
+    const energyResetButton = mounted.container.querySelector(
+      '#section-reset-Energy'
+    ) as HTMLButtonElement | null;
+    const dynamicsResetButton = mounted.container.querySelector(
+      '#section-reset-Dynamics'
+    ) as HTMLButtonElement | null;
     const energySlider = mounted.container.querySelector(
       '#section-slider-Energy'
+    ) as HTMLInputElement | null;
+    const dynamicsSlider = mounted.container.querySelector(
+      '#section-slider-Dynamics'
     ) as HTMLInputElement | null;
 
     expect(nameInput?.value).toBe('Verse');
@@ -142,9 +148,19 @@ describe('SectionContext truth surface', () => {
       'Project default: Med (50)'
     );
     expect(mounted.container.textContent).toContain(
-      'Groove, feel, swing, and dynamics are not editable per section here yet.'
+      'Section Dynamics Override'
+    );
+    expect(mounted.container.textContent).toContain(
+      'This section is inheriting the project dynamics default.'
+    );
+    expect(mounted.container.textContent).toContain(
+      'Project default: mp (50)'
+    );
+    expect(mounted.container.textContent).toContain(
+      'Groove, feel, and swing are not editable per section here yet.'
     );
     expect(energySlider?.value).toBe('75');
+    expect(dynamicsSlider?.value).toBe('50');
 
     act(() => {
       if (nameInput) {
@@ -176,13 +192,35 @@ describe('SectionContext truth surface', () => {
       }
     });
 
+    act(() => {
+      if (dynamicsSlider) {
+        const valueSetter = Object.getOwnPropertyDescriptor(
+          HTMLInputElement.prototype,
+          'value'
+        )?.set;
+        valueSetter?.call(dynamicsSlider, '82');
+        dynamicsSlider.dispatchEvent(new Event('input', { bubbles: true }));
+        dynamicsSlider.dispatchEvent(new Event('change', { bubbles: true }));
+      }
+    });
+
     const updatedSection = useProjectStore.getState().sections[0];
     expect(updatedSection?.name).toBe('Bridge');
     expect(updatedSection?.barCount).toBe(12);
     expect(updatedSection?.energyOverride).toBe(33);
+    expect(updatedSection?.dynamicsOverride).toBe(82);
+    expect(mounted.container.textContent).toContain(
+      'This section is carrying its own saved dynamics override.'
+    );
 
     act(() => {
-      projectDefaultButton?.dispatchEvent(
+      energyResetButton?.dispatchEvent(
+        new MouseEvent('click', { bubbles: true })
+      );
+    });
+
+    act(() => {
+      dynamicsResetButton?.dispatchEvent(
         new MouseEvent('click', { bubbles: true })
       );
     });
@@ -191,10 +229,18 @@ describe('SectionContext truth surface', () => {
     const resetEnergySlider = mounted.container.querySelector(
       '#section-slider-Energy'
     ) as HTMLInputElement | null;
+    const resetDynamicsSlider = mounted.container.querySelector(
+      '#section-slider-Dynamics'
+    ) as HTMLInputElement | null;
     expect(resetSection?.energyOverride).toBeNull();
+    expect(resetSection?.dynamicsOverride).toBeNull();
     expect(resetEnergySlider?.value).toBe('50');
+    expect(resetDynamicsSlider?.value).toBe('50');
     expect(mounted.container.textContent).toContain(
       'This section is inheriting the project energy default.'
+    );
+    expect(mounted.container.textContent).toContain(
+      'This section is inheriting the project dynamics default.'
     );
   });
 });
