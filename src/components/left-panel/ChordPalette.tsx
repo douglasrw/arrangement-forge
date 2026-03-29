@@ -2,6 +2,9 @@ import { useState, useCallback, useRef, useEffect, useMemo } from "react"
 import { cn } from "@/lib/utils"
 import { X, Plus, ArrowRight } from "lucide-react"
 import { degreeToNote } from "@/lib/chords"
+import { useProjectStore } from "@/store/project-store"
+import { useSelectionStore } from "@/store/selection-store"
+import type { Block, InstrumentType, Section, Stem } from "@/types"
 
 /* ------------------------------------------------------------------ */
 /*  Root notes and qualities for custom chord builder                  */
@@ -36,11 +39,145 @@ interface DiatonicChord {
   name: string
 }
 
+interface ChordPaletteSelectionTruth {
+  badge: string
+  summary: string
+  selectionLabel: string
+  selectionValue: string
+  footer: string
+  tone: "default" | "missing" | "warning"
+}
+
+const INSTRUMENT_LABELS: Record<InstrumentType, string> = {
+  drums: "Drums",
+  bass: "Bass",
+  piano: "Piano",
+  guitar: "Guitar",
+  strings: "Strings",
+}
+
 function diatonicChordsForKey(key: string): DiatonicChord[] {
   return DIATONIC_DEGREES.map((d) => ({
     numeral: d.label,
     name: degreeToNote(d.degree, key) + d.suffix,
   }))
+}
+
+function getSectionBarRange(section: Section) {
+  return {
+    startBar: section.startBar,
+    endBar: section.startBar + section.barCount - 1,
+  }
+}
+
+function formatBarRange(startBar: number, endBar: number) {
+  return startBar === endBar ? `Bar ${startBar}` : `Bars ${startBar}-${endBar}`
+}
+
+function getInstrumentLabel(stem?: Stem) {
+  if (!stem) return "Selected"
+  return INSTRUMENT_LABELS[stem.instrument]
+}
+
+function getMissingSelectionTruth(chordCount: number): ChordPaletteSelectionTruth {
+  return {
+    badge: "Selection missing",
+    summary:
+      "The current arrangement selection no longer resolves to live data, so this palette is falling back to song-level chord truth.",
+    selectionLabel: "Fallback scope",
+    selectionValue: "Whole song",
+    footer:
+      chordCount > 0
+        ? "Changes below still update the song chord chart for the full project."
+        : "Add chords below to create the song-level chart truth the arrangement can follow.",
+    tone: "missing",
+  }
+}
+
+function getChordPaletteSelectionTruth({
+  selectionLevel,
+  sectionId,
+  blockId,
+  sections,
+  blocks,
+  stems,
+  chordCount,
+}: {
+  selectionLevel: "song" | "section" | "block"
+  sectionId: string | null
+  blockId: string | null
+  sections: Section[]
+  blocks: Block[]
+  stems: Stem[]
+  chordCount: number
+}): ChordPaletteSelectionTruth {
+  if (selectionLevel === "block") {
+    const selectedBlock = blockId
+      ? blocks.find((block) => block.id === blockId)
+      : undefined
+
+    if (!selectedBlock) {
+      return getMissingSelectionTruth(chordCount)
+    }
+
+    const selectedStem = stems.find((stem) => stem.id === selectedBlock.stemId)
+
+    return {
+      badge: "Block selected",
+      summary: `The arrangement is currently focused on ${formatBarRange(selectedBlock.startBar, selectedBlock.endBar)}, but block chord overrides are unavailable here today.`,
+      selectionLabel: "Current selection",
+      selectionValue: `${getInstrumentLabel(selectedStem)} block`,
+      footer:
+        chordCount > 0
+          ? "Changes below still update the song chord chart for the full project."
+          : "Add chords below to create the song-level chart truth this block will inherit.",
+      tone: "warning",
+    }
+  }
+
+  if (selectionLevel === "section") {
+    const selectedSection = sectionId
+      ? sections.find((section) => section.id === sectionId)
+      : undefined
+
+    if (!selectedSection) {
+      return getMissingSelectionTruth(chordCount)
+    }
+
+    const { startBar, endBar } = getSectionBarRange(selectedSection)
+
+    return {
+      badge: "Section selected",
+      summary: `${selectedSection.name} is selected in the arrangement, but section-scoped chord editing is unavailable here today.`,
+      selectionLabel: "Current selection",
+      selectionValue: `${selectedSection.name} (${formatBarRange(startBar, endBar)})`,
+      footer:
+        chordCount > 0
+          ? "Changes below still update the song chord chart instead of a section-only progression."
+          : "Add chords below to create the song-level chart truth this section will inherit.",
+      tone: "warning",
+    }
+  }
+
+  if (chordCount === 0) {
+    return {
+      badge: "Empty chart",
+      summary: "No song chord chart is loaded yet.",
+      selectionLabel: "Current selection",
+      selectionValue: "Whole song",
+      footer: "Add chords below to create the progression truth the arrangement will follow.",
+      tone: "missing",
+    }
+  }
+
+  return {
+    badge: "Song chart",
+    summary: "You are editing the song chord chart the arrangement inherits today.",
+    selectionLabel: "Current selection",
+    selectionValue: "Whole song",
+    footer: "This palette is ready to add, remove, or replace chords for the full project.",
+    tone: "default",
+  }
 }
 
 /* ------------------------------------------------------------------ */
@@ -85,6 +222,12 @@ export function ChordPalette({
   const [builderQuality, setBuilderQuality] = useState<Quality | null>(null)
   const [manualMode, setManualMode] = useState(false)
   const [manualText, setManualText] = useState("")
+  const sections = useProjectStore((state) => state.sections)
+  const blocks = useProjectStore((state) => state.blocks)
+  const stems = useProjectStore((state) => state.stems)
+  const selectionLevel = useSelectionStore((state) => state.level)
+  const sectionId = useSelectionStore((state) => state.sectionId)
+  const blockId = useSelectionStore((state) => state.blockId)
   const glowTimeout = useRef<ReturnType<typeof setTimeout> | null>(null)
   const isInitialRender = useRef(true)
   const onChordsChangeRef = useRef(onChordsChange)
@@ -93,6 +236,19 @@ export function ChordPalette({
   const beatsPerBar = parseTimeSig(timeSignature)
   const perRow = getChordsPerRow(beatsPerBar)
   const diatonicChords = useMemo(() => diatonicChordsForKey(projectKey), [projectKey])
+  const selectionTruth = useMemo(
+    () =>
+      getChordPaletteSelectionTruth({
+        selectionLevel,
+        sectionId,
+        blockId,
+        sections,
+        blocks,
+        stems,
+        chordCount: chords.length,
+      }),
+    [selectionLevel, sectionId, blockId, sections, blocks, stems, chords.length]
+  )
 
   /* Sync chord changes back to parent */
   useEffect(() => {
@@ -145,11 +301,59 @@ export function ChordPalette({
     setManualMode(false)
   }, [manualText])
 
+  const selectionTruthCard = (
+    <div
+      className={cn(
+        "rounded-lg border px-3 py-2",
+        selectionTruth.tone === "default"
+          ? "border-border/60 bg-secondary/40"
+          : selectionTruth.tone === "warning"
+            ? "border-amber-500/30 bg-amber-500/10"
+            : "border-border/60 bg-secondary/70"
+      )}
+      aria-live="polite"
+    >
+      <div className="flex items-center justify-between gap-2">
+        <span
+          className={cn(
+            "rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase tracking-widest",
+            selectionTruth.tone === "warning"
+              ? "bg-amber-500/15 text-amber-200"
+              : "bg-secondary text-foreground"
+          )}
+        >
+          {selectionTruth.badge}
+        </span>
+        <span className="text-[10px] font-medium uppercase tracking-widest text-muted-foreground">
+          Current selection
+        </span>
+      </div>
+
+      <p className="mt-2 text-xs leading-relaxed text-foreground">
+        {selectionTruth.summary}
+      </p>
+
+      <div className="mt-2 flex items-center justify-between gap-3 rounded-md bg-background/40 px-2 py-1.5">
+        <span className="text-[10px] font-medium uppercase tracking-widest text-muted-foreground">
+          {selectionTruth.selectionLabel}
+        </span>
+        <span className="text-[11px] font-medium text-foreground">
+          {selectionTruth.selectionValue}
+        </span>
+      </div>
+
+      <p className="mt-2 text-[11px] leading-relaxed text-muted-foreground">
+        {selectionTruth.footer}
+      </p>
+    </div>
+  )
+
   /* ---- Manual textarea mode ---- */
 
   if (manualMode) {
     return (
-      <div className={cn("rounded-xl border border-border/50 bg-card p-4", className)}>
+      <div className={cn("flex flex-col gap-3 rounded-xl border border-border/50 bg-card p-4", className)}>
+        {selectionTruthCard}
         <label htmlFor="chord-manual-input" className="mb-2 block text-[10px] font-medium uppercase tracking-widest text-muted-foreground">
           Chord Chart
         </label>
@@ -187,6 +391,7 @@ export function ChordPalette({
 
   return (
     <div className={cn("flex flex-col gap-3 rounded-xl border border-border/50 bg-card p-4", className)}>
+      {selectionTruthCard}
 
       {/* Row 1: Progression grid */}
       <div className="flex flex-col gap-1.5">
