@@ -107,6 +107,12 @@ function findButtonByText(container: HTMLElement, text: string): HTMLButtonEleme
   ) ?? null;
 }
 
+function findElementByTitle(container: HTMLElement, title: string): HTMLElement | null {
+  return Array.from(container.querySelectorAll<HTMLElement>('[title]')).find(
+    (element) => element.getAttribute('title') === title
+  ) ?? null;
+}
+
 function makeDrumKit(overrides: Partial<DrumKitLike> = {}): DrumKitLike {
   const drumKit: DrumKitLike = {
     triggerAttackRelease: () => undefined,
@@ -248,6 +254,12 @@ describe('MixerDrawer', () => {
     expect(stringsPanValue?.textContent).toBe('--');
     expect(stringsPanReset?.disabled).toBe(true);
     expect(mounted.container.textContent).toContain('No stem');
+    expect(
+      findElementByTitle(
+        mounted.container,
+        'No strings stem is loaded for this arrangement.'
+      )?.textContent
+    ).toContain('No stem');
     expect(masterSlider?.getAttribute('aria-valuenow')).toBe('60');
   });
 
@@ -265,6 +277,12 @@ describe('MixerDrawer', () => {
     mountedContainer = mounted.container;
 
     expect(mounted.container.textContent).toContain('No arrangement');
+    expect(
+      findElementByTitle(
+        mounted.container,
+        'Generate or import an arrangement to enable piano.'
+      )?.textContent
+    ).toContain('No arrangement');
     expect(
       (mounted.container.querySelector('button[aria-label="Toggle PIANO mute"]') as HTMLButtonElement | null)?.disabled
     ).toBe(true);
@@ -487,6 +505,12 @@ describe('MixerDrawer', () => {
 
     expect(mounted.container.textContent).toContain('Loading instrument samples. Mixer changes will apply when audio is ready.');
     expect(mounted.container.textContent).toContain('Kit loading');
+    expect(
+      findElementByTitle(
+        mounted.container,
+        'Drum sub-mix loading. Drum group controls will unlock when samples are ready.'
+      )?.textContent
+    ).toContain('Kit loading');
     expect(mounted.container.textContent).toContain(
       'Drum sub-mix loading. Drum group controls will unlock when samples are ready.'
     );
@@ -516,6 +540,12 @@ describe('MixerDrawer', () => {
 
     expect(mounted.container.textContent).toContain('Audio unavailable: Salamander drum samples missing');
     expect(mounted.container.textContent).toContain('Kit error');
+    expect(
+      findElementByTitle(
+        mounted.container,
+        'Drum sub-mix unavailable: Salamander drum samples missing'
+      )?.textContent
+    ).toContain('Kit error');
     expect(mounted.container.textContent).toContain(
       'Drum sub-mix unavailable: Salamander drum samples missing'
     );
