@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect } from "react"
 import { cn } from "@/lib/utils"
 import { Settings } from "lucide-react"
+import type { Project } from "@/types"
 import { useProjectStore } from "@/store/project-store"
 import { useUiStore } from "@/store/ui-store"
 import { useAuth } from "@/hooks/useAuth"
@@ -16,6 +17,28 @@ export function reconcileProjectNameDraft(
 
 export function normalizeProjectNameDraft(newName: string): string {
   return newName.trim() || "Untitled Project"
+}
+
+export function formatProjectChordChartExport(project: Project): string {
+  const chordChart = project.chordChartRaw.trim()
+    ? project.chordChartRaw
+    : "(empty)"
+  const sections = [
+    "Arrangement Forge Export",
+    `Project: ${project.name}`,
+    `Chord Chart\n${chordChart}`,
+  ]
+  const generationHints = project.generationHints.trim()
+
+  if (generationHints) {
+    sections.push(`Generation Hints\n${project.generationHints}`)
+  }
+
+  return sections.join("\n\n")
+}
+
+function getProjectExportFilename(project: Project): string {
+  return `${project.name.trim() || "Untitled Project"}.txt`
 }
 
 /* ------------------------------------------------------------------ */
@@ -219,6 +242,27 @@ export function TopBar() {
     return () => document.removeEventListener("mousedown", handleClick)
   }, [menuOpen])
 
+  function handleExport() {
+    if (!project) {
+      return
+    }
+
+    const exportBlob = new Blob([formatProjectChordChartExport(project)], {
+      type: "text/plain;charset=utf-8",
+    })
+    const exportUrl = URL.createObjectURL(exportBlob)
+    const downloadLink = document.createElement("a")
+
+    downloadLink.href = exportUrl
+    downloadLink.download = getProjectExportFilename(project)
+    document.body.appendChild(downloadLink)
+    downloadLink.click()
+    downloadLink.remove()
+    URL.revokeObjectURL(exportUrl)
+  }
+
+  const canExport = project !== null
+
   function commitName(newName: string) {
     setIsEditing(false)
     const name = normalizeProjectNameDraft(newName)
@@ -314,12 +358,19 @@ export function TopBar() {
 
       {/* ---- RIGHT: Export + Gear + Avatar ---- */}
       <div className="flex items-center gap-2">
-        {/* Export button (disabled) */}
+        {/* Export button */}
         <button
           type="button"
-          disabled
-          title="Coming soon"
-          className="cursor-not-allowed rounded-lg border border-border bg-secondary px-3 py-1.5 text-xs font-medium text-muted-foreground opacity-40"
+          data-testid="topbar-export-button"
+          disabled={!canExport}
+          onClick={handleExport}
+          title={canExport ? "Download chord chart as text" : "Open a project to export"}
+          className={cn(
+            "rounded-lg border border-border bg-secondary px-3 py-1.5 text-xs font-medium transition-colors",
+            canExport
+              ? "text-foreground hover:bg-secondary/80"
+              : "cursor-not-allowed text-muted-foreground opacity-40"
+          )}
         >
           Export
         </button>
