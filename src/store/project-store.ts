@@ -162,7 +162,8 @@ function regenerateBlockWithProjectState(state: {
     nextBlock.startBar !== currentBlock.startBar ||
     nextBlock.endBar !== currentBlock.endBar ||
     nextBlock.sectionId !== currentBlock.sectionId ||
-    nextBlock.energyOverride !== currentBlock.energyOverride;
+    nextBlock.energyOverride !== currentBlock.energyOverride ||
+    nextBlock.dynamicsOverride !== currentBlock.dynamicsOverride;
 
   if (!needsMidiRefresh) {
     return nextBlock;
@@ -179,6 +180,7 @@ function regenerateBlockWithProjectState(state: {
     }));
 
   const effectiveEnergy = resolveStyle(state.project, section, nextBlock, 'energy').value;
+  const effectiveDynamics = resolveStyle(state.project, section, nextBlock, 'dynamics').value;
   const midiData = generateMidiForBlock(
     stem.instrument,
     nextBlock.endBar - nextBlock.startBar + 1,
@@ -189,7 +191,7 @@ function regenerateBlockWithProjectState(state: {
       ? {
           substyle: state.project.subStyle,
           energy: effectiveEnergy,
-          dynamics: section.dynamicsOverride ?? state.project.dynamics,
+          dynamics: effectiveDynamics,
           swingPct: section.swingPctOverride ?? state.project.swingPct,
           groove: section.grooveOverride ?? state.project.groove,
           feel: section.feelOverride ?? state.project.feel,
@@ -203,7 +205,7 @@ function regenerateBlockWithProjectState(state: {
       : {
           substyle: state.project.subStyle,
           energy: effectiveEnergy,
-          dynamics: section.dynamicsOverride ?? state.project.dynamics,
+          dynamics: effectiveDynamics,
           swingPct: section.swingPctOverride ?? state.project.swingPct,
           groove: section.grooveOverride ?? state.project.groove,
           feel: section.feelOverride ?? state.project.feel,

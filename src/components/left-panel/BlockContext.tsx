@@ -82,6 +82,7 @@ export function BlockContext({
   const label = INSTRUMENT_LABELS[instrument]
   const activePattern = liveBlock?.style ?? styleName
   const fallbackProjectEnergy = project?.energy ?? 50
+  const fallbackProjectDynamics = project?.dynamics ?? 50
   const effectiveEnergy =
     project && liveSection
       ? resolveStyle(project, liveSection, liveBlock ?? null, "energy")
@@ -101,6 +102,25 @@ export function BlockContext({
     : liveBlock?.energyOverride == null
   const inheritedEnergySourceLabel =
     inheritedEnergy.source === "section" ? "Section" : "Project"
+  const effectiveDynamics =
+    project && liveSection
+      ? resolveStyle(project, liveSection, liveBlock ?? null, "dynamics")
+      : {
+          value: liveBlock?.dynamicsOverride ?? fallbackProjectDynamics,
+          source: liveBlock?.dynamicsOverride != null ? ("block" as const) : ("project" as const),
+        }
+  const inheritedDynamics =
+    project && liveSection
+      ? resolveStyle(project, liveSection, null, "dynamics")
+      : {
+          value: fallbackProjectDynamics,
+          source: "project" as const,
+        }
+  const isDynamicsInherited = liveSection
+    ? isInherited(liveSection, liveBlock ?? null, "dynamics", "block")
+    : liveBlock?.dynamicsOverride == null
+  const inheritedDynamicsSourceLabel =
+    inheritedDynamics.source === "section" ? "Section" : "Project"
 
   /* Confirm dialog for delete block */
   const [confirmDeleteOpen, setConfirmDeleteOpen] = useState(false)
@@ -125,6 +145,16 @@ export function BlockContext({
   function resetEnergyOverride() {
     if (!liveBlock || liveBlock.energyOverride == null) return
     updateBlock(liveBlock.id, { energyOverride: null })
+  }
+
+  function updateDynamicsOverride(value: number) {
+    if (!liveBlock) return
+    updateBlock(liveBlock.id, { dynamicsOverride: value })
+  }
+
+  function resetDynamicsOverride() {
+    if (!liveBlock || liveBlock.dynamicsOverride == null) return
+    updateBlock(liveBlock.id, { dynamicsOverride: null })
   }
 
   return (
@@ -193,7 +223,7 @@ export function BlockContext({
             </SelectContent>
           </Select>
           <p className="mt-2 text-xs text-muted-foreground">
-            Pattern and energy override are the saved block settings here today.
+            Pattern, energy, and dynamics are the saved block settings here today.
           </p>
         </div>
 
@@ -264,10 +294,73 @@ export function BlockContext({
           <div className="flex items-start justify-between gap-3">
             <div className="flex flex-col gap-1">
               <h3 className="text-[10px] font-medium uppercase tracking-widest text-zinc-500">
+                Block Dynamics Override
+              </h3>
+              <p className="text-xs text-muted-foreground">
+                {isDynamicsInherited
+                  ? `This block is inheriting the ${inheritedDynamics.source === "section" ? "section" : "project"} dynamics default.`
+                  : "This block is carrying its own saved dynamics override."}
+              </p>
+            </div>
+            <span className="rounded border border-border/70 px-2 py-0.5 text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
+              {isDynamicsInherited ? inheritedDynamicsSourceLabel : "Block"}
+            </span>
+          </div>
+
+          <div className="mt-3 flex items-center justify-between gap-3">
+            <label
+              htmlFor="block-slider-Dynamics"
+              className="text-[11px] font-medium text-muted-foreground"
+            >
+              Dynamics
+            </label>
+            <span className="min-w-[4rem] shrink-0 text-right text-[11px] font-semibold text-foreground">
+              {getStyleDisplayValue("dynamics", effectiveDynamics.value)} ({effectiveDynamics.value})
+            </span>
+          </div>
+
+          <div className="group relative mt-2 h-1.5 w-full rounded-full bg-secondary">
+            <div
+              className="absolute inset-y-0 left-0 rounded-full bg-ring"
+              style={{ width: `${effectiveDynamics.value}%` }}
+            />
+            <input
+              type="range"
+              id="block-slider-Dynamics"
+              aria-label="Block dynamics override"
+              min={0}
+              max={100}
+              value={effectiveDynamics.value}
+              onChange={(e) => updateDynamicsOverride(Number(e.target.value))}
+              className="absolute inset-0 h-full w-full cursor-pointer opacity-0"
+            />
+          </div>
+
+          <div className="mt-3 flex items-center justify-between gap-3">
+            <p className="text-xs text-muted-foreground">
+              {inheritedDynamicsSourceLabel} default:{" "}
+              {getStyleDisplayValue("dynamics", inheritedDynamics.value)} ({inheritedDynamics.value})
+            </p>
+            <button
+              type="button"
+              id="block-reset-Dynamics"
+              onClick={resetDynamicsOverride}
+              disabled={isDynamicsInherited}
+              className="rounded border border-border/70 px-2 py-1 text-[11px] font-medium text-muted-foreground transition-colors hover:border-ring/50 hover:text-foreground disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              Clear override
+            </button>
+          </div>
+        </div>
+
+        <div className="mt-4 rounded-lg border border-border/70 bg-secondary/30 p-3">
+          <div className="flex items-start justify-between gap-3">
+            <div className="flex flex-col gap-1">
+              <h3 className="text-[10px] font-medium uppercase tracking-widest text-zinc-500">
                 Unavailable In This Build
               </h3>
               <p className="text-xs text-muted-foreground">
-                Volume, pan, dynamics, and custom chord overrides are not editable per block here yet.
+                Volume, pan, and custom chord overrides are not editable per block here yet.
               </p>
             </div>
             <span className="rounded border border-border/70 px-2 py-0.5 text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
@@ -275,7 +368,7 @@ export function BlockContext({
             </span>
           </div>
           <p className="mt-3 text-sm text-foreground">
-            This inspector now edits saved pattern and energy truth. Other block-specific controls still inherit from the mixer, section style cascade, or chord chart defaults.
+            This inspector now edits saved pattern, energy, and dynamics truth. Other block-specific controls still inherit from the mixer, section style cascade, or chord chart defaults.
           </p>
         </div>
 
