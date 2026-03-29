@@ -4,13 +4,24 @@ import { useProjectStore } from "@/store/project-store"
 import { useSelectionStore } from "@/store/selection-store"
 import { ConfirmDialog } from "@/components/shared/ConfirmDialog"
 
-function getStyleDisplayValue(field: "energy" | "dynamics", value: number): string {
+function getStyleDisplayValue(
+  field: "energy" | "groove" | "dynamics",
+  value: number
+): string {
   if (field === "dynamics") {
     if (value <= 20) return "pp"
     if (value <= 40) return "p"
     if (value <= 60) return "mp"
     if (value <= 80) return "f"
     return "ff"
+  }
+
+  if (field === "groove") {
+    if (value <= 20) return "Simple"
+    if (value <= 40) return "Basic"
+    if (value <= 60) return "Standard"
+    if (value <= 80) return "Busy"
+    return "Complex"
   }
 
   if (value <= 20) return "Low"
@@ -42,14 +53,16 @@ export function SectionContext({
   const currentName = liveSection?.name ?? sectionName
   const currentBars = liveSection?.barCount ?? sectionBars
   const projectEnergy = project?.energy ?? 50
+  const projectGroove = project?.groove ?? 50
   const projectDynamics = project?.dynamics ?? 50
   const effectiveEnergy = liveSection?.energyOverride ?? projectEnergy
+  const effectiveGroove = liveSection?.grooveOverride ?? projectGroove
   const effectiveDynamics = liveSection?.dynamicsOverride ?? projectDynamics
   const isEnergyInherited = liveSection?.energyOverride == null
+  const isGrooveInherited = liveSection?.grooveOverride == null
   const isDynamicsInherited = liveSection?.dynamicsOverride == null
   const hasHiddenStyleOverrides = liveSection
     ? [
-        liveSection.grooveOverride,
         liveSection.feelOverride,
         liveSection.swingPctOverride,
       ].some((value) => value !== null)
@@ -85,6 +98,16 @@ export function SectionContext({
   function resetEnergyOverride() {
     if (!liveSection || liveSection.energyOverride == null) return
     updateSection(liveSection.id, { energyOverride: null })
+  }
+
+  function updateGrooveOverride(value: number) {
+    if (!liveSection) return
+    updateSection(liveSection.id, { grooveOverride: value })
+  }
+
+  function resetGrooveOverride() {
+    if (!liveSection || liveSection.grooveOverride == null) return
+    updateSection(liveSection.id, { grooveOverride: null })
   }
 
   function updateDynamicsOverride(value: number) {
@@ -256,6 +279,82 @@ export function SectionContext({
           <div className="flex items-start justify-between gap-3">
             <div className="flex flex-col gap-1">
               <h3 className="text-[10px] font-medium uppercase tracking-widest text-zinc-500">
+                Section Groove Override
+              </h3>
+              <p className="text-xs text-muted-foreground">
+                {isGrooveInherited
+                  ? "This section is inheriting the project groove default."
+                  : "This section is carrying its own saved groove override."}
+              </p>
+            </div>
+            <span className="rounded border border-border/70 px-2 py-0.5 text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
+              {isGrooveInherited ? "Project" : "Section"}
+            </span>
+          </div>
+
+          <div className="mt-3 flex items-center justify-between gap-3">
+            <label
+              htmlFor="section-slider-Groove"
+              className="text-[11px] font-medium text-muted-foreground"
+            >
+              Groove
+            </label>
+            <span className="min-w-[4rem] shrink-0 text-right text-[11px] font-semibold text-foreground">
+              {getStyleDisplayValue("groove", effectiveGroove)} ({effectiveGroove})
+            </span>
+          </div>
+
+          <div className="group relative mt-2 h-1.5 w-full rounded-full bg-secondary">
+            <div
+              className="absolute inset-y-0 left-0 rounded-full bg-ring"
+              style={{ width: `${effectiveGroove}%` }}
+            />
+            <input
+              type="range"
+              id="section-slider-Groove"
+              aria-label="Section groove override"
+              min={0}
+              max={100}
+              value={effectiveGroove}
+              disabled={!liveSection}
+              onChange={(e) => updateGrooveOverride(Number(e.target.value))}
+              className={cn(
+                "absolute inset-0 h-full w-full cursor-pointer appearance-none bg-transparent",
+                "disabled:cursor-not-allowed disabled:opacity-40",
+                "[&::-webkit-slider-thumb]:h-3 [&::-webkit-slider-thumb]:w-3",
+                "[&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:rounded-full",
+                "[&::-webkit-slider-thumb]:border [&::-webkit-slider-thumb]:border-ring",
+                "[&::-webkit-slider-thumb]:bg-foreground [&::-webkit-slider-thumb]:shadow-sm",
+                "[&::-webkit-slider-thumb]:opacity-0 [&::-webkit-slider-thumb]:transition-opacity",
+                "group-hover:[&::-webkit-slider-thumb]:opacity-100",
+                "[&::-moz-range-thumb]:h-3 [&::-moz-range-thumb]:w-3",
+                "[&::-moz-range-thumb]:appearance-none [&::-moz-range-thumb]:rounded-full",
+                "[&::-moz-range-thumb]:border [&::-moz-range-thumb]:border-ring",
+                "[&::-moz-range-thumb]:bg-foreground [&::-moz-range-thumb]:shadow-sm"
+              )}
+            />
+          </div>
+
+          <div className="mt-3 flex items-center justify-between gap-3">
+            <p className="text-xs text-muted-foreground">
+              Project default: {getStyleDisplayValue("groove", projectGroove)} ({projectGroove})
+            </p>
+            <button
+              type="button"
+              id="section-reset-Groove"
+              onClick={resetGrooveOverride}
+              disabled={!liveSection || isGrooveInherited}
+              className="rounded border border-border/70 px-2 py-1 text-[10px] font-medium uppercase tracking-wider text-foreground transition-colors hover:bg-secondary disabled:cursor-not-allowed disabled:text-muted-foreground"
+            >
+              Use project default
+            </button>
+          </div>
+        </div>
+
+        <div className="mt-3 rounded-lg border border-border/70 bg-secondary/30 p-3">
+          <div className="flex items-start justify-between gap-3">
+            <div className="flex flex-col gap-1">
+              <h3 className="text-[10px] font-medium uppercase tracking-widest text-zinc-500">
                 Section Dynamics Override
               </h3>
               <p className="text-xs text-muted-foreground">
@@ -333,7 +432,7 @@ export function SectionContext({
             More Overrides Unavailable
           </h3>
           <p className="mt-2 text-sm text-foreground">
-            Groove, feel, and swing are not editable per section here yet.
+            Feel and swing are not editable per section here yet.
           </p>
           {hasHiddenStyleOverrides && (
             <p className="mt-2 text-xs text-muted-foreground">
