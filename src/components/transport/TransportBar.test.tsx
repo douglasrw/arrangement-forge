@@ -196,6 +196,11 @@ describe('TransportBar transport controls', () => {
   });
 
   it('forwards loop and metronome toggles into the audio hook', () => {
+    useAudioState.transportState = {
+      ...useAudioState.transportState,
+      totalSeconds: 64,
+    };
+
     const mounted = renderTransportBar();
     mountedRoot = mounted.root;
     mountedContainer = mounted.container;
@@ -243,5 +248,70 @@ describe('TransportBar transport controls', () => {
     });
 
     expect(seekToSecondsMock).toHaveBeenCalledWith(32.5);
+  });
+
+  it('disables timeline-dependent controls and surfaces empty timeline truth when no arrangement timeline exists', () => {
+    useAudioState.transportState = {
+      ...useAudioState.transportState,
+      playbackState: 'playing',
+      currentBar: 4,
+      currentBeat: 3,
+      elapsedSeconds: 18,
+      totalSeconds: 0,
+    };
+    useAudioState.audioConfig = {
+      ...useAudioState.audioConfig,
+      loopEnabled: true,
+      metronomeEnabled: true,
+    };
+
+    useProjectStore.setState({
+      project: makeProject({
+        hasArrangement: false,
+        generatedAt: null,
+        generatedTempo: null,
+      }),
+      sections: [],
+    });
+
+    const mounted = renderTransportBar();
+    mountedRoot = mounted.root;
+    mountedContainer = mounted.container;
+
+    const skipStartButton = mounted.container.querySelector(
+      'button[aria-label="Skip to start"]'
+    ) as HTMLButtonElement | null;
+    const stopButton = mounted.container.querySelector(
+      'button[aria-label="Stop"]'
+    ) as HTMLButtonElement | null;
+    const playButton = mounted.container.querySelector(
+      'button[aria-label="Play"]'
+    ) as HTMLButtonElement | null;
+    const skipEndButton = mounted.container.querySelector(
+      'button[aria-label="Skip to end"]'
+    ) as HTMLButtonElement | null;
+    const loopButton = mounted.container.querySelector(
+      'button[aria-label="Toggle loop"]'
+    ) as HTMLButtonElement | null;
+    const metronomeButton = mounted.container.querySelector(
+      'button[aria-label="Toggle metronome"]'
+    ) as HTMLButtonElement | null;
+    const scrubber = mounted.container.querySelector(
+      'input[aria-label="Transport scrubber"]'
+    ) as HTMLInputElement | null;
+
+    expect(skipStartButton?.disabled).toBe(true);
+    expect(stopButton?.disabled).toBe(false);
+    expect(playButton?.disabled).toBe(true);
+    expect(skipEndButton?.disabled).toBe(true);
+    expect(loopButton?.disabled).toBe(true);
+    expect(metronomeButton?.disabled).toBe(true);
+    expect(loopButton?.getAttribute('aria-pressed')).toBe('false');
+    expect(metronomeButton?.getAttribute('aria-pressed')).toBe('false');
+    expect(scrubber?.disabled).toBe(true);
+    expect(scrubber?.max).toBe('0');
+    expect(scrubber?.value).toBe('0');
+    expect(mounted.container.textContent).toContain('No timeline');
+    expect(mounted.container.textContent).not.toContain('Bar 4');
   });
 });

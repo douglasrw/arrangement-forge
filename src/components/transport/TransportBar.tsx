@@ -68,6 +68,14 @@ export function TransportBar() {
   const timeSig = project?.timeSignature ?? "4/4"
   const loopActive = audioConfig.loopEnabled
   const metronomeActive = audioConfig.metronomeEnabled
+  const totalBars = sections.reduce((sum, section) => sum + section.barCount, 0)
+  const hasTimeline = Boolean(project?.hasArrangement) && totalBars > 0 && totalSeconds > 0
+  const playbackActive = hasTimeline && isPlaying
+  const loopPressed = hasTimeline && loopActive
+  const metronomePressed = hasTimeline && metronomeActive
+  const transportUnavailableTitle = hasTimeline
+    ? undefined
+    : "No arrangement timeline available yet"
 
   /* BPM inline editing — local draft only */
   const [editingBpm, setEditingBpm] = useState(false)
@@ -99,8 +107,9 @@ export function TransportBar() {
     setEditingBpm(false)
     updateProject({ tempo: val })
   }
-  const timeStr = `${formatClock(elapsedSeconds)} / ${formatClock(totalSeconds)}`
-  const totalBars = sections.reduce((sum, section) => sum + section.barCount, 0)
+  const timeStr = hasTimeline
+    ? `${formatClock(elapsedSeconds)} / ${formatClock(totalSeconds)}`
+    : "No timeline"
 
   return (
     <footer className="flex h-16 w-full shrink-0 items-center gap-4 border-t border-border bg-secondary px-4">
@@ -110,7 +119,9 @@ export function TransportBar() {
         <button
           type="button"
           onClick={() => seek(1)}
-          className="flex size-9 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:text-foreground"
+          disabled={!hasTimeline}
+          title={transportUnavailableTitle}
+          className="flex size-9 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:text-foreground disabled:cursor-not-allowed disabled:text-zinc-700 disabled:hover:text-zinc-700"
           aria-label="Skip to start"
         >
           <SkipBack className="size-4" />
@@ -130,15 +141,19 @@ export function TransportBar() {
         <button
           type="button"
           onClick={handlePlayPause}
+          disabled={!hasTimeline}
+          title={transportUnavailableTitle}
           className={cn(
             "flex size-8 items-center justify-center rounded-full transition-all",
-            isPlaying
+            !hasTimeline
+              ? "bg-zinc-800 text-zinc-600 shadow-none"
+              : playbackActive
               ? "bg-primary text-primary-foreground shadow-[0_0_12px_rgba(6,182,212,0.4)]"
               : "bg-primary text-primary-foreground hover:bg-primary/90"
           )}
-          aria-label={isPlaying ? "Pause" : "Play"}
+          aria-label={playbackActive ? "Pause" : "Play"}
         >
-          {isPlaying ? (
+          {playbackActive ? (
             <Pause className="size-4.5 fill-current" />
           ) : (
             <Play className="size-4.5 fill-current" />
@@ -151,7 +166,9 @@ export function TransportBar() {
           onClick={() => {
             seek(Math.max(totalBars, 1))
           }}
-          className="flex size-9 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:text-foreground"
+          disabled={!hasTimeline}
+          title={transportUnavailableTitle}
+          className="flex size-9 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:text-foreground disabled:cursor-not-allowed disabled:text-zinc-700 disabled:hover:text-zinc-700"
           aria-label="Skip to end"
         >
           <SkipForward className="size-4" />
@@ -161,13 +178,20 @@ export function TransportBar() {
       {/* ---- CENTER: Transport clock + scrubber ---- */}
       <div className="flex h-12 min-w-0 flex-1 items-center gap-3 rounded-xl border border-border bg-background px-4 py-2">
         <div className="flex shrink-0 items-center gap-2 rounded-lg bg-secondary px-3 py-1 font-mono text-xs">
-          <span className="font-semibold text-zinc-200">{`Bar ${bar}`}</span>
-          <span className="text-zinc-600">|</span>
-          <span className="text-zinc-500">{`Beat ${beat}`}</span>
+          {hasTimeline ? (
+            <>
+              <span className="font-semibold text-zinc-200">{`Bar ${bar}`}</span>
+              <span className="text-zinc-600">|</span>
+              <span className="text-zinc-500">{`Beat ${beat}`}</span>
+            </>
+          ) : (
+            <span className="font-semibold text-zinc-500">No timeline</span>
+          )}
         </div>
         <Scrubber
-          value={elapsedSeconds}
+          value={hasTimeline ? elapsedSeconds : 0}
           max={Math.max(totalSeconds, 0)}
+          disabled={!hasTimeline}
           onChange={seekToSeconds}
         />
         <span className="min-w-[88px] text-right font-mono text-xs text-zinc-500">
@@ -222,30 +246,38 @@ export function TransportBar() {
         <span className="text-sm text-zinc-500">{timeSig}</span>
         <button
           type="button"
+          disabled={!hasTimeline}
+          title={transportUnavailableTitle}
           onClick={() => setLoopEnabled(!loopActive)}
           className={cn(
             "flex size-7 items-center justify-center rounded-md transition-colors",
-            loopActive
+            !hasTimeline
+              ? "cursor-not-allowed text-zinc-700"
+              : loopPressed
               ? "bg-instrument-strings/15 text-playhead-light"
               : "text-zinc-500 hover:text-muted-foreground"
           )}
           aria-label="Toggle loop"
-          aria-pressed={loopActive}
+          aria-pressed={loopPressed}
         >
           <Repeat className="size-3.5" />
         </button>
 
         <button
           type="button"
+          disabled={!hasTimeline}
+          title={transportUnavailableTitle}
           onClick={() => setMetronomeEnabled(!metronomeActive)}
           className={cn(
             "flex size-7 items-center justify-center rounded-md transition-colors",
-            metronomeActive
+            !hasTimeline
+              ? "cursor-not-allowed text-zinc-700"
+              : metronomePressed
               ? "bg-instrument-strings/15 text-playhead-light"
               : "text-zinc-500 hover:text-muted-foreground"
           )}
           aria-label="Toggle metronome"
-          aria-pressed={metronomeActive}
+          aria-pressed={metronomePressed}
         >
           <MetronomeIcon className="size-3.5" />
         </button>
