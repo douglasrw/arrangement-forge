@@ -57,6 +57,21 @@ function clickButton(button: HTMLButtonElement | null) {
   button?.dispatchEvent(new MouseEvent('click', { bubbles: true }));
 }
 
+function createDeferred<T>() {
+  let resolve: ((value: T | PromiseLike<T>) => void) | undefined;
+  let reject: ((reason?: unknown) => void) | undefined;
+  const promise = new Promise<T>((resolvePromise, rejectPromise) => {
+    resolve = resolvePromise;
+    reject = rejectPromise;
+  });
+
+  return {
+    promise,
+    resolve,
+    reject,
+  };
+}
+
 function fillCredentials(container: HTMLElement, email: string, password: string) {
   const emailInput = container.querySelector('#login-email') as HTMLInputElement | null;
   const passwordInput = container.querySelector('#login-password') as HTMLInputElement | null;
@@ -185,6 +200,32 @@ describe('LoginPage failure truth', () => {
     expect(submitButton?.disabled).toBe(false);
   });
 
+  it('shows explicit sign-in submission truth while email auth is in progress', async () => {
+    const signInRequest = createDeferred<void>();
+    authApi.signIn.mockImplementation(() => signInRequest.promise);
+
+    const mounted = renderLoginPage();
+    mountedRoot = mounted.root;
+    mountedContainer = mounted.container;
+
+    fillCredentials(mounted.container, 'ash@example.com', 'secret-1');
+
+    await act(async () => {
+      submitLoginForm(mounted.container);
+      await Promise.resolve();
+    });
+
+    expect(authApi.signIn).toHaveBeenCalledWith('ash@example.com', 'secret-1');
+    expect((mounted.container.querySelector('button[type="submit"]') as HTMLButtonElement | null)?.textContent).toBe('Signing in...');
+    expect((mounted.container.querySelector('button[type="submit"]') as HTMLButtonElement | null)?.disabled).toBe(true);
+    expect(findButtonByText(mounted.container, 'Continue with Google')?.disabled).toBe(true);
+
+    await act(async () => {
+      signInRequest.resolve?.(undefined);
+      await Promise.resolve();
+    });
+  });
+
   it('surfaces sign-up failures and clears the stale error when the mode changes', async () => {
     authApi.signUp.mockRejectedValueOnce(new Error('Email already registered'));
 
@@ -213,14 +254,39 @@ describe('LoginPage failure truth', () => {
     expect(mounted.container.textContent).not.toContain('Email already registered');
   });
 
+  it('shows explicit sign-up submission truth while account creation is in progress', async () => {
+    const signUpRequest = createDeferred<void>();
+    authApi.signUp.mockImplementation(() => signUpRequest.promise);
+
+    const mounted = renderLoginPage();
+    mountedRoot = mounted.root;
+    mountedContainer = mounted.container;
+
+    act(() => {
+      clickButton(findButtonByText(mounted.container, 'Sign Up'));
+    });
+
+    fillCredentials(mounted.container, 'ash@example.com', 'secret-1');
+
+    await act(async () => {
+      submitLoginForm(mounted.container);
+      await Promise.resolve();
+    });
+
+    expect(authApi.signUp).toHaveBeenCalledWith('ash@example.com', 'secret-1');
+    expect((mounted.container.querySelector('button[type="submit"]') as HTMLButtonElement | null)?.textContent).toBe('Creating account...');
+    expect((mounted.container.querySelector('button[type="submit"]') as HTMLButtonElement | null)?.disabled).toBe(true);
+    expect(findButtonByText(mounted.container, 'Continue with Google')?.disabled).toBe(true);
+
+    await act(async () => {
+      signUpRequest.resolve?.(undefined);
+      await Promise.resolve();
+    });
+  });
+
   it('clears loading state honestly when Google auth fails', async () => {
-    let rejectGoogle: ((error: Error) => void) | undefined;
-    authApi.signInWithGoogle.mockImplementation(
-      () =>
-        new Promise<void>((_, reject) => {
-          rejectGoogle = reject;
-        })
-    );
+    const googleRequest = createDeferred<void>();
+    authApi.signInWithGoogle.mockImplementation(() => googleRequest.promise);
 
     const mounted = renderLoginPage();
     mountedRoot = mounted.root;
@@ -234,11 +300,11 @@ describe('LoginPage failure truth', () => {
     });
 
     expect(authApi.signInWithGoogle).toHaveBeenCalledTimes(1);
-    expect(findButtonByText(mounted.container, 'Continue with Google')?.disabled).toBe(true);
+    expect((findButtonByText(mounted.container, 'Connecting to Google...') as HTMLButtonElement | null)?.disabled).toBe(true);
     expect((mounted.container.querySelector('button[type="submit"]') as HTMLButtonElement | null)?.disabled).toBe(true);
 
     await act(async () => {
-      rejectGoogle?.(new Error('Google popup blocked'));
+      googleRequest.reject?.(new Error('Google popup blocked'));
       await Promise.resolve();
     });
 
