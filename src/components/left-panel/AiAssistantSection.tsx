@@ -2,6 +2,7 @@ import { ArrowUp } from "lucide-react"
 import { useEffect, useRef, useState } from "react"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { useGenerate } from "@/hooks/useGenerate"
+import { getGenerationFailureDetail, isGenerationFailureContent } from "@/lib/assistant-chat"
 import { useProjectStore } from "@/store/project-store"
 import { useUiStore } from "@/store/ui-store"
 import { cn } from "@/lib/utils"
@@ -24,6 +25,10 @@ const SCOPE_LABELS: Record<AiChatMessage["scope"], string> = {
 function getScopeLabel(message: AiChatMessage) {
   const label = SCOPE_LABELS[message.scope]
   return message.scopeTarget ? `${label}: ${message.scopeTarget}` : label
+}
+
+function isFailureMessage(message: AiChatMessage) {
+  return message.role === "assistant" && isGenerationFailureContent(message.content)
 }
 
 type ComposerStatus = {
@@ -93,34 +98,50 @@ export function AiAssistantSection() {
               {emptyStateCopy}
             </div>
           ) : (
-            chatMessages.map((message) => (
-              <div
-                key={message.id}
-                className={cn(
-                  "flex flex-col gap-1",
-                  message.role === "user" ? "items-end" : "items-start"
-                )}
-              >
-                <span
-                  className={cn(
-                    "inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-medium uppercase tracking-wider",
-                    SCOPE_STYLES[message.scope]
-                  )}
-                >
-                  {getScopeLabel(message)}
-                </span>
+            chatMessages.map((message) => {
+              const failureMessage = isFailureMessage(message)
+
+              return (
                 <div
+                  key={message.id}
                   className={cn(
-                    "max-w-[90%] rounded-lg border px-3 py-2 text-xs leading-relaxed",
-                    message.role === "user"
-                      ? "border-ring/20 bg-ring/15 text-foreground"
-                      : "border-border bg-card text-card-foreground"
+                    "flex flex-col gap-1",
+                    message.role === "user" ? "items-end" : "items-start"
                   )}
                 >
-                  {message.content}
+                  <span
+                    className={cn(
+                      "inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-medium uppercase tracking-wider",
+                      SCOPE_STYLES[message.scope]
+                    )}
+                  >
+                    {getScopeLabel(message)}
+                  </span>
+                  <div
+                    data-testid={failureMessage ? "ai-assistant-failure-bubble" : undefined}
+                    className={cn(
+                      "max-w-[90%] rounded-lg border px-3 py-2 text-xs leading-relaxed",
+                      message.role === "user"
+                        ? "border-ring/20 bg-ring/15 text-foreground"
+                        : failureMessage
+                          ? "border-warning/40 bg-warning/10 text-foreground"
+                          : "border-border bg-card text-card-foreground"
+                    )}
+                  >
+                    {failureMessage ? (
+                      <>
+                        <div className="mb-1 text-[10px] font-semibold uppercase tracking-wider text-warning">
+                          Generation failed
+                        </div>
+                        <div>{getGenerationFailureDetail(message.content)}</div>
+                      </>
+                    ) : (
+                      message.content
+                    )}
+                  </div>
                 </div>
-              </div>
-            ))
+              )
+            })
           )}
           <div ref={bottomRef} />
         </div>

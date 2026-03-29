@@ -9,6 +9,7 @@ import { useProject } from '@/hooks/useProject';
 import { generate, generateMidiForBlock } from '@/lib/midi-generator';
 import { parseChordChart } from '@/lib/chord-chart-parser';
 import { getEffectiveSwingPct } from '@/lib/genre-config';
+import { formatGenerationFailureMessage } from '@/lib/assistant-chat';
 import { snapshotArrangement } from '@/lib/undo-helpers';
 import type {
   AiChatMessage,
@@ -247,7 +248,7 @@ export function useGenerate() {
         createChatMessage(
           project.id,
           'assistant',
-          err instanceof Error ? `Generation failed: ${err.message}` : 'Generation failed.',
+          formatGenerationFailureMessage(err),
           generationScope
         )
       );
