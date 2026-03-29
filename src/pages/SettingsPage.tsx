@@ -30,6 +30,24 @@ const EMPTY_TOUCHED_FIELDS: Record<SettingsField, boolean> = {
   defaultGenre: false,
 };
 
+const UNAVAILABLE_SETTINGS = [
+  {
+    title: 'Audio Output Device',
+    summary: 'Playback follows your browser or system default output device.',
+    detail: 'Device selection is not available in Settings yet.',
+  },
+  {
+    title: 'Auto-Save Interval',
+    summary: 'Projects auto-save after 30 seconds of unsaved changes.',
+    detail: 'The auto-save timing is fixed in this build.',
+  },
+  {
+    title: 'Theme',
+    summary: 'Arrangement Forge uses one built-in theme.',
+    detail: 'Theme switching is not available in this build.',
+  },
+] as const;
+
 export function createSettingsDraft(profile: Profile | null): SettingsDraft {
   return {
     profileId: profile?.id ?? null,
@@ -126,9 +144,6 @@ export default function SettingsPage() {
 
   const selectClasses =
     'w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-ring';
-
-  const disabledSelectClasses =
-    'w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground opacity-50 cursor-not-allowed';
 
   const settingsCardClasses = 'rounded-lg border border-border bg-card p-6 py-6 ring-0 gap-6';
 
@@ -275,42 +290,34 @@ export default function SettingsPage() {
             </CardContent>
           </Card>
 
-          {/* Coming Soon card */}
-          <Card className={`${settingsCardClasses} opacity-60`}>
+          {/* Unsupported settings card */}
+          <Card className={settingsCardClasses}>
             <CardHeader className={settingsCardHeaderClasses}>
-              <h2 className={sectionHeadingClasses}>Coming Soon</h2>
+              <div className="flex flex-col gap-1.5">
+                <h2 className={sectionHeadingClasses}>Unavailable in this build</h2>
+                <p className="text-sm text-muted-foreground">
+                  These settings are fixed today, so this page shows the current behavior instead
+                  of fake controls.
+                </p>
+              </div>
             </CardHeader>
             <CardContent className={settingsCardContentClasses}>
-              <div className="flex items-center gap-3 mb-4">
-                <Separator className="flex-1" />
-                <Badge variant="outline">Coming Soon</Badge>
-                <Separator className="flex-1" />
-              </div>
               <div className="flex flex-col gap-4">
-                <div className="flex flex-col gap-1.5">
-                  <Label htmlFor="settings-audio-output">
-                    Audio Output Device
-                  </Label>
-                  <select id="settings-audio-output" className={disabledSelectClasses} disabled>
-                    <option>System Default</option>
-                  </select>
-                </div>
-                <div className="flex flex-col gap-1.5">
-                  <Label htmlFor="settings-autosave">
-                    Auto-Save Interval
-                  </Label>
-                  <select id="settings-autosave" className={disabledSelectClasses} disabled>
-                    <option>Every 60 seconds</option>
-                  </select>
-                </div>
-                <div className="flex flex-col gap-1.5">
-                  <Label htmlFor="settings-theme">
-                    Theme
-                  </Label>
-                  <select id="settings-theme" className={disabledSelectClasses} disabled>
-                    <option>Forge Dark (default)</option>
-                  </select>
-                </div>
+                {UNAVAILABLE_SETTINGS.map((setting) => (
+                  <div
+                    key={setting.title}
+                    className="rounded-lg border border-border/70 bg-background/60 p-4"
+                  >
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="flex flex-col gap-1">
+                        <h3 className="text-sm font-medium text-foreground">{setting.title}</h3>
+                        <p className="text-xs text-muted-foreground">{setting.detail}</p>
+                      </div>
+                      <Badge variant="outline">Unavailable</Badge>
+                    </div>
+                    <p className="mt-3 text-sm text-foreground">{setting.summary}</p>
+                  </div>
+                ))}
               </div>
             </CardContent>
           </Card>
