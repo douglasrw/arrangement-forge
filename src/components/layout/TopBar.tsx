@@ -19,13 +19,30 @@ export function normalizeProjectNameDraft(newName: string): string {
   return newName.trim() || "Untitled Project"
 }
 
+function getProjectDisplayName(project: Project): string {
+  return project.name.trim() || "Untitled Project"
+}
+
+function slugifyExportFilenameSegment(value: string): string {
+  return value
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "")
+}
+
+export function hasProjectExportTruth(project: Project | null): project is Project {
+  return Boolean(
+    project && (project.chordChartRaw.trim() || project.generationHints.trim())
+  )
+}
+
 export function formatProjectChordChartExport(project: Project): string {
   const chordChart = project.chordChartRaw.trim()
     ? project.chordChartRaw
     : "(empty)"
   const sections = [
     "Arrangement Forge Export",
-    `Project: ${project.name}`,
+    `Project: ${getProjectDisplayName(project)}`,
     `Chord Chart\n${chordChart}`,
   ]
   const generationHints = project.generationHints.trim()
@@ -37,8 +54,12 @@ export function formatProjectChordChartExport(project: Project): string {
   return sections.join("\n\n")
 }
 
-function getProjectExportFilename(project: Project): string {
-  return `${project.name.trim() || "Untitled Project"}.txt`
+export function getProjectExportFilename(project: Project): string {
+  const baseName = slugifyExportFilenameSegment(getProjectDisplayName(project))
+  const fallbackId = slugifyExportFilenameSegment(project.id)
+  const stableBaseName = baseName || fallbackId || "untitled-project"
+
+  return `${stableBaseName}-chord-chart.txt`
 }
 
 /* ------------------------------------------------------------------ */
@@ -215,6 +236,7 @@ export function TopBar() {
   const [isEditing, setIsEditing] = useState(false)
   const [nameDraft, setNameDraft] = useState(projectName)
   const [menuOpen, setMenuOpen] = useState(false)
+  const [exportFeedback, setExportFeedback] = useState<string | null>(null)
   const inputRef = useRef<HTMLInputElement>(null)
   const menuRef = useRef<HTMLDivElement>(null)
 
@@ -242,11 +264,26 @@ export function TopBar() {
     return () => document.removeEventListener("mousedown", handleClick)
   }, [menuOpen])
 
+  useEffect(() => {
+    if (!exportFeedback) return
+
+    const timeoutId = window.setTimeout(() => {
+      setExportFeedback(null)
+    }, 4000)
+
+    return () => window.clearTimeout(timeoutId)
+  }, [exportFeedback])
+
+  useEffect(() => {
+    setExportFeedback(null)
+  }, [project?.id, project?.name, project?.chordChartRaw, project?.generationHints])
+
   function handleExport() {
-    if (!project) {
+    if (!hasProjectExportTruth(project)) {
       return
     }
 
+    const fileName = getProjectExportFilename(project)
     const exportBlob = new Blob([formatProjectChordChartExport(project)], {
       type: "text/plain;charset=utf-8",
     })
@@ -254,14 +291,21 @@ export function TopBar() {
     const downloadLink = document.createElement("a")
 
     downloadLink.href = exportUrl
-    downloadLink.download = getProjectExportFilename(project)
+    downloadLink.download = fileName
     document.body.appendChild(downloadLink)
     downloadLink.click()
     downloadLink.remove()
     URL.revokeObjectURL(exportUrl)
+    setExportFeedback(`Exported ${fileName}`)
   }
 
-  const canExport = project !== null
+  const canExport = hasProjectExportTruth(project)
+  const exportTitle = exportFeedback ??
+    (project === null
+      ? "Open a project to export"
+      : canExport
+        ? "Download chord chart as text"
+        : "Add a chord chart or Description to export")
 
   function commitName(newName: string) {
     setIsEditing(false)
@@ -364,7 +408,8 @@ export function TopBar() {
           data-testid="topbar-export-button"
           disabled={!canExport}
           onClick={handleExport}
-          title={canExport ? "Download chord chart as text" : "Open a project to export"}
+          title={exportTitle}
+          aria-label={exportTitle}
           className={cn(
             "rounded-lg border border-border bg-secondary px-3 py-1.5 text-xs font-medium transition-colors",
             canExport
@@ -372,7 +417,7 @@ export function TopBar() {
               : "cursor-not-allowed text-muted-foreground opacity-40"
           )}
         >
-          Export
+          {exportFeedback ? "Exported" : "Export"}
         </button>
 
         {/* Gear icon */}

@@ -9,6 +9,8 @@ import { useUiStore } from '@/store/ui-store';
 import {
   TopBar,
   formatProjectChordChartExport,
+  getProjectExportFilename,
+  hasProjectExportTruth,
   normalizeProjectNameDraft,
   reconcileProjectNameDraft,
 } from './TopBar';
@@ -162,10 +164,10 @@ describe('TopBar project-name draft reconciliation', () => {
 });
 
 describe('TopBar export baseline', () => {
-  it('downloads the current project as a plain-text chord chart with labeled hints', async () => {
+  it('downloads the current project as a plain-text chord chart with a stable filename and visible outcome truth', async () => {
     useProjectStore.setState({
       project: makeProject({
-        name: 'Midnight Changes',
+        name: 'Midnight Changes / Demo',
         chordChartRaw: '[Verse]\nCmaj7 | Dm7 | G7 | Cmaj7',
         generationHints: 'Keep the voicings airy',
       }),
@@ -190,23 +192,28 @@ describe('TopBar export baseline', () => {
     expect(createObjectUrlMock).toHaveBeenCalledTimes(1);
     expect(downloadRequest).toEqual({
       href: 'blob:export-url',
-      download: 'Midnight Changes.txt',
+      download: 'midnight-changes-demo-chord-chart.txt',
     });
     expect(anchorClickSpy).toHaveBeenCalledTimes(1);
     expect(revokeObjectUrlMock).toHaveBeenCalledWith('blob:export-url');
+    expect(exportButton?.textContent).toBe('Exported');
+    expect(exportButton?.title).toBe('Exported midnight-changes-demo-chord-chart.txt');
 
     const exportBlob = createObjectUrlMock.mock.calls[0]?.[0] as Blob;
     const exportText = await exportBlob.text();
 
     expect(exportText).toContain('Arrangement Forge Export');
-    expect(exportText).toContain('Project: Midnight Changes');
+    expect(exportText).toContain('Project: Midnight Changes / Demo');
     expect(exportText).toContain('Chord Chart\n[Verse]\nCmaj7 | Dm7 | G7 | Cmaj7');
     expect(exportText).toContain('Generation Hints\nKeep the voicings airy');
   });
 
-  it('keeps the export button disabled when no project is loaded', () => {
+  it('keeps export disabled until the project has chord chart or description truth', () => {
     useProjectStore.setState({
-      project: null,
+      project: makeProject({
+        chordChartRaw: '   ',
+        generationHints: '   ',
+      }),
     });
 
     const mounted = renderTopBar();
@@ -218,6 +225,7 @@ describe('TopBar export baseline', () => {
     ) as HTMLButtonElement | null;
 
     expect(exportButton?.disabled).toBe(true);
+    expect(exportButton?.title).toBe('Add a chord chart or Description to export');
   });
 });
 
@@ -232,5 +240,28 @@ describe('formatProjectChordChartExport', () => {
 
     expect(exportText).toContain('Chord Chart\nDm7 | G7 | Cmaj7 | Cmaj7');
     expect(exportText).not.toContain('Generation Hints');
+  });
+});
+
+describe('export helpers', () => {
+  it('treats generation hints alone as exportable project truth', () => {
+    expect(
+      hasProjectExportTruth(
+        makeProject({
+          chordChartRaw: '   ',
+          generationHints: 'Leave room for the melody',
+        })
+      )
+    ).toBe(true);
+  });
+
+  it('derives a stable chord chart filename from the current project state', () => {
+    expect(
+      getProjectExportFilename(
+        makeProject({
+          name: '  Night Train: Alt Take #2  ',
+        })
+      )
+    ).toBe('night-train-alt-take-2-chord-chart.txt');
   });
 });
