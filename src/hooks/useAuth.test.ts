@@ -72,11 +72,24 @@ beforeEach(() => {
   hookValue = null;
   profileRow = null;
 
+  supabaseMock.auth.getUser.mockReset();
+  supabaseMock.auth.getSession.mockReset();
+  supabaseMock.auth.onAuthStateChange.mockReset();
+  supabaseMock.auth.signInWithPassword.mockReset();
+  supabaseMock.auth.signUp.mockReset();
+  supabaseMock.auth.signInWithOAuth.mockReset();
+  supabaseMock.auth.signOut.mockReset();
+  supabaseMock.from.mockReset();
+
   supabaseMock.auth.getUser.mockResolvedValue({
     data: {
       user: { id: 'user-1' },
     },
   });
+  supabaseMock.auth.signInWithPassword.mockResolvedValue({ error: null });
+  supabaseMock.auth.signUp.mockResolvedValue({ error: null });
+  supabaseMock.auth.signInWithOAuth.mockResolvedValue({ error: null });
+  supabaseMock.auth.signOut.mockResolvedValue({ error: null });
   supabaseMock.from.mockImplementation((table: string) => {
     if (table === 'profiles') {
       return createProfileQuery(profileRow);
@@ -139,5 +152,51 @@ describe('useAuth loadProfile', () => {
       updatedAt: '2026-03-29T01:00:00Z',
     });
     expect(useUiStore.getState().chordDisplayMode).toBe('roman');
+  });
+});
+
+describe('useAuth auth action failures', () => {
+  it('preserves sign-in failures from Supabase', async () => {
+    const failure = new Error('Invalid email or password');
+    supabaseMock.auth.signInWithPassword.mockResolvedValue({ error: failure });
+
+    const mounted = renderHarness();
+    mountedRoot = mounted.root;
+    mountedContainer = mounted.container;
+
+    await expect(hookValue!.signIn('ash@example.com', 'secret-1')).rejects.toBe(failure);
+    expect(supabaseMock.auth.signInWithPassword).toHaveBeenCalledWith({
+      email: 'ash@example.com',
+      password: 'secret-1',
+    });
+  });
+
+  it('preserves sign-up failures from Supabase', async () => {
+    const failure = new Error('Email already registered');
+    supabaseMock.auth.signUp.mockResolvedValue({ error: failure });
+
+    const mounted = renderHarness();
+    mountedRoot = mounted.root;
+    mountedContainer = mounted.container;
+
+    await expect(hookValue!.signUp('ash@example.com', 'secret-1')).rejects.toBe(failure);
+    expect(supabaseMock.auth.signUp).toHaveBeenCalledWith({
+      email: 'ash@example.com',
+      password: 'secret-1',
+    });
+  });
+
+  it('preserves Google auth failures from Supabase', async () => {
+    const failure = new Error('Google popup blocked');
+    supabaseMock.auth.signInWithOAuth.mockResolvedValue({ error: failure });
+
+    const mounted = renderHarness();
+    mountedRoot = mounted.root;
+    mountedContainer = mounted.container;
+
+    await expect(hookValue!.signInWithGoogle()).rejects.toBe(failure);
+    expect(supabaseMock.auth.signInWithOAuth).toHaveBeenCalledWith({
+      provider: 'google',
+    });
   });
 });
