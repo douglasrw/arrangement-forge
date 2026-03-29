@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach } from 'vitest';
-import { useProjectStore } from './project-store';
+import { serializeProjectExportSnapshot, useProjectStore } from './project-store';
 import { useSelectionStore } from './selection-store';
 import { useUiStore } from './ui-store';
 import { useUndoStore } from './undo-store';
@@ -931,5 +931,38 @@ describe('undo/redo round-trip', () => {
       style: 'arpeggiated',
     });
     expect(useProjectStore.getState().blocks[0]?.midiData).toHaveLength(8);
+  });
+
+  it('serializes an arrangement snapshot export with project, section, stem, block, and chord truth', () => {
+    const serialized = serializeProjectExportSnapshot(
+      {
+        project: makeProject({
+          name: 'Snapshot Test',
+          chordChartRaw: '[Verse]\nCmaj7 | Fmaj7',
+          generationHints: 'Keep it sparse',
+          hasArrangement: true,
+        }),
+        stems: [makeStem()],
+        sections: [makeSection()],
+        blocks: [makeBlock()],
+        chords: [makeChord()],
+      },
+      '2026-03-29T08:15:00.000Z'
+    );
+
+    expect(JSON.parse(serialized)).toEqual({
+      version: 1,
+      exportedAt: '2026-03-29T08:15:00.000Z',
+      project: makeProject({
+        name: 'Snapshot Test',
+        chordChartRaw: '[Verse]\nCmaj7 | Fmaj7',
+        generationHints: 'Keep it sparse',
+        hasArrangement: true,
+      }),
+      stems: [makeStem()],
+      sections: [makeSection()],
+      blocks: [makeBlock()],
+      chords: [makeChord()],
+    });
   });
 });

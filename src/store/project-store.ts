@@ -203,6 +203,39 @@ function regenerateBlockWithProjectState(state: {
   return { ...nextBlock, midiData };
 }
 
+export interface ProjectExportSnapshot {
+  version: 1;
+  exportedAt: string;
+  project: Project;
+  stems: Stem[];
+  sections: Section[];
+  blocks: Block[];
+  chords: Chord[];
+}
+
+export function serializeProjectExportSnapshot(
+  state: {
+    project: Project;
+    stems: Stem[];
+    sections: Section[];
+    blocks: Block[];
+    chords: Chord[];
+  },
+  exportedAt: string = new Date().toISOString()
+): string {
+  const snapshot: ProjectExportSnapshot = {
+    version: 1,
+    exportedAt,
+    project: state.project,
+    stems: state.stems,
+    sections: state.sections,
+    blocks: state.blocks,
+    chords: state.chords,
+  };
+
+  return JSON.stringify(snapshot, null, 2);
+}
+
 function reconcileSelectionWithArrangement(state: {
   stems: Stem[];
   sections: Section[];

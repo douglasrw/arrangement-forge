@@ -2,7 +2,10 @@ import { useState, useRef, useEffect } from "react"
 import { cn } from "@/lib/utils"
 import { Settings } from "lucide-react"
 import type { Project } from "@/types"
-import { useProjectStore } from "@/store/project-store"
+import {
+  serializeProjectExportSnapshot,
+  useProjectStore,
+} from "@/store/project-store"
 import { useUiStore } from "@/store/ui-store"
 import { useAuth } from "@/hooks/useAuth"
 import { ALL_KEYS } from "@/lib/chords"
@@ -60,6 +63,13 @@ export function getProjectExportFilename(project: Project): string {
   const stableBaseName = baseName || fallbackId || "untitled-project"
 
   return `${stableBaseName}-chord-chart.txt`
+}
+
+export function getProjectSnapshotFilename(project: Project): string {
+  return getProjectExportFilename(project).replace(
+    /-chord-chart\.txt$/,
+    "-arrangement-snapshot.json"
+  )
 }
 
 /* ------------------------------------------------------------------ */
@@ -223,7 +233,7 @@ function ChordDisplayToggle({
 /*  TopBar                                                             */
 /* ------------------------------------------------------------------ */
 export function TopBar() {
-  const { project, updateProject } = useProjectStore()
+  const { project, stems, sections, blocks, chords, updateProject } = useProjectStore()
   const { unsavedChanges, chordDisplayMode, toggleChordDisplay } = useUiStore()
   const { signOut } = useAuth()
 
@@ -278,14 +288,13 @@ export function TopBar() {
     setExportFeedback(null)
   }, [project?.id, project?.name, project?.chordChartRaw, project?.generationHints])
 
-  function handleExport() {
-    if (!hasProjectExportTruth(project)) {
-      return
-    }
-
-    const fileName = getProjectExportFilename(project)
-    const exportBlob = new Blob([formatProjectChordChartExport(project)], {
-      type: "text/plain;charset=utf-8",
+  function downloadExportFile(
+    contents: BlobPart,
+    fileName: string,
+    mimeType: string
+  ) {
+    const exportBlob = new Blob([contents], {
+      type: mimeType,
     })
     const exportUrl = URL.createObjectURL(exportBlob)
     const downloadLink = document.createElement("a")
@@ -296,7 +305,33 @@ export function TopBar() {
     downloadLink.click()
     downloadLink.remove()
     URL.revokeObjectURL(exportUrl)
-    setExportFeedback(`Exported ${fileName}`)
+  }
+
+  function handleExport() {
+    if (!hasProjectExportTruth(project)) {
+      return
+    }
+
+    const chartFileName = getProjectExportFilename(project)
+    const snapshotFileName = getProjectSnapshotFilename(project)
+
+    downloadExportFile(
+      formatProjectChordChartExport(project),
+      chartFileName,
+      "text/plain;charset=utf-8"
+    )
+    downloadExportFile(
+      serializeProjectExportSnapshot({
+        project,
+        stems,
+        sections,
+        blocks,
+        chords,
+      }),
+      snapshotFileName,
+      "application/json;charset=utf-8"
+    )
+    setExportFeedback(`Exported ${chartFileName} and ${snapshotFileName}`)
   }
 
   const canExport = hasProjectExportTruth(project)

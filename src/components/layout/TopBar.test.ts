@@ -3,13 +3,14 @@
 import { act, createElement } from 'react';
 import { createRoot, type Root } from 'react-dom/client';
 import { beforeEach, afterEach, describe, expect, it, vi } from 'vitest';
-import type { Project } from '@/types';
+import type { Block, Chord, Project, Section, Stem } from '@/types';
 import { useProjectStore } from '@/store/project-store';
 import { useUiStore } from '@/store/ui-store';
 import {
   TopBar,
   formatProjectChordChartExport,
   getProjectExportFilename,
+  getProjectSnapshotFilename,
   hasProjectExportTruth,
   normalizeProjectNameDraft,
   reconcileProjectNameDraft,
@@ -65,12 +66,83 @@ function renderTopBar() {
   return { container, root };
 }
 
+function makeStem(partial: Partial<Stem> = {}): Stem {
+  return {
+    id: 'stem-1',
+    projectId: 'project-1',
+    instrument: 'piano',
+    sortOrder: 0,
+    volume: 0.8,
+    pan: 0,
+    isMuted: false,
+    isSolo: false,
+    createdAt: '2026-03-29T00:00:00Z',
+    ...partial,
+  };
+}
+
+function makeSection(partial: Partial<Section> = {}): Section {
+  return {
+    id: 'section-1',
+    projectId: 'project-1',
+    name: 'Verse',
+    sortOrder: 0,
+    barCount: 4,
+    startBar: 1,
+    energyOverride: null,
+    grooveOverride: null,
+    feelOverride: null,
+    swingPctOverride: null,
+    dynamicsOverride: null,
+    createdAt: '2026-03-29T00:00:00Z',
+    ...partial,
+  };
+}
+
+function makeBlock(partial: Partial<Block> = {}): Block {
+  return {
+    id: 'block-1',
+    stemId: 'stem-1',
+    sectionId: 'section-1',
+    startBar: 1,
+    endBar: 4,
+    chordDegree: 'I',
+    chordQuality: 'maj7',
+    chordBassDegree: null,
+    style: 'jazz_comp',
+    energyOverride: null,
+    dynamicsOverride: null,
+    midiData: [
+      {
+        note: 'C4',
+        time: 0,
+        duration: 1,
+        velocity: 96,
+      },
+    ],
+    createdAt: '2026-03-29T00:00:00Z',
+    ...partial,
+  };
+}
+
+function makeChord(partial: Partial<Chord> = {}): Chord {
+  return {
+    id: 'chord-1',
+    projectId: 'project-1',
+    barNumber: 1,
+    degree: 'I',
+    quality: 'maj7',
+    bassDegree: null,
+    ...partial,
+  };
+}
+
 let mountedRoot: Root | null = null;
 let mountedContainer: HTMLDivElement | null = null;
 let createObjectUrlMock: ReturnType<typeof vi.fn>;
 let revokeObjectUrlMock: ReturnType<typeof vi.fn>;
 let anchorClickSpy: ReturnType<typeof vi.spyOn> | null = null;
-let downloadRequest: { href: string; download: string } | null = null;
+let downloadRequests: Array<{ href: string; download: string }> = [];
 
 beforeEach(() => {
   reactActEnv.IS_REACT_ACT_ENVIRONMENT = true;
@@ -94,9 +166,14 @@ beforeEach(() => {
     errorMessage: null,
   });
 
-  createObjectUrlMock = vi.fn(() => 'blob:export-url');
   revokeObjectUrlMock = vi.fn();
-  downloadRequest = null;
+  downloadRequests = [];
+
+  let exportUrlCounter = 0;
+  createObjectUrlMock = vi.fn(() => {
+    exportUrlCounter += 1;
+    return `blob:export-url-${exportUrlCounter}`;
+  });
 
   Object.defineProperty(globalThis.URL, 'createObjectURL', {
     configurable: true,
@@ -111,10 +188,10 @@ beforeEach(() => {
   anchorClickSpy = vi
     .spyOn(HTMLAnchorElement.prototype, 'click')
     .mockImplementation(function captureDownload(this: HTMLAnchorElement) {
-      downloadRequest = {
+      downloadRequests.push({
         href: this.href,
         download: this.download,
-      };
+      });
     });
 });
 
@@ -164,13 +241,17 @@ describe('TopBar project-name draft reconciliation', () => {
 });
 
 describe('TopBar export baseline', () => {
-  it('downloads the current project as a plain-text chord chart with a stable filename and visible outcome truth', async () => {
+  it('downloads the current project as a plain-text chord chart plus arrangement snapshot with visible outcome truth', async () => {
     useProjectStore.setState({
       project: makeProject({
         name: 'Midnight Changes / Demo',
         chordChartRaw: '[Verse]\nCmaj7 | Dm7 | G7 | Cmaj7',
         generationHints: 'Keep the voicings airy',
       }),
+      stems: [makeStem()],
+      sections: [makeSection()],
+      blocks: [makeBlock()],
+      chords: [makeChord()],
     });
 
     const mounted = renderTopBar();
@@ -189,23 +270,55 @@ describe('TopBar export baseline', () => {
       await Promise.resolve();
     });
 
-    expect(createObjectUrlMock).toHaveBeenCalledTimes(1);
-    expect(downloadRequest).toEqual({
-      href: 'blob:export-url',
-      download: 'midnight-changes-demo-chord-chart.txt',
-    });
-    expect(anchorClickSpy).toHaveBeenCalledTimes(1);
-    expect(revokeObjectUrlMock).toHaveBeenCalledWith('blob:export-url');
+    expect(createObjectUrlMock).toHaveBeenCalledTimes(2);
+    expect(downloadRequests).toEqual([
+      {
+        href: 'blob:export-url-1',
+        download: 'midnight-changes-demo-chord-chart.txt',
+      },
+      {
+        href: 'blob:export-url-2',
+        download: 'midnight-changes-demo-arrangement-snapshot.json',
+      },
+    ]);
+    expect(anchorClickSpy).toHaveBeenCalledTimes(2);
+    expect(revokeObjectUrlMock).toHaveBeenCalledWith('blob:export-url-1');
+    expect(revokeObjectUrlMock).toHaveBeenCalledWith('blob:export-url-2');
     expect(exportButton?.textContent).toBe('Exported');
-    expect(exportButton?.title).toBe('Exported midnight-changes-demo-chord-chart.txt');
+    expect(exportButton?.title).toBe(
+      'Exported midnight-changes-demo-chord-chart.txt and midnight-changes-demo-arrangement-snapshot.json'
+    );
 
-    const exportBlob = createObjectUrlMock.mock.calls[0]?.[0] as Blob;
-    const exportText = await exportBlob.text();
+    const chartBlob = createObjectUrlMock.mock.calls[0]?.[0] as Blob;
+    const exportText = await chartBlob.text();
 
     expect(exportText).toContain('Arrangement Forge Export');
     expect(exportText).toContain('Project: Midnight Changes / Demo');
     expect(exportText).toContain('Chord Chart\n[Verse]\nCmaj7 | Dm7 | G7 | Cmaj7');
     expect(exportText).toContain('Generation Hints\nKeep the voicings airy');
+
+    const snapshotBlob = createObjectUrlMock.mock.calls[1]?.[0] as Blob;
+    const snapshot = JSON.parse(await snapshotBlob.text()) as {
+      version: number;
+      exportedAt: string;
+      project: { name: string };
+      stems: Array<{ id: string }>;
+      sections: Array<{ id: string }>;
+      blocks: Array<{ id: string }>;
+      chords: Array<{ id: string }>;
+    };
+
+    expect(snapshot).toMatchObject({
+      version: 1,
+      project: {
+        name: 'Midnight Changes / Demo',
+      },
+      stems: [{ id: 'stem-1' }],
+      sections: [{ id: 'section-1' }],
+      blocks: [{ id: 'block-1' }],
+      chords: [{ id: 'chord-1' }],
+    });
+    expect(typeof snapshot.exportedAt).toBe('string');
   });
 
   it('keeps export disabled until the project has chord chart or description truth', () => {
@@ -263,5 +376,15 @@ describe('export helpers', () => {
         })
       )
     ).toBe('night-train-alt-take-2-chord-chart.txt');
+  });
+
+  it('derives a matching arrangement snapshot filename from the current project state', () => {
+    expect(
+      getProjectSnapshotFilename(
+        makeProject({
+          name: '  Night Train: Alt Take #2  ',
+        })
+      )
+    ).toBe('night-train-alt-take-2-arrangement-snapshot.json');
   });
 });
