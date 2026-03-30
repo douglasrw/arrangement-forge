@@ -1,6 +1,15 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import { useUndoStore } from './undo-store';
 
+function makeSnapshot(label: string) {
+  return JSON.stringify({
+    stems: [{ id: `st-${label}` }],
+    sections: [],
+    blocks: [],
+    chords: [],
+  });
+}
+
 beforeEach(() => {
   useUndoStore.setState({ undoStack: [], redoStack: [] });
 });
@@ -27,9 +36,19 @@ describe('undoStore', () => {
   });
 
   it('undo returns the entry and moves it to redo stack', () => {
-    useUndoStore.getState().pushUndo('Action', { undo: 'before', redo: 'after' });
-    const entry = useUndoStore.getState().undo();
-    expect(entry?.undoSnapshot).toBe('before');
+    const undoSnapshot = makeSnapshot('before');
+    const redoSnapshot = makeSnapshot('after');
+    useUndoStore.getState().pushUndo('Action', { undo: undoSnapshot, redo: redoSnapshot });
+    const transition = useUndoStore.getState().undo();
+    expect(transition).toMatchObject({
+      boundary: 'undo',
+      description: 'Action',
+      undoSnapshot,
+      redoSnapshot,
+    });
+    expect(transition?.restoreSnapshot).toMatchObject({
+      stems: [{ id: 'st-before' }],
+    });
     expect(useUndoStore.getState().undoStack).toHaveLength(0);
     expect(useUndoStore.getState().redoStack).toHaveLength(1);
   });
@@ -39,10 +58,20 @@ describe('undoStore', () => {
   });
 
   it('redo moves entry back to undo stack', () => {
-    useUndoStore.getState().pushUndo('Action', { undo: 'before', redo: 'after' });
+    const undoSnapshot = makeSnapshot('before');
+    const redoSnapshot = makeSnapshot('after');
+    useUndoStore.getState().pushUndo('Action', { undo: undoSnapshot, redo: redoSnapshot });
     useUndoStore.getState().undo();
-    const entry = useUndoStore.getState().redo();
-    expect(entry?.redoSnapshot).toBe('after');
+    const transition = useUndoStore.getState().redo();
+    expect(transition).toMatchObject({
+      boundary: 'redo',
+      description: 'Action',
+      undoSnapshot,
+      redoSnapshot,
+    });
+    expect(transition?.restoreSnapshot).toMatchObject({
+      stems: [{ id: 'st-after' }],
+    });
     expect(useUndoStore.getState().undoStack).toHaveLength(1);
     expect(useUndoStore.getState().redoStack).toHaveLength(0);
   });

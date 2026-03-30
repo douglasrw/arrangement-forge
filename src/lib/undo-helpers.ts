@@ -21,6 +21,11 @@ export interface UndoBoundarySnapshots {
   redo: string;
 }
 
+export interface UndoBoundaryTransition extends UndoBoundaryEntry {
+  boundary: UndoBoundary;
+  restoreSnapshot: ArrangementSnapshot | null;
+}
+
 export function snapshotArrangement(state: {
   stems: Stem[];
   sections: Section[];
@@ -59,6 +64,17 @@ export function parseUndoBoundarySnapshot(
 ): ArrangementSnapshot | null {
   const snapshot = boundary === 'undo' ? entry.undoSnapshot : entry.redoSnapshot;
   return parseSnapshot(snapshot);
+}
+
+export function createUndoBoundaryTransition(
+  entry: UndoBoundaryEntry,
+  boundary: UndoBoundary
+): UndoBoundaryTransition {
+  return {
+    ...entry,
+    boundary,
+    restoreSnapshot: parseUndoBoundarySnapshot(entry, boundary),
+  };
 }
 
 export function createUndoBoundaryEntry(

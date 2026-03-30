@@ -6,8 +6,8 @@ import {
 } from './project-store';
 import { useSelectionStore } from './selection-store';
 import { useUiStore } from './ui-store';
-import { useUndoStore } from './undo-store';
-import { parseRedoSnapshot, parseUndoSnapshot, snapshotArrangement } from '@/lib/undo-helpers';
+import { useUndoStore, type UndoTransition } from './undo-store';
+import { snapshotArrangement } from '@/lib/undo-helpers';
 import { generateMidiForBlock } from '@/lib/midi-generator';
 import type { Project, Section, Block, Stem, Chord, AiChatMessage } from '@/types';
 
@@ -1024,18 +1024,18 @@ function hasSnapshotKeys(json: string): boolean {
   );
 }
 
-function parseRequiredUndoSnapshot(entry: { undoSnapshot: string; redoSnapshot: string } | null) {
+function parseRequiredUndoSnapshot(entry: UndoTransition | null) {
   expect(entry).not.toBeNull();
-  const snapshot = parseUndoSnapshot(entry!);
-  expect(snapshot).not.toBeNull();
-  return snapshot!;
+  expect(entry?.boundary).toBe('undo');
+  expect(entry?.restoreSnapshot).not.toBeNull();
+  return entry!.restoreSnapshot!;
 }
 
-function parseRequiredRedoSnapshot(entry: { undoSnapshot: string; redoSnapshot: string } | null) {
+function parseRequiredRedoSnapshot(entry: UndoTransition | null) {
   expect(entry).not.toBeNull();
-  const snapshot = parseRedoSnapshot(entry!);
-  expect(snapshot).not.toBeNull();
-  return snapshot!;
+  expect(entry?.boundary).toBe('redo');
+  expect(entry?.restoreSnapshot).not.toBeNull();
+  return entry!.restoreSnapshot!;
 }
 
 describe('undo push coverage', () => {

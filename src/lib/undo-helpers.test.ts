@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import {
+  createUndoBoundaryTransition,
   parseRedoSnapshot,
   parseSnapshot,
   parseUndoBoundarySnapshot,
@@ -79,6 +80,33 @@ describe('parseUndoBoundarySnapshot', () => {
       )
     ).toMatchObject({
       stems: [{ id: 'redo-stem' }],
+    });
+  });
+});
+
+describe('createUndoBoundaryTransition', () => {
+  it('returns the named restore snapshot for an undo boundary', () => {
+    const transition = createUndoBoundaryTransition(
+      {
+        undoSnapshot: JSON.stringify({
+          stems: [{ id: 'undo-stem' }],
+          sections: [],
+          blocks: [],
+          chords: [],
+        }),
+        redoSnapshot: JSON.stringify({
+          stems: [{ id: 'redo-stem' }],
+          sections: [],
+          blocks: [],
+          chords: [],
+        }),
+      },
+      'undo'
+    );
+
+    expect(transition.boundary).toBe('undo');
+    expect(transition.restoreSnapshot).toMatchObject({
+      stems: [{ id: 'undo-stem' }],
     });
   });
 });

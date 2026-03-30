@@ -1,13 +1,17 @@
 import { create } from 'zustand';
 import {
   createUndoBoundaryEntry,
+  createUndoBoundaryTransition,
   type UndoBoundaryEntry,
   type UndoBoundarySnapshots,
+  type UndoBoundaryTransition,
 } from '@/lib/undo-helpers';
 
 export interface UndoEntry extends UndoBoundaryEntry {
   description: string;
 }
+
+export interface UndoTransition extends UndoEntry, UndoBoundaryTransition {}
 
 interface UndoStore {
   undoStack: UndoEntry[];
@@ -15,8 +19,8 @@ interface UndoStore {
   maxUndo: number;
 
   pushUndo: (description: string, snapshots: UndoBoundarySnapshots) => void;
-  undo: () => UndoEntry | null;
-  redo: () => UndoEntry | null;
+  undo: () => UndoTransition | null;
+  redo: () => UndoTransition | null;
   canUndo: () => boolean;
   canRedo: () => boolean;
   getUndoDescription: () => string | null;
@@ -46,7 +50,10 @@ export const useUndoStore = create<UndoStore>()((set, get) => ({
     if (undoStack.length === 0) return null;
     const entry = undoStack[undoStack.length - 1];
     set({ undoStack: undoStack.slice(0, -1), redoStack: [...redoStack, entry] });
-    return entry;
+    return {
+      description: entry.description,
+      ...createUndoBoundaryTransition(entry, 'undo'),
+    };
   },
 
   redo: () => {
@@ -54,7 +61,10 @@ export const useUndoStore = create<UndoStore>()((set, get) => ({
     if (redoStack.length === 0) return null;
     const entry = redoStack[redoStack.length - 1];
     set({ redoStack: redoStack.slice(0, -1), undoStack: [...undoStack, entry] });
-    return entry;
+    return {
+      description: entry.description,
+      ...createUndoBoundaryTransition(entry, 'redo'),
+    };
   },
 
   canUndo: () => get().undoStack.length > 0,

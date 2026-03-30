@@ -6,7 +6,6 @@ import { useSelectionStore } from '@/store/selection-store';
 import { useProjectStore } from '@/store/project-store';
 import { useUndoStore } from '@/store/undo-store';
 import { useProject } from '@/hooks/useProject';
-import { parseRedoSnapshot, parseUndoSnapshot } from '@/lib/undo-helpers';
 
 function isInputFocused(): boolean {
   const el = document.activeElement;
@@ -41,12 +40,9 @@ export function useKeyboardShortcuts() {
       if (isMod(e) && !e.shiftKey && e.key === 'z') {
         e.preventDefault();
         if (canUndo() && generationState !== 'generating') {
-          const entry = undo();
-          if (entry) {
-            const snapshot = parseUndoSnapshot(entry);
-            if (snapshot) {
-              useProjectStore.getState().setArrangement(snapshot);
-            }
+          const transition = undo();
+          if (transition?.restoreSnapshot) {
+            useProjectStore.getState().setArrangement(transition.restoreSnapshot);
           }
         }
         return;
@@ -56,12 +52,9 @@ export function useKeyboardShortcuts() {
       if (isMod(e) && e.shiftKey && e.key === 'z') {
         e.preventDefault();
         if (canRedo() && generationState !== 'generating') {
-          const entry = redo();
-          if (entry) {
-            const snapshot = parseRedoSnapshot(entry);
-            if (snapshot) {
-              useProjectStore.getState().setArrangement(snapshot);
-            }
+          const transition = redo();
+          if (transition?.restoreSnapshot) {
+            useProjectStore.getState().setArrangement(transition.restoreSnapshot);
           }
         }
         return;
