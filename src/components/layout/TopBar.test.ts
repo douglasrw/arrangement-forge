@@ -252,7 +252,7 @@ describe('TopBar project-name draft reconciliation', () => {
 });
 
 describe('TopBar save indicator truth', () => {
-  it('shows unsaved truth in the project identity surface', () => {
+  it('shows project-draft truth when only project fields and chat are pending save', () => {
     useUiStore.setState({
       unsavedChanges: true,
       systemStatus: 'ready',
@@ -265,8 +265,37 @@ describe('TopBar save indicator truth', () => {
 
     const { dot, label } = getTopBarSaveIndicator(mounted.container);
 
-    expect(label?.textContent).toBe('Unsaved');
-    expect(label?.title).toBe('Unsaved changes');
+    expect(label?.textContent).toBe('Project draft');
+    expect(label?.title).toBe(
+      'Only project fields and chat are in play right now; no arrangement rows are loaded. Persist project fields and chat without replacing arrangement rows.'
+    );
+    expect(dot?.className).toContain('bg-status-unsaved');
+  });
+
+  it('shows arrangement-draft replacement truth when loaded rows sit ahead of a saved snapshot', () => {
+    useProjectStore.setState({
+      project: makeProject({ hasArrangement: true }),
+      stems: [makeStem()],
+      sections: [makeSection()],
+      blocks: [makeBlock()],
+      chords: [makeChord()],
+    });
+    useUiStore.setState({
+      unsavedChanges: true,
+      systemStatus: 'ready',
+      lastSavedAt: null,
+    });
+
+    const mounted = renderTopBar();
+    mountedRoot = mounted.root;
+    mountedContainer = mounted.container;
+
+    const { dot, label } = getTopBarSaveIndicator(mounted.container);
+
+    expect(label?.textContent).toBe('Arrangement draft');
+    expect(label?.title).toBe(
+      'Loaded arrangement rows are ahead of the saved arrangement snapshot. Replace the saved arrangement snapshot with the current arrangement draft.'
+    );
     expect(dot?.className).toContain('bg-status-unsaved');
   });
 
@@ -283,8 +312,10 @@ describe('TopBar save indicator truth', () => {
 
     const { dot, label } = getTopBarSaveIndicator(mounted.container);
 
-    expect(label?.textContent).toBe('Saving…');
-    expect(label?.title).toBe('Saving project changes');
+    expect(label?.textContent).toBe('Saving project…');
+    expect(label?.title).toBe(
+      'Only project fields and chat are in play right now; no arrangement rows are loaded. Persist project fields and chat without replacing arrangement rows.'
+    );
     expect(dot?.className).toContain('bg-status-saving');
     expect(dot?.className).toContain('animate-pulse');
   });

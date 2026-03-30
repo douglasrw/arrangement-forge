@@ -73,6 +73,9 @@ export interface ProjectExportReadiness {
 export interface ProjectSavePlan {
   saveTarget: 'project' | 'arrangement';
   nextStep: 'save-project' | 'save-arrangement';
+  statusLabel: 'Project draft' | 'Arrangement draft';
+  savingLabel: 'Saving project…' | 'Saving arrangement…';
+  currentState: string;
   summary: string;
   arrangementTruth: ReturnType<typeof getProjectArrangementTruth>;
 }
@@ -95,6 +98,20 @@ function getPersistedArrangementProjectPatch(
   };
 }
 
+function describeProjectSaveCurrentState(
+  arrangementTruth: ReturnType<typeof getProjectArrangementTruth>
+): string {
+  if (arrangementTruth.hasArrangementRows) {
+    return arrangementTruth.hasPersistedArrangement
+      ? 'Loaded arrangement rows are ahead of the saved arrangement snapshot.'
+      : 'Loaded arrangement rows exist only in the current draft state.';
+  }
+
+  return arrangementTruth.hasPersistedArrangement
+    ? 'Only project fields and chat will change; the saved arrangement snapshot stays untouched.'
+    : 'Only project fields and chat are in play right now; no arrangement rows are loaded.';
+}
+
 export function getProjectSavePlan(state: {
   project: Project | null;
   stems: Stem[];
@@ -108,6 +125,9 @@ export function getProjectSavePlan(state: {
     return {
       saveTarget: 'arrangement',
       nextStep: 'save-arrangement',
+      statusLabel: 'Arrangement draft',
+      savingLabel: 'Saving arrangement…',
+      currentState: describeProjectSaveCurrentState(arrangementTruth),
       summary: arrangementTruth.hasPersistedArrangement
         ? 'Replace the saved arrangement snapshot with the current arrangement draft.'
         : 'Promote the current arrangement draft into the first saved arrangement snapshot.',
@@ -118,6 +138,9 @@ export function getProjectSavePlan(state: {
   return {
     saveTarget: 'project',
     nextStep: 'save-project',
+    statusLabel: 'Project draft',
+    savingLabel: 'Saving project…',
+    currentState: describeProjectSaveCurrentState(arrangementTruth),
     summary: 'Persist project fields and chat without replacing arrangement rows.',
     arrangementTruth,
   };

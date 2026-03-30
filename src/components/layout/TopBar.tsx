@@ -2,7 +2,7 @@ import { useState, useRef, useEffect } from 'react';
 import { cn } from '@/lib/utils';
 import { Settings } from 'lucide-react';
 import type { Block, Chord, Project, Section, Stem, SystemStatus } from '@/types';
-import { getProjectExportReadiness } from '@/hooks/useProject';
+import { getProjectExportReadiness, getProjectSavePlan, type ProjectSavePlan } from '@/hooks/useProject';
 import { serializeProjectExportSnapshot, useProjectStore } from '@/store/project-store';
 import { useUiStore } from '@/store/ui-store';
 import { useAuth } from '@/hooks/useAuth';
@@ -214,8 +214,13 @@ export function getTopBarSaveIndicatorCopy(
   indicatorState: TopBarSaveIndicatorState,
   lastSavedAt: string | null,
   errorMessage: string | null,
+  savePlan: Pick<ProjectSavePlan, 'statusLabel' | 'savingLabel' | 'currentState' | 'summary'> | null,
   now = new Date()
 ): { label: string; tooltip: string } {
+  const savePlanTooltip = savePlan
+    ? `${savePlan.currentState} ${savePlan.summary}`.trim()
+    : null;
+
   if (indicatorState === 'error') {
     return {
       label: formatTopBarErrorLabel(errorMessage),
@@ -225,15 +230,15 @@ export function getTopBarSaveIndicatorCopy(
 
   if (indicatorState === 'saving') {
     return {
-      label: 'Saving…',
-      tooltip: 'Saving project changes',
+      label: savePlan?.savingLabel ?? 'Saving…',
+      tooltip: savePlanTooltip ?? 'Saving project changes',
     };
   }
 
   if (indicatorState === 'unsaved') {
     return {
-      label: 'Unsaved',
-      tooltip: 'Unsaved changes',
+      label: savePlan?.statusLabel ?? 'Unsaved',
+      tooltip: savePlanTooltip ?? 'Unsaved changes',
     };
   }
 
@@ -484,6 +489,13 @@ export function TopBar() {
     blocks,
     chords,
   });
+  const savePlan = getProjectSavePlan({
+    project,
+    stems,
+    sections,
+    blocks,
+    chords,
+  });
 
   function downloadExportFile(contents: BlobPart, fileName: string, mimeType: string) {
     const exportBlob = new Blob([contents], {
@@ -546,7 +558,8 @@ export function TopBar() {
   const saveIndicatorCopy = getTopBarSaveIndicatorCopy(
     saveIndicatorState,
     lastSavedAt,
-    errorMessage
+    errorMessage,
+    savePlan
   );
 
   function commitName(newName: string) {

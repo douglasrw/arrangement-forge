@@ -422,6 +422,9 @@ describe('useProject save planning', () => {
     expect(plan).toEqual({
       saveTarget: 'arrangement',
       nextStep: 'save-arrangement',
+      statusLabel: 'Arrangement draft',
+      savingLabel: 'Saving arrangement…',
+      currentState: 'Loaded arrangement rows exist only in the current draft state.',
       summary: 'Promote the current arrangement draft into the first saved arrangement snapshot.',
       arrangementTruth: {
         status: 'draft-only',
@@ -430,6 +433,45 @@ describe('useProject save planning', () => {
         hasAnyArrangementTruth: true,
         summary: 'Arrangement rows are loaded, but no saved arrangement snapshot exists yet.',
         nextStep: 'Save the current arrangement rows to create the first saved arrangement snapshot.',
+      },
+    });
+  });
+
+  it('keeps replacement truth explicit when loaded rows are ahead of a saved arrangement snapshot', () => {
+    const plan = getProjectSavePlan({
+      project: buildStoredProject('project-arrangement-replace', true),
+      stems: [
+        {
+          id: 'stem-1',
+          projectId: 'project-arrangement-replace',
+          instrument: 'piano',
+          sortOrder: 0,
+          volume: 0.8,
+          pan: 0,
+          isMuted: false,
+          isSolo: false,
+          createdAt: '2026-03-28T00:00:00Z',
+        },
+      ],
+      sections: [],
+      blocks: [],
+      chords: [],
+    });
+
+    expect(plan).toEqual({
+      saveTarget: 'arrangement',
+      nextStep: 'save-arrangement',
+      statusLabel: 'Arrangement draft',
+      savingLabel: 'Saving arrangement…',
+      currentState: 'Loaded arrangement rows are ahead of the saved arrangement snapshot.',
+      summary: 'Replace the saved arrangement snapshot with the current arrangement draft.',
+      arrangementTruth: {
+        status: 'draft-and-persisted',
+        hasArrangementRows: true,
+        hasPersistedArrangement: true,
+        hasAnyArrangementTruth: true,
+        summary: 'Arrangement rows are loaded and a saved arrangement snapshot already exists.',
+        nextStep: 'Save the current arrangement rows when you want to replace the saved arrangement snapshot.',
       },
     });
   });
@@ -446,6 +488,9 @@ describe('useProject save planning', () => {
     expect(plan).toEqual({
       saveTarget: 'project',
       nextStep: 'save-project',
+      statusLabel: 'Project draft',
+      savingLabel: 'Saving project…',
+      currentState: 'Only project fields and chat are in play right now; no arrangement rows are loaded.',
       summary: 'Persist project fields and chat without replacing arrangement rows.',
       arrangementTruth: {
         status: 'missing',
