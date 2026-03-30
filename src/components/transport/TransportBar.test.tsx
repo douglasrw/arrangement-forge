@@ -41,6 +41,7 @@ const useAudioState = vi.hoisted(() => ({
   playbackReadiness: 'ready' as PlaybackReadiness,
   playbackTruth: {
     status: 'ready',
+    action: 'play',
     reason: 'ready',
     summary: 'Ready',
     detail: 'Arrangement audio is loaded into the engine.',
@@ -158,6 +159,7 @@ beforeEach(() => {
   useAudioState.playbackReadiness = 'ready';
   useAudioState.playbackTruth = {
     status: 'ready',
+    action: 'play',
     reason: 'ready',
     summary: 'Ready',
     detail: 'Arrangement audio is loaded into the engine.',
@@ -483,6 +485,7 @@ describe('TransportBar transport controls', () => {
     useAudioState.playbackReadiness = 'loading';
     useAudioState.playbackTruth = {
       status: 'loading',
+      action: 'load-and-play',
       reason: 'awaiting-user-play',
       summary: 'Load to play',
       detail: 'Arrangement audio is not loaded into the engine yet.',
@@ -527,6 +530,7 @@ describe('TransportBar transport controls', () => {
     useAudioState.playbackReadiness = 'loading';
     useAudioState.playbackTruth = {
       status: 'loading',
+      action: 'wait',
       reason: 'loading-arrangement',
       summary: 'Loading audio',
       detail: 'Arrangement audio is loading into the engine right now.',
@@ -567,6 +571,7 @@ describe('TransportBar transport controls', () => {
     useAudioState.playbackReadiness = 'unavailable';
     useAudioState.playbackTruth = {
       status: 'unavailable',
+      action: 'retry-play',
       reason: 'load-failed',
       summary: 'Unavailable',
       detail: 'Audio failed to load: Salamander drum samples missing',
@@ -578,7 +583,7 @@ describe('TransportBar transport controls', () => {
     mountedContainer = mounted.container;
 
     const playButton = mounted.container.querySelector(
-      'button[aria-label="Play unavailable"]'
+      'button[aria-label="Retry audio"]'
     ) as HTMLButtonElement | null;
     const loopButton = mounted.container.querySelector(
       'button[aria-label="Toggle loop"]'
@@ -593,7 +598,7 @@ describe('TransportBar transport controls', () => {
       '[data-transport-guidance="load-failed"]'
     ) as HTMLDivElement | null;
 
-    expect(playButton?.disabled).toBe(true);
+    expect(playButton?.disabled).toBe(false);
     expect(loopButton?.disabled).toBe(true);
     expect(metronomeButton?.disabled).toBe(true);
     expect(scrubber).toBeNull();
@@ -603,5 +608,11 @@ describe('TransportBar transport controls', () => {
     expect(mounted.container.textContent).not.toContain('Loading');
     expect(mounted.container.textContent).not.toContain('Load to play');
     expect(playButton?.title).toContain('Audio failed to load: Salamander drum samples missing');
+
+    act(() => {
+      playButton?.click();
+    });
+
+    expect(playMock).toHaveBeenCalledTimes(1);
   });
 });

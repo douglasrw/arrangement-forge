@@ -121,10 +121,12 @@ export function TransportBar() {
   const metronomeActive = audioConfig.metronomeEnabled
   const totalBars = sections.reduce((sum, section) => sum + section.barCount, 0)
   const timelineAvailable = Boolean(project?.hasArrangement) && totalBars > 0
+  const playbackAction = playbackTruth.action
   const playbackReady = playbackReadiness === "ready"
-  const playbackNeedsLoad = playbackTruth.reason === "awaiting-user-play"
-  const playbackLoading = playbackTruth.reason === "loading-arrangement"
-  const playbackUnavailable = playbackReadiness === "unavailable"
+  const playbackNeedsLoad = playbackAction === "load-and-play"
+  const playbackLoading = playbackAction === "wait"
+  const playbackUnavailable = playbackAction === "unavailable"
+  const playbackRetryAvailable = playbackAction === "retry-play"
   const transportReady = timelineAvailable && playbackReady
   const transportNeedsLoad = timelineAvailable && playbackNeedsLoad
   const playbackActive = transportReady && isPlaying
@@ -139,6 +141,8 @@ export function TransportBar() {
       ? "Loading audio"
       : transportReady
         ? "Play"
+        : playbackRetryAvailable
+          ? "Retry audio"
         : transportNeedsLoad
           ? "Load and play"
           : "Play unavailable"

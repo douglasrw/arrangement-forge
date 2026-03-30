@@ -4,6 +4,12 @@ export type PlaybackState = 'stopped' | 'playing' | 'paused';
 export type PlaybackReadiness = 'ready' | 'loading' | 'unavailable';
 export type CountInSetting = 'off' | '1-bar' | '2-bars';
 export type AudioEngineFailureStage = 'engine-start' | 'load-arrangement' | 'hot-swap';
+export type PlaybackTruthAction =
+  | 'play'
+  | 'load-and-play'
+  | 'retry-play'
+  | 'wait'
+  | 'unavailable';
 export type PlaybackTruthReason =
   | 'ready'
   | 'no-arrangement'
@@ -39,6 +45,7 @@ export interface AudioEngineReadinessSnapshot {
 
 export interface PlaybackTruth {
   status: PlaybackReadiness;
+  action: PlaybackTruthAction;
   reason: PlaybackTruthReason;
   summary: string;
   detail: string;

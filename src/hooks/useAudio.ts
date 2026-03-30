@@ -62,6 +62,7 @@ function buildPlaybackTruth({
   if (!projectExists || !hasArrangementTruth) {
     return {
       status: 'unavailable',
+      action: 'unavailable',
       reason: 'no-arrangement',
       summary: 'Unavailable',
       detail: 'No arrangement audio is available yet.',
@@ -72,6 +73,7 @@ function buildPlaybackTruth({
   if (stemsCount === 0) {
     return {
       status: 'unavailable',
+      action: 'unavailable',
       reason: 'no-stems',
       summary: 'Unavailable',
       detail: 'No playable stems are loaded for this arrangement yet.',
@@ -85,6 +87,7 @@ function buildPlaybackTruth({
   ) {
     return {
       status: 'unavailable',
+      action: 'retry-play',
       reason: 'load-failed',
       summary: 'Audio engine blocked',
       detail: `The audio engine could not start: ${engineReadiness.failureMessage ?? 'The audio engine could not start.'}`,
@@ -96,6 +99,7 @@ function buildPlaybackTruth({
     if (engineReadiness.failureStage === 'hot-swap') {
       return {
         status: 'unavailable',
+        action: 'retry-play',
         reason: 'load-failed',
         summary: 'Audio update failed',
         detail: `Arrangement audio could not refresh: ${engineReadiness.failureMessage ?? 'Instrument update failed.'}`,
@@ -105,6 +109,7 @@ function buildPlaybackTruth({
 
     return {
       status: 'unavailable',
+      action: 'retry-play',
       reason: 'load-failed',
       summary: 'Audio load failed',
       detail: `Arrangement audio failed to load: ${engineReadiness.failureMessage ?? 'Instrument samples could not be loaded.'}`,
@@ -115,6 +120,7 @@ function buildPlaybackTruth({
   if (loadedArrangementSignature === arrangementSignature) {
     return {
       status: 'ready',
+      action: 'play',
       reason: 'ready',
       summary: 'Ready',
       detail: 'Arrangement audio is loaded into the engine.',
@@ -128,6 +134,7 @@ function buildPlaybackTruth({
   ) {
     return {
       status: 'loading',
+      action: 'wait',
       reason: 'loading-arrangement',
       summary: 'Loading audio',
       detail: 'Arrangement audio is loading into the engine right now.',
@@ -137,6 +144,7 @@ function buildPlaybackTruth({
 
   return {
     status: 'loading',
+    action: 'load-and-play',
     reason: 'awaiting-user-play',
     summary: 'Load to play',
     detail: engineReadiness.isInitialized
@@ -210,7 +218,7 @@ export function useAudio() {
     failedArrangementSignature,
   });
   const playbackReadiness = playbackTruth.status;
-  const audioLoading = playbackTruth.reason === 'loading-arrangement';
+  const audioLoading = playbackTruth.action === 'wait';
 
   const syncStemMixerState = useCallback(() => {
     for (const stem of stems) {

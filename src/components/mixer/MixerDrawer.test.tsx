@@ -36,6 +36,7 @@ const useAudioState = vi.hoisted(() => ({
   playbackReadiness: 'ready' as PlaybackReadiness,
   playbackTruth: {
     status: 'ready',
+    action: 'play',
     reason: 'ready',
     summary: 'Ready',
     detail: 'Arrangement audio is loaded into the engine.',
@@ -172,6 +173,7 @@ beforeEach(() => {
   useAudioState.playbackReadiness = 'ready';
   useAudioState.playbackTruth = {
     status: 'ready',
+    action: 'play',
     reason: 'ready',
     summary: 'Ready',
     detail: 'Arrangement audio is loaded into the engine.',
@@ -424,6 +426,7 @@ describe('MixerDrawer', () => {
     useAudioState.playbackReadiness = 'loading';
     useAudioState.playbackTruth = {
       status: 'loading',
+      action: 'wait',
       reason: 'loading-arrangement',
       summary: 'Loading audio',
       detail: 'Arrangement audio is loading into the engine right now.',
@@ -473,6 +476,7 @@ describe('MixerDrawer', () => {
     useAudioState.playbackReadiness = 'loading';
     useAudioState.playbackTruth = {
       status: 'loading',
+      action: 'load-and-play',
       reason: 'awaiting-user-play',
       summary: 'Load to play',
       detail: 'Arrangement audio is not loaded into the engine yet.',
@@ -528,6 +532,7 @@ describe('MixerDrawer', () => {
     useAudioState.playbackReadiness = 'unavailable';
     useAudioState.playbackTruth = {
       status: 'unavailable',
+      action: 'retry-play',
       reason: 'load-failed',
       summary: 'Unavailable',
       detail: 'Audio failed to load: Salamander drum samples missing',
@@ -655,6 +660,7 @@ describe('MixerDrawer', () => {
     useAudioState.playbackReadiness = 'loading';
     useAudioState.playbackTruth = {
       status: 'loading',
+      action: 'wait',
       reason: 'loading-arrangement',
       summary: 'Loading audio',
       detail: 'Arrangement audio is loading into the engine right now.',
@@ -700,6 +706,7 @@ describe('MixerDrawer', () => {
     useAudioState.playbackReadiness = 'unavailable';
     useAudioState.playbackTruth = {
       status: 'unavailable',
+      action: 'retry-play',
       reason: 'load-failed',
       summary: 'Unavailable',
       detail: 'Audio failed to load: Salamander drum samples missing',
