@@ -100,7 +100,7 @@ export function StatusBar({ status = 'saved', className }: StatusBarProps) {
     blocks,
     chords,
   });
-  const savePlanTooltip = `${savePlan.currentState} ${savePlan.summary}`.trim();
+  const savePlanTooltip = `${savePlan.currentState} ${savePlan.nextStep}`.trim();
   const label =
     status === 'error'
       ? formatErrorStatusLabel(errorMessage)

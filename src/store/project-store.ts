@@ -278,7 +278,7 @@ export interface ProjectArrangementTruth {
   hasArrangementRows: boolean;
   hasPersistedArrangement: boolean;
   hasAnyArrangementTruth: boolean;
-  summary: string;
+  currentState: string;
   nextStep: string;
 }
 
@@ -288,11 +288,11 @@ function describeProjectArrangementTruth({
 }: {
   hasArrangementRows: boolean;
   hasPersistedArrangement: boolean;
-}): Pick<ProjectArrangementTruth, 'status' | 'summary' | 'nextStep'> {
+}): Pick<ProjectArrangementTruth, 'status' | 'currentState' | 'nextStep'> {
   if (hasArrangementRows && hasPersistedArrangement) {
     return {
       status: 'loaded-and-persisted',
-      summary: 'Loaded arrangement rows and a saved arrangement snapshot both exist right now.',
+      currentState: 'Loaded arrangement rows and a saved arrangement snapshot both exist right now.',
       nextStep: 'Save the loaded arrangement rows if you want them to replace the saved arrangement snapshot.',
     };
   }
@@ -300,7 +300,7 @@ function describeProjectArrangementTruth({
   if (hasArrangementRows) {
     return {
       status: 'draft-only',
-      summary: 'Arrangement rows are loaded, but no saved arrangement snapshot exists yet.',
+      currentState: 'Arrangement rows are loaded, but no saved arrangement snapshot exists yet.',
       nextStep: 'Save the current arrangement rows to create the first saved arrangement snapshot.',
     };
   }
@@ -308,14 +308,14 @@ function describeProjectArrangementTruth({
   if (hasPersistedArrangement) {
     return {
       status: 'persisted-only',
-      summary: 'A saved arrangement snapshot exists, but its rows are not loaded in the project store right now.',
+      currentState: 'A saved arrangement snapshot exists, but its rows are not loaded in the project store right now.',
       nextStep: 'Reload the arrangement rows before editing, saving, or exporting the current arrangement snapshot.',
     };
   }
 
   return {
     status: 'missing',
-    summary: 'No arrangement rows or saved arrangement snapshot exist yet.',
+    currentState: 'No arrangement rows or saved arrangement snapshot exist yet.',
     nextStep: 'Generate or import an arrangement before saving or exporting arrangement rows.',
   };
 }

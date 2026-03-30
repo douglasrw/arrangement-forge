@@ -302,7 +302,7 @@ describe('projectStore', () => {
       hasArrangementRows: true,
       hasPersistedArrangement: false,
       hasAnyArrangementTruth: true,
-      summary: 'Arrangement rows are loaded, but no saved arrangement snapshot exists yet.',
+      currentState: 'Arrangement rows are loaded, but no saved arrangement snapshot exists yet.',
       nextStep: 'Save the current arrangement rows to create the first saved arrangement snapshot.',
     });
   });
@@ -321,7 +321,7 @@ describe('projectStore', () => {
       hasArrangementRows: false,
       hasPersistedArrangement: true,
       hasAnyArrangementTruth: true,
-      summary: 'A saved arrangement snapshot exists, but its rows are not loaded in the project store right now.',
+      currentState: 'A saved arrangement snapshot exists, but its rows are not loaded in the project store right now.',
       nextStep: 'Reload the arrangement rows before editing, saving, or exporting the current arrangement snapshot.',
     });
   });
@@ -340,9 +340,24 @@ describe('projectStore', () => {
       hasArrangementRows: true,
       hasPersistedArrangement: true,
       hasAnyArrangementTruth: true,
-      summary: 'Loaded arrangement rows and a saved arrangement snapshot both exist right now.',
+      currentState: 'Loaded arrangement rows and a saved arrangement snapshot both exist right now.',
       nextStep: 'Save the loaded arrangement rows if you want them to replace the saved arrangement snapshot.',
     });
+  });
+
+  it('exposes current arrangement state as a named field instead of generic summary copy', () => {
+    const truth = getProjectArrangementTruth({
+      project: makeProject({ hasArrangement: true }),
+      stems: [makeStem()],
+      sections: [],
+      blocks: [],
+      chords: [],
+    });
+
+    expect(truth.currentState).toBe(
+      'Loaded arrangement rows and a saved arrangement snapshot both exist right now.'
+    );
+    expect(truth).not.toHaveProperty('summary');
   });
 
   it('splitBlock creates two blocks with correct bar ranges', () => {

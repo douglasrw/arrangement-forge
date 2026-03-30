@@ -92,11 +92,11 @@ interface ProjectSaveCopy {
 export interface ProjectSavePlan {
   saveStatus: ProjectSaveStatus;
   saveTarget: 'project' | 'arrangement';
-  nextStep: 'save-project' | 'save-arrangement';
+  saveAction: 'save-project' | 'save-arrangement';
   statusLabel: ProjectSaveCopy['statusLabel'];
   savingLabel: ProjectSaveCopy['savingLabel'];
   currentState: string;
-  summary: string;
+  nextStep: string;
   arrangementTruth: ReturnType<typeof getProjectArrangementTruth>;
 }
 
@@ -130,6 +130,18 @@ function describeProjectSaveCurrentState(
   return arrangementTruth.hasPersistedArrangement
     ? 'Only project fields and chat will change; the saved arrangement snapshot exists but is not loaded in this session.'
     : 'Only project fields and chat are in play right now; no arrangement rows are loaded.';
+}
+
+function describeProjectSaveNextStep(
+  arrangementTruth: ReturnType<typeof getProjectArrangementTruth>
+): string {
+  if (arrangementTruth.hasArrangementRows) {
+    return arrangementTruth.hasPersistedArrangement
+      ? 'Save now to write the loaded arrangement rows back to the saved arrangement snapshot.'
+      : 'Save now to create the first saved arrangement snapshot from the loaded arrangement rows.';
+  }
+
+  return 'Save now to persist project fields and chat without replacing arrangement rows.';
 }
 
 function getProjectSaveStatus(
@@ -189,12 +201,10 @@ export function getProjectSavePlan(state: {
     return {
       saveStatus,
       saveTarget: 'arrangement',
-      nextStep: 'save-arrangement',
+      saveAction: 'save-arrangement',
       ...saveCopy,
       currentState: describeProjectSaveCurrentState(arrangementTruth),
-      summary: arrangementTruth.hasPersistedArrangement
-        ? 'Saving now will write the loaded arrangement rows back to the saved arrangement snapshot.'
-        : 'Saving now will create the first saved arrangement snapshot from the loaded arrangement rows.',
+      nextStep: describeProjectSaveNextStep(arrangementTruth),
       arrangementTruth,
     };
   }
@@ -202,10 +212,10 @@ export function getProjectSavePlan(state: {
   return {
     saveStatus,
     saveTarget: 'project',
-    nextStep: 'save-project',
+    saveAction: 'save-project',
     ...saveCopy,
     currentState: describeProjectSaveCurrentState(arrangementTruth),
-    summary: 'Saving now will persist project fields and chat without replacing arrangement rows.',
+    nextStep: describeProjectSaveNextStep(arrangementTruth),
     arrangementTruth,
   };
 }

@@ -267,7 +267,7 @@ describe('TopBar save indicator truth', () => {
 
     expect(label?.textContent).toBe('Project draft');
     expect(label?.title).toBe(
-      'Only project fields and chat are in play right now; no arrangement rows are loaded. Saving now will persist project fields and chat without replacing arrangement rows.'
+      'Only project fields and chat are in play right now; no arrangement rows are loaded. Save now to persist project fields and chat without replacing arrangement rows.'
     );
     expect(dot?.className).toContain('bg-status-unsaved');
   });
@@ -294,7 +294,7 @@ describe('TopBar save indicator truth', () => {
 
     expect(label?.textContent).toBe('Loaded arrangement');
     expect(label?.title).toBe(
-      'Loaded arrangement rows and a saved arrangement snapshot both exist right now. Saving now will write the loaded arrangement rows back to the saved arrangement snapshot.'
+      'Loaded arrangement rows and a saved arrangement snapshot both exist right now. Save now to write the loaded arrangement rows back to the saved arrangement snapshot.'
     );
     expect(dot?.className).toContain('bg-status-unsaved');
   });
@@ -321,7 +321,7 @@ describe('TopBar save indicator truth', () => {
 
     expect(label?.textContent).toBe('Project draft + saved arrangement');
     expect(label?.title).toBe(
-      'Only project fields and chat will change; the saved arrangement snapshot exists but is not loaded in this session. Saving now will persist project fields and chat without replacing arrangement rows.'
+      'Only project fields and chat will change; the saved arrangement snapshot exists but is not loaded in this session. Save now to persist project fields and chat without replacing arrangement rows.'
     );
     expect(dot?.className).toContain('bg-status-unsaved');
   });
@@ -341,7 +341,7 @@ describe('TopBar save indicator truth', () => {
 
     expect(label?.textContent).toBe('Saving project…');
     expect(label?.title).toBe(
-      'Only project fields and chat are in play right now; no arrangement rows are loaded. Saving now will persist project fields and chat without replacing arrangement rows.'
+      'Only project fields and chat are in play right now; no arrangement rows are loaded. Save now to persist project fields and chat without replacing arrangement rows.'
     );
     expect(dot?.className).toContain('bg-status-saving');
     expect(dot?.className).toContain('animate-pulse');

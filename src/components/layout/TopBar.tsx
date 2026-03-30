@@ -214,11 +214,11 @@ export function getTopBarSaveIndicatorCopy(
   indicatorState: TopBarSaveIndicatorState,
   lastSavedAt: string | null,
   errorMessage: string | null,
-  savePlan: Pick<ProjectSavePlan, 'statusLabel' | 'savingLabel' | 'currentState' | 'summary'> | null,
+  savePlan: Pick<ProjectSavePlan, 'statusLabel' | 'savingLabel' | 'currentState' | 'nextStep'> | null,
   now = new Date()
 ): { label: string; tooltip: string } {
   const savePlanTooltip = savePlan
-    ? `${savePlan.currentState} ${savePlan.summary}`.trim()
+    ? `${savePlan.currentState} ${savePlan.nextStep}`.trim()
     : null;
 
   if (indicatorState === 'error') {
