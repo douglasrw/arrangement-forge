@@ -48,6 +48,7 @@ export class AudioEngine {
   private _isLoading = false;
   private _failureStage: AudioEngineFailureStage | null = null;
   private _failureMessage: string | null = null;
+  private activeLoadPromise: Promise<void> | null = null;
   private arrangementEndEventId: number | null = null;
   private audioConfig: AudioEngineConfig = {
     metronomeEnabled: false,
@@ -84,6 +85,8 @@ export class AudioEngine {
     Tone.getTransport().stop();
     Tone.getTransport().cancel();
     this.arrangementEndEventId = null;
+    this.activeLoadPromise = null;
+    this._isLoading = false;
     this.metronome.dispose();
     // Don't dispose samplers — they are cached in sampler-cache.ts
     // Just disconnect them from our signal chain
@@ -206,114 +209,119 @@ export class AudioEngine {
     };
   }
 
-  async loadArrangement(
+  loadArrangement(
     blocks: Block[],
     stems: Stem[],
     sections: Section[],
     timeSignature: string
   ): Promise<void> {
-    if (!this._initialized || !this.masterGain) return;
-    if (this._isLoading) return; // prevent concurrent loads
+    if (!this._initialized || !this.masterGain) return Promise.resolve();
+    if (this.activeLoadPromise) return this.activeLoadPromise;
 
     this._isLoading = true;
     this.clearFailureState();
 
-    try {
-      const [numStr] = timeSignature.split('/');
-      const numerator = parseInt(numStr ?? '4', 10);
-      this.transportController.setTimeSignature(numerator, 4);
+    this.activeLoadPromise = (async () => {
+      try {
+        const [numStr] = timeSignature.split('/');
+        const numerator = parseInt(numStr ?? '4', 10);
+        this.transportController.setTimeSignature(numerator, 4);
 
-      Tone.getTransport().cancel();
-      this.arrangementEndEventId = null;
+        Tone.getTransport().cancel();
+        this.arrangementEndEventId = null;
 
-      // Disconnect old signal chains (but don't dispose cached samplers)
-      this.instruments.forEach((inst) => inst.disconnect());
-      this.channelGains.forEach((g) => g.dispose());
-      this.channelPanners.forEach((p) => p.dispose());
-      this.instruments.clear();
-      this.channelGains.clear();
-      this.channelPanners.clear();
-      this.stemVolumes.clear();
+        // Disconnect old signal chains (but don't dispose cached samplers)
+        this.instruments.forEach((inst) => inst.disconnect());
+        this.channelGains.forEach((g) => g.dispose());
+        this.channelPanners.forEach((p) => p.dispose());
+        this.instruments.clear();
+        this.channelGains.clear();
+        this.channelPanners.clear();
+        this.stemVolumes.clear();
 
-      // Load samplers (cached after first load — returns instantly on subsequent calls)
-      for (const stem of stems) {
-        const inst = await getSampler(stem.instrument);
-        const gain = new Tone.Gain(stem.volume);
-        const panner = new Tone.Panner(stem.pan);
-        inst.disconnect(); // ensure clean state
-        inst.connect(gain);
-        gain.connect(panner);
-        panner.connect(this.masterGain);
-        this.instruments.set(stem.instrument, inst);
-        this.channelGains.set(stem.instrument, gain);
-        this.channelPanners.set(stem.instrument, panner);
-        this.stemVolumes.set(stem.instrument, stem.volume);
-        this.stemMuted.set(stem.instrument, stem.isMuted);
-        this.stemSoloed.set(stem.instrument, stem.isSolo);
-      }
-
-      this.applyMixState();
-
-      // Clear all tracked event IDs
-      this.scheduledEventIds.clear();
-
-      const tempo = Tone.getTransport().bpm.value;
-      const secondsPerBeat = 60 / tempo;
-
-      for (const block of blocks) {
-        const stem = stems.find((s) => s.id === block.stemId);
-        if (!stem) continue;
-        const instrument = this.instruments.get(stem.instrument);
-        if (!instrument) continue;
-
-        const blockStartSeconds = this.transportController.getTimeAtBar(block.startBar);
-
-        for (const note of block.midiData) {
-          const noteTime = blockStartSeconds + note.time * secondsPerBeat;
-          const noteDuration = note.duration * secondsPerBeat;
-          const velocity = note.velocity / 127;
-
-          const eventId = Tone.getTransport().schedule((t) => {
-            try {
-              instrument.triggerAttackRelease(
-                note.note,
-                noteDuration,
-                t,
-                velocity
-              );
-            } catch {
-              // Ignore scheduling errors
-            }
-          }, noteTime);
-
-          // Track event ID per instrument
-          const ids = this.scheduledEventIds.get(stem.instrument) ?? [];
-          ids.push(eventId);
-          this.scheduledEventIds.set(stem.instrument, ids);
+        // Load samplers (cached after first load — returns instantly on subsequent calls)
+        for (const stem of stems) {
+          const inst = await getSampler(stem.instrument);
+          const gain = new Tone.Gain(stem.volume);
+          const panner = new Tone.Panner(stem.pan);
+          inst.disconnect(); // ensure clean state
+          inst.connect(gain);
+          gain.connect(panner);
+          panner.connect(this.masterGain);
+          this.instruments.set(stem.instrument, inst);
+          this.channelGains.set(stem.instrument, gain);
+          this.channelPanners.set(stem.instrument, panner);
+          this.stemVolumes.set(stem.instrument, stem.volume);
+          this.stemMuted.set(stem.instrument, stem.isMuted);
+          this.stemSoloed.set(stem.instrument, stem.isSolo);
         }
+
+        this.applyMixState();
+
+        // Clear all tracked event IDs
+        this.scheduledEventIds.clear();
+
+        const tempo = Tone.getTransport().bpm.value;
+        const secondsPerBeat = 60 / tempo;
+
+        for (const block of blocks) {
+          const stem = stems.find((s) => s.id === block.stemId);
+          if (!stem) continue;
+          const instrument = this.instruments.get(stem.instrument);
+          if (!instrument) continue;
+
+          const blockStartSeconds = this.transportController.getTimeAtBar(block.startBar);
+
+          for (const note of block.midiData) {
+            const noteTime = blockStartSeconds + note.time * secondsPerBeat;
+            const noteDuration = note.duration * secondsPerBeat;
+            const velocity = note.velocity / 127;
+
+            const eventId = Tone.getTransport().schedule((t) => {
+              try {
+                instrument.triggerAttackRelease(
+                  note.note,
+                  noteDuration,
+                  t,
+                  velocity
+                );
+              } catch {
+                // Ignore scheduling errors
+              }
+            }, noteTime);
+
+            // Track event ID per instrument
+            const ids = this.scheduledEventIds.get(stem.instrument) ?? [];
+            ids.push(eventId);
+            this.scheduledEventIds.set(stem.instrument, ids);
+          }
+        }
+
+        const totalBars = sections.reduce((sum, s) => sum + s.barCount, 0);
+        const loopEndBar = Math.max(1, totalBars);
+        this.audioConfig.loopStartBar = 1;
+        this.audioConfig.loopEndBar = loopEndBar;
+
+        const totalSeconds = totalBars > 0
+          ? this.transportController.getTimeAtBar(totalBars + 1)
+          : 0;
+        Tone.getTransport().loop = this.audioConfig.loopEnabled;
+        Tone.getTransport().loopStart = 0;
+        Tone.getTransport().loopEnd = totalSeconds;
+        this.scheduleArrangementStop();
+
+        // Schedule metronome clicks (checks enabled at trigger time)
+        this.metronome.scheduleClick(1, totalBars, tempo, timeSignature);
+      } catch (error) {
+        this.recordFailure('load-arrangement', error, 'Instrument samples could not be loaded.');
+        throw error;
+      } finally {
+        this._isLoading = false;
+        this.activeLoadPromise = null;
       }
+    })();
 
-      const totalBars = sections.reduce((sum, s) => sum + s.barCount, 0);
-      const loopEndBar = Math.max(1, totalBars);
-      this.audioConfig.loopStartBar = 1;
-      this.audioConfig.loopEndBar = loopEndBar;
-
-      const totalSeconds = totalBars > 0
-        ? this.transportController.getTimeAtBar(totalBars + 1)
-        : 0;
-      Tone.getTransport().loop = this.audioConfig.loopEnabled;
-      Tone.getTransport().loopStart = 0;
-      Tone.getTransport().loopEnd = totalSeconds;
-      this.scheduleArrangementStop();
-
-      // Schedule metronome clicks (checks enabled at trigger time)
-      this.metronome.scheduleClick(1, totalBars, tempo, timeSignature);
-    } catch (error) {
-      this.recordFailure('load-arrangement', error, 'Instrument samples could not be loaded.');
-      throw error;
-    } finally {
-      this._isLoading = false;
-    }
+    return this.activeLoadPromise;
   }
 
   /** Hot-swap one instrument's scheduled notes without stopping playback.

@@ -112,6 +112,7 @@ const reactActEnv = globalThis as typeof globalThis & {
 };
 
 let hookValue: ReturnType<typeof useAudio> | null = null;
+let secondaryHookValue: ReturnType<typeof useAudio> | null = null;
 let consoleErrorSpy: ReturnType<typeof vi.spyOn> | null = null;
 
 function makeProject(partial: Partial<Project> = {}): Project {
@@ -199,13 +200,19 @@ function UseAudioHarness() {
   return null;
 }
 
-function renderHarness() {
+function DualUseAudioHarness() {
+  hookValue = useAudio();
+  secondaryHookValue = useAudio();
+  return null;
+}
+
+function renderHarness(HarnessComponent = UseAudioHarness) {
   const container = document.createElement('div');
   document.body.appendChild(container);
   const root = createRoot(container);
 
   act(() => {
-    root.render(createElement(UseAudioHarness));
+    root.render(createElement(HarnessComponent));
   });
 
   return { container, root };
@@ -217,6 +224,7 @@ let mountedContainer: HTMLDivElement | null = null;
 beforeEach(() => {
   reactActEnv.IS_REACT_ACT_ENVIRONMENT = true;
   hookValue = null;
+  secondaryHookValue = null;
   consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
   engineState.isInitialized = false;
   engineState.isLoading = false;
@@ -731,5 +739,66 @@ describe('useAudio transport config', () => {
 
     expect(playMock).toHaveBeenCalledTimes(1);
     expect(useUiStore.getState().systemStatus).toBe('ready');
+  });
+
+  it('keeps concurrent useAudio consumers aligned while one shared arrangement load fails', async () => {
+    engineState.isInitialized = true;
+
+    let rejectLoad: ((reason?: unknown) => void) | null = null;
+    let sharedLoadPromise: Promise<void> | null = null;
+
+    loadArrangementMock.mockImplementation(() => {
+      if (sharedLoadPromise) return sharedLoadPromise;
+
+      engineState.isLoading = true;
+      sharedLoadPromise = new Promise<void>((_resolve, reject) => {
+        rejectLoad = reject;
+      }).finally(() => {
+        engineState.isLoading = false;
+      });
+
+      return sharedLoadPromise;
+    });
+
+    useProjectStore.setState({
+      project: makeProject(),
+      stems: [makeStem()],
+      sections: [makeSection()],
+      blocks: [makeBlock()],
+      chords: [],
+      chatMessages: [],
+      drumOnlyUpdate: false,
+      allInstrumentsUpdate: false,
+    });
+
+    const mounted = renderHarness(DualUseAudioHarness);
+    mountedRoot = mounted.root;
+    mountedContainer = mounted.container;
+
+    await act(async () => {
+      await Promise.resolve();
+      await Promise.resolve();
+    });
+
+    expect(loadArrangementMock).toHaveBeenCalledTimes(2);
+    expect(hookValue?.playbackReadiness).toBe('loading');
+    expect(secondaryHookValue?.playbackReadiness).toBe('loading');
+    expect(hookValue?.playbackTruth.summary).toBe('Loading audio');
+    expect(secondaryHookValue?.playbackTruth.summary).toBe('Loading audio');
+
+    await act(async () => {
+      engineState.failureStage = 'load-arrangement';
+      engineState.failureMessage = 'Piano samples unavailable';
+      rejectLoad?.(new Error('Piano samples unavailable'));
+      await sharedLoadPromise?.catch(() => undefined);
+      await Promise.resolve();
+    });
+
+    expect(hookValue?.playbackReadiness).toBe('unavailable');
+    expect(secondaryHookValue?.playbackReadiness).toBe('unavailable');
+    expect(hookValue?.playbackTruth.summary).toBe('Audio load failed');
+    expect(secondaryHookValue?.playbackTruth.summary).toBe('Audio load failed');
+    expect(hookValue?.playbackTruth.detail).toContain('Piano samples unavailable');
+    expect(secondaryHookValue?.playbackTruth.detail).toContain('Piano samples unavailable');
   });
 });
