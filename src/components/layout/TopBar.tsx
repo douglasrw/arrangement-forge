@@ -2,7 +2,12 @@ import { useState, useRef, useEffect } from 'react';
 import { cn } from '@/lib/utils';
 import { Settings } from 'lucide-react';
 import type { Block, Chord, Project, Section, Stem, SystemStatus } from '@/types';
-import { getProjectExportReadiness, getProjectSavePlan, type ProjectSavePlan } from '@/hooks/useProject';
+import {
+  getProjectExportReadiness,
+  getProjectSavePlan,
+  type ProjectSavePlan,
+  useProject,
+} from '@/hooks/useProject';
 import { serializeProjectExportSnapshot, useProjectStore } from '@/store/project-store';
 import { useUiStore } from '@/store/ui-store';
 import { useAuth } from '@/hooks/useAuth';
@@ -413,6 +418,7 @@ function ChordDisplayToggle({
 /* ------------------------------------------------------------------ */
 export function TopBar() {
   const { project, stems, sections, blocks, chords, updateProject } = useProjectStore();
+  const { loadProject } = useProject();
   const {
     unsavedChanges,
     systemStatus,
@@ -434,6 +440,7 @@ export function TopBar() {
   const [nameDraft, setNameDraft] = useState(projectName);
   const [menuOpen, setMenuOpen] = useState(false);
   const [exportFeedback, setExportFeedback] = useState<string | null>(null);
+  const [reloadingSavedSnapshot, setReloadingSavedSnapshot] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
   const menuRef = useRef<HTMLDivElement>(null);
 
@@ -512,8 +519,25 @@ export function TopBar() {
     URL.revokeObjectURL(exportUrl);
   }
 
-  function handleExport() {
-    if (!project || !exportReadiness.canExport) {
+  async function handleExport() {
+    if (!project) {
+      return;
+    }
+
+    if (exportReadiness.actionType === 'reload-saved-snapshot') {
+      setExportFeedback(null);
+      setReloadingSavedSnapshot(true);
+
+      try {
+        await loadProject(project.id);
+      } finally {
+        setReloadingSavedSnapshot(false);
+      }
+
+      return;
+    }
+
+    if (!exportReadiness.canExport) {
       return;
     }
 
@@ -554,12 +578,16 @@ export function TopBar() {
     );
   }
 
-  const canExport = exportReadiness.canExport;
-  const exportTitle = exportFeedback
-    ?? `${exportReadiness.currentState} ${exportReadiness.nextStep}`.trim();
-  const exportButtonLabel = exportFeedback
-    ? 'Exported'
-    : exportReadiness.actionLabel;
+  const exportActionEnabled =
+    Boolean(project) && !reloadingSavedSnapshot && exportReadiness.actionType !== 'none';
+  const exportTitle = reloadingSavedSnapshot
+    ? 'Reloading the saved arrangement rows for this project.'
+    : (exportFeedback ?? `${exportReadiness.currentState} ${exportReadiness.nextStep}`.trim());
+  const exportButtonLabel = reloadingSavedSnapshot
+    ? 'Reloading snapshot...'
+    : exportFeedback
+      ? 'Exported'
+      : exportReadiness.actionLabel;
   const saveIndicatorState = deriveTopBarSaveIndicatorState({
     systemStatus,
     unsavedChanges,
@@ -679,13 +707,15 @@ export function TopBar() {
         <button
           type="button"
           data-testid="topbar-export-button"
-          disabled={!canExport}
-          onClick={handleExport}
+          disabled={!exportActionEnabled}
+          onClick={() => {
+            void handleExport();
+          }}
           title={exportTitle}
           aria-label={exportTitle}
           className={cn(
             'rounded-lg border border-border bg-secondary px-3 py-1.5 text-xs font-medium transition-colors',
-            canExport
+            exportActionEnabled
               ? 'text-foreground hover:bg-secondary/80'
               : 'cursor-not-allowed text-muted-foreground opacity-40'
           )}

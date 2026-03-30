@@ -340,6 +340,7 @@ describe('useProject export readiness', () => {
 
     expect(readiness).toEqual({
       canExport: true,
+      actionType: 'export-chart-and-snapshot',
       actionLabel: 'Export chart + snapshot',
       hasTextTruth: false,
       hasArrangementRows: true,
@@ -370,6 +371,7 @@ describe('useProject export readiness', () => {
 
     expect(readiness).toEqual({
       canExport: true,
+      actionType: 'export-chart',
       actionLabel: 'Export chart',
       hasTextTruth: true,
       hasArrangementRows: false,
@@ -403,6 +405,7 @@ describe('useProject export readiness', () => {
 
     expect(readiness).toEqual({
       canExport: true,
+      actionType: 'export-chart',
       actionLabel: 'Export chart',
       hasTextTruth: true,
       hasArrangementRows: false,
@@ -436,6 +439,7 @@ describe('useProject export readiness', () => {
 
     expect(readiness).toEqual({
       canExport: false,
+      actionType: 'reload-saved-snapshot',
       actionLabel: 'Reload saved snapshot',
       hasTextTruth: false,
       hasArrangementRows: false,
@@ -469,6 +473,7 @@ describe('useProject export readiness', () => {
 
     expect(readiness).toEqual({
       canExport: false,
+      actionType: 'none',
       actionLabel: 'Nothing to export',
       hasTextTruth: false,
       hasArrangementRows: false,

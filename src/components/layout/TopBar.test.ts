@@ -4,6 +4,7 @@ import { act, createElement } from 'react';
 import { createRoot, type Root } from 'react-dom/client';
 import { beforeEach, afterEach, describe, expect, it, vi } from 'vitest';
 import type { Block, Chord, Project, Section, Stem } from '@/types';
+import type { LoadProjectResult } from '@/hooks/useProject';
 import { useProjectStore } from '@/store/project-store';
 import { useUiStore } from '@/store/ui-store';
 import {
@@ -17,12 +18,24 @@ import {
 } from './TopBar';
 
 const signOutMock = vi.hoisted(() => vi.fn());
+const loadProjectMock = vi.hoisted(() => vi.fn());
 
 vi.mock('@/hooks/useAuth', () => ({
   useAuth: () => ({
     signOut: signOutMock,
   }),
 }));
+
+vi.mock('@/hooks/useProject', async () => {
+  const actual = await vi.importActual<typeof import('@/hooks/useProject')>('@/hooks/useProject');
+
+  return {
+    ...actual,
+    useProject: () => ({
+      loadProject: loadProjectMock,
+    }),
+  };
+});
 
 const reactActEnv = globalThis as typeof globalThis & {
   IS_REACT_ACT_ENVIRONMENT?: boolean;
@@ -51,6 +64,21 @@ function makeProject(partial: Partial<Project> = {}): Project {
     createdAt: '2026-03-29T00:00:00Z',
     updatedAt: '2026-03-29T00:00:00Z',
     ...partial,
+  };
+}
+
+function createDeferred<T>() {
+  let resolve!: (value: T) => void;
+  let reject!: (reason?: unknown) => void;
+  const promise = new Promise<T>((nextResolve, nextReject) => {
+    resolve = nextResolve;
+    reject = nextReject;
+  });
+
+  return {
+    promise,
+    resolve,
+    reject,
   };
 }
 
@@ -159,6 +187,8 @@ let downloadRequests: Array<{ href: string; download: string }> = [];
 beforeEach(() => {
   reactActEnv.IS_REACT_ACT_ENVIRONMENT = true;
   signOutMock.mockReset();
+  loadProjectMock.mockReset();
+  loadProjectMock.mockResolvedValue({ status: 'ready' } satisfies LoadProjectResult);
 
   useProjectStore.setState({
     project: makeProject(),
@@ -574,10 +604,70 @@ describe('TopBar export baseline', () => {
       '[data-testid="topbar-export-button"]'
     ) as HTMLButtonElement | null;
 
-    expect(exportButton?.disabled).toBe(true);
+    expect(exportButton?.disabled).toBe(false);
     expect(exportButton?.textContent).toBe('Reload saved snapshot');
     expect(exportButton?.title).toBe(
       'A saved arrangement snapshot exists, but its rows are not loaded in this session. Reload the saved arrangement rows before exporting the arrangement snapshot.'
+    );
+  });
+
+  it('reloads the saved snapshot from the export action when arrangement rows are missing', async () => {
+    const reloadDeferred = createDeferred<LoadProjectResult>();
+    loadProjectMock.mockReturnValueOnce(reloadDeferred.promise);
+
+    useProjectStore.setState({
+      project: makeProject({
+        chordChartRaw: '   ',
+        generationHints: '   ',
+        hasArrangement: true,
+      }),
+      stems: [],
+      sections: [],
+      blocks: [],
+      chords: [],
+    });
+
+    const mounted = renderTopBar();
+    mountedRoot = mounted.root;
+    mountedContainer = mounted.container;
+
+    const exportButton = mounted.container.querySelector(
+      '[data-testid="topbar-export-button"]'
+    ) as HTMLButtonElement | null;
+
+    expect(exportButton).not.toBeNull();
+
+    await act(async () => {
+      exportButton?.dispatchEvent(new MouseEvent('click', { bubbles: true }));
+      await Promise.resolve();
+    });
+
+    expect(loadProjectMock).toHaveBeenCalledWith('project-1');
+    expect(exportButton?.disabled).toBe(true);
+    expect(exportButton?.textContent).toBe('Reloading snapshot...');
+    expect(exportButton?.title).toBe('Reloading the saved arrangement rows for this project.');
+
+    await act(async () => {
+      useProjectStore.setState({
+        project: makeProject({
+          chordChartRaw: '   ',
+          generationHints: '   ',
+          hasArrangement: true,
+        }),
+        stems: [makeStem()],
+        sections: [makeSection()],
+        blocks: [makeBlock()],
+        chords: [makeChord()],
+      });
+      reloadDeferred.resolve({ status: 'ready' });
+      await reloadDeferred.promise;
+      await Promise.resolve();
+    });
+
+    expect(exportButton?.disabled).toBe(false);
+    expect(exportButton?.textContent).toBe('Export chart + snapshot');
+    expect(exportButton?.title).toBe(
+      'Loaded arrangement rows are ready to export from the saved arrangement snapshot already loaded in this session. Export now to download the chord chart and arrangement snapshot.'
     );
   });
 

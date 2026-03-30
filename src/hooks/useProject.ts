@@ -129,6 +129,11 @@ async function ensureWriteSucceeded<T extends { error?: unknown | null }>(
 
 export interface ProjectExportReadiness {
   canExport: boolean;
+  actionType:
+    | 'none'
+    | 'export-chart'
+    | 'export-chart-and-snapshot'
+    | 'reload-saved-snapshot';
   actionLabel:
     | 'Export chart + snapshot'
     | 'Export chart'
@@ -323,6 +328,7 @@ export function getProjectExportReadiness(state: {
   if (!state.project) {
     return {
       canExport: false,
+      actionType: 'none',
       actionLabel: 'Nothing to export',
       hasTextTruth: false,
       hasArrangementRows: false,
@@ -342,6 +348,7 @@ export function getProjectExportReadiness(state: {
       if (arrangementTruth.status === 'persisted-only') {
         return {
           canExport: true,
+          actionType: 'export-chart',
           actionLabel: 'Export chart',
           hasTextTruth,
           hasArrangementRows: false,
@@ -354,6 +361,7 @@ export function getProjectExportReadiness(state: {
 
       return {
         canExport: true,
+        actionType: 'export-chart',
         actionLabel: 'Export chart',
         hasTextTruth,
         hasArrangementRows: false,
@@ -366,6 +374,7 @@ export function getProjectExportReadiness(state: {
 
     return {
       canExport: true,
+      actionType: 'export-chart-and-snapshot',
       actionLabel: 'Export chart + snapshot',
       hasTextTruth,
       hasArrangementRows,
@@ -391,6 +400,7 @@ export function getProjectExportReadiness(state: {
   if (arrangementTruth.status === 'persisted-only') {
     return {
       canExport: false,
+      actionType: 'reload-saved-snapshot',
       actionLabel: 'Reload saved snapshot',
       hasTextTruth: false,
       hasArrangementRows: false,
@@ -403,6 +413,7 @@ export function getProjectExportReadiness(state: {
 
   return {
     canExport: false,
+    actionType: 'none',
     actionLabel: 'Nothing to export',
     hasTextTruth: false,
     hasArrangementRows: false,
