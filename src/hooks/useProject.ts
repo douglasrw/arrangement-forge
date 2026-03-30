@@ -64,6 +64,7 @@ function rowToMessage(row: Record<string, unknown>): AiChatMessage {
 
 export interface ProjectExportReadiness {
   canExport: boolean;
+  actionLabel: 'Export' | 'Reload to export' | 'Nothing to export';
   hasTextTruth: boolean;
   hasArrangementRows: boolean;
   arrangementTruth: ReturnType<typeof getProjectArrangementTruth>;
@@ -233,6 +234,7 @@ export function getProjectExportReadiness(state: {
   if (!state.project) {
     return {
       canExport: false,
+      actionLabel: 'Nothing to export',
       hasTextTruth: false,
       hasArrangementRows: false,
       arrangementTruth,
@@ -247,6 +249,7 @@ export function getProjectExportReadiness(state: {
   if (hasTextTruth || hasArrangementRows) {
     return {
       canExport: true,
+      actionLabel: 'Export',
       hasTextTruth,
       hasArrangementRows,
       arrangementTruth,
@@ -257,6 +260,7 @@ export function getProjectExportReadiness(state: {
   if (arrangementTruth.status === 'persisted-only') {
     return {
       canExport: false,
+      actionLabel: 'Reload to export',
       hasTextTruth: false,
       hasArrangementRows: false,
       arrangementTruth,
@@ -266,6 +270,7 @@ export function getProjectExportReadiness(state: {
 
   return {
     canExport: false,
+    actionLabel: 'Nothing to export',
     hasTextTruth: false,
     hasArrangementRows: false,
     arrangementTruth,

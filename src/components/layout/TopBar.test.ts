@@ -495,6 +495,34 @@ describe('TopBar export baseline', () => {
     expect(exportButton?.title).toBe('Add a chord chart, description, or arrangement to export');
   });
 
+  it('keeps blocked export truth explicit when only a saved arrangement snapshot exists', () => {
+    useProjectStore.setState({
+      project: makeProject({
+        chordChartRaw: '   ',
+        generationHints: '   ',
+        hasArrangement: true,
+      }),
+      stems: [],
+      sections: [],
+      blocks: [],
+      chords: [],
+    });
+
+    const mounted = renderTopBar();
+    mountedRoot = mounted.root;
+    mountedContainer = mounted.container;
+
+    const exportButton = mounted.container.querySelector(
+      '[data-testid="topbar-export-button"]'
+    ) as HTMLButtonElement | null;
+
+    expect(exportButton?.disabled).toBe(true);
+    expect(exportButton?.textContent).toBe('Reload to export');
+    expect(exportButton?.title).toBe(
+      'Reload the saved arrangement rows before exporting the arrangement snapshot'
+    );
+  });
+
   it('exports arrangement-only projects instead of treating them as an empty-state dead end', async () => {
     useProjectStore.setState({
       project: makeProject({

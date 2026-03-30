@@ -548,9 +548,7 @@ export function TopBar() {
   const exportTitle = exportFeedback ?? exportReadiness.message;
   const exportButtonLabel = exportFeedback
     ? 'Exported'
-    : project === null || canExport
-      ? 'Export'
-      : 'Nothing to export';
+    : exportReadiness.actionLabel;
   const saveIndicatorState = deriveTopBarSaveIndicatorState({
     systemStatus,
     unsavedChanges,

@@ -324,6 +324,7 @@ describe('useProject export readiness', () => {
 
     expect(readiness).toEqual({
       canExport: true,
+      actionLabel: 'Export',
       hasTextTruth: false,
       hasArrangementRows: true,
       arrangementTruth: {
@@ -353,6 +354,7 @@ describe('useProject export readiness', () => {
 
     expect(readiness).toEqual({
       canExport: false,
+      actionLabel: 'Reload to export',
       hasTextTruth: false,
       hasArrangementRows: false,
       arrangementTruth: {
@@ -382,6 +384,7 @@ describe('useProject export readiness', () => {
 
     expect(readiness).toEqual({
       canExport: false,
+      actionLabel: 'Nothing to export',
       hasTextTruth: false,
       hasArrangementRows: false,
       arrangementTruth: {
