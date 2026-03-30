@@ -5,7 +5,7 @@ import { useAudio } from "@/hooks/useAudio"
 import { hasProjectArrangementTruth, useProjectStore } from "@/store/project-store"
 import { useUiStore } from "@/store/ui-store"
 import type { DrumKitLike } from "@/audio/drum-kit"
-import type { Stem, SystemStatus } from "@/types"
+import type { PlaybackTruth, Stem, SystemStatus } from "@/types"
 
 /* ------------------------------------------------------------------ */
 /*  Instrument palette (matches sequencer-block.tsx)                   */
@@ -30,7 +30,7 @@ interface ChannelState {
 
 interface MixerReadinessTruth {
   status: "ready" | "loading" | "unavailable"
-  badge: "Ready" | "Loading" | "Unavailable"
+  badge: string
   message: string | null
   tone: "ready" | "loading" | "default" | "error"
 }
@@ -102,17 +102,11 @@ function toChannelState(stem?: Stem): ChannelState {
 function getMixerReadinessTruth({
   hasArrangementTruth,
   stemsCount,
-  playbackReadiness,
-  isLoadingAudio,
-  systemStatus,
-  errorMessage,
+  playbackTruth,
 }: {
   hasArrangementTruth: boolean
   stemsCount: number
-  playbackReadiness: "ready" | "loading" | "unavailable"
-  isLoadingAudio: boolean
-  systemStatus: SystemStatus
-  errorMessage: string | null
+  playbackTruth: PlaybackTruth
 }): MixerReadinessTruth {
   if (!hasArrangementTruth) {
     return {
@@ -132,24 +126,20 @@ function getMixerReadinessTruth({
     }
   }
 
-  if (systemStatus === "error") {
+  if (playbackTruth.status === "unavailable") {
     return {
       status: "unavailable",
       badge: "Unavailable",
-      message: `Audio unavailable: ${errorMessage ?? "Instrument samples could not be loaded."}`,
-      tone: "error",
+      message: `${playbackTruth.detail} ${playbackTruth.nextStep}`.trim(),
+      tone: playbackTruth.reason === "load-failed" ? "error" : "default",
     }
   }
 
-  if (
-    isLoadingAudio ||
-    systemStatus === "loading-samples" ||
-    playbackReadiness === "loading"
-  ) {
+  if (playbackTruth.status === "loading") {
     return {
       status: "loading",
-      badge: "Loading",
-      message: "Arrangement audio is loading. Mixer controls will unlock when audio is ready.",
+      badge: playbackTruth.summary,
+      message: `${playbackTruth.detail} ${playbackTruth.nextStep}`.trim(),
       tone: "loading",
     }
   }
@@ -478,8 +468,7 @@ export function MixerDrawer() {
     engine,
     transportState,
     audioConfig,
-    playbackReadiness,
-    isLoadingAudio,
+    playbackTruth,
     setMasterVolume,
   } = useAudio()
 
@@ -498,10 +487,7 @@ export function MixerDrawer() {
   const mixerReadiness = getMixerReadinessTruth({
     hasArrangementTruth,
     stemsCount: stems.length,
-    playbackReadiness,
-    isLoadingAudio,
-    systemStatus,
-    errorMessage,
+    playbackTruth,
   })
   const mixerReady = mixerReadiness.status === "ready"
 

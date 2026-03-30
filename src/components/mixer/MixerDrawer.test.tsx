@@ -7,7 +7,14 @@ import { MixerDrawer } from './MixerDrawer';
 import type { DrumKitLike } from '@/audio/drum-kit';
 import { useProjectStore } from '@/store/project-store';
 import { useUiStore } from '@/store/ui-store';
-import type { AudioEngineConfig, PlaybackReadiness, Project, Stem, TransportState } from '@/types';
+import type {
+  AudioEngineConfig,
+  PlaybackReadiness,
+  PlaybackTruth,
+  Project,
+  Stem,
+  TransportState,
+} from '@/types';
 
 const useAudioState = vi.hoisted(() => ({
   transportState: {
@@ -27,7 +34,13 @@ const useAudioState = vi.hoisted(() => ({
     loopEndBar: 4,
   } as AudioEngineConfig,
   playbackReadiness: 'ready' as PlaybackReadiness,
-  isLoadingAudio: false,
+  playbackTruth: {
+    status: 'ready',
+    reason: 'ready',
+    summary: 'Ready',
+    detail: 'Arrangement audio is loaded into the engine.',
+    nextStep: 'Play, scrub, or adjust the transport.',
+  } as PlaybackTruth,
   engine: {
     getDrumKit: () => null,
   },
@@ -43,7 +56,7 @@ vi.mock('@/hooks/useAudio', () => ({
     transportState: useAudioState.transportState,
     audioConfig: useAudioState.audioConfig,
     playbackReadiness: useAudioState.playbackReadiness,
-    isLoadingAudio: useAudioState.isLoadingAudio,
+    playbackTruth: useAudioState.playbackTruth,
     setMasterVolume: setMasterVolumeMock,
   }),
 }));
@@ -157,7 +170,13 @@ beforeEach(() => {
     loopEndBar: 4,
   };
   useAudioState.playbackReadiness = 'ready';
-  useAudioState.isLoadingAudio = false;
+  useAudioState.playbackTruth = {
+    status: 'ready',
+    reason: 'ready',
+    summary: 'Ready',
+    detail: 'Arrangement audio is loaded into the engine.',
+    nextStep: 'Play, scrub, or adjust the transport.',
+  };
   useAudioState.engine = {
     getDrumKit: () => null,
   };
@@ -403,7 +422,13 @@ describe('MixerDrawer', () => {
 
   it('surfaces loading readiness truth and blocks mixer interaction until audio is ready', () => {
     useAudioState.playbackReadiness = 'loading';
-    useAudioState.isLoadingAudio = true;
+    useAudioState.playbackTruth = {
+      status: 'loading',
+      reason: 'loading-arrangement',
+      summary: 'Loading audio',
+      detail: 'Arrangement audio is loading into the engine right now.',
+      nextStep: 'Wait for the current audio load to finish.',
+    };
 
     useUiStore.setState({
       systemStatus: 'loading-samples',
@@ -433,10 +458,10 @@ describe('MixerDrawer', () => {
       '[aria-label="Master volume fader"]'
     ) as HTMLDivElement | null;
 
-    expect(mixerReadiness?.textContent).toBe('Loading');
+    expect(mixerReadiness?.textContent).toBe('Loading audio');
     expect(mixerReadiness?.getAttribute('data-mixer-readiness')).toBe('loading');
     expect(mounted.container.textContent).toContain(
-      'Arrangement audio is loading. Mixer controls will unlock when audio is ready.'
+      'Arrangement audio is loading into the engine right now. Wait for the current audio load to finish.'
     );
     expect(pianoMuteButton?.disabled).toBe(true);
     expect(pianoSlider?.getAttribute('aria-disabled')).toBe('true');
@@ -444,8 +469,70 @@ describe('MixerDrawer', () => {
     expect(masterSlider?.getAttribute('aria-disabled')).toBe('true');
   });
 
+  it('surfaces pending load truth before the mixer can unlock', () => {
+    useAudioState.playbackReadiness = 'loading';
+    useAudioState.playbackTruth = {
+      status: 'loading',
+      reason: 'awaiting-user-play',
+      summary: 'Load to play',
+      detail: 'Arrangement audio is not loaded into the engine yet.',
+      nextStep: 'Press play to load arrangement audio.',
+    };
+
+    useProjectStore.setState({
+      stems: [makeStem({ id: 'st-piano', instrument: 'piano', sortOrder: 0 })],
+      sections: [
+        {
+          id: 'sec-1',
+          projectId: 'p1',
+          name: 'Verse',
+          sortOrder: 0,
+          barCount: 4,
+          startBar: 1,
+          energyOverride: null,
+          grooveOverride: null,
+          feelOverride: null,
+          swingPctOverride: null,
+          dynamicsOverride: null,
+          createdAt: '2026-03-29T00:00:00Z',
+        },
+      ],
+      blocks: [],
+      chords: [],
+    });
+
+    const mounted = renderMixer();
+    mountedRoot = mounted.root;
+    mountedContainer = mounted.container;
+
+    const mixerReadiness = mounted.container.querySelector(
+      '[data-mixer-readiness]'
+    ) as HTMLSpanElement | null;
+    const pianoMuteButton = mounted.container.querySelector(
+      'button[aria-label="Toggle PIANO mute"]'
+    ) as HTMLButtonElement | null;
+    const masterSlider = mounted.container.querySelector(
+      '[aria-label="Master volume fader"]'
+    ) as HTMLDivElement | null;
+
+    expect(mixerReadiness?.textContent).toBe('Load to play');
+    expect(mixerReadiness?.getAttribute('data-mixer-readiness')).toBe('loading');
+    expect(mounted.container.textContent).toContain(
+      'Arrangement audio is not loaded into the engine yet. Press play to load arrangement audio.'
+    );
+    expect(pianoMuteButton?.disabled).toBe(true);
+    expect(masterSlider?.getAttribute('aria-disabled')).toBe('true');
+  });
+
   it('surfaces unavailable readiness when audio loading fails in the mixer itself', () => {
     useAudioState.playbackReadiness = 'unavailable';
+    useAudioState.playbackTruth = {
+      status: 'unavailable',
+      reason: 'load-failed',
+      summary: 'Unavailable',
+      detail: 'Audio failed to load: Salamander drum samples missing',
+      nextStep: 'Fix the sample error, then press play to try again.',
+    };
 
     useUiStore.setState({
       systemStatus: 'error',
@@ -475,7 +562,9 @@ describe('MixerDrawer', () => {
 
     expect(mixerReadiness?.textContent).toBe('Unavailable');
     expect(mixerReadiness?.getAttribute('data-mixer-readiness')).toBe('unavailable');
-    expect(mounted.container.textContent).toContain('Audio unavailable: Salamander drum samples missing');
+    expect(mounted.container.textContent).toContain(
+      'Audio failed to load: Salamander drum samples missing Fix the sample error, then press play to try again.'
+    );
     expect(pianoMuteButton?.disabled).toBe(true);
     expect(pianoSlider?.getAttribute('aria-disabled')).toBe('true');
     expect(masterSlider?.getAttribute('aria-disabled')).toBe('true');
@@ -563,6 +652,15 @@ describe('MixerDrawer', () => {
   });
 
   it('shows drum sub-mix loading truth until the drum kit is loaded', () => {
+    useAudioState.playbackReadiness = 'loading';
+    useAudioState.playbackTruth = {
+      status: 'loading',
+      reason: 'loading-arrangement',
+      summary: 'Loading audio',
+      detail: 'Arrangement audio is loading into the engine right now.',
+      nextStep: 'Wait for the current audio load to finish.',
+    };
+
     useUiStore.setState({
       systemStatus: 'loading-samples',
     });
@@ -582,7 +680,7 @@ describe('MixerDrawer', () => {
     });
 
     expect(mounted.container.textContent).toContain(
-      'Arrangement audio is loading. Mixer controls will unlock when audio is ready.'
+      'Arrangement audio is loading into the engine right now. Wait for the current audio load to finish.'
     );
     expect(mounted.container.textContent).toContain('Kit loading');
     expect(
@@ -599,6 +697,15 @@ describe('MixerDrawer', () => {
   });
 
   it('shows drum sub-mix error truth when sample loading fails', () => {
+    useAudioState.playbackReadiness = 'unavailable';
+    useAudioState.playbackTruth = {
+      status: 'unavailable',
+      reason: 'load-failed',
+      summary: 'Unavailable',
+      detail: 'Audio failed to load: Salamander drum samples missing',
+      nextStep: 'Fix the sample error, then press play to try again.',
+    };
+
     useUiStore.setState({
       systemStatus: 'error',
       errorMessage: 'Salamander drum samples missing',
@@ -618,7 +725,9 @@ describe('MixerDrawer', () => {
       drumButton?.dispatchEvent(new MouseEvent('click', { bubbles: true }));
     });
 
-    expect(mounted.container.textContent).toContain('Audio unavailable: Salamander drum samples missing');
+    expect(mounted.container.textContent).toContain(
+      'Audio failed to load: Salamander drum samples missing Fix the sample error, then press play to try again.'
+    );
     expect(mounted.container.textContent).toContain('Kit error');
     expect(
       findElementByTitle(
