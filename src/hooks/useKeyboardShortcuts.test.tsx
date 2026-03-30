@@ -256,4 +256,29 @@ describe('useKeyboardShortcuts undo boundary truth', () => {
     ]);
     expect(useUndoStore.getState().undoStack).toHaveLength(1);
   });
+
+  it('keeps the undo boundary available when the restore snapshot is invalid', () => {
+    const after = makeArrangement('after');
+
+    useProjectStore.getState().setArrangement(after);
+    useUndoStore.getState().pushUndo(
+      'Broken boundary test',
+      {
+        undo: 'not json',
+        redo: JSON.stringify(after),
+      }
+    );
+
+    const mounted = renderHarness();
+    mountedRoot = mounted.root;
+    mountedContainer = mounted.container;
+
+    dispatchShortcut('z');
+
+    expect(useProjectStore.getState().blocks).toMatchObject([
+      { id: 'blk-after', stemId: 'st-after', sectionId: 'sec-after' },
+    ]);
+    expect(useUndoStore.getState().undoStack).toHaveLength(1);
+    expect(useUndoStore.getState().redoStack).toHaveLength(0);
+  });
 });

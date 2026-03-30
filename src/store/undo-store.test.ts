@@ -53,6 +53,17 @@ describe('undoStore', () => {
     expect(useUndoStore.getState().redoStack).toHaveLength(1);
   });
 
+  it('undo leaves stacks unchanged when the restore snapshot is invalid', () => {
+    useUndoStore.getState().pushUndo('Broken action', {
+      undo: 'not json',
+      redo: makeSnapshot('after'),
+    });
+
+    expect(useUndoStore.getState().undo()).toBeNull();
+    expect(useUndoStore.getState().undoStack).toHaveLength(1);
+    expect(useUndoStore.getState().redoStack).toHaveLength(0);
+  });
+
   it('redo returns null when redo stack is empty', () => {
     expect(useUndoStore.getState().redo()).toBeNull();
   });
@@ -76,9 +87,27 @@ describe('undoStore', () => {
     expect(useUndoStore.getState().redoStack).toHaveLength(0);
   });
 
+  it('redo leaves stacks unchanged when the restore snapshot is invalid', () => {
+    useUndoStore.getState().pushUndo('Broken redo', {
+      undo: makeSnapshot('before'),
+      redo: 'not json',
+    });
+
+    expect(useUndoStore.getState().undo()).not.toBeNull();
+    expect(useUndoStore.getState().undoStack).toHaveLength(0);
+    expect(useUndoStore.getState().redoStack).toHaveLength(1);
+
+    expect(useUndoStore.getState().redo()).toBeNull();
+    expect(useUndoStore.getState().undoStack).toHaveLength(0);
+    expect(useUndoStore.getState().redoStack).toHaveLength(1);
+  });
+
   it('canUndo and canRedo reflect stack state', () => {
     expect(useUndoStore.getState().canUndo()).toBe(false);
-    useUndoStore.getState().pushUndo('A', { undo: 'a', redo: 'b' });
+    useUndoStore.getState().pushUndo('A', {
+      undo: makeSnapshot('before'),
+      redo: makeSnapshot('after'),
+    });
     expect(useUndoStore.getState().canUndo()).toBe(true);
     useUndoStore.getState().undo();
     expect(useUndoStore.getState().canRedo()).toBe(true);

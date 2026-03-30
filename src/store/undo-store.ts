@@ -49,10 +49,12 @@ export const useUndoStore = create<UndoStore>()((set, get) => ({
     const { undoStack, redoStack } = get();
     if (undoStack.length === 0) return null;
     const entry = undoStack[undoStack.length - 1];
+    const transition = createUndoBoundaryTransition(entry, 'undo');
+    if (!transition.restoreSnapshot) return null;
     set({ undoStack: undoStack.slice(0, -1), redoStack: [...redoStack, entry] });
     return {
       description: entry.description,
-      ...createUndoBoundaryTransition(entry, 'undo'),
+      ...transition,
     };
   },
 
@@ -60,10 +62,12 @@ export const useUndoStore = create<UndoStore>()((set, get) => ({
     const { undoStack, redoStack } = get();
     if (redoStack.length === 0) return null;
     const entry = redoStack[redoStack.length - 1];
+    const transition = createUndoBoundaryTransition(entry, 'redo');
+    if (!transition.restoreSnapshot) return null;
     set({ redoStack: redoStack.slice(0, -1), undoStack: [...undoStack, entry] });
     return {
       description: entry.description,
-      ...createUndoBoundaryTransition(entry, 'redo'),
+      ...transition,
     };
   },
 
