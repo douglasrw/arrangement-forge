@@ -6,17 +6,17 @@ const SCOPE_STYLES: Record<Scope, { bg: string; text: string; label: string }> =
   song: {
     bg: "bg-input/60",
     text: "text-muted-foreground",
-    label: "Song",
+    label: "Song Scope",
   },
   section: {
     bg: "bg-instrument-strings/10",
     text: "text-playhead",
-    label: "Section",
+    label: "Section Scope",
   },
   block: {
     bg: "bg-scope-section/10",
     text: "text-warning",
-    label: "Block",
+    label: "Block Scope",
   },
 }
 

@@ -272,6 +272,11 @@ describe('BlockContext truth surface', () => {
     ) as HTMLButtonElement | null;
 
     expect(mounted.container.textContent).toContain('Bars 3 – 6');
+    expect(mounted.container.textContent).toContain('Block Inspector');
+    expect(mounted.container.textContent).toContain('Block Scope');
+    expect(mounted.container.textContent).toContain(
+      'Active scope: Piano block across bars 3 – 6.'
+    );
     expect(mounted.container.textContent).toContain(
       'Pattern, energy, and dynamics are the saved block settings here today.'
     );
@@ -289,6 +294,16 @@ describe('BlockContext truth surface', () => {
     expect(mounted.container.textContent).toContain(
       'This block inherits volume and pan from the current piano mixer lane.'
     );
+    expect(
+      mounted.container
+        .querySelector('#block-audio-truth-card')
+        ?.getAttribute('data-truth-tone')
+    ).toBe('default');
+    expect(
+      mounted.container
+        .querySelector('#block-chord-truth-card')
+        ?.getAttribute('data-truth-tone')
+    ).toBe('default');
     expect(mounted.container.textContent).toContain(
       'Use the mixer drawer to change this lane truth. Block-level audio overrides are not editable here yet.'
     );
@@ -489,6 +504,16 @@ describe('BlockContext truth surface', () => {
       'No current piano stem is loaded for this arrangement, so block audio truth is missing rather than hidden.'
     );
     expect(
+      mounted.container
+        .querySelector('#block-audio-truth-card')
+        ?.getAttribute('data-truth-tone')
+    ).toBe('missing');
+    expect(
+      mounted.container
+        .querySelector('#block-audio-truth-badge')
+        ?.getAttribute('data-truth-tone')
+    ).toBe('missing');
+    expect(
       (
         mounted.container.querySelector('#block-audio-volume-value') as
           | HTMLSpanElement
@@ -527,6 +552,16 @@ describe('BlockContext truth surface', () => {
     expect(mounted.container.textContent).toContain(
       'No chord chart truth is loaded for bars 3 – 6, so scope is missing rather than hidden.'
     );
+    expect(
+      mounted.container
+        .querySelector('#block-chord-truth-card')
+        ?.getAttribute('data-truth-tone')
+    ).toBe('missing');
+    expect(
+      mounted.container
+        .querySelector('#block-chord-truth-badge')
+        ?.getAttribute('data-truth-tone')
+    ).toBe('missing');
     expect(mounted.container.textContent).toContain('Range');
     expect(mounted.container.textContent).toContain('No chord chart');
     expect(mounted.container.textContent).toContain(

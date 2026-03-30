@@ -1,5 +1,6 @@
 import { useState } from "react"
 import type { Instrument } from "@/components/sequencer-block"
+import { ScopeBadge } from "@/components/shared/ScopeBadge"
 import type { Chord, Stem } from "@/types"
 import { useProjectStore } from "@/store/project-store"
 import { useSelectionStore } from "@/store/selection-store"
@@ -16,6 +17,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
+import { cn } from "@/lib/utils"
 
 /* ------------------------------------------------------------------ */
 /*  Instrument palette (matches sequencer-block.tsx)                    */
@@ -59,7 +61,7 @@ interface BlockAudioTruth {
   volumeValue: string
   panValue: string
   footer: string
-  tone: "default" | "missing"
+  tone: TruthTone
 }
 
 interface BlockChordTruth {
@@ -70,7 +72,35 @@ interface BlockChordTruth {
     value: string
   }>
   footer: string
-  tone: "default" | "missing"
+  tone: TruthTone
+}
+
+type TruthTone = "default" | "missing"
+
+const TRUTH_TONE_STYLES: Record<
+  TruthTone,
+  {
+    panel: string
+    badge: string
+    row: string
+    value: string
+    footer: string
+  }
+> = {
+  default: {
+    panel: "border-border/70 bg-secondary/30",
+    badge: "border-border/70 text-foreground",
+    row: "border-border/60 bg-card/40",
+    value: "text-foreground",
+    footer: "text-foreground",
+  },
+  missing: {
+    panel: "border-warning/30 bg-warning/10",
+    badge: "border-warning/30 bg-warning/10 text-warning",
+    row: "border-warning/20 bg-warning/5",
+    value: "text-warning",
+    footer: "text-warning",
+  },
 }
 
 function formatMixerVolume(gain: number): string {
@@ -291,6 +321,8 @@ export function BlockContext({
     : liveBlock?.dynamicsOverride == null
   const inheritedDynamicsSourceLabel =
     inheritedDynamics.source === "section" ? "Section" : "Project"
+  const audioTruthTone = TRUTH_TONE_STYLES[blockAudioTruth.tone]
+  const chordTruthTone = TRUTH_TONE_STYLES[blockChordTruth.tone]
 
   /* Confirm dialog for delete block */
   const [confirmDeleteOpen, setConfirmDeleteOpen] = useState(false)
@@ -351,17 +383,40 @@ export function BlockContext({
       </button>
 
       <div className="border-t border-border px-4 pb-4 pt-4">
-        {/* Block header — colored dot + instrument name + bar range */}
-        <div className="flex items-center gap-2">
-          <div
-            className="size-2.5 rounded-sm"
-            style={{ backgroundColor: color }}
-          />
-          <span className="text-sm font-medium text-zinc-200">{label}</span>
+        <div className="rounded-lg border border-border/70 bg-secondary/30 p-3">
+          <div className="flex items-center justify-between gap-3">
+            <div className="flex items-center gap-2">
+              <div
+                className="size-2.5 rounded-sm"
+                style={{ backgroundColor: color }}
+              />
+              <span className="text-xs font-semibold uppercase tracking-wider text-foreground">
+                Block Inspector
+              </span>
+            </div>
+            <ScopeBadge
+              scope="block"
+              className="shrink-0"
+            />
+          </div>
+
+          <div className="mt-3 flex items-center gap-2">
+            <div
+              className="size-2.5 rounded-sm"
+              style={{ backgroundColor: color }}
+            />
+            <span className="text-sm font-medium text-zinc-200">{label}</span>
+          </div>
+          <p className="mt-0.5 text-xs text-muted-foreground">
+            Bars {resolvedStartBar} &ndash; {resolvedEndBar}
+          </p>
+          <p
+            id="block-scope-summary"
+            className="mt-2 text-xs text-muted-foreground"
+          >
+            Active scope: {label} block across bars {resolvedStartBar} &ndash; {resolvedEndBar}.
+          </p>
         </div>
-        <p className="mt-0.5 text-xs text-muted-foreground">
-          Bars {resolvedStartBar} &ndash; {resolvedEndBar}
-        </p>
 
         {/* PATTERN STYLE */}
         <label
@@ -523,7 +578,11 @@ export function BlockContext({
           </div>
         </div>
 
-        <div className="mt-4 rounded-lg border border-border/70 bg-secondary/30 p-3">
+        <div
+          id="block-audio-truth-card"
+          data-truth-tone={blockAudioTruth.tone}
+          className={cn("mt-4 rounded-lg border p-3", audioTruthTone.panel)}
+        >
           <div className="flex items-start justify-between gap-3">
             <div className="flex flex-col gap-1">
               <h3 className="text-[10px] font-medium uppercase tracking-widest text-zinc-500">
@@ -534,16 +593,19 @@ export function BlockContext({
               </p>
             </div>
             <span
-              className={`rounded border border-border/70 px-2 py-0.5 text-[10px] font-medium uppercase tracking-wider ${
-                blockAudioTruth.tone === "missing" ? "text-muted-foreground" : "text-foreground"
-              }`}
+              id="block-audio-truth-badge"
+              data-truth-tone={blockAudioTruth.tone}
+              className={cn(
+                "rounded border px-2 py-0.5 text-[10px] font-medium uppercase tracking-wider",
+                audioTruthTone.badge
+              )}
             >
               {blockAudioTruth.badge}
             </span>
           </div>
 
           <div className="mt-3 grid gap-2">
-            <div className="flex items-center justify-between gap-3 rounded-md border border-border/60 bg-card/40 px-3 py-2">
+            <div className={cn("flex items-center justify-between gap-3 rounded-md border px-3 py-2", audioTruthTone.row)}>
               <div className="flex flex-col gap-0.5">
                 <span className="text-[11px] font-medium text-foreground">Volume</span>
                 <span className="text-[11px] text-muted-foreground">
@@ -552,13 +614,13 @@ export function BlockContext({
               </div>
               <span
                 id="block-audio-volume-value"
-                className="font-mono text-[11px] text-foreground"
+                className={cn("font-mono text-[11px]", audioTruthTone.value)}
               >
                 {blockAudioTruth.volumeValue}
               </span>
             </div>
 
-            <div className="flex items-center justify-between gap-3 rounded-md border border-border/60 bg-card/40 px-3 py-2">
+            <div className={cn("flex items-center justify-between gap-3 rounded-md border px-3 py-2", audioTruthTone.row)}>
               <div className="flex flex-col gap-0.5">
                 <span className="text-[11px] font-medium text-foreground">Pan</span>
                 <span className="text-[11px] text-muted-foreground">
@@ -567,19 +629,23 @@ export function BlockContext({
               </div>
               <span
                 id="block-audio-pan-value"
-                className="font-mono text-[11px] text-foreground"
+                className={cn("font-mono text-[11px]", audioTruthTone.value)}
               >
                 {blockAudioTruth.panValue}
               </span>
             </div>
           </div>
 
-          <p className="mt-3 text-sm text-foreground">
+          <p className={cn("mt-3 text-sm", audioTruthTone.footer)}>
             {blockAudioTruth.footer}
           </p>
         </div>
 
-        <div className="mt-4 rounded-lg border border-border/70 bg-secondary/30 p-3">
+        <div
+          id="block-chord-truth-card"
+          data-truth-tone={blockChordTruth.tone}
+          className={cn("mt-4 rounded-lg border p-3", chordTruthTone.panel)}
+        >
           <div className="flex items-start justify-between gap-3">
             <div className="flex flex-col gap-1">
               <h3 className="text-[10px] font-medium uppercase tracking-widest text-zinc-500">
@@ -590,9 +656,12 @@ export function BlockContext({
               </p>
             </div>
             <span
-              className={`rounded border border-border/70 px-2 py-0.5 text-[10px] font-medium uppercase tracking-wider ${
-                blockChordTruth.tone === "missing" ? "text-muted-foreground" : "text-foreground"
-              }`}
+              id="block-chord-truth-badge"
+              data-truth-tone={blockChordTruth.tone}
+              className={cn(
+                "rounded border px-2 py-0.5 text-[10px] font-medium uppercase tracking-wider",
+                chordTruthTone.badge
+              )}
             >
               {blockChordTruth.badge}
             </span>
@@ -602,15 +671,20 @@ export function BlockContext({
             {blockChordTruth.rows.map((row) => (
               <div
                 key={row.label}
-                className="flex items-center justify-between gap-3 rounded-md border border-border/60 bg-card/40 px-3 py-2"
+                className={cn(
+                  "flex items-center justify-between gap-3 rounded-md border px-3 py-2",
+                  chordTruthTone.row
+                )}
               >
                 <span className="text-[11px] font-medium text-foreground">{row.label}</span>
-                <span className="font-mono text-[11px] text-foreground">{row.value}</span>
+                <span className={cn("font-mono text-[11px]", chordTruthTone.value)}>
+                  {row.value}
+                </span>
               </div>
             ))}
           </div>
 
-          <p className="mt-3 text-sm text-foreground">
+          <p className={cn("mt-3 text-sm", chordTruthTone.footer)}>
             {blockChordTruth.footer}
           </p>
         </div>
