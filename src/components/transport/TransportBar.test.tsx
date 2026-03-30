@@ -7,6 +7,7 @@ import { TransportBar } from './TransportBar';
 import { useProjectStore } from '@/store/project-store';
 import type {
   AudioEngineConfig,
+  PlaybackTruth,
   PlaybackReadiness,
   Project,
   Section,
@@ -38,7 +39,13 @@ const useAudioState = vi.hoisted(() => ({
     loopEndBar: 4,
   } as AudioEngineConfig,
   playbackReadiness: 'ready' as PlaybackReadiness,
-  isLoadingAudio: false,
+  playbackTruth: {
+    status: 'ready',
+    reason: 'ready',
+    summary: 'Ready',
+    detail: 'Arrangement audio is loaded into the engine.',
+    nextStep: 'Play, scrub, or adjust the transport.',
+  } as PlaybackTruth,
 }));
 
 vi.mock('@/hooks/useAudio', () => ({
@@ -46,7 +53,7 @@ vi.mock('@/hooks/useAudio', () => ({
     transportState: useAudioState.transportState,
     audioConfig: useAudioState.audioConfig,
     playbackReadiness: useAudioState.playbackReadiness,
-    isLoadingAudio: useAudioState.isLoadingAudio,
+    playbackTruth: useAudioState.playbackTruth,
     play: playMock,
     pause: pauseMock,
     stop: stopMock,
@@ -149,7 +156,13 @@ beforeEach(() => {
     loopEndBar: 4,
   };
   useAudioState.playbackReadiness = 'ready';
-  useAudioState.isLoadingAudio = false;
+  useAudioState.playbackTruth = {
+    status: 'ready',
+    reason: 'ready',
+    summary: 'Ready',
+    detail: 'Arrangement audio is loaded into the engine.',
+    nextStep: 'Play, scrub, or adjust the transport.',
+  };
 
   useProjectStore.setState({
     project: makeProject(),
@@ -468,6 +481,13 @@ describe('TransportBar transport controls', () => {
       totalSeconds: 0,
     };
     useAudioState.playbackReadiness = 'loading';
+    useAudioState.playbackTruth = {
+      status: 'loading',
+      reason: 'awaiting-user-play',
+      summary: 'Load to play',
+      detail: 'Arrangement audio is not loaded into the engine yet.',
+      nextStep: 'Press play to load arrangement audio.',
+    };
 
     const mounted = renderTransportBar();
     mountedRoot = mounted.root;
@@ -494,13 +514,19 @@ describe('TransportBar transport controls', () => {
     expect(loopButton?.disabled).toBe(true);
     expect(metronomeButton?.disabled).toBe(true);
     expect(scrubber?.disabled).toBe(true);
-    expect(mounted.container.textContent).toContain('Loading');
+    expect(mounted.container.textContent).toContain('Load to play');
     expect(mounted.container.textContent).toContain('Load to play');
   });
 
   it('disables play while arrangement audio is actively loading', () => {
     useAudioState.playbackReadiness = 'loading';
-    useAudioState.isLoadingAudio = true;
+    useAudioState.playbackTruth = {
+      status: 'loading',
+      reason: 'loading-arrangement',
+      summary: 'Loading audio',
+      detail: 'Arrangement audio is loading into the engine right now.',
+      nextStep: 'Wait for the current audio load to finish.',
+    };
 
     const mounted = renderTransportBar();
     mountedRoot = mounted.root;
@@ -525,6 +551,13 @@ describe('TransportBar transport controls', () => {
 
   it('surfaces unavailable playback truth when arrangement audio is not playable', () => {
     useAudioState.playbackReadiness = 'unavailable';
+    useAudioState.playbackTruth = {
+      status: 'unavailable',
+      reason: 'load-failed',
+      summary: 'Unavailable',
+      detail: 'Audio failed to load: Salamander drum samples missing',
+      nextStep: 'Fix the sample error, then press play to try again.',
+    };
 
     const mounted = renderTransportBar();
     mountedRoot = mounted.root;
@@ -546,5 +579,6 @@ describe('TransportBar transport controls', () => {
     expect(mounted.container.textContent).toContain('Unavailable');
     expect(mounted.container.textContent).not.toContain('Loading');
     expect(mounted.container.textContent).not.toContain('Load to play');
+    expect(playButton?.title).toContain('Audio failed to load: Salamander drum samples missing');
   });
 });

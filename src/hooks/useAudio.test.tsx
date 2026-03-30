@@ -10,6 +10,7 @@ import type { AudioEngineConfig, Block, Project, Section, Stem, TransportState }
 
 const engineState = vi.hoisted(() => ({
   isInitialized: false,
+  isLoading: false,
   audioConfig: {
     metronomeEnabled: false,
     countIn: 'off',
@@ -34,6 +35,10 @@ const initMock = vi.hoisted(() => vi.fn(async () => {
 const loadArrangementMock = vi.hoisted(() => vi.fn(async () => undefined));
 const getTransportStateMock = vi.hoisted(() => vi.fn(() => engineState.transportState));
 const getAudioConfigMock = vi.hoisted(() => vi.fn(() => ({ ...engineState.audioConfig })));
+const getReadinessSnapshotMock = vi.hoisted(() => vi.fn(() => ({
+  isInitialized: engineState.isInitialized,
+  isLoading: engineState.isLoading,
+})));
 const setMetronomeEnabledMock = vi.hoisted(() => vi.fn((enabled: boolean) => {
   engineState.audioConfig.metronomeEnabled = enabled;
 }));
@@ -62,6 +67,7 @@ const AudioEngineMock = vi.hoisted(() => vi.fn(() => ({
   loadArrangement: loadArrangementMock,
   getTransportState: getTransportStateMock,
   getAudioConfig: getAudioConfigMock,
+  getReadinessSnapshot: getReadinessSnapshotMock,
   setMetronomeEnabled: setMetronomeEnabledMock,
   setLoopEnabled: setLoopEnabledMock,
   setMasterVolume: setMasterVolumeMock,
@@ -196,6 +202,7 @@ beforeEach(() => {
   hookValue = null;
   consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
   engineState.isInitialized = false;
+  engineState.isLoading = false;
   engineState.audioConfig = {
     metronomeEnabled: false,
     countIn: 'off',
@@ -217,6 +224,7 @@ beforeEach(() => {
   loadArrangementMock.mockClear();
   getTransportStateMock.mockClear();
   getAudioConfigMock.mockClear();
+  getReadinessSnapshotMock.mockClear();
   setMetronomeEnabledMock.mockClear();
   setLoopEnabledMock.mockClear();
   setMasterVolumeMock.mockClear();
@@ -375,6 +383,7 @@ describe('useAudio transport config', () => {
 
     expect(loadArrangementMock).toHaveBeenCalledTimes(1);
     expect(hookValue?.playbackReadiness).toBe('ready');
+    expect(hookValue?.playbackTruth.summary).toBe('Ready');
 
     loadArrangementMock.mockClear();
 
@@ -443,6 +452,30 @@ describe('useAudio transport config', () => {
     });
 
     expect(hookValue?.playbackReadiness).toBe('unavailable');
+    expect(hookValue?.playbackTruth.detail).toContain('Piano samples unavailable');
+  });
+
+  it('surfaces the next playback step before arrangement audio has been loaded', () => {
+    useProjectStore.setState({
+      project: makeProject(),
+      stems: [makeStem()],
+      sections: [makeSection()],
+      blocks: [makeBlock()],
+      chords: [],
+      chatMessages: [],
+      drumOnlyUpdate: false,
+      allInstrumentsUpdate: false,
+    });
+
+    const mounted = renderHarness();
+    mountedRoot = mounted.root;
+    mountedContainer = mounted.container;
+
+    expect(hookValue?.playbackReadiness).toBe('loading');
+    expect(hookValue?.isLoadingAudio).toBe(false);
+    expect(hookValue?.playbackTruth.reason).toBe('awaiting-user-play');
+    expect(hookValue?.playbackTruth.summary).toBe('Load to play');
+    expect(hookValue?.playbackTruth.nextStep).toBe('Press play to load arrangement audio.');
   });
 
   it('surfaces hot-swap failures instead of only logging them', async () => {

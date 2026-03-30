@@ -98,7 +98,7 @@ export function TransportBar() {
     transportState,
     audioConfig,
     playbackReadiness,
-    isLoadingAudio,
+    playbackTruth,
     play,
     pause,
     stop,
@@ -122,19 +122,20 @@ export function TransportBar() {
   const totalBars = sections.reduce((sum, section) => sum + section.barCount, 0)
   const timelineAvailable = Boolean(project?.hasArrangement) && totalBars > 0
   const playbackReady = playbackReadiness === "ready"
-  const playbackNeedsLoad = playbackReadiness === "loading"
+  const playbackNeedsLoad = playbackTruth.reason === "awaiting-user-play"
+  const playbackLoading = playbackTruth.reason === "loading-arrangement"
   const playbackUnavailable = playbackReadiness === "unavailable"
   const transportReady = timelineAvailable && playbackReady
   const transportNeedsLoad = timelineAvailable && playbackNeedsLoad
   const playbackActive = transportReady && isPlaying
   const loopPressed = transportReady && loopActive
   const metronomePressed = transportReady && metronomeActive
-  const playButtonDisabled = !timelineAvailable || playbackUnavailable || isLoadingAudio
+  const playButtonDisabled = !timelineAvailable || playbackUnavailable || playbackLoading
   const playButtonLabel = playbackActive
     ? "Pause"
     : !timelineAvailable
       ? "Play unavailable"
-      : isLoadingAudio
+      : playbackLoading
       ? "Loading audio"
       : transportReady
         ? "Play"
@@ -143,28 +144,18 @@ export function TransportBar() {
           : "Play unavailable"
   const transportUnavailableTitle = !timelineAvailable
     ? "No arrangement timeline available yet"
-    : isLoadingAudio
-      ? "Arrangement audio is still loading"
-      : transportNeedsLoad
-        ? "Arrangement audio will load before playback starts"
-        : playbackUnavailable
-          ? "Arrangement audio is unavailable right now"
-          : undefined
+    : transportReady
+      ? undefined
+      : `${playbackTruth.detail} ${playbackTruth.nextStep}`.trim()
   const timelineStatusLabel = !timelineAvailable
     ? "No timeline"
-    : isLoadingAudio
-      ? "Loading audio"
-      : transportNeedsLoad
-        ? "Load to play"
-        : "Unavailable"
+    : playbackTruth.summary
   const readinessLabel = transportReady
     ? "Ready"
-    : transportNeedsLoad
-      ? "Loading"
-      : "Unavailable"
+    : playbackTruth.summary
   const readinessClassName = transportReady
     ? "bg-emerald-500/10 text-emerald-300"
-    : transportNeedsLoad
+    : playbackReadiness === "loading"
       ? "bg-amber-500/10 text-amber-300"
       : "bg-zinc-800 text-zinc-500"
 

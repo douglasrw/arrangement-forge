@@ -3,6 +3,13 @@
 export type PlaybackState = 'stopped' | 'playing' | 'paused';
 export type PlaybackReadiness = 'ready' | 'loading' | 'unavailable';
 export type CountInSetting = 'off' | '1-bar' | '2-bars';
+export type PlaybackTruthReason =
+  | 'ready'
+  | 'no-arrangement'
+  | 'no-stems'
+  | 'awaiting-user-play'
+  | 'loading-arrangement'
+  | 'load-failed';
 
 export interface TransportState {
   playbackState: PlaybackState;
@@ -20,4 +27,17 @@ export interface AudioEngineConfig {
   loopEnabled: boolean;
   loopStartBar: number;
   loopEndBar: number;
+}
+
+export interface AudioEngineReadinessSnapshot {
+  isInitialized: boolean;
+  isLoading: boolean;
+}
+
+export interface PlaybackTruth {
+  status: PlaybackReadiness;
+  reason: PlaybackTruthReason;
+  summary: string;
+  detail: string;
+  nextStep: string;
 }

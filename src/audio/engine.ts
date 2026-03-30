@@ -5,6 +5,7 @@
 import * as Tone from 'tone';
 import type {
   AudioEngineConfig,
+  AudioEngineReadinessSnapshot,
   Block,
   Stem,
   Section,
@@ -173,6 +174,13 @@ export class AudioEngine {
 
   getAudioConfig(): AudioEngineConfig {
     return { ...this.audioConfig };
+  }
+
+  getReadinessSnapshot(): AudioEngineReadinessSnapshot {
+    return {
+      isInitialized: this._initialized,
+      isLoading: this._isLoading,
+    };
   }
 
   async loadArrangement(

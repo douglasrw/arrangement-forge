@@ -4,7 +4,12 @@ import { useState, useEffect, useRef, useCallback } from 'react';
 import { AudioEngine } from '@/audio/engine';
 import { useProjectStore } from '@/store/project-store';
 import { useUiStore } from '@/store/ui-store';
-import type { AudioEngineConfig, PlaybackReadiness, TransportState } from '@/types';
+import type {
+  AudioEngineConfig,
+  AudioEngineReadinessSnapshot,
+  PlaybackTruth,
+  TransportState,
+} from '@/types';
 
 // Module-level singleton — not stored in Zustand
 let engineInstance: AudioEngine | null = null;
@@ -35,10 +40,94 @@ function getErrorMessage(error: unknown, fallback: string): string {
   return fallback;
 }
 
+function buildPlaybackTruth({
+  projectExists,
+  hasArrangementTruth,
+  stemsCount,
+  engineReadiness,
+  arrangementSignature,
+  loadingArrangementSignature,
+  loadedArrangementSignature,
+  failedArrangementSignature,
+  errorMessage,
+}: {
+  projectExists: boolean;
+  hasArrangementTruth: boolean;
+  stemsCount: number;
+  engineReadiness: AudioEngineReadinessSnapshot;
+  arrangementSignature: string;
+  loadingArrangementSignature: string;
+  loadedArrangementSignature: string;
+  failedArrangementSignature: string;
+  errorMessage: string | null;
+}): PlaybackTruth {
+  if (!projectExists || !hasArrangementTruth) {
+    return {
+      status: 'unavailable',
+      reason: 'no-arrangement',
+      summary: 'Unavailable',
+      detail: 'No arrangement audio is available yet.',
+      nextStep: 'Generate or import an arrangement to enable playback.',
+    };
+  }
+
+  if (stemsCount === 0) {
+    return {
+      status: 'unavailable',
+      reason: 'no-stems',
+      summary: 'Unavailable',
+      detail: 'No playable stems are loaded for this arrangement yet.',
+      nextStep: 'Regenerate or import stems before starting playback.',
+    };
+  }
+
+  if (failedArrangementSignature === arrangementSignature) {
+    return {
+      status: 'unavailable',
+      reason: 'load-failed',
+      summary: 'Unavailable',
+      detail: `Audio failed to load: ${errorMessage ?? 'Instrument samples could not be loaded.'}`,
+      nextStep: 'Fix the sample error, then press play to try again.',
+    };
+  }
+
+  if (loadedArrangementSignature === arrangementSignature) {
+    return {
+      status: 'ready',
+      reason: 'ready',
+      summary: 'Ready',
+      detail: 'Arrangement audio is loaded into the engine.',
+      nextStep: 'Play, scrub, or adjust the transport.',
+    };
+  }
+
+  if (
+    loadingArrangementSignature === arrangementSignature
+    || engineReadiness.isLoading
+  ) {
+    return {
+      status: 'loading',
+      reason: 'loading-arrangement',
+      summary: 'Loading audio',
+      detail: 'Arrangement audio is loading into the engine right now.',
+      nextStep: 'Wait for the current audio load to finish.',
+    };
+  }
+
+  return {
+    status: 'loading',
+    reason: 'awaiting-user-play',
+    summary: 'Load to play',
+    detail: engineReadiness.isInitialized
+      ? 'Arrangement audio is not loaded into the engine yet.'
+      : 'The audio engine has not started yet.',
+    nextStep: 'Press play to load arrangement audio.',
+  };
+}
+
 export function useAudio() {
   const [isReady, setIsReady] = useState(false);
   const [transportState, setTransportState] = useState<TransportState>(defaultTransportState);
-  const [playbackReadiness, setPlaybackReadiness] = useState<PlaybackReadiness>('unavailable');
   const [loadingArrangementSignature, setLoadingArrangementSignature] = useState('');
   const [loadedArrangementSignature, setLoadedArrangementSignature] = useState('');
   const [failedArrangementSignature, setFailedArrangementSignature] = useState('');
@@ -49,7 +138,7 @@ export function useAudio() {
   const lastMixerSignatureRef = useRef('');
 
   const { project, blocks, stems, sections, drumOnlyUpdate, clearDrumOnlyUpdate, allInstrumentsUpdate, clearAllInstrumentsUpdate } = useProjectStore();
-  const { setSystemStatus } = useUiStore();
+  const { errorMessage, setSystemStatus } = useUiStore();
 
   const arrangementSignature = JSON.stringify({
     projectId: project?.id ?? null,
@@ -88,7 +177,20 @@ export function useAudio() {
   );
   const totalBars = sections.reduce((sum, section) => sum + section.barCount, 0);
   const hasArrangementTruth = Boolean(project?.hasArrangement) && totalBars > 0;
-  const audioLoading = loadingArrangementSignature === arrangementSignature;
+  const engineReadiness = engine.getReadinessSnapshot();
+  const playbackTruth = buildPlaybackTruth({
+    projectExists: Boolean(project),
+    hasArrangementTruth,
+    stemsCount: stems.length,
+    engineReadiness,
+    arrangementSignature,
+    loadingArrangementSignature,
+    loadedArrangementSignature,
+    failedArrangementSignature,
+    errorMessage,
+  });
+  const playbackReadiness = playbackTruth.status;
+  const audioLoading = playbackTruth.reason === 'loading-arrangement';
 
   const syncStemMixerState = useCallback(() => {
     for (const stem of stems) {
@@ -130,29 +232,8 @@ export function useAudio() {
       setLoadingArrangementSignature('');
       setLoadedArrangementSignature('');
       setFailedArrangementSignature('');
-      setPlaybackReadiness('unavailable');
-      return;
     }
-
-    if (failedArrangementSignature === arrangementSignature) {
-      setPlaybackReadiness('unavailable');
-      return;
-    }
-
-    if (loadedArrangementSignature === arrangementSignature) {
-      setPlaybackReadiness('ready');
-      return;
-    }
-
-    setPlaybackReadiness('loading');
-  }, [
-    arrangementSignature,
-    failedArrangementSignature,
-    hasArrangementTruth,
-    loadedArrangementSignature,
-    project,
-    stems.length,
-  ]);
+  }, [hasArrangementTruth, project, stems.length]);
 
   // Auto-load arrangement into audio engine when structure changes.
   // Stem mix updates are handled separately so mixer moves do not reload samples.
@@ -349,6 +430,7 @@ export function useAudio() {
     audioConfig,
     isReady,
     playbackReadiness,
+    playbackTruth,
     isLoadingAudio: audioLoading,
     play,
     pause,
