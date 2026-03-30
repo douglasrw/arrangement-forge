@@ -47,38 +47,38 @@ describe('parseSnapshot', () => {
 });
 
 describe('parseUndoBoundarySnapshot', () => {
-  const beforeSnapshot = JSON.stringify({
-    stems: [{ id: 'before-stem' }],
+  const undoSnapshot = JSON.stringify({
+    stems: [{ id: 'undo-stem' }],
     sections: [],
     blocks: [],
     chords: [],
   });
-  const afterSnapshot = JSON.stringify({
-    stems: [{ id: 'after-stem' }],
+  const redoSnapshot = JSON.stringify({
+    stems: [{ id: 'redo-stem' }],
     sections: [],
     blocks: [],
     chords: [],
   });
 
-  it('selects the before snapshot for undo boundaries', () => {
+  it('selects the undo snapshot for undo boundaries', () => {
     expect(
       parseUndoBoundarySnapshot(
-        { stateBefore: beforeSnapshot, stateAfter: afterSnapshot },
+        { undoSnapshot, redoSnapshot },
         'undo'
       )
     ).toMatchObject({
-      stems: [{ id: 'before-stem' }],
+      stems: [{ id: 'undo-stem' }],
     });
   });
 
-  it('selects the after snapshot for redo boundaries', () => {
+  it('selects the redo snapshot for redo boundaries', () => {
     expect(
       parseUndoBoundarySnapshot(
-        { stateBefore: beforeSnapshot, stateAfter: afterSnapshot },
+        { undoSnapshot, redoSnapshot },
         'redo'
       )
     ).toMatchObject({
-      stems: [{ id: 'after-stem' }],
+      stems: [{ id: 'redo-stem' }],
     });
   });
 });
@@ -87,21 +87,21 @@ describe('parseUndoSnapshot', () => {
   it('parses the restore target for undo entries without a boundary literal', () => {
     expect(
       parseUndoSnapshot({
-        stateBefore: JSON.stringify({
-          stems: [{ id: 'before-stem' }],
+        undoSnapshot: JSON.stringify({
+          stems: [{ id: 'undo-stem' }],
           sections: [],
           blocks: [],
           chords: [],
         }),
-        stateAfter: JSON.stringify({
-          stems: [{ id: 'after-stem' }],
+        redoSnapshot: JSON.stringify({
+          stems: [{ id: 'redo-stem' }],
           sections: [],
           blocks: [],
           chords: [],
         }),
       })
     ).toMatchObject({
-      stems: [{ id: 'before-stem' }],
+      stems: [{ id: 'undo-stem' }],
     });
   });
 });
@@ -110,21 +110,21 @@ describe('parseRedoSnapshot', () => {
   it('parses the restore target for redo entries without a boundary literal', () => {
     expect(
       parseRedoSnapshot({
-        stateBefore: JSON.stringify({
-          stems: [{ id: 'before-stem' }],
+        undoSnapshot: JSON.stringify({
+          stems: [{ id: 'undo-stem' }],
           sections: [],
           blocks: [],
           chords: [],
         }),
-        stateAfter: JSON.stringify({
-          stems: [{ id: 'after-stem' }],
+        redoSnapshot: JSON.stringify({
+          stems: [{ id: 'redo-stem' }],
           sections: [],
           blocks: [],
           chords: [],
         }),
       })
     ).toMatchObject({
-      stems: [{ id: 'after-stem' }],
+      stems: [{ id: 'redo-stem' }],
     });
   });
 });

@@ -11,13 +11,13 @@ describe('undoStore', () => {
     expect(useUndoStore.getState().undoStack).toHaveLength(1);
     expect(useUndoStore.getState().undoStack[0]).toMatchObject({
       description: 'Test action',
-      stateBefore: '{}',
-      stateAfter: '{"a":1}',
+      undoSnapshot: '{}',
+      redoSnapshot: '{"a":1}',
     });
   });
 
   it('pushUndo clears the redo stack', () => {
-    useUndoStore.setState({ redoStack: [{ description: 'old', stateBefore: '', stateAfter: '' }] });
+    useUndoStore.setState({ redoStack: [{ description: 'old', undoSnapshot: '', redoSnapshot: '' }] });
     useUndoStore.getState().pushUndo('New', { undo: 'a', redo: 'b' });
     expect(useUndoStore.getState().redoStack).toHaveLength(0);
   });
@@ -29,7 +29,7 @@ describe('undoStore', () => {
   it('undo returns the entry and moves it to redo stack', () => {
     useUndoStore.getState().pushUndo('Action', { undo: 'before', redo: 'after' });
     const entry = useUndoStore.getState().undo();
-    expect(entry?.stateBefore).toBe('before');
+    expect(entry?.undoSnapshot).toBe('before');
     expect(useUndoStore.getState().undoStack).toHaveLength(0);
     expect(useUndoStore.getState().redoStack).toHaveLength(1);
   });
@@ -42,7 +42,7 @@ describe('undoStore', () => {
     useUndoStore.getState().pushUndo('Action', { undo: 'before', redo: 'after' });
     useUndoStore.getState().undo();
     const entry = useUndoStore.getState().redo();
-    expect(entry?.stateAfter).toBe('after');
+    expect(entry?.redoSnapshot).toBe('after');
     expect(useUndoStore.getState().undoStack).toHaveLength(1);
     expect(useUndoStore.getState().redoStack).toHaveLength(0);
   });

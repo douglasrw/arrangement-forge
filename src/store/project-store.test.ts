@@ -1024,14 +1024,14 @@ function hasSnapshotKeys(json: string): boolean {
   );
 }
 
-function parseRequiredUndoSnapshot(entry: { stateBefore: string; stateAfter: string } | null) {
+function parseRequiredUndoSnapshot(entry: { undoSnapshot: string; redoSnapshot: string } | null) {
   expect(entry).not.toBeNull();
   const snapshot = parseUndoSnapshot(entry!);
   expect(snapshot).not.toBeNull();
   return snapshot!;
 }
 
-function parseRequiredRedoSnapshot(entry: { stateBefore: string; stateAfter: string } | null) {
+function parseRequiredRedoSnapshot(entry: { undoSnapshot: string; redoSnapshot: string } | null) {
   expect(entry).not.toBeNull();
   const snapshot = parseRedoSnapshot(entry!);
   expect(snapshot).not.toBeNull();
@@ -1047,8 +1047,8 @@ describe('undo push coverage', () => {
     useProjectStore.getState().splitBlock('b1', 5);
     const stack = useUndoStore.getState().undoStack;
     expect(stack).toHaveLength(1);
-    expect(hasSnapshotKeys(stack[0].stateBefore)).toBe(true);
-    expect(hasSnapshotKeys(stack[0].stateAfter)).toBe(true);
+    expect(hasSnapshotKeys(stack[0].undoSnapshot)).toBe(true);
+    expect(hasSnapshotKeys(stack[0].redoSnapshot)).toBe(true);
   });
 
   it('mergeBlocks pushes undo entry with unified snapshot format', () => {
@@ -1063,8 +1063,8 @@ describe('undo push coverage', () => {
     useProjectStore.getState().mergeBlocks('b1', 'b2');
     const stack = useUndoStore.getState().undoStack;
     expect(stack).toHaveLength(1);
-    expect(hasSnapshotKeys(stack[0].stateBefore)).toBe(true);
-    expect(hasSnapshotKeys(stack[0].stateAfter)).toBe(true);
+    expect(hasSnapshotKeys(stack[0].undoSnapshot)).toBe(true);
+    expect(hasSnapshotKeys(stack[0].redoSnapshot)).toBe(true);
   });
 
   it('deleteBlock pushes undo entry with unified snapshot format', () => {
@@ -1075,8 +1075,8 @@ describe('undo push coverage', () => {
     useProjectStore.getState().deleteBlock('b1');
     const stack = useUndoStore.getState().undoStack;
     expect(stack).toHaveLength(1);
-    expect(hasSnapshotKeys(stack[0].stateBefore)).toBe(true);
-    expect(hasSnapshotKeys(stack[0].stateAfter)).toBe(true);
+    expect(hasSnapshotKeys(stack[0].undoSnapshot)).toBe(true);
+    expect(hasSnapshotKeys(stack[0].redoSnapshot)).toBe(true);
   });
 
   it('updateBlock pushes undo entry with unified snapshot format', () => {
@@ -1087,8 +1087,8 @@ describe('undo push coverage', () => {
     useProjectStore.getState().updateBlock('b1', { style: 'rock_power' });
     const stack = useUndoStore.getState().undoStack;
     expect(stack).toHaveLength(1);
-    expect(hasSnapshotKeys(stack[0].stateBefore)).toBe(true);
-    expect(hasSnapshotKeys(stack[0].stateAfter)).toBe(true);
+    expect(hasSnapshotKeys(stack[0].undoSnapshot)).toBe(true);
+    expect(hasSnapshotKeys(stack[0].redoSnapshot)).toBe(true);
   });
 
   it('duplicateBlock pushes undo entry with unified snapshot format', () => {
@@ -1099,8 +1099,8 @@ describe('undo push coverage', () => {
     useProjectStore.getState().duplicateBlock('b1');
     const stack = useUndoStore.getState().undoStack;
     expect(stack).toHaveLength(1);
-    expect(hasSnapshotKeys(stack[0].stateBefore)).toBe(true);
-    expect(hasSnapshotKeys(stack[0].stateAfter)).toBe(true);
+    expect(hasSnapshotKeys(stack[0].undoSnapshot)).toBe(true);
+    expect(hasSnapshotKeys(stack[0].redoSnapshot)).toBe(true);
   });
 
   it('addSection pushes undo entry with unified snapshot format', () => {
@@ -1110,8 +1110,8 @@ describe('undo push coverage', () => {
     useProjectStore.getState().addSection(makeSection());
     const stack = useUndoStore.getState().undoStack;
     expect(stack).toHaveLength(1);
-    expect(hasSnapshotKeys(stack[0].stateBefore)).toBe(true);
-    expect(hasSnapshotKeys(stack[0].stateAfter)).toBe(true);
+    expect(hasSnapshotKeys(stack[0].undoSnapshot)).toBe(true);
+    expect(hasSnapshotKeys(stack[0].redoSnapshot)).toBe(true);
   });
 
   it('updateSection pushes undo entry with unified snapshot format', () => {
@@ -1121,8 +1121,8 @@ describe('undo push coverage', () => {
     useProjectStore.getState().updateSection('s1', { name: 'Chorus' });
     const stack = useUndoStore.getState().undoStack;
     expect(stack).toHaveLength(1);
-    expect(hasSnapshotKeys(stack[0].stateBefore)).toBe(true);
-    expect(hasSnapshotKeys(stack[0].stateAfter)).toBe(true);
+    expect(hasSnapshotKeys(stack[0].undoSnapshot)).toBe(true);
+    expect(hasSnapshotKeys(stack[0].redoSnapshot)).toBe(true);
   });
 
   it('removeSection pushes undo entry with unified snapshot format', () => {
@@ -1133,8 +1133,8 @@ describe('undo push coverage', () => {
     useProjectStore.getState().removeSection('s1');
     const stack = useUndoStore.getState().undoStack;
     expect(stack).toHaveLength(1);
-    expect(hasSnapshotKeys(stack[0].stateBefore)).toBe(true);
-    expect(hasSnapshotKeys(stack[0].stateAfter)).toBe(true);
+    expect(hasSnapshotKeys(stack[0].undoSnapshot)).toBe(true);
+    expect(hasSnapshotKeys(stack[0].redoSnapshot)).toBe(true);
   });
 
   it('reorderSections pushes undo entry with unified snapshot format', () => {
@@ -1146,8 +1146,8 @@ describe('undo push coverage', () => {
     useProjectStore.getState().reorderSections(['s2', 's1']);
     const stack = useUndoStore.getState().undoStack;
     expect(stack).toHaveLength(1);
-    expect(hasSnapshotKeys(stack[0].stateBefore)).toBe(true);
-    expect(hasSnapshotKeys(stack[0].stateAfter)).toBe(true);
+    expect(hasSnapshotKeys(stack[0].undoSnapshot)).toBe(true);
+    expect(hasSnapshotKeys(stack[0].redoSnapshot)).toBe(true);
   });
 
   it('updateChord pushes undo entry with unified snapshot format', () => {
@@ -1158,8 +1158,8 @@ describe('undo push coverage', () => {
     useProjectStore.getState().updateChord(1, { quality: 'min7' });
     const stack = useUndoStore.getState().undoStack;
     expect(stack).toHaveLength(1);
-    expect(hasSnapshotKeys(stack[0].stateBefore)).toBe(true);
-    expect(hasSnapshotKeys(stack[0].stateAfter)).toBe(true);
+    expect(hasSnapshotKeys(stack[0].undoSnapshot)).toBe(true);
+    expect(hasSnapshotKeys(stack[0].redoSnapshot)).toBe(true);
   });
 
   // Negative tests: non-undo actions
