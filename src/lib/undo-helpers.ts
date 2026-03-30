@@ -1,4 +1,4 @@
-// undo-helpers.ts — Unified snapshot format for undo/redo.
+// undo-helpers.ts — Unified snapshot format and boundary helpers for undo/redo.
 
 import type { Stem, Section, Block, Chord } from '@/types';
 
@@ -7,6 +7,13 @@ export interface ArrangementSnapshot {
   sections: Section[];
   blocks: Block[];
   chords: Chord[];
+}
+
+export type UndoBoundary = 'undo' | 'redo';
+
+export interface UndoBoundaryEntry {
+  stateBefore: string;
+  stateAfter: string;
 }
 
 export function snapshotArrangement(state: {
@@ -39,4 +46,12 @@ export function parseSnapshot(json: string): ArrangementSnapshot | null {
   } catch {
     return null;
   }
+}
+
+export function parseUndoBoundarySnapshot(
+  entry: UndoBoundaryEntry,
+  boundary: UndoBoundary
+): ArrangementSnapshot | null {
+  const snapshot = boundary === 'undo' ? entry.stateBefore : entry.stateAfter;
+  return parseSnapshot(snapshot);
 }

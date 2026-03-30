@@ -2,8 +2,8 @@ import { create } from 'zustand';
 
 export interface UndoEntry {
   description: string;
-  stateBefore: string; // JSON snapshot
-  stateAfter: string; // JSON snapshot
+  stateBefore: string; // Snapshot to restore when undoing this entry
+  stateAfter: string; // Snapshot to restore when redoing this entry
 }
 
 interface UndoStore {
