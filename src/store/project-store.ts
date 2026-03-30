@@ -372,6 +372,7 @@ interface ProjectStore {
     chords: Chord[];
     chatMessages: AiChatMessage[];
   }) => void;
+  clearProjectSession: () => void;
   updateProject: (partial: Partial<Project>) => void;
   setArrangement: (data: {
     stems: Stem[];
@@ -449,6 +450,22 @@ export const useProjectStore = create<ProjectStore>()((set, get) => ({
 
       reconcileSelectionWithArrangement({ stems: normalizedStems, sections, blocks });
     },
+
+  clearProjectSession: () => {
+    useSelectionStore.getState().clearSelection();
+    useUiStore.getState().syncProjectSession('idle');
+
+    set({
+      project: null,
+      stems: [],
+      sections: [],
+      blocks: [],
+      chords: [],
+      chatMessages: [],
+      drumOnlyUpdate: false,
+      allInstrumentsUpdate: false,
+    });
+  },
 
   updateProject: (partial) => {
     set((state) => ({ project: state.project ? { ...state.project, ...partial } : null }));

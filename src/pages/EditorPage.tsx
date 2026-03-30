@@ -1,9 +1,9 @@
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { AppShell } from '@/components/layout/AppShell';
+import type { LoadProjectResult } from '@/hooks/useProject';
 import { useProject } from '@/hooks/useProject';
 import { useProjectStore } from '@/store/project-store';
-import { useUiStore } from '@/store/ui-store';
 
 function EditorShellState({
   title,
@@ -42,34 +42,47 @@ function EditorShellState({
   );
 }
 
+type EditorRouteState =
+  | { status: 'loading' }
+  | { status: 'missing-project'; message: string }
+  | { status: 'error'; message: string }
+  | { status: 'ready' };
+
 export default function EditorPage() {
   const { id } = useParams<{ id: string }>();
   const { loadProject } = useProject();
   const loadedProjectId = useProjectStore((state) => state.project?.id ?? null);
-  const systemStatus = useUiStore((state) => state.systemStatus);
-  const errorMessage = useUiStore((state) => state.errorMessage);
+  const [routeState, setRouteState] = useState<EditorRouteState>({ status: 'loading' });
 
   useEffect(() => {
-    if (id) void loadProject(id);
-  }, [id, loadProject]);
-
-  if (id && loadedProjectId !== id) {
-    if (systemStatus === 'error') {
-      return (
-        <AppShell
-          shellStatus="error"
-          shellBody={
-            <EditorShellState
-              title="Unable to open project"
-              message={errorMessage ?? 'The requested project could not be loaded.'}
-              testId="editor-shell-error-state"
-              tone="error"
-            />
-          }
-        />
-      );
+    if (!id) {
+      setRouteState({
+        status: 'error',
+        message: 'The requested project route is missing an id.',
+      });
+      return;
     }
 
+    let cancelled = false;
+    setRouteState({ status: 'loading' });
+
+    void loadProject(id).then((result: LoadProjectResult) => {
+      if (cancelled) return;
+
+      if (result.status === 'ready') {
+        setRouteState({ status: 'ready' });
+        return;
+      }
+
+      setRouteState(result);
+    });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [id, loadProject]);
+
+  if (routeState.status === 'loading' || (routeState.status === 'ready' && loadedProjectId !== id)) {
     return (
       <AppShell
         shellStatus="loading-project"
@@ -78,6 +91,38 @@ export default function EditorPage() {
             title="Loading project..."
             message="Preparing the editor for this arrangement."
             testId="editor-shell-loading-state"
+          />
+        }
+      />
+    );
+  }
+
+  if (routeState.status === 'missing-project') {
+    return (
+      <AppShell
+        shellStatus="error"
+        shellBody={
+          <EditorShellState
+            title="Project not found"
+            message={routeState.message}
+            testId="editor-shell-missing-project-state"
+            tone="error"
+          />
+        }
+      />
+    );
+  }
+
+  if (routeState.status === 'error') {
+    return (
+      <AppShell
+        shellStatus="error"
+        shellBody={
+          <EditorShellState
+            title="Unable to open project"
+            message={routeState.message}
+            testId="editor-shell-error-state"
+            tone="error"
           />
         }
       />

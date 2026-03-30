@@ -4,6 +4,7 @@ import { act, createElement } from 'react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { createRoot, type Root } from 'react-dom/client';
 import { getProjectExportReadiness, useProject } from './useProject';
+import type { LoadProjectResult } from './useProject';
 import { useAuthStore } from '@/store/auth-store';
 import { useProjectStore } from '@/store/project-store';
 import { useSelectionStore } from '@/store/selection-store';
@@ -38,6 +39,11 @@ function createTableQuery(response: TableResponse = {}) {
   const filteredQuery = {
     order: () => Promise.resolve({ data, error }),
     single: () =>
+      Promise.resolve({
+        data: response.singleData ?? (Array.isArray(data) ? data[0] ?? null : data),
+        error,
+      }),
+    maybeSingle: () =>
       Promise.resolve({
         data: response.singleData ?? (Array.isArray(data) ? data[0] ?? null : data),
         error,
@@ -358,10 +364,13 @@ describe('useProject loadProject', () => {
       includeContent: true,
     });
 
+    let firstLoadResult: LoadProjectResult | undefined;
     await act(async () => {
-      await hookValue!.loadProject('project-a');
+      firstLoadResult = await hookValue!.loadProject('project-a');
       await Promise.resolve();
     });
+
+    expect(firstLoadResult).toEqual({ status: 'ready' });
 
     act(() => {
       useSelectionStore.getState().selectBlock('project-a-block', 'project-a-stem');
@@ -379,10 +388,13 @@ describe('useProject loadProject', () => {
       includeContent: false,
     });
 
+    let secondLoadResult: LoadProjectResult | undefined;
     await act(async () => {
-      await hookValue!.loadProject('project-b');
+      secondLoadResult = await hookValue!.loadProject('project-b');
       await Promise.resolve();
     });
+
+    expect(secondLoadResult).toEqual({ status: 'ready' });
 
     expect(useProjectStore.getState()).toMatchObject({
       project: expect.objectContaining({ id: 'project-b' }),
@@ -401,6 +413,129 @@ describe('useProject loadProject', () => {
       generationState: 'idle',
       systemStatus: 'ready',
       errorMessage: null,
+      unsavedChanges: false,
+      lastSavedAt: null,
+    });
+  });
+
+  it('clears stale project state and returns missing-project truth when the route target does not exist', async () => {
+    useProjectStore.setState({
+      project: buildStoredProject('project-a', true),
+      stems: [
+        {
+          id: 'project-a-stem',
+          projectId: 'project-a',
+          instrument: 'piano',
+          sortOrder: 0,
+          volume: 0.8,
+          pan: 0,
+          isMuted: false,
+          isSolo: false,
+          createdAt: '2026-03-28T00:00:00Z',
+        },
+      ],
+      sections: [
+        {
+          id: 'project-a-section',
+          projectId: 'project-a',
+          name: 'Verse',
+          sortOrder: 0,
+          barCount: 8,
+          startBar: 1,
+          energyOverride: null,
+          grooveOverride: null,
+          feelOverride: null,
+          swingPctOverride: null,
+          dynamicsOverride: null,
+          createdAt: '2026-03-28T00:00:00Z',
+        },
+      ],
+      blocks: [
+        {
+          id: 'project-a-block',
+          stemId: 'project-a-stem',
+          sectionId: 'project-a-section',
+          startBar: 1,
+          endBar: 8,
+          chordDegree: 'I',
+          chordQuality: 'maj7',
+          chordBassDegree: null,
+          style: 'jazz_comp',
+          energyOverride: null,
+          dynamicsOverride: null,
+          midiData: [],
+          createdAt: '2026-03-28T00:00:00Z',
+        },
+      ],
+      chords: [
+        {
+          id: 'project-a-chord',
+          projectId: 'project-a',
+          barNumber: 1,
+          degree: 'I',
+          quality: 'maj7',
+          bassDegree: null,
+        },
+      ],
+      chatMessages: [buildStoredMessage('project-a')],
+      drumOnlyUpdate: false,
+      allInstrumentsUpdate: false,
+    });
+    useSelectionStore.setState({
+      level: 'block',
+      sectionId: 'project-a-section',
+      blockId: 'project-a-block',
+      stemId: 'project-a-stem',
+    });
+    useUiStore.setState({
+      generationState: 'complete',
+      systemStatus: 'ready',
+      errorMessage: null,
+      unsavedChanges: true,
+      lastSavedAt: '2026-03-28T00:00:00Z',
+    });
+
+    const mounted = renderHarness();
+    mountedRoot = mounted.root;
+    mountedContainer = mounted.container;
+    expect(hookValue).not.toBeNull();
+
+    tableResponses = {
+      projects: { singleData: null },
+      stems: { data: [] },
+      sections: { data: [] },
+      chords: { data: [] },
+      ai_chat_messages: { data: [] },
+    };
+
+    let loadResult: LoadProjectResult | undefined;
+    await act(async () => {
+      loadResult = await hookValue!.loadProject('missing-project');
+      await Promise.resolve();
+    });
+
+    expect(loadResult).toEqual({
+      status: 'missing-project',
+      message: 'Project not found',
+    });
+    expect(useProjectStore.getState()).toMatchObject({
+      project: null,
+      stems: [],
+      sections: [],
+      blocks: [],
+      chords: [],
+      chatMessages: [],
+    });
+    expect(useSelectionStore.getState()).toMatchObject({
+      level: 'song',
+      sectionId: null,
+      blockId: null,
+      stemId: null,
+    });
+    expect(useUiStore.getState()).toMatchObject({
+      generationState: 'idle',
+      systemStatus: 'error',
+      errorMessage: 'Project not found',
       unsavedChanges: false,
       lastSavedAt: null,
     });

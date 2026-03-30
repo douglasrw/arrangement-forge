@@ -69,6 +69,13 @@ export interface ProjectExportReadiness {
   message: string;
 }
 
+export type LoadProjectResult =
+  | { status: 'ready' }
+  | { status: 'missing-project'; message: string }
+  | { status: 'error'; message: string };
+
+const PROJECT_NOT_FOUND_MESSAGE = 'Project not found';
+
 export function hasArrangementExportTruth(state: {
   stems: Stem[];
   sections: Section[];
@@ -133,12 +140,12 @@ export function useProject() {
   );
 
   const loadProject = useCallback(
-    async (projectId: string) => {
+    async (projectId: string): Promise<LoadProjectResult> => {
       setSystemStatus('ready');
       try {
         const [projectRes, stemsRes, sectionsRes, chordsRes, messagesRes] =
           await Promise.all([
-            supabase.from('projects').select('*').eq('id', projectId).single(),
+            supabase.from('projects').select('*').eq('id', projectId).maybeSingle(),
             supabase.from('stems').select('*').eq('project_id', projectId),
             supabase.from('sections').select('*').eq('project_id', projectId).order('sort_order'),
             supabase.from('chords').select('*').eq('project_id', projectId).order('bar_number'),
@@ -146,6 +153,14 @@ export function useProject() {
           ]);
 
         if (projectRes.error) throw projectRes.error;
+        if (!projectRes.data) {
+          useProjectStore.getState().clearProjectSession();
+          setSystemStatus('error', PROJECT_NOT_FOUND_MESSAGE);
+          return {
+            status: 'missing-project',
+            message: PROJECT_NOT_FOUND_MESSAGE,
+          };
+        }
 
         const store = useProjectStore.getState();
         const project = rowToProject(projectRes.data as Record<string, unknown>);
@@ -165,8 +180,13 @@ export function useProject() {
           chords: (chordsRes.data ?? []).map((r) => rowToChord(r as Record<string, unknown>)),
           chatMessages: (messagesRes.data ?? []).map((msg) => rowToMessage(msg as Record<string, unknown>)),
         });
+        return { status: 'ready' };
       } catch (err) {
         handleError(err);
+        return {
+          status: 'error',
+          message: err instanceof Error ? err.message : 'Unknown error',
+        };
       }
     },
     [setSystemStatus, handleError]

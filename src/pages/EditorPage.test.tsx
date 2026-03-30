@@ -3,13 +3,14 @@
 import { act } from 'react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { createRoot, type Root } from 'react-dom/client';
+import type { LoadProjectResult } from '@/hooks/useProject';
 import type { Project } from '@/types';
 import { useProjectStore } from '@/store/project-store';
 import { useSelectionStore } from '@/store/selection-store';
 import { useUiStore } from '@/store/ui-store';
 import EditorPage from './EditorPage';
 
-const loadProjectMock = vi.fn<(projectId: string) => Promise<void>>();
+const loadProjectMock = vi.fn<(projectId: string) => Promise<LoadProjectResult>>();
 const signOutMock = vi.hoisted(() => vi.fn());
 let routeProjectId = 'project-a';
 const reactActEnv = globalThis as typeof globalThis & {
@@ -106,12 +107,20 @@ function queryLoadingGate() {
   return document.querySelector('[data-testid="editor-shell-loading-state"]');
 }
 
+function queryMissingProjectState() {
+  return document.querySelector('[data-testid="editor-shell-missing-project-state"]');
+}
+
 function queryAppShell() {
   return document.querySelector('[data-testid="editor-shell"]');
 }
 
 function queryErrorState() {
   return document.querySelector('[data-testid="editor-shell-error-state"]');
+}
+
+function querySelectionSurface() {
+  return document.querySelector('[data-testid="selection-surface"]');
 }
 
 function getStatusBarText(): string {
@@ -125,6 +134,7 @@ beforeEach(() => {
   reactActEnv.IS_REACT_ACT_ENVIRONMENT = true;
   routeProjectId = 'project-a';
   loadProjectMock.mockReset();
+  loadProjectMock.mockResolvedValue({ status: 'ready' });
   signOutMock.mockReset();
   window.scrollTo = vi.fn();
   useProjectStore.setState({
@@ -163,16 +173,16 @@ afterEach(() => {
 });
 
 describe('EditorPage route loading gate', () => {
-  it('shows a loading gate until the target project resolves', async () => {
+  it('keeps the workspace behind a loading gate until the current route load resolves', async () => {
     useProjectStore.setState({ project: makeProject('project-a') });
 
     let resolveLoad: (() => void) | undefined;
     loadProjectMock.mockImplementation(
       (projectId) =>
-        new Promise<void>((resolve) => {
+        new Promise<LoadProjectResult>((resolve) => {
           resolveLoad = () => {
             useProjectStore.setState({ project: makeProject(projectId) });
-            resolve();
+            resolve({ status: 'ready' });
           };
         })
     );
@@ -184,6 +194,7 @@ describe('EditorPage route loading gate', () => {
     expect(loadProjectMock).toHaveBeenCalledWith('project-b');
     expect(queryLoadingGate()).not.toBeNull();
     expect(queryAppShell()).not.toBeNull();
+    expect(querySelectionSurface()).toBeNull();
     expect(getStatusBarText()).toContain('Loading project');
 
     await act(async () => {
@@ -193,15 +204,51 @@ describe('EditorPage route loading gate', () => {
 
     expect(queryLoadingGate()).toBeNull();
     expect(queryAppShell()).not.toBeNull();
+    expect(querySelectionSurface()).not.toBeNull();
   });
 
-  it('removes the stale shell immediately when the route switches to another project', async () => {
+  it('keeps route loading truth even when the store already holds the requested project id', async () => {
+    useProjectStore.setState({ project: makeProject('project-a') });
+
+    let resolveLoad: (() => void) | undefined;
+    loadProjectMock.mockImplementation(
+      (projectId) =>
+        new Promise<LoadProjectResult>((resolve) => {
+          resolveLoad = () => {
+            useProjectStore.setState({ project: makeProject(projectId) });
+            resolve({ status: 'ready' });
+          };
+        })
+    );
+
+    const mounted = renderEditor('project-a');
+    mountedRoot = mounted.root;
+    mountedContainer = mounted.container;
+
+    expect(loadProjectMock).toHaveBeenCalledWith('project-a');
+    expect(queryLoadingGate()).not.toBeNull();
+    expect(querySelectionSurface()).toBeNull();
+
+    await act(async () => {
+      resolveLoad?.();
+      await Promise.resolve();
+    });
+
+    expect(queryLoadingGate()).toBeNull();
+    expect(queryAppShell()).not.toBeNull();
+    expect(querySelectionSurface()).not.toBeNull();
+  });
+
+  it('removes the stale workspace immediately when the route switches to another project', async () => {
     useProjectStore.setState({ project: makeProject('project-a') });
 
     loadProjectMock.mockImplementation(async (projectId) => {
-      if (projectId === 'project-a') return;
+      if (projectId === 'project-a') {
+        useProjectStore.setState({ project: makeProject(projectId) });
+        return { status: 'ready' };
+      }
 
-      return new Promise<void>(() => {
+      return new Promise<LoadProjectResult>(() => {
         // Keep the new project unresolved so the route stays behind the loading gate.
       });
     });
@@ -210,7 +257,11 @@ describe('EditorPage route loading gate', () => {
     mountedRoot = mounted.root;
     mountedContainer = mounted.container;
 
-    expect(queryAppShell()).not.toBeNull();
+    await act(async () => {
+      await Promise.resolve();
+    });
+
+    expect(querySelectionSurface()).not.toBeNull();
 
     await act(async () => {
       routeProjectId = 'project-b';
@@ -221,15 +272,17 @@ describe('EditorPage route loading gate', () => {
     expect(loadProjectMock).toHaveBeenCalledWith('project-b');
     expect(queryLoadingGate()).not.toBeNull();
     expect(queryAppShell()).not.toBeNull();
+    expect(querySelectionSurface()).toBeNull();
     expect(getStatusBarText()).toContain('Loading project');
   });
 
-  it('shows a route error when the requested project cannot be loaded', async () => {
+  it('shows a distinct missing-project state when the requested project does not exist', async () => {
     loadProjectMock.mockImplementation(async () => {
-      useUiStore.setState({
-        systemStatus: 'error',
-        errorMessage: 'Project not found',
-      });
+      useUiStore.setState({ systemStatus: 'error', errorMessage: 'Project not found' });
+      return {
+        status: 'missing-project',
+        message: 'Project not found',
+      };
     });
 
     const mounted = renderEditor('missing-project');
@@ -243,9 +296,36 @@ describe('EditorPage route loading gate', () => {
     expect(loadProjectMock).toHaveBeenCalledWith('missing-project');
     expect(queryLoadingGate()).toBeNull();
     expect(queryAppShell()).not.toBeNull();
-    expect(queryErrorState()).not.toBeNull();
+    expect(queryMissingProjectState()).not.toBeNull();
+    expect(querySelectionSurface()).toBeNull();
     expect(getStatusBarText()).toContain('Error: Project not found');
     expect(document.body.textContent).toContain('Project not found');
+  });
+
+  it('shows a route error when the requested project load fails unexpectedly', async () => {
+    loadProjectMock.mockImplementation(async () => {
+      useUiStore.setState({
+        systemStatus: 'error',
+        errorMessage: 'Backend unavailable',
+      });
+
+      return {
+        status: 'error',
+        message: 'Backend unavailable',
+      };
+    });
+
+    const mounted = renderEditor('project-a');
+    mountedRoot = mounted.root;
+    mountedContainer = mounted.container;
+
+    await act(async () => {
+      await Promise.resolve();
+    });
+
+    expect(queryErrorState()).not.toBeNull();
+    expect(querySelectionSurface()).toBeNull();
+    expect(document.body.textContent).toContain('Backend unavailable');
   });
 
   it('keeps export wired into the editor shell alongside project, tempo, and selection surfaces', async () => {
@@ -344,10 +424,15 @@ describe('EditorPage route loading gate', () => {
     mountedRoot = mounted.root;
     mountedContainer = mounted.container;
 
+    await act(async () => {
+      await Promise.resolve();
+    });
+
     const exportButton = mounted.container.querySelector(
       '[data-testid="topbar-export-button"]'
     ) as HTMLButtonElement | null;
     expect(queryAppShell()).not.toBeNull();
+    expect(querySelectionSurface()).not.toBeNull();
     expect(exportButton?.disabled).toBe(false);
     expect(mounted.container.textContent).toContain('Night Train');
     expect(mounted.container.textContent).toContain('132 bpm');
