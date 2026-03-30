@@ -2,6 +2,8 @@
 
 import { act, createElement } from 'react';
 import { createRoot, type Root } from 'react-dom/client';
+import type { Block, Chord, Project, Section, Stem } from '@/types';
+import { useProjectStore } from '@/store/project-store';
 import { useUiStore } from '@/store/ui-store';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { deriveStatusBarStatus, StatusBar, type AppStatus } from './StatusBar';
@@ -12,6 +14,96 @@ const reactActEnv = globalThis as typeof globalThis & {
 
 let mountedRoot: Root | null = null;
 let mountedContainer: HTMLDivElement | null = null;
+
+function makeProject(partial: Partial<Project> = {}): Project {
+  return {
+    id: 'project-1',
+    userId: 'user-1',
+    name: 'Baseline Chart',
+    key: 'C',
+    tempo: 120,
+    timeSignature: '4/4',
+    genre: 'Jazz',
+    subStyle: 'Swing',
+    energy: 50,
+    groove: 50,
+    feel: 50,
+    swingPct: null,
+    dynamics: 50,
+    generationHints: '',
+    chordChartRaw: '',
+    hasArrangement: false,
+    generatedAt: null,
+    generatedTempo: null,
+    createdAt: '2026-03-29T00:00:00Z',
+    updatedAt: '2026-03-29T00:00:00Z',
+    ...partial,
+  };
+}
+
+function makeStem(partial: Partial<Stem> = {}): Stem {
+  return {
+    id: 'stem-1',
+    projectId: 'project-1',
+    instrument: 'piano',
+    sortOrder: 0,
+    volume: 0.8,
+    pan: 0,
+    isMuted: false,
+    isSolo: false,
+    createdAt: '2026-03-29T00:00:00Z',
+    ...partial,
+  };
+}
+
+function makeSection(partial: Partial<Section> = {}): Section {
+  return {
+    id: 'section-1',
+    projectId: 'project-1',
+    name: 'Verse',
+    sortOrder: 0,
+    barCount: 4,
+    startBar: 1,
+    energyOverride: null,
+    grooveOverride: null,
+    feelOverride: null,
+    swingPctOverride: null,
+    dynamicsOverride: null,
+    createdAt: '2026-03-29T00:00:00Z',
+    ...partial,
+  };
+}
+
+function makeBlock(partial: Partial<Block> = {}): Block {
+  return {
+    id: 'block-1',
+    stemId: 'stem-1',
+    sectionId: 'section-1',
+    startBar: 1,
+    endBar: 4,
+    chordDegree: 'I',
+    chordQuality: 'maj7',
+    chordBassDegree: null,
+    style: 'jazz_comp',
+    energyOverride: null,
+    dynamicsOverride: null,
+    midiData: [],
+    createdAt: '2026-03-29T00:00:00Z',
+    ...partial,
+  };
+}
+
+function makeChord(partial: Partial<Chord> = {}): Chord {
+  return {
+    id: 'chord-1',
+    projectId: 'project-1',
+    barNumber: 1,
+    degree: 'I',
+    quality: 'maj7',
+    bassDegree: null,
+    ...partial,
+  };
+}
 
 function renderStatusBar(status: AppStatus) {
   const container = document.createElement('div');
@@ -29,6 +121,13 @@ function renderStatusBar(status: AppStatus) {
 
 beforeEach(() => {
   reactActEnv.IS_REACT_ACT_ENVIRONMENT = true;
+  useProjectStore.setState({
+    project: makeProject(),
+    stems: [],
+    sections: [],
+    blocks: [],
+    chords: [],
+  });
   useUiStore.setState({
     errorMessage: null,
   });
@@ -79,6 +178,47 @@ describe('deriveStatusBarStatus', () => {
 });
 
 describe('StatusBar', () => {
+  it('renders project-draft truth instead of generic unsaved copy', () => {
+    const container = renderStatusBar('unsaved');
+    const label = container.querySelector('span[title]') as HTMLSpanElement | null;
+
+    expect(container.textContent).toContain('Project draft');
+    expect(container.textContent).not.toContain('Unsaved changes');
+    expect(label?.title).toBe(
+      'Only project fields and chat are in play right now; no arrangement rows are loaded. Persist project fields and chat without replacing arrangement rows.'
+    );
+  });
+
+  it('renders arrangement-draft replacement truth instead of generic unsaved copy', () => {
+    useProjectStore.setState({
+      project: makeProject({ hasArrangement: true }),
+      stems: [makeStem()],
+      sections: [makeSection()],
+      blocks: [makeBlock()],
+      chords: [makeChord()],
+    });
+
+    const container = renderStatusBar('unsaved');
+    const label = container.querySelector('span[title]') as HTMLSpanElement | null;
+
+    expect(container.textContent).toContain('Arrangement draft');
+    expect(container.textContent).not.toContain('Unsaved changes');
+    expect(label?.title).toBe(
+      'Loaded arrangement rows are ahead of the saved arrangement snapshot. Replace the saved arrangement snapshot with the current arrangement draft.'
+    );
+  });
+
+  it('renders project save progress with explicit save-target truth', () => {
+    const container = renderStatusBar('saving');
+    const label = container.querySelector('span[title]') as HTMLSpanElement | null;
+
+    expect(container.textContent).toContain('Saving project…');
+    expect(container.textContent).not.toContain('Saving…');
+    expect(label?.title).toBe(
+      'Only project fields and chat are in play right now; no arrangement rows are loaded. Persist project fields and chat without replacing arrangement rows.'
+    );
+  });
+
   it('renders route-level project loading as a distinct shell status', () => {
     const container = renderStatusBar('loading-project');
 

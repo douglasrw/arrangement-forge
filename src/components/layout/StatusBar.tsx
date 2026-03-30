@@ -1,5 +1,7 @@
 import type { GenerationState, SystemStatus } from '@/types';
 import { cn } from '@/lib/utils';
+import { getProjectSavePlan } from '@/hooks/useProject';
+import { useProjectStore } from '@/store/project-store';
 import { useUiStore } from '@/store/ui-store';
 
 export type AppStatus =
@@ -89,9 +91,30 @@ interface StatusBarProps {
 
 export function StatusBar({ status = 'saved', className }: StatusBarProps) {
   const errorMessage = useUiStore((state) => state.errorMessage);
+  const { project, stems, sections, blocks, chords } = useProjectStore();
   const cfg = STATUS_CONFIG[status];
-  const label = status === 'error' ? formatErrorStatusLabel(errorMessage) : cfg.label;
-  const labelTitle = status === 'error' && errorMessage ? errorMessage : label;
+  const savePlan = getProjectSavePlan({
+    project,
+    stems,
+    sections,
+    blocks,
+    chords,
+  });
+  const savePlanTooltip = `${savePlan.currentState} ${savePlan.summary}`.trim();
+  const label =
+    status === 'error'
+      ? formatErrorStatusLabel(errorMessage)
+      : status === 'saving'
+      ? savePlan.savingLabel
+      : status === 'unsaved'
+      ? savePlan.statusLabel
+      : cfg.label;
+  const labelTitle =
+    status === 'error' && errorMessage
+      ? errorMessage
+      : status === 'saving' || status === 'unsaved'
+      ? savePlanTooltip
+      : label;
 
   return (
     <div
