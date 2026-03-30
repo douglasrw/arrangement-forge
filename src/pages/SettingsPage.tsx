@@ -2,6 +2,7 @@ import { useState, useEffect, FormEvent } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/lib/supabase';
 import { rowToProfile } from '@/lib/profile';
+import { cn } from '@/lib/utils';
 import { useAuthStore } from '@/store/auth-store';
 import { useUiStore } from '@/store/ui-store';
 import { GENRES } from '@/lib/genre-config';
@@ -15,6 +16,14 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
 
 type SettingsField = 'displayName' | 'chordMode' | 'defaultGenre';
+
+const EDITABLE_SETTINGS: SettingsField[] = ['displayName', 'chordMode', 'defaultGenre'];
+
+const SETTINGS_FIELD_LABELS: Record<SettingsField, string> = {
+  displayName: 'Display Name',
+  chordMode: 'Chord Display Mode',
+  defaultGenre: 'Default Genre',
+};
 
 export interface SettingsDraft {
   profileId: string | null;
@@ -91,6 +100,42 @@ export function applySavedProfile(
   return createSettingsDraft(profile);
 }
 
+function getPendingSettingsFields(
+  draft: SettingsDraft,
+  profile: Profile | null
+): SettingsField[] {
+  const savedDraft = createSettingsDraft(profile);
+  const pendingFields: SettingsField[] = [];
+
+  if (draft.displayName !== savedDraft.displayName) {
+    pendingFields.push('displayName');
+  }
+
+  if (draft.chordMode !== savedDraft.chordMode) {
+    pendingFields.push('chordMode');
+  }
+
+  if (draft.defaultGenre !== savedDraft.defaultGenre) {
+    pendingFields.push('defaultGenre');
+  }
+
+  return pendingFields;
+}
+
+function formatSettingsFieldList(fields: SettingsField[]): string {
+  const labels = fields.map((field) => SETTINGS_FIELD_LABELS[field]);
+
+  if (labels.length <= 1) {
+    return labels[0] ?? '';
+  }
+
+  if (labels.length === 2) {
+    return `${labels[0]} and ${labels[1]}`;
+  }
+
+  return `${labels.slice(0, -1).join(', ')}, and ${labels[labels.length - 1]}`;
+}
+
 export default function SettingsPage() {
   const navigate = useNavigate();
   const { user, profile, setProfile } = useAuthStore();
@@ -98,7 +143,6 @@ export default function SettingsPage() {
 
   const [draft, setDraft] = useState<SettingsDraft>(() => createSettingsDraft(profile));
   const [saving, setSaving] = useState(false);
-  const [saved, setSaved] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   // Sync from profile when the same surface rerenders. Untouched fields should
@@ -109,10 +153,12 @@ export default function SettingsPage() {
 
   async function handleSave(e: FormEvent) {
     e.preventDefault();
-    if (!user) return;
+    const pendingFields = getPendingSettingsFields(draft, profile);
+
+    if (!user || pendingFields.length === 0) return;
+
     setSaving(true);
     setError(null);
-    setSaved(false);
 
     const { data, error: err } = await supabase
       .from('profiles')
@@ -137,8 +183,6 @@ export default function SettingsPage() {
       setProfile(savedProfile);
       setChordDisplayMode(savedProfile.chordDisplayMode);
       setDraft((currentDraft) => applySavedProfile(currentDraft, savedProfile));
-      setSaved(true);
-      setTimeout(() => setSaved(false), 2000);
     }
   }
 
@@ -152,6 +196,24 @@ export default function SettingsPage() {
   const settingsCardContentClasses = 'px-0';
 
   const sectionHeadingClasses = 'text-lg font-semibold text-foreground';
+  const pendingFields = getPendingSettingsFields(draft, profile);
+  const hasPendingChanges = pendingFields.length > 0;
+  const savedSettingsCount = profile ? EDITABLE_SETTINGS.length - pendingFields.length : 0;
+  const pendingSettingsLabel = formatSettingsFieldList(pendingFields);
+  const saveButtonLabel = saving
+    ? 'Saving...'
+    : hasPendingChanges
+      ? 'Save Pending Changes'
+      : profile
+        ? 'All Changes Saved'
+        : 'No Changes to Save';
+  const saveCaption = saving
+    ? `${pendingFields.length} setting change${pendingFields.length === 1 ? ' is' : 's are'} being applied now.`
+    : hasPendingChanges
+      ? `${pendingSettingsLabel} ${pendingFields.length === 1 ? 'is' : 'are'} still waiting until you save.`
+      : profile
+        ? 'This page already matches your saved profile settings.'
+        : 'Change a setting here to create saved profile preferences.';
 
   return (
     <div className="min-h-screen bg-background">
@@ -169,6 +231,107 @@ export default function SettingsPage() {
 
       <div className="max-w-2xl mx-auto px-4 py-8">
         <form onSubmit={handleSave} className="flex flex-col gap-6">
+          <Card className={settingsCardClasses}>
+            <CardHeader className={settingsCardHeaderClasses}>
+              <div className="flex flex-col gap-1.5">
+                <h2 className={sectionHeadingClasses}>Settings State</h2>
+                <p className="text-sm text-muted-foreground">
+                  Saved settings, pending edits, and unavailable settings stay separate here so
+                  you can tell what is already applied before leaving the page.
+                </p>
+              </div>
+            </CardHeader>
+            <CardContent className={settingsCardContentClasses}>
+              <div className="grid gap-3 md:grid-cols-3">
+                <div
+                  data-testid="settings-state-saved"
+                  className="rounded-lg border border-border/70 bg-background/60 p-4"
+                >
+                  <div className="flex items-center justify-between gap-3">
+                    <div className="flex items-center gap-2">
+                      <span className="size-2 rounded-full bg-status-ready" />
+                      <h3 className="text-sm font-medium text-foreground">Saved</h3>
+                    </div>
+                    <Badge variant="secondary">
+                      {profile ? `${savedSettingsCount} applied` : 'No saved profile'}
+                    </Badge>
+                  </div>
+                  <p className="mt-3 text-sm text-foreground">
+                    {profile
+                      ? hasPendingChanges
+                        ? `${savedSettingsCount} editable setting${savedSettingsCount === 1 ? '' : 's'} already match your saved profile.`
+                        : 'All editable settings match your saved profile.'
+                      : 'No saved profile settings exist yet.'}
+                  </p>
+                  <p className="mt-2 text-xs text-muted-foreground">
+                    {profile
+                      ? 'Saved settings are already applied on this page and in future sessions.'
+                      : 'Save changes here to carry your profile preferences into future sessions.'}
+                  </p>
+                </div>
+
+                <div
+                  data-testid="settings-state-pending"
+                  className={cn(
+                    'rounded-lg border border-border/70 bg-background/60 p-4',
+                    hasPendingChanges && 'border-status-unsaved/50'
+                  )}
+                >
+                  <div className="flex items-center justify-between gap-3">
+                    <div className="flex items-center gap-2">
+                      <span
+                        className={cn(
+                          'size-2 rounded-full',
+                          saving ? 'bg-status-saving animate-pulse' : 'bg-status-unsaved'
+                        )}
+                      />
+                      <h3 className="text-sm font-medium text-foreground">Pending</h3>
+                    </div>
+                    <Badge variant={hasPendingChanges || saving ? 'outline' : 'secondary'}>
+                      {saving
+                        ? 'Saving'
+                        : hasPendingChanges
+                          ? `${pendingFields.length} waiting`
+                          : 'Clear'}
+                    </Badge>
+                  </div>
+                  <p className="mt-3 text-sm text-foreground">
+                    {saving
+                      ? `${pendingFields.length} setting change${pendingFields.length === 1 ? ' is' : 's are'} being applied now.`
+                      : hasPendingChanges
+                        ? `${pendingFields.length} setting change${pendingFields.length === 1 ? ' is' : 's are'} waiting to be applied.`
+                        : 'No pending changes.'}
+                  </p>
+                  <p className="mt-2 text-xs text-muted-foreground">
+                    {hasPendingChanges
+                      ? `${pendingSettingsLabel} ${pendingFields.length === 1 ? 'is' : 'are'} still local until you save.`
+                      : 'Any edit you make here will move into pending until you save it.'}
+                  </p>
+                </div>
+
+                <div
+                  data-testid="settings-state-unavailable"
+                  className="rounded-lg border border-border/70 bg-background/60 p-4"
+                >
+                  <div className="flex items-center justify-between gap-3">
+                    <div className="flex items-center gap-2">
+                      <span className="size-2 rounded-full bg-muted-foreground" />
+                      <h3 className="text-sm font-medium text-foreground">Unavailable</h3>
+                    </div>
+                    <Badge variant="outline">{UNAVAILABLE_SETTINGS.length} fixed today</Badge>
+                  </div>
+                  <p className="mt-3 text-sm text-foreground">
+                    {UNAVAILABLE_SETTINGS.length} settings stay fixed in this build.
+                  </p>
+                  <p className="mt-2 text-xs text-muted-foreground">
+                    Audio output, auto-save interval, and theme show current behavior instead of
+                    fake controls.
+                  </p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
           {/* Profile card */}
           <Card className={settingsCardClasses}>
             <CardHeader className={settingsCardHeaderClasses}>
@@ -333,18 +496,21 @@ export default function SettingsPage() {
           <div className="flex items-center gap-3">
             <Button
               type="submit"
-              disabled={saving}
+              disabled={saving || !hasPendingChanges}
               className="px-4 py-2"
             >
               {saving ? (
                 <span className="h-4 w-4 rounded-full border-2 border-primary-foreground border-t-transparent animate-spin inline-block" />
               ) : (
-                'Save Settings'
+                saveButtonLabel
               )}
             </Button>
-            {saved && (
-              <span className="text-sm font-medium text-green-400">Saved!</span>
-            )}
+            <span
+              data-testid="settings-save-caption"
+              className="text-sm text-muted-foreground"
+            >
+              {saveCaption}
+            </span>
           </div>
         </form>
       </div>

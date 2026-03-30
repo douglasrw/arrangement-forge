@@ -15,9 +15,18 @@ import SettingsPage, {
   type SettingsDraft,
 } from './SettingsPage';
 
+type SaveResponse = {
+  data: Record<string, unknown> | null;
+  error: { message: string } | null;
+};
+
+const supabaseMock = vi.hoisted(() => ({
+  from: vi.fn(),
+}));
+
 vi.mock('@/lib/supabase', () => ({
   supabase: {
-    from: vi.fn(),
+    from: supabaseMock.from,
   },
 }));
 
@@ -53,11 +62,52 @@ function renderSettingsPage() {
   return { container, root };
 }
 
+function createProfileSaveQuery(response: SaveResponse) {
+  return {
+    upsert: () => ({
+      select: () => ({
+        single: () => Promise.resolve(response),
+      }),
+    }),
+  };
+}
+
+async function flushAsyncWork() {
+  await Promise.resolve();
+  await Promise.resolve();
+}
+
+function setInputValue(input: HTMLInputElement, value: string) {
+  const valueSetter = Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value')?.set;
+  valueSetter?.call(input, value);
+  input.dispatchEvent(new Event('input', { bubbles: true }));
+}
+
 let mountedRoot: Root | null = null;
 let mountedContainer: HTMLDivElement | null = null;
+let saveResponse: SaveResponse;
 
 beforeEach(() => {
   reactActEnv.IS_REACT_ACT_ENVIRONMENT = true;
+  saveResponse = {
+    data: {
+      id: 'user-1',
+      display_name: 'Doug',
+      chord_display_mode: 'letter',
+      default_genre: 'Jazz',
+      created_at: '2026-03-27T00:00:00Z',
+      updated_at: '2026-03-27T00:00:00Z',
+    },
+    error: null,
+  };
+  supabaseMock.from.mockReset();
+  supabaseMock.from.mockImplementation((table: string) => {
+    if (table === 'profiles') {
+      return createProfileSaveQuery(saveResponse);
+    }
+
+    throw new Error(`Unexpected table ${table}`);
+  });
   useAuthStore.setState({
     user: { id: 'user-1', email: 'ash@example.com' } as User,
     profile: makeProfile(),
@@ -271,5 +321,86 @@ describe('SettingsPage truth surface', () => {
     expect(mounted.container.querySelector('#settings-audio-output')).toBeNull();
     expect(mounted.container.querySelector('#settings-autosave')).toBeNull();
     expect(mounted.container.querySelector('#settings-theme')).toBeNull();
+  });
+
+  it('distinguishes saved, pending, and unavailable settings while a draft moves into the saved profile', async () => {
+    const mounted = renderSettingsPage();
+    mountedRoot = mounted.root;
+    mountedContainer = mounted.container;
+
+    const savedState = mounted.container.querySelector(
+      '[data-testid="settings-state-saved"]'
+    ) as HTMLDivElement | null;
+    const pendingState = mounted.container.querySelector(
+      '[data-testid="settings-state-pending"]'
+    ) as HTMLDivElement | null;
+    const unavailableState = mounted.container.querySelector(
+      '[data-testid="settings-state-unavailable"]'
+    ) as HTMLDivElement | null;
+    const saveButton = mounted.container.querySelector(
+      'button[type="submit"]'
+    ) as HTMLButtonElement | null;
+    const saveCaption = mounted.container.querySelector(
+      '[data-testid="settings-save-caption"]'
+    ) as HTMLSpanElement | null;
+    const displayNameInput = mounted.container.querySelector(
+      '#settings-display-name'
+    ) as HTMLInputElement | null;
+    const form = mounted.container.querySelector('form') as HTMLFormElement | null;
+
+    expect(savedState?.textContent).toContain('Saved');
+    expect(savedState?.textContent).toContain('3 applied');
+    expect(savedState?.textContent).toContain('All editable settings match your saved profile.');
+    expect(pendingState?.textContent).toContain('Pending');
+    expect(pendingState?.textContent).toContain('No pending changes.');
+    expect(unavailableState?.textContent).toContain('Unavailable');
+    expect(unavailableState?.textContent).toContain('3 fixed today');
+    expect(saveButton?.disabled).toBe(true);
+    expect(saveButton?.textContent).toBe('All Changes Saved');
+    expect(saveCaption?.textContent).toBe('This page already matches your saved profile settings.');
+
+    act(() => {
+      if (!displayNameInput) {
+        throw new Error('Expected display name input');
+      }
+
+      setInputValue(displayNameInput, 'Ashlyn');
+    });
+
+    expect(savedState?.textContent).toContain('2 applied');
+    expect(savedState?.textContent).toContain(
+      '2 editable settings already match your saved profile.'
+    );
+    expect(pendingState?.textContent).toContain('1 waiting');
+    expect(pendingState?.textContent).toContain('1 setting change is waiting to be applied.');
+    expect(pendingState?.textContent).toContain('Display Name is still local until you save.');
+    expect(saveButton?.disabled).toBe(false);
+    expect(saveButton?.textContent).toBe('Save Pending Changes');
+    expect(saveCaption?.textContent).toBe('Display Name is still waiting until you save.');
+
+    saveResponse = {
+      data: {
+        id: 'user-1',
+        display_name: 'Ashlyn',
+        chord_display_mode: 'letter',
+        default_genre: 'Jazz',
+        created_at: '2026-03-27T00:00:00Z',
+        updated_at: '2026-03-30T00:00:00Z',
+      },
+      error: null,
+    };
+
+    await act(async () => {
+      form?.dispatchEvent(new Event('submit', { bubbles: true, cancelable: true }));
+      await flushAsyncWork();
+    });
+
+    expect(useAuthStore.getState().profile?.displayName).toBe('Ashlyn');
+    expect(savedState?.textContent).toContain('3 applied');
+    expect(savedState?.textContent).toContain('All editable settings match your saved profile.');
+    expect(pendingState?.textContent).toContain('No pending changes.');
+    expect(saveButton?.disabled).toBe(true);
+    expect(saveButton?.textContent).toBe('All Changes Saved');
+    expect(saveCaption?.textContent).toBe('This page already matches your saved profile settings.');
   });
 });
