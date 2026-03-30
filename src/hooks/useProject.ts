@@ -70,11 +70,31 @@ export interface ProjectExportReadiness {
   message: string;
 }
 
+export type ProjectSaveStatus =
+  | 'project-draft'
+  | 'project-draft-over-saved-arrangement'
+  | 'arrangement-draft'
+  | 'loaded-arrangement';
+
+interface ProjectSaveCopy {
+  statusLabel:
+    | 'Project draft'
+    | 'Project draft + saved arrangement'
+    | 'Arrangement draft'
+    | 'Loaded arrangement';
+  savingLabel:
+    | 'Saving project…'
+    | 'Saving project draft…'
+    | 'Saving arrangement draft…'
+    | 'Saving loaded arrangement…';
+}
+
 export interface ProjectSavePlan {
+  saveStatus: ProjectSaveStatus;
   saveTarget: 'project' | 'arrangement';
   nextStep: 'save-project' | 'save-arrangement';
-  statusLabel: 'Project draft' | 'Arrangement draft' | 'Loaded arrangement';
-  savingLabel: 'Saving project…' | 'Saving arrangement draft…' | 'Saving loaded arrangement…';
+  statusLabel: ProjectSaveCopy['statusLabel'];
+  savingLabel: ProjectSaveCopy['savingLabel'];
   currentState: string;
   summary: string;
   arrangementTruth: ReturnType<typeof getProjectArrangementTruth>;
@@ -112,6 +132,48 @@ function describeProjectSaveCurrentState(
     : 'Only project fields and chat are in play right now; no arrangement rows are loaded.';
 }
 
+function getProjectSaveStatus(
+  arrangementTruth: ReturnType<typeof getProjectArrangementTruth>
+): ProjectSaveStatus {
+  switch (arrangementTruth.status) {
+    case 'draft-only':
+      return 'arrangement-draft';
+    case 'loaded-and-persisted':
+      return 'loaded-arrangement';
+    case 'persisted-only':
+      return 'project-draft-over-saved-arrangement';
+    case 'missing':
+    default:
+      return 'project-draft';
+  }
+}
+
+function getProjectSaveCopy(saveStatus: ProjectSaveStatus): ProjectSaveCopy {
+  switch (saveStatus) {
+    case 'arrangement-draft':
+      return {
+        statusLabel: 'Arrangement draft',
+        savingLabel: 'Saving arrangement draft…',
+      };
+    case 'loaded-arrangement':
+      return {
+        statusLabel: 'Loaded arrangement',
+        savingLabel: 'Saving loaded arrangement…',
+      };
+    case 'project-draft-over-saved-arrangement':
+      return {
+        statusLabel: 'Project draft + saved arrangement',
+        savingLabel: 'Saving project draft…',
+      };
+    case 'project-draft':
+    default:
+      return {
+        statusLabel: 'Project draft',
+        savingLabel: 'Saving project…',
+      };
+  }
+}
+
 export function getProjectSavePlan(state: {
   project: Project | null;
   stems: Stem[];
@@ -120,15 +182,15 @@ export function getProjectSavePlan(state: {
   chords: Chord[];
 }): ProjectSavePlan {
   const arrangementTruth = getProjectArrangementTruth(state);
+  const saveStatus = getProjectSaveStatus(arrangementTruth);
+  const saveCopy = getProjectSaveCopy(saveStatus);
 
   if (arrangementTruth.hasArrangementRows) {
-    const hasSavedSnapshot = arrangementTruth.status === 'loaded-and-persisted';
-
     return {
+      saveStatus,
       saveTarget: 'arrangement',
       nextStep: 'save-arrangement',
-      statusLabel: hasSavedSnapshot ? 'Loaded arrangement' : 'Arrangement draft',
-      savingLabel: hasSavedSnapshot ? 'Saving loaded arrangement…' : 'Saving arrangement draft…',
+      ...saveCopy,
       currentState: describeProjectSaveCurrentState(arrangementTruth),
       summary: arrangementTruth.hasPersistedArrangement
         ? 'Saving now will write the loaded arrangement rows back to the saved arrangement snapshot.'
@@ -138,10 +200,10 @@ export function getProjectSavePlan(state: {
   }
 
   return {
+    saveStatus,
     saveTarget: 'project',
     nextStep: 'save-project',
-    statusLabel: 'Project draft',
-    savingLabel: 'Saving project…',
+    ...saveCopy,
     currentState: describeProjectSaveCurrentState(arrangementTruth),
     summary: 'Saving now will persist project fields and chat without replacing arrangement rows.',
     arrangementTruth,

@@ -299,6 +299,33 @@ describe('TopBar save indicator truth', () => {
     expect(dot?.className).toContain('bg-status-unsaved');
   });
 
+  it('shows project-draft-over-saved-arrangement truth when the snapshot exists but rows are not loaded', () => {
+    useProjectStore.setState({
+      project: makeProject({ hasArrangement: true }),
+      stems: [],
+      sections: [],
+      blocks: [],
+      chords: [],
+    });
+    useUiStore.setState({
+      unsavedChanges: true,
+      systemStatus: 'ready',
+      lastSavedAt: null,
+    });
+
+    const mounted = renderTopBar();
+    mountedRoot = mounted.root;
+    mountedContainer = mounted.container;
+
+    const { dot, label } = getTopBarSaveIndicator(mounted.container);
+
+    expect(label?.textContent).toBe('Project draft + saved arrangement');
+    expect(label?.title).toBe(
+      'Only project fields and chat will change; the saved arrangement snapshot exists but is not loaded in this session. Saving now will persist project fields and chat without replacing arrangement rows.'
+    );
+    expect(dot?.className).toContain('bg-status-unsaved');
+  });
+
   it('shows active saving truth instead of collapsing back to a generic saved state', () => {
     useUiStore.setState({
       unsavedChanges: true,

@@ -420,6 +420,7 @@ describe('useProject save planning', () => {
     });
 
     expect(plan).toEqual({
+      saveStatus: 'arrangement-draft',
       saveTarget: 'arrangement',
       nextStep: 'save-arrangement',
       statusLabel: 'Arrangement draft',
@@ -459,6 +460,7 @@ describe('useProject save planning', () => {
     });
 
     expect(plan).toEqual({
+      saveStatus: 'loaded-arrangement',
       saveTarget: 'arrangement',
       nextStep: 'save-arrangement',
       statusLabel: 'Loaded arrangement',
@@ -486,6 +488,7 @@ describe('useProject save planning', () => {
     });
 
     expect(plan).toEqual({
+      saveStatus: 'project-draft',
       saveTarget: 'project',
       nextStep: 'save-project',
       statusLabel: 'Project draft',
@@ -499,6 +502,34 @@ describe('useProject save planning', () => {
         hasAnyArrangementTruth: false,
         summary: 'No arrangement rows or saved arrangement snapshot exist yet.',
         nextStep: 'Generate or import an arrangement before saving or exporting arrangement rows.',
+      },
+    });
+  });
+
+  it('keeps saved arrangement snapshot truth explicit when only project fields are pending save', () => {
+    const plan = getProjectSavePlan({
+      project: buildStoredProject('project-shell-over-saved-arrangement', true),
+      stems: [],
+      sections: [],
+      blocks: [],
+      chords: [],
+    });
+
+    expect(plan).toEqual({
+      saveStatus: 'project-draft-over-saved-arrangement',
+      saveTarget: 'project',
+      nextStep: 'save-project',
+      statusLabel: 'Project draft + saved arrangement',
+      savingLabel: 'Saving project draft…',
+      currentState: 'Only project fields and chat will change; the saved arrangement snapshot exists but is not loaded in this session.',
+      summary: 'Saving now will persist project fields and chat without replacing arrangement rows.',
+      arrangementTruth: {
+        status: 'persisted-only',
+        hasArrangementRows: false,
+        hasPersistedArrangement: true,
+        hasAnyArrangementTruth: true,
+        summary: 'A saved arrangement snapshot exists, but its rows are not loaded in the project store right now.',
+        nextStep: 'Reload the arrangement rows before editing, saving, or exporting the current arrangement snapshot.',
       },
     });
   });
