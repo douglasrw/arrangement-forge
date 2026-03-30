@@ -267,10 +267,57 @@ export interface ProjectExportSnapshot {
   chords: Chord[];
 }
 
+export type ProjectArrangementTruthStatus =
+  | 'missing'
+  | 'draft-only'
+  | 'persisted-only'
+  | 'draft-and-persisted';
+
 export interface ProjectArrangementTruth {
-  hasDraftArrangement: boolean;
+  status: ProjectArrangementTruthStatus;
+  hasArrangementRows: boolean;
   hasPersistedArrangement: boolean;
   hasAnyArrangementTruth: boolean;
+  summary: string;
+  nextStep: string;
+}
+
+function describeProjectArrangementTruth({
+  hasArrangementRows,
+  hasPersistedArrangement,
+}: {
+  hasArrangementRows: boolean;
+  hasPersistedArrangement: boolean;
+}): Pick<ProjectArrangementTruth, 'status' | 'summary' | 'nextStep'> {
+  if (hasArrangementRows && hasPersistedArrangement) {
+    return {
+      status: 'draft-and-persisted',
+      summary: 'Arrangement rows are loaded and a saved arrangement snapshot already exists.',
+      nextStep: 'Save the current arrangement rows when you want to replace the saved arrangement snapshot.',
+    };
+  }
+
+  if (hasArrangementRows) {
+    return {
+      status: 'draft-only',
+      summary: 'Arrangement rows are loaded, but no saved arrangement snapshot exists yet.',
+      nextStep: 'Save the current arrangement rows to create the first saved arrangement snapshot.',
+    };
+  }
+
+  if (hasPersistedArrangement) {
+    return {
+      status: 'persisted-only',
+      summary: 'A saved arrangement snapshot exists, but its rows are not loaded in the project store right now.',
+      nextStep: 'Reload the arrangement rows before editing, saving, or exporting the current arrangement snapshot.',
+    };
+  }
+
+  return {
+    status: 'missing',
+    summary: 'No arrangement rows or saved arrangement snapshot exist yet.',
+    nextStep: 'Generate or import an arrangement before saving or exporting arrangement rows.',
+  };
 }
 
 export function getProjectArrangementTruth(state: {
@@ -280,18 +327,23 @@ export function getProjectArrangementTruth(state: {
   blocks: Block[];
   chords: Chord[];
 }): ProjectArrangementTruth {
-  const hasDraftArrangement = Boolean(
+  const hasArrangementRows = Boolean(
     state.stems.length ||
     state.sections.length ||
     state.blocks.length ||
     state.chords.length
   );
   const hasPersistedArrangement = Boolean(state.project?.hasArrangement);
+  const arrangementTruth = describeProjectArrangementTruth({
+    hasArrangementRows,
+    hasPersistedArrangement,
+  });
 
   return {
-    hasDraftArrangement,
+    ...arrangementTruth,
+    hasArrangementRows,
     hasPersistedArrangement,
-    hasAnyArrangementTruth: hasDraftArrangement || hasPersistedArrangement,
+    hasAnyArrangementTruth: hasArrangementRows || hasPersistedArrangement,
   };
 }
 

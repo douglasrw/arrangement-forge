@@ -298,9 +298,12 @@ describe('projectStore', () => {
         chords: [makeChord()],
       })
     ).toEqual({
-      hasDraftArrangement: true,
+      status: 'draft-only',
+      hasArrangementRows: true,
       hasPersistedArrangement: false,
       hasAnyArrangementTruth: true,
+      summary: 'Arrangement rows are loaded, but no saved arrangement snapshot exists yet.',
+      nextStep: 'Save the current arrangement rows to create the first saved arrangement snapshot.',
     });
   });
 
@@ -314,9 +317,31 @@ describe('projectStore', () => {
         chords: [],
       })
     ).toEqual({
-      hasDraftArrangement: false,
+      status: 'persisted-only',
+      hasArrangementRows: false,
       hasPersistedArrangement: true,
       hasAnyArrangementTruth: true,
+      summary: 'A saved arrangement snapshot exists, but its rows are not loaded in the project store right now.',
+      nextStep: 'Reload the arrangement rows before editing, saving, or exporting the current arrangement snapshot.',
+    });
+  });
+
+  it('reports when loaded rows already sit on top of a saved arrangement snapshot', () => {
+    expect(
+      getProjectArrangementTruth({
+        project: makeProject({ hasArrangement: true }),
+        stems: [makeStem()],
+        sections: [makeSection()],
+        blocks: [makeBlock()],
+        chords: [],
+      })
+    ).toEqual({
+      status: 'draft-and-persisted',
+      hasArrangementRows: true,
+      hasPersistedArrangement: true,
+      hasAnyArrangementTruth: true,
+      summary: 'Arrangement rows are loaded and a saved arrangement snapshot already exists.',
+      nextStep: 'Save the current arrangement rows when you want to replace the saved arrangement snapshot.',
     });
   });
 

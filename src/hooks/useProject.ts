@@ -65,7 +65,8 @@ function rowToMessage(row: Record<string, unknown>): AiChatMessage {
 export interface ProjectExportReadiness {
   canExport: boolean;
   hasTextTruth: boolean;
-  hasArrangementTruth: boolean;
+  hasArrangementRows: boolean;
+  arrangementTruth: ReturnType<typeof getProjectArrangementTruth>;
   message: string;
 }
 
@@ -83,21 +84,6 @@ export type LoadProjectResult =
 
 const PROJECT_NOT_FOUND_MESSAGE = 'Project not found';
 
-export function hasArrangementExportTruth(state: {
-  stems: Stem[];
-  sections: Section[];
-  blocks: Block[];
-  chords: Chord[];
-}): boolean {
-  return getProjectArrangementTruth({
-    project: null,
-    stems: state.stems,
-    sections: state.sections,
-    blocks: state.blocks,
-    chords: state.chords,
-  }).hasDraftArrangement;
-}
-
 export function getProjectSavePlan(state: {
   project: Project | null;
   stems: Stem[];
@@ -107,7 +93,7 @@ export function getProjectSavePlan(state: {
 }): ProjectSavePlan {
   const arrangementTruth = getProjectArrangementTruth(state);
 
-  if (arrangementTruth.hasDraftArrangement) {
+  if (arrangementTruth.hasArrangementRows) {
     return {
       saveTarget: 'arrangement',
       nextStep: 'save-arrangement',
@@ -133,11 +119,15 @@ export function getProjectExportReadiness(state: {
   blocks: Block[];
   chords: Chord[];
 }): ProjectExportReadiness {
+  const arrangementTruth = getProjectArrangementTruth(state);
+  const hasArrangementRows = arrangementTruth.hasArrangementRows;
+
   if (!state.project) {
     return {
       canExport: false,
       hasTextTruth: false,
-      hasArrangementTruth: false,
+      hasArrangementRows: false,
+      arrangementTruth,
       message: 'Open a project to export',
     };
   }
@@ -145,21 +135,32 @@ export function getProjectExportReadiness(state: {
   const hasTextTruth = Boolean(
     state.project.chordChartRaw.trim() || state.project.generationHints.trim()
   );
-  const hasArrangementTruth = hasArrangementExportTruth(state);
 
-  if (hasTextTruth || hasArrangementTruth) {
+  if (hasTextTruth || hasArrangementRows) {
     return {
       canExport: true,
       hasTextTruth,
-      hasArrangementTruth,
+      hasArrangementRows,
+      arrangementTruth,
       message: 'Download chord chart and arrangement snapshot',
+    };
+  }
+
+  if (arrangementTruth.status === 'persisted-only') {
+    return {
+      canExport: false,
+      hasTextTruth: false,
+      hasArrangementRows: false,
+      arrangementTruth,
+      message: 'Reload the saved arrangement rows before exporting the arrangement snapshot',
     };
   }
 
   return {
     canExport: false,
     hasTextTruth: false,
-    hasArrangementTruth: false,
+    hasArrangementRows: false,
+    arrangementTruth,
     message: 'Add a chord chart, description, or arrangement to export',
   };
 }

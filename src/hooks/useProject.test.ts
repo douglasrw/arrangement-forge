@@ -325,8 +325,45 @@ describe('useProject export readiness', () => {
     expect(readiness).toEqual({
       canExport: true,
       hasTextTruth: false,
-      hasArrangementTruth: true,
+      hasArrangementRows: true,
+      arrangementTruth: {
+        status: 'draft-and-persisted',
+        hasArrangementRows: true,
+        hasPersistedArrangement: true,
+        hasAnyArrangementTruth: true,
+        summary: 'Arrangement rows are loaded and a saved arrangement snapshot already exists.',
+        nextStep: 'Save the current arrangement rows when you want to replace the saved arrangement snapshot.',
+      },
       message: 'Download chord chart and arrangement snapshot',
+    });
+  });
+
+  it('explains the blocked export state when saved arrangement metadata exists without loaded rows', () => {
+    const readiness = getProjectExportReadiness({
+      project: {
+        ...buildStoredProject('project-saved-only', true),
+        chordChartRaw: '   ',
+        generationHints: '   ',
+      },
+      stems: [],
+      sections: [],
+      blocks: [],
+      chords: [],
+    });
+
+    expect(readiness).toEqual({
+      canExport: false,
+      hasTextTruth: false,
+      hasArrangementRows: false,
+      arrangementTruth: {
+        status: 'persisted-only',
+        hasArrangementRows: false,
+        hasPersistedArrangement: true,
+        hasAnyArrangementTruth: true,
+        summary: 'A saved arrangement snapshot exists, but its rows are not loaded in the project store right now.',
+        nextStep: 'Reload the arrangement rows before editing, saving, or exporting the current arrangement snapshot.',
+      },
+      message: 'Reload the saved arrangement rows before exporting the arrangement snapshot',
     });
   });
 
@@ -346,7 +383,15 @@ describe('useProject export readiness', () => {
     expect(readiness).toEqual({
       canExport: false,
       hasTextTruth: false,
-      hasArrangementTruth: false,
+      hasArrangementRows: false,
+      arrangementTruth: {
+        status: 'missing',
+        hasArrangementRows: false,
+        hasPersistedArrangement: false,
+        hasAnyArrangementTruth: false,
+        summary: 'No arrangement rows or saved arrangement snapshot exist yet.',
+        nextStep: 'Generate or import an arrangement before saving or exporting arrangement rows.',
+      },
       message: 'Add a chord chart, description, or arrangement to export',
     });
   });
@@ -379,9 +424,12 @@ describe('useProject save planning', () => {
       nextStep: 'save-arrangement',
       summary: 'Promote the current arrangement draft into the first saved arrangement snapshot.',
       arrangementTruth: {
-        hasDraftArrangement: true,
+        status: 'draft-only',
+        hasArrangementRows: true,
         hasPersistedArrangement: false,
         hasAnyArrangementTruth: true,
+        summary: 'Arrangement rows are loaded, but no saved arrangement snapshot exists yet.',
+        nextStep: 'Save the current arrangement rows to create the first saved arrangement snapshot.',
       },
     });
   });
@@ -400,9 +448,12 @@ describe('useProject save planning', () => {
       nextStep: 'save-project',
       summary: 'Persist project fields and chat without replacing arrangement rows.',
       arrangementTruth: {
-        hasDraftArrangement: false,
+        status: 'missing',
+        hasArrangementRows: false,
         hasPersistedArrangement: false,
         hasAnyArrangementTruth: false,
+        summary: 'No arrangement rows or saved arrangement snapshot exist yet.',
+        nextStep: 'Generate or import an arrangement before saving or exporting arrangement rows.',
       },
     });
   });
