@@ -436,6 +436,14 @@ describe('TopBar save indicator truth', () => {
   it('surfaces recent save timing from lastSavedAt once changes are saved', () => {
     vi.useFakeTimers();
     vi.setSystemTime(new Date('2026-03-29T12:00:00Z'));
+    useProjectStore.getState().hydrateProject({
+      project: makeProject({ hasArrangement: true }),
+      stems: [makeStem()],
+      sections: [makeSection()],
+      blocks: [makeBlock()],
+      chords: [makeChord()],
+      chatMessages: [],
+    });
 
     useUiStore.setState({
       unsavedChanges: false,
@@ -451,6 +459,12 @@ describe('TopBar save indicator truth', () => {
 
     expect(label?.textContent).toBe('Saved 5m ago');
     expect(label?.title).toContain('Last saved');
+    expect(label?.title).toContain(
+      'Loaded arrangement rows already match the saved arrangement snapshot.'
+    );
+    expect(label?.title).toContain(
+      'Edit the arrangement to create a draft, or save project fields and chat without replacing arrangement rows.'
+    );
     expect(dot?.className).toContain('bg-status-ready');
   });
 

@@ -219,11 +219,17 @@ export function getTopBarSaveIndicatorCopy(
   indicatorState: TopBarSaveIndicatorState,
   lastSavedAt: string | null,
   errorMessage: string | null,
-  savePlan: Pick<ProjectSavePlan, 'statusLabel' | 'savingLabel' | 'currentState' | 'nextStep'> | null,
+  savePlan: Pick<
+    ProjectSavePlan,
+    'statusLabel' | 'savingLabel' | 'currentState' | 'nextStep' | 'arrangementTruth'
+  > | null,
   now = new Date()
 ): { label: string; tooltip: string } {
   const savePlanTooltip = savePlan
     ? `${savePlan.currentState} ${savePlan.nextStep}`.trim()
+    : null;
+  const savedArrangementTooltip = savePlan
+    ? `${savePlan.arrangementTruth.currentState} ${savePlan.arrangementTruth.nextStep}`.trim()
     : null;
 
   if (indicatorState === 'error') {
@@ -252,7 +258,9 @@ export function getTopBarSaveIndicatorCopy(
 
   return {
     label: formatRecentSaveLabel(lastSavedAt, now),
-    tooltip: hasValidSavedAt ? `Last saved ${savedAt?.toLocaleString()}` : 'All changes saved',
+    tooltip: hasValidSavedAt
+      ? `Last saved ${savedAt?.toLocaleString()}. ${savedArrangementTooltip ?? 'All changes saved.'}`.trim()
+      : savedArrangementTooltip ?? 'All changes saved',
   };
 }
 

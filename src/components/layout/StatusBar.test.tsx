@@ -278,6 +278,24 @@ describe('StatusBar', () => {
     );
   });
 
+  it('keeps saved arrangement truth visible after the project is already saved', () => {
+    useProjectStore.setState({
+      project: makeProject({ hasArrangement: true }),
+      stems: [],
+      sections: [],
+      blocks: [],
+      chords: [],
+    });
+
+    const container = renderStatusBar('saved');
+    const label = container.querySelector('span[title]') as HTMLSpanElement | null;
+
+    expect(container.textContent).toContain('Saved');
+    expect(label?.title).toBe(
+      'A saved arrangement snapshot exists, but its rows are not loaded in the project store right now. Use Reload saved snapshot in the top bar to load the arrangement rows before editing, saving, or exporting the current arrangement snapshot.'
+    );
+  });
+
   it('renders route-level project loading as a distinct shell status', () => {
     const container = renderStatusBar('loading-project');
 

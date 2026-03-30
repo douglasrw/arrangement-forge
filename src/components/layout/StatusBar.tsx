@@ -1,5 +1,6 @@
 import type { GenerationState, SystemStatus } from '@/types';
 import { cn } from '@/lib/utils';
+import { getProjectArrangementTruth } from '@/store/project-store';
 import { getProjectSavePlan } from '@/hooks/useProject';
 import { useProjectStore } from '@/store/project-store';
 import { useUiStore } from '@/store/ui-store';
@@ -92,6 +93,13 @@ interface StatusBarProps {
 export function StatusBar({ status = 'saved', className }: StatusBarProps) {
   const errorMessage = useUiStore((state) => state.errorMessage);
   const { project, stems, sections, blocks, chords } = useProjectStore();
+  const arrangementTruth = getProjectArrangementTruth({
+    project,
+    stems,
+    sections,
+    blocks,
+    chords,
+  });
   const cfg = STATUS_CONFIG[status];
   const savePlan = getProjectSavePlan({
     project,
@@ -101,6 +109,7 @@ export function StatusBar({ status = 'saved', className }: StatusBarProps) {
     chords,
   });
   const savePlanTooltip = `${savePlan.currentState} ${savePlan.nextStep}`.trim();
+  const savedTruthTooltip = `${arrangementTruth.currentState} ${arrangementTruth.nextStep}`.trim();
   const label =
     status === 'error'
       ? formatErrorStatusLabel(errorMessage)
@@ -114,6 +123,8 @@ export function StatusBar({ status = 'saved', className }: StatusBarProps) {
       ? errorMessage
       : status === 'saving' || status === 'unsaved'
       ? savePlanTooltip
+      : status === 'saved'
+      ? savedTruthTooltip
       : label;
 
   return (
