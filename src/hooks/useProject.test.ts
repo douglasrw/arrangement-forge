@@ -18,6 +18,21 @@ type TableResponse = {
   singleData?: Row | null;
 };
 
+function createDeferred<T>() {
+  let resolve!: (value: T) => void;
+  let reject!: (reason?: unknown) => void;
+  const promise = new Promise<T>((nextResolve, nextReject) => {
+    resolve = nextResolve;
+    reject = nextReject;
+  });
+
+  return {
+    promise,
+    resolve,
+    reject,
+  };
+}
+
 const supabaseMock = vi.hoisted(() => ({
   from: vi.fn(),
 }));
@@ -695,6 +710,219 @@ describe('useProject loadProject', () => {
       errorMessage: null,
       unsavedChanges: false,
       lastSavedAt: null,
+    });
+  });
+
+  it('clears stale project truth before a replacement route load finishes', async () => {
+    const projectQuery = createDeferred<{ data: Row | null; error: Error | null }>();
+    const stemsQuery = createDeferred<{ data: Row[]; error: Error | null }>();
+    const sectionsQuery = createDeferred<{ data: Row[]; error: Error | null }>();
+    const chordsQuery = createDeferred<{ data: Row[]; error: Error | null }>();
+    const messagesQuery = createDeferred<{ data: Row[]; error: Error | null }>();
+
+    supabaseMock.from.mockImplementation((table: string) => {
+      switch (table) {
+        case 'projects':
+          return {
+            select: () => ({
+              eq: () => ({
+                maybeSingle: () => projectQuery.promise,
+              }),
+            }),
+          };
+        case 'stems':
+          return {
+            select: () => ({
+              eq: () => stemsQuery.promise,
+            }),
+          };
+        case 'sections':
+          return {
+            select: () => ({
+              eq: () => ({
+                order: () => sectionsQuery.promise,
+              }),
+            }),
+          };
+        case 'chords':
+          return {
+            select: () => ({
+              eq: () => ({
+                order: () => chordsQuery.promise,
+              }),
+            }),
+          };
+        case 'ai_chat_messages':
+          return {
+            select: () => ({
+              eq: () => ({
+                order: () => messagesQuery.promise,
+              }),
+            }),
+          };
+        case 'blocks':
+          return {
+            select: () => ({
+              in: () => Promise.resolve({ data: [], error: null }),
+            }),
+          };
+        default:
+          return createTableQuery();
+      }
+    });
+
+    useProjectStore.setState({
+      project: {
+        ...buildStoredProject('project-a', true),
+        name: 'Night Train',
+        chordChartRaw: '[Verse]\nCmaj7 | Fmaj7',
+        generationHints: 'Keep the groove moving',
+      },
+      stems: [
+        {
+          id: 'project-a-stem',
+          projectId: 'project-a',
+          instrument: 'piano',
+          sortOrder: 0,
+          volume: 0.8,
+          pan: 0,
+          isMuted: false,
+          isSolo: false,
+          createdAt: '2026-03-28T00:00:00Z',
+        },
+      ],
+      sections: [
+        {
+          id: 'project-a-section',
+          projectId: 'project-a',
+          name: 'Verse',
+          sortOrder: 0,
+          barCount: 4,
+          startBar: 1,
+          energyOverride: null,
+          grooveOverride: null,
+          feelOverride: null,
+          swingPctOverride: null,
+          dynamicsOverride: null,
+          createdAt: '2026-03-28T00:00:00Z',
+        },
+      ],
+      blocks: [
+        {
+          id: 'project-a-block',
+          stemId: 'project-a-stem',
+          sectionId: 'project-a-section',
+          startBar: 1,
+          endBar: 4,
+          chordDegree: 'I',
+          chordQuality: 'maj7',
+          chordBassDegree: null,
+          style: 'jazz_comp',
+          energyOverride: null,
+          dynamicsOverride: null,
+          midiData: [],
+          createdAt: '2026-03-28T00:00:00Z',
+        },
+      ],
+      chords: [
+        {
+          id: 'project-a-chord',
+          projectId: 'project-a',
+          barNumber: 1,
+          degree: 'I',
+          quality: 'maj7',
+          bassDegree: null,
+        },
+      ],
+      chatMessages: [buildStoredMessage('project-a')],
+      drumOnlyUpdate: false,
+      allInstrumentsUpdate: false,
+    });
+    useSelectionStore.setState({
+      level: 'block',
+      sectionId: 'project-a-section',
+      blockId: 'project-a-block',
+      stemId: 'project-a-stem',
+    });
+    useUiStore.setState({
+      generationState: 'complete',
+      systemStatus: 'ready',
+      errorMessage: null,
+      unsavedChanges: true,
+      lastSavedAt: '2026-03-28T00:00:00Z',
+    });
+
+    const mounted = renderHarness();
+    mountedRoot = mounted.root;
+    mountedContainer = mounted.container;
+    expect(hookValue).not.toBeNull();
+
+    let loadPromise!: Promise<LoadProjectResult>;
+    await act(async () => {
+      loadPromise = hookValue!.loadProject('project-b');
+      await Promise.resolve();
+    });
+
+    expect(useProjectStore.getState()).toMatchObject({
+      project: null,
+      stems: [],
+      sections: [],
+      blocks: [],
+      chords: [],
+      chatMessages: [],
+    });
+    expect(useSelectionStore.getState()).toMatchObject({
+      level: 'song',
+      sectionId: null,
+      blockId: null,
+      stemId: null,
+    });
+    expect(useUiStore.getState()).toMatchObject({
+      generationState: 'idle',
+      systemStatus: 'ready',
+      errorMessage: null,
+      unsavedChanges: false,
+      lastSavedAt: null,
+    });
+
+    const nextProjectRows = buildProjectRows('project-b', {
+      hasArrangement: false,
+      includeContent: false,
+    });
+
+    await act(async () => {
+      projectQuery.resolve({
+        data: nextProjectRows.projects.singleData ?? null,
+        error: null,
+      });
+      stemsQuery.resolve({
+        data: (nextProjectRows.stems.data ?? []) as Row[],
+        error: null,
+      });
+      sectionsQuery.resolve({
+        data: (nextProjectRows.sections.data ?? []) as Row[],
+        error: null,
+      });
+      chordsQuery.resolve({
+        data: (nextProjectRows.chords.data ?? []) as Row[],
+        error: null,
+      });
+      messagesQuery.resolve({
+        data: (nextProjectRows.ai_chat_messages.data ?? []) as Row[],
+        error: null,
+      });
+
+      await loadPromise;
+      await Promise.resolve();
+    });
+
+    expect(useProjectStore.getState()).toMatchObject({
+      project: expect.objectContaining({ id: 'project-b' }),
+      stems: [],
+      sections: [],
+      blocks: [],
+      chords: [],
+      chatMessages: [],
     });
   });
 

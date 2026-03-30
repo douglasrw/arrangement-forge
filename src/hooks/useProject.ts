@@ -336,6 +336,7 @@ export function useProject() {
 
   const loadProject = useCallback(
     async (projectId: string): Promise<LoadProjectResult> => {
+      useProjectStore.getState().clearProjectSession();
       setSystemStatus('ready');
       try {
         const [projectRes, stemsRes, sectionsRes, chordsRes, messagesRes] =
