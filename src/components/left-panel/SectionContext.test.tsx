@@ -161,6 +161,10 @@ describe('SectionContext truth surface', () => {
 
     expect(nameInput?.value).toBe('Verse');
     expect(mounted.container.textContent).toContain('8 bars');
+    expect(mounted.container.textContent).toContain('Section Scope');
+    expect(mounted.container.textContent).toContain(
+      'Active scope: Verse section across 8 bars.'
+    );
     expect(mounted.container.textContent).toContain(
       'Section Energy Override'
     );
@@ -540,5 +544,49 @@ describe('SectionContext truth surface', () => {
     expect(mounted.container.textContent).toContain(
       'This section is inheriting the project dynamics default.'
     );
+  });
+
+  it('marks missing selected section context as unavailable instead of a normal ready state', () => {
+    useProjectStore.setState({
+      project: makeProject(),
+      sections: [],
+    });
+
+    useSelectionStore.setState({
+      level: 'section',
+      sectionId: 'missing-section',
+      blockId: null,
+      stemId: null,
+    });
+
+    const mounted = renderSectionContext();
+    mountedRoot = mounted.root;
+    mountedContainer = mounted.container;
+
+    const nameInput = mounted.container.querySelector(
+      '#section-name-input'
+    ) as HTMLInputElement | null;
+    const lengthButtons = Array.from(
+      mounted.container.querySelectorAll('button')
+    ).filter((button) => {
+      const text = button.textContent?.trim();
+      return text === '\u2212' || text === '+';
+    });
+    const deleteButton = Array.from(
+      mounted.container.querySelectorAll('button')
+    ).find((button) => button.textContent?.trim() === 'Delete Section');
+
+    expect(mounted.container.textContent).toContain('Section Scope');
+    expect(mounted.container.textContent).toContain('Section unavailable');
+    expect(mounted.container.textContent).toContain(
+      'Last requested section: Fallback Section (4 bars).'
+    );
+    expect(mounted.container.textContent).toContain(
+      'The selected section is no longer available, so section scope is missing rather than ready.'
+    );
+    expect(nameInput?.disabled).toBe(true);
+    expect(lengthButtons).toHaveLength(2);
+    expect(lengthButtons.every((button) => button.disabled)).toBe(true);
+    expect(deleteButton?.disabled).toBe(true);
   });
 });

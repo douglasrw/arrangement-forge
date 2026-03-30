@@ -1,6 +1,7 @@
 import { cn } from "@/lib/utils"
 
 type Scope = "song" | "section" | "block"
+type ScopeTone = "default" | "missing"
 
 const SCOPE_STYLES: Record<Scope, { bg: string; text: string; label: string }> = {
   song: {
@@ -22,17 +23,23 @@ const SCOPE_STYLES: Record<Scope, { bg: string; text: string; label: string }> =
 
 interface ScopeBadgeProps {
   scope: Scope
+  tone?: ScopeTone
   className?: string
 }
 
-export function ScopeBadge({ scope, className }: ScopeBadgeProps) {
+export function ScopeBadge({
+  scope,
+  tone = "default",
+  className,
+}: ScopeBadgeProps) {
   const s = SCOPE_STYLES[scope]
   return (
     <span
       className={cn(
         "inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-medium uppercase tracking-wider",
-        s.bg,
-        s.text,
+        tone === "default"
+          ? [s.bg, s.text]
+          : "border border-warning/30 bg-warning/10 text-warning",
         className
       )}
     >

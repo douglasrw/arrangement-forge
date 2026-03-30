@@ -4,6 +4,7 @@ import { isGenreSwingEnabled } from "@/lib/genre-config"
 import { useProjectStore } from "@/store/project-store"
 import { useSelectionStore } from "@/store/selection-store"
 import { ConfirmDialog } from "@/components/shared/ConfirmDialog"
+import { ScopeBadge } from "@/components/shared/ScopeBadge"
 
 function getStyleDisplayValue(
   field: "energy" | "groove" | "feel" | "dynamics",
@@ -62,6 +63,77 @@ function getSwingDisplayState(swingPct: number | null | undefined): {
   }
 }
 
+type SectionScopeTone = "default" | "missing"
+
+interface SectionScopeTruth {
+  title: string
+  meta: string
+  summary: string
+  tone: SectionScopeTone
+}
+
+const SECTION_SCOPE_TONE_STYLES: Record<
+  SectionScopeTone,
+  {
+    panel: string
+    title: string
+    meta: string
+    summary: string
+  }
+> = {
+  default: {
+    panel: "border-border/70 bg-secondary/30",
+    title: "text-zinc-200",
+    meta: "text-muted-foreground",
+    summary: "text-muted-foreground",
+  },
+  missing: {
+    panel: "border-warning/30 bg-warning/10",
+    title: "text-warning",
+    meta: "text-warning",
+    summary: "text-warning",
+  },
+}
+
+function getSectionScopeTruth({
+  hasLiveSection,
+  sectionId,
+  currentName,
+  currentBars,
+}: {
+  hasLiveSection: boolean
+  sectionId: string | null
+  currentName: string
+  currentBars: number
+}): SectionScopeTruth {
+  if (hasLiveSection) {
+    return {
+      title: currentName,
+      meta: `${currentBars} bars`,
+      summary: `Active scope: ${currentName} section across ${currentBars} bars.`,
+      tone: "default",
+    }
+  }
+
+  if (sectionId) {
+    return {
+      title: "Section unavailable",
+      meta: `Last requested section: ${currentName} (${currentBars} bars).`,
+      summary:
+        "The selected section is no longer available, so section scope is missing rather than ready.",
+      tone: "missing",
+    }
+  }
+
+  return {
+    title: "No section selected",
+    meta: `Inspector fallback: ${currentName} (${currentBars} bars).`,
+    summary:
+      "No live section is selected, so section scope is missing rather than ready.",
+    tone: "missing",
+  }
+}
+
 /* ------------------------------------------------------------------ */
 /*  SectionContext                                                      */
 /* ------------------------------------------------------------------ */
@@ -81,6 +153,7 @@ export function SectionContext({
 
   /* Derive live section from store using sectionId */
   const liveSection = sections.find((s) => s.id === sectionId)
+  const hasLiveSection = liveSection != null
   const currentName = liveSection?.name ?? sectionName
   const currentBars = liveSection?.barCount ?? sectionBars
   const projectEnergy = project?.energy ?? 50
@@ -111,6 +184,13 @@ export function SectionContext({
   const hiddenSwingOverrideNote = project?.genre
     ? `Saved swing override data still exists on this section, but ${project.genre} ignores it until swing becomes available again.`
     : "Saved swing override data still exists on this section, but the current genre ignores it until swing becomes available again."
+  const sectionScopeTruth = getSectionScopeTruth({
+    hasLiveSection,
+    sectionId,
+    currentName,
+    currentBars,
+  })
+  const scopeToneStyles = SECTION_SCOPE_TONE_STYLES[sectionScopeTruth.tone]
 
   /* Local draft for the name input */
   const [nameDraft, setNameDraft] = useState(currentName)
@@ -208,14 +288,38 @@ export function SectionContext({
       </button>
 
       <div className="border-t border-border px-4 pb-4 pt-4">
-        {/* Section badge */}
-        <div className="mb-4 flex items-center gap-2">
-          <div className="flex size-6 items-center justify-center rounded bg-secondary">
-            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#a1a1aa" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18"/></svg>
+        <div className={cn("mb-4 rounded-lg border p-3", scopeToneStyles.panel)}>
+          <div className="flex items-center justify-between gap-3">
+            <div className="flex items-center gap-2">
+              <div className="flex size-6 items-center justify-center rounded bg-secondary">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#a1a1aa" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18"/></svg>
+              </div>
+              <span className="text-xs font-semibold uppercase tracking-wider text-foreground">
+                Section Inspector
+              </span>
+            </div>
+            <ScopeBadge
+              scope="section"
+              tone={sectionScopeTruth.tone}
+              className="shrink-0"
+            />
           </div>
-          <span className="text-xs font-semibold uppercase tracking-wider text-foreground">
-            Section Inspector
-          </span>
+
+          <div className="mt-3 flex items-center gap-2">
+            <div className="flex size-2.5 items-center justify-center rounded-sm bg-instrument-strings/70" />
+            <span className={cn("text-sm font-medium", scopeToneStyles.title)}>
+              {sectionScopeTruth.title}
+            </span>
+          </div>
+          <p className={cn("mt-0.5 text-xs", scopeToneStyles.meta)}>
+            {sectionScopeTruth.meta}
+          </p>
+          <p
+            id="section-scope-summary"
+            className={cn("mt-2 text-xs", scopeToneStyles.summary)}
+          >
+            {sectionScopeTruth.summary}
+          </p>
         </div>
 
         {/* Section name */}
@@ -232,10 +336,12 @@ export function SectionContext({
             if (e.key === "Enter") commitName(nameDraft)
             if (e.key === "Escape") setNameDraft(currentName)
           }}
+          disabled={!hasLiveSection}
           className={cn(
             "mt-1.5 w-full rounded-lg border border-border bg-secondary px-3 py-1.5",
             "text-sm font-medium text-zinc-100",
-            "focus:border-ring/50 focus:outline-none focus:ring-1 focus:ring-ring/30"
+            "focus:border-ring/50 focus:outline-none focus:ring-1 focus:ring-ring/30",
+            "disabled:cursor-not-allowed disabled:opacity-50"
           )}
         />
 
@@ -247,7 +353,8 @@ export function SectionContext({
           <button
             type="button"
             onClick={() => adjustBars(-4)}
-            className="flex size-7 items-center justify-center rounded-lg bg-input text-sm font-medium text-muted-foreground transition-colors hover:bg-zinc-600 hover:text-zinc-100"
+            disabled={!hasLiveSection}
+            className="flex size-7 items-center justify-center rounded-lg bg-input text-sm font-medium text-muted-foreground transition-colors hover:bg-zinc-600 hover:text-zinc-100 disabled:cursor-not-allowed disabled:opacity-40"
           >
             {'\u2212'}
           </button>
@@ -257,7 +364,8 @@ export function SectionContext({
           <button
             type="button"
             onClick={() => adjustBars(4)}
-            className="flex size-7 items-center justify-center rounded-lg bg-input text-sm font-medium text-muted-foreground transition-colors hover:bg-zinc-600 hover:text-zinc-100"
+            disabled={!hasLiveSection}
+            className="flex size-7 items-center justify-center rounded-lg bg-input text-sm font-medium text-muted-foreground transition-colors hover:bg-zinc-600 hover:text-zinc-100 disabled:cursor-not-allowed disabled:opacity-40"
           >
             +
           </button>
@@ -669,7 +777,8 @@ export function SectionContext({
         <button
           type="button"
           onClick={() => setConfirmDeleteOpen(true)}
-          className="mt-6 text-xs text-zinc-500 transition-colors hover:text-red-400"
+          disabled={!hasLiveSection}
+          className="mt-6 text-xs text-zinc-500 transition-colors hover:text-red-400 disabled:cursor-not-allowed disabled:text-zinc-600"
         >
           Delete Section
         </button>
