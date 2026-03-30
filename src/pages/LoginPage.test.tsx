@@ -178,7 +178,24 @@ describe('LoginPage failure truth', () => {
     expect(navigateMock).toHaveBeenCalledWith('/library', { replace: true });
   });
 
+  it('keeps the blocked state and recovery target visible before authentication begins', () => {
+    locationMock.state = {
+      redirectTo: '/project/project-1?tab=arrangement',
+    };
+
+    const mounted = renderLoginPage();
+    mountedRoot = mounted.root;
+    mountedContainer = mounted.container;
+
+    expect(mounted.container.textContent).toContain('Authentication blocked');
+    expect(mounted.container.textContent).toContain('return you to your project');
+    expect(mounted.container.querySelector('form')).not.toBeNull();
+  });
+
   it('surfaces sign-in failures without navigating away', async () => {
+    locationMock.state = {
+      redirectTo: '/settings',
+    };
     authApi.signIn.mockRejectedValueOnce(new Error('Invalid email or password'));
 
     const mounted = renderLoginPage();
@@ -193,8 +210,10 @@ describe('LoginPage failure truth', () => {
     });
 
     expect(authApi.signIn).toHaveBeenCalledWith('ash@example.com', 'secret-1');
+    expect(mounted.container.textContent).toContain('Authentication failed');
     expect(mounted.container.textContent).toContain('Email sign-in failed');
     expect(mounted.container.textContent).toContain('Invalid email or password');
+    expect(mounted.container.textContent).toContain('return you to settings');
     expect(navigateMock).not.toHaveBeenCalled();
 
     const submitButton = mounted.container.querySelector('button[type="submit"]') as HTMLButtonElement | null;
@@ -217,6 +236,8 @@ describe('LoginPage failure truth', () => {
     });
 
     expect(authApi.signIn).toHaveBeenCalledWith('ash@example.com', 'secret-1');
+    expect(mounted.container.textContent).toContain('Waiting on authentication');
+    expect(mounted.container.textContent).toContain('continue to the library');
     expect((mounted.container.querySelector('button[type="submit"]') as HTMLButtonElement | null)?.textContent).toBe('Signing in...');
     expect((mounted.container.querySelector('button[type="submit"]') as HTMLButtonElement | null)?.disabled).toBe(true);
     expect(findButtonByText(mounted.container, 'Continue with Google')?.disabled).toBe(true);
@@ -318,6 +339,22 @@ describe('LoginPage failure truth', () => {
     expect(navigateMock).not.toHaveBeenCalled();
   });
 
+  it('keeps the waiting state explicit while session bootstrap is still running', () => {
+    authApi.isLoading = true;
+    locationMock.state = {
+      redirectTo: '/settings',
+    };
+
+    const mounted = renderLoginPage();
+    mountedRoot = mounted.root;
+    mountedContainer = mounted.container;
+
+    expect(mounted.container.querySelector('[data-testid="auth-loading-screen"]')).not.toBeNull();
+    expect(mounted.container.textContent).toContain('Waiting on authentication');
+    expect(mounted.container.textContent).toContain('continue to settings');
+    expect(mounted.container.querySelector('form')).toBeNull();
+  });
+
   it('holds authenticated sessions off the login form and recovers them forward', async () => {
     authApi.isAuthenticated = true;
     locationMock.state = {
@@ -329,6 +366,8 @@ describe('LoginPage failure truth', () => {
     mountedContainer = mounted.container;
 
     expect(mounted.container.querySelector('[data-testid="auth-loading-screen"]')).not.toBeNull();
+    expect(mounted.container.textContent).toContain('Waiting on authentication');
+    expect(mounted.container.textContent).toContain('Returning you to settings');
     expect(mounted.container.querySelector('form')).toBeNull();
 
     await act(async () => {

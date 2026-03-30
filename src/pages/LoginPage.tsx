@@ -25,13 +25,49 @@ function resolveRecoveryPath(state: unknown) {
   return '/library';
 }
 
-function AuthLoadingScreen() {
+function describeRecoveryDestination(path: string) {
+  if (path.startsWith('/project/')) {
+    return 'your project';
+  }
+
+  if (path.startsWith('/settings')) {
+    return 'settings';
+  }
+
+  if (path.startsWith('/library')) {
+    return 'the library';
+  }
+
+  return 'your workspace';
+}
+
+function AuthLoadingScreen({
+  isAuthenticated,
+  recoveryPath,
+}: {
+  isAuthenticated: boolean;
+  recoveryPath: string;
+}) {
+  const recoveryDestination = describeRecoveryDestination(recoveryPath);
+
   return (
     <div
       data-testid="auth-loading-screen"
-      className="min-h-screen bg-background flex items-center justify-center"
+      className="min-h-screen bg-background flex items-center justify-center p-4"
     >
-      <div className="h-8 w-8 rounded-full border-2 border-primary border-t-transparent animate-spin" />
+      <div className="bg-card shadow-xl w-full max-w-sm border border-border rounded-lg p-6">
+        <div className="flex flex-col items-center gap-4 text-center">
+          <div className="h-8 w-8 rounded-full border-2 border-primary border-t-transparent animate-spin" />
+          <div className="space-y-1">
+            <h1 className="text-base font-semibold text-foreground">Waiting on authentication</h1>
+            <p className="text-sm text-muted-foreground">
+              {isAuthenticated
+                ? `Your session is ready. Returning you to ${recoveryDestination}.`
+                : `Checking for an existing session before showing the form. If one is found, you will continue to ${recoveryDestination}.`}
+            </p>
+          </div>
+        </div>
+      </div>
     </div>
   );
 }
@@ -45,6 +81,58 @@ function getFailureTitle(path: 'signin' | 'signup' | 'google') {
     default:
       return 'Email sign-in failed';
   }
+}
+
+function AuthStatusNotice({
+  activeSubmissionPath,
+  error,
+  recoveryPath,
+}: {
+  activeSubmissionPath: 'signin' | 'signup' | 'google' | null;
+  error: { path: 'signin' | 'signup' | 'google'; message: string } | null;
+  recoveryPath: string;
+}) {
+  const recoveryDestination = describeRecoveryDestination(recoveryPath);
+
+  if (error) {
+    return (
+      <Alert data-testid="auth-status-notice" variant="destructive">
+        <AlertTitle>Authentication failed</AlertTitle>
+        <AlertDescription>
+          <p>{getFailureTitle(error.path)}: {error.message}</p>
+          <p>
+            Check your details or try another sign-in path. After a successful retry,
+            Arrangement Forge will return you to {recoveryDestination}.
+          </p>
+        </AlertDescription>
+      </Alert>
+    );
+  }
+
+  if (activeSubmissionPath) {
+    const waitingDescription = activeSubmissionPath === 'google'
+      ? `Finish the Google handoff in the popup or redirected window. When Google hands control back, Arrangement Forge will continue to ${recoveryDestination}.`
+      : activeSubmissionPath === 'signup'
+        ? `Arrangement Forge is creating your account. Keep this tab open and you will continue to ${recoveryDestination} as soon as authentication succeeds.`
+        : `Arrangement Forge is checking your credentials. Keep this tab open and you will continue to ${recoveryDestination} as soon as authentication succeeds.`;
+
+    return (
+      <Alert data-testid="auth-status-notice">
+        <AlertTitle>Waiting on authentication</AlertTitle>
+        <AlertDescription>{waitingDescription}</AlertDescription>
+      </Alert>
+    );
+  }
+
+  return (
+    <Alert data-testid="auth-status-notice">
+      <AlertTitle>Authentication blocked</AlertTitle>
+      <AlertDescription>
+        Sign in with email, create an account, or continue with Google to unblock access.
+        After authentication, Arrangement Forge will return you to {recoveryDestination}.
+      </AlertDescription>
+    </Alert>
+  );
 }
 
 export default function LoginPage() {
@@ -110,7 +198,7 @@ export default function LoginPage() {
   }
 
   if (isLoading || isAuthenticated) {
-    return <AuthLoadingScreen />;
+    return <AuthLoadingScreen isAuthenticated={isAuthenticated} recoveryPath={recoveryPath} />;
   }
 
   return (
@@ -126,6 +214,12 @@ export default function LoginPage() {
               AI-powered backing tracks
             </p>
           </div>
+
+          <AuthStatusNotice
+            activeSubmissionPath={activeSubmissionPath}
+            error={error}
+            recoveryPath={recoveryPath}
+          />
 
           {/* Mode toggle */}
           <div className="flex gap-2 bg-secondary rounded-lg p-1">
@@ -181,13 +275,6 @@ export default function LoginPage() {
                 minLength={6}
               />
             </div>
-
-            {error && (
-              <Alert variant="destructive">
-                <AlertTitle>{getFailureTitle(error.path)}</AlertTitle>
-                <AlertDescription>{error.message}</AlertDescription>
-              </Alert>
-            )}
 
             <Button
               type="submit"
