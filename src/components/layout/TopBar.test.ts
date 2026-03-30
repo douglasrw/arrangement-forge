@@ -272,6 +272,33 @@ describe('TopBar save indicator truth', () => {
     expect(dot?.className).toContain('bg-status-unsaved');
   });
 
+  it('shows arrangement-draft truth when arrangement rows exist without a saved snapshot', () => {
+    useProjectStore.setState({
+      project: makeProject({ hasArrangement: false }),
+      stems: [makeStem()],
+      sections: [],
+      blocks: [],
+      chords: [],
+    });
+    useUiStore.setState({
+      unsavedChanges: true,
+      systemStatus: 'ready',
+      lastSavedAt: null,
+    });
+
+    const mounted = renderTopBar();
+    mountedRoot = mounted.root;
+    mountedContainer = mounted.container;
+
+    const { dot, label } = getTopBarSaveIndicator(mounted.container);
+
+    expect(label?.textContent).toBe('Arrangement draft');
+    expect(label?.title).toBe(
+      'Loaded arrangement rows exist only in the current draft state. Save now to create the first saved arrangement snapshot from the loaded arrangement rows.'
+    );
+    expect(dot?.className).toContain('bg-status-unsaved');
+  });
+
   it('shows loaded-arrangement truth when loaded rows and a saved snapshot both exist', () => {
     useProjectStore.setState({
       project: makeProject({ hasArrangement: true }),
