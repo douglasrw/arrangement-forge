@@ -73,8 +73,8 @@ export interface ProjectExportReadiness {
 export interface ProjectSavePlan {
   saveTarget: 'project' | 'arrangement';
   nextStep: 'save-project' | 'save-arrangement';
-  statusLabel: 'Project draft' | 'Arrangement draft';
-  savingLabel: 'Saving project…' | 'Saving arrangement…';
+  statusLabel: 'Project draft' | 'Arrangement draft' | 'Loaded arrangement';
+  savingLabel: 'Saving project…' | 'Saving arrangement draft…' | 'Saving loaded arrangement…';
   currentState: string;
   summary: string;
   arrangementTruth: ReturnType<typeof getProjectArrangementTruth>;
@@ -103,12 +103,12 @@ function describeProjectSaveCurrentState(
 ): string {
   if (arrangementTruth.hasArrangementRows) {
     return arrangementTruth.hasPersistedArrangement
-      ? 'Loaded arrangement rows are ahead of the saved arrangement snapshot.'
+      ? 'Loaded arrangement rows and a saved arrangement snapshot both exist right now.'
       : 'Loaded arrangement rows exist only in the current draft state.';
   }
 
   return arrangementTruth.hasPersistedArrangement
-    ? 'Only project fields and chat will change; the saved arrangement snapshot stays untouched.'
+    ? 'Only project fields and chat will change; the saved arrangement snapshot exists but is not loaded in this session.'
     : 'Only project fields and chat are in play right now; no arrangement rows are loaded.';
 }
 
@@ -122,15 +122,17 @@ export function getProjectSavePlan(state: {
   const arrangementTruth = getProjectArrangementTruth(state);
 
   if (arrangementTruth.hasArrangementRows) {
+    const hasSavedSnapshot = arrangementTruth.status === 'loaded-and-persisted';
+
     return {
       saveTarget: 'arrangement',
       nextStep: 'save-arrangement',
-      statusLabel: 'Arrangement draft',
-      savingLabel: 'Saving arrangement…',
+      statusLabel: hasSavedSnapshot ? 'Loaded arrangement' : 'Arrangement draft',
+      savingLabel: hasSavedSnapshot ? 'Saving loaded arrangement…' : 'Saving arrangement draft…',
       currentState: describeProjectSaveCurrentState(arrangementTruth),
       summary: arrangementTruth.hasPersistedArrangement
-        ? 'Replace the saved arrangement snapshot with the current arrangement draft.'
-        : 'Promote the current arrangement draft into the first saved arrangement snapshot.',
+        ? 'Saving now will write the loaded arrangement rows back to the saved arrangement snapshot.'
+        : 'Saving now will create the first saved arrangement snapshot from the loaded arrangement rows.',
       arrangementTruth,
     };
   }
@@ -141,7 +143,7 @@ export function getProjectSavePlan(state: {
     statusLabel: 'Project draft',
     savingLabel: 'Saving project…',
     currentState: describeProjectSaveCurrentState(arrangementTruth),
-    summary: 'Persist project fields and chat without replacing arrangement rows.',
+    summary: 'Saving now will persist project fields and chat without replacing arrangement rows.',
     arrangementTruth,
   };
 }

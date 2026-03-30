@@ -185,11 +185,11 @@ describe('StatusBar', () => {
     expect(container.textContent).toContain('Project draft');
     expect(container.textContent).not.toContain('Unsaved changes');
     expect(label?.title).toBe(
-      'Only project fields and chat are in play right now; no arrangement rows are loaded. Persist project fields and chat without replacing arrangement rows.'
+      'Only project fields and chat are in play right now; no arrangement rows are loaded. Saving now will persist project fields and chat without replacing arrangement rows.'
     );
   });
 
-  it('renders arrangement-draft replacement truth instead of generic unsaved copy', () => {
+  it('renders loaded-arrangement truth instead of generic unsaved copy', () => {
     useProjectStore.setState({
       project: makeProject({ hasArrangement: true }),
       stems: [makeStem()],
@@ -201,10 +201,10 @@ describe('StatusBar', () => {
     const container = renderStatusBar('unsaved');
     const label = container.querySelector('span[title]') as HTMLSpanElement | null;
 
-    expect(container.textContent).toContain('Arrangement draft');
+    expect(container.textContent).toContain('Loaded arrangement');
     expect(container.textContent).not.toContain('Unsaved changes');
     expect(label?.title).toBe(
-      'Loaded arrangement rows are ahead of the saved arrangement snapshot. Replace the saved arrangement snapshot with the current arrangement draft.'
+      'Loaded arrangement rows and a saved arrangement snapshot both exist right now. Saving now will write the loaded arrangement rows back to the saved arrangement snapshot.'
     );
   });
 
@@ -215,7 +215,7 @@ describe('StatusBar', () => {
     expect(container.textContent).toContain('Saving project…');
     expect(container.textContent).not.toContain('Saving…');
     expect(label?.title).toBe(
-      'Only project fields and chat are in play right now; no arrangement rows are loaded. Persist project fields and chat without replacing arrangement rows.'
+      'Only project fields and chat are in play right now; no arrangement rows are loaded. Saving now will persist project fields and chat without replacing arrangement rows.'
     );
   });
 

@@ -271,7 +271,7 @@ export type ProjectArrangementTruthStatus =
   | 'missing'
   | 'draft-only'
   | 'persisted-only'
-  | 'draft-and-persisted';
+  | 'loaded-and-persisted';
 
 export interface ProjectArrangementTruth {
   status: ProjectArrangementTruthStatus;
@@ -291,9 +291,9 @@ function describeProjectArrangementTruth({
 }): Pick<ProjectArrangementTruth, 'status' | 'summary' | 'nextStep'> {
   if (hasArrangementRows && hasPersistedArrangement) {
     return {
-      status: 'draft-and-persisted',
-      summary: 'Arrangement rows are loaded and a saved arrangement snapshot already exists.',
-      nextStep: 'Save the current arrangement rows when you want to replace the saved arrangement snapshot.',
+      status: 'loaded-and-persisted',
+      summary: 'Loaded arrangement rows and a saved arrangement snapshot both exist right now.',
+      nextStep: 'Save the loaded arrangement rows if you want them to replace the saved arrangement snapshot.',
     };
   }
 

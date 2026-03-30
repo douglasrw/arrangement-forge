@@ -267,12 +267,12 @@ describe('TopBar save indicator truth', () => {
 
     expect(label?.textContent).toBe('Project draft');
     expect(label?.title).toBe(
-      'Only project fields and chat are in play right now; no arrangement rows are loaded. Persist project fields and chat without replacing arrangement rows.'
+      'Only project fields and chat are in play right now; no arrangement rows are loaded. Saving now will persist project fields and chat without replacing arrangement rows.'
     );
     expect(dot?.className).toContain('bg-status-unsaved');
   });
 
-  it('shows arrangement-draft replacement truth when loaded rows sit ahead of a saved snapshot', () => {
+  it('shows loaded-arrangement truth when loaded rows and a saved snapshot both exist', () => {
     useProjectStore.setState({
       project: makeProject({ hasArrangement: true }),
       stems: [makeStem()],
@@ -292,9 +292,9 @@ describe('TopBar save indicator truth', () => {
 
     const { dot, label } = getTopBarSaveIndicator(mounted.container);
 
-    expect(label?.textContent).toBe('Arrangement draft');
+    expect(label?.textContent).toBe('Loaded arrangement');
     expect(label?.title).toBe(
-      'Loaded arrangement rows are ahead of the saved arrangement snapshot. Replace the saved arrangement snapshot with the current arrangement draft.'
+      'Loaded arrangement rows and a saved arrangement snapshot both exist right now. Saving now will write the loaded arrangement rows back to the saved arrangement snapshot.'
     );
     expect(dot?.className).toContain('bg-status-unsaved');
   });
@@ -314,7 +314,7 @@ describe('TopBar save indicator truth', () => {
 
     expect(label?.textContent).toBe('Saving project…');
     expect(label?.title).toBe(
-      'Only project fields and chat are in play right now; no arrangement rows are loaded. Persist project fields and chat without replacing arrangement rows.'
+      'Only project fields and chat are in play right now; no arrangement rows are loaded. Saving now will persist project fields and chat without replacing arrangement rows.'
     );
     expect(dot?.className).toContain('bg-status-saving');
     expect(dot?.className).toContain('animate-pulse');

@@ -336,12 +336,12 @@ describe('projectStore', () => {
         chords: [],
       })
     ).toEqual({
-      status: 'draft-and-persisted',
+      status: 'loaded-and-persisted',
       hasArrangementRows: true,
       hasPersistedArrangement: true,
       hasAnyArrangementTruth: true,
-      summary: 'Arrangement rows are loaded and a saved arrangement snapshot already exists.',
-      nextStep: 'Save the current arrangement rows when you want to replace the saved arrangement snapshot.',
+      summary: 'Loaded arrangement rows and a saved arrangement snapshot both exist right now.',
+      nextStep: 'Save the loaded arrangement rows if you want them to replace the saved arrangement snapshot.',
     });
   });
 
