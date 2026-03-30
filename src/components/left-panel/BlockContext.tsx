@@ -710,8 +710,9 @@ export function BlockContext({
         open={confirmDeleteOpen}
         onClose={() => setConfirmDeleteOpen(false)}
         onConfirm={handleDeleteBlock}
-        title="Delete Block?"
-        body={`This will permanently delete this ${label} block (bars ${resolvedStartBar}\u2013${resolvedEndBar}). This cannot be undone.`}
+        title="Delete Block"
+        body={`Remove this ${label} block from bars ${resolvedStartBar}\u2013${resolvedEndBar}.`}
+        consequence="This permanently deletes the block from the arrangement. This cannot be undone."
         confirmLabel="Delete"
         variant="danger"
       />

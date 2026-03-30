@@ -788,8 +788,9 @@ export function SectionContext({
         open={confirmDeleteOpen}
         onClose={() => setConfirmDeleteOpen(false)}
         onConfirm={handleDeleteSection}
-        title="Delete Section?"
-        body={`This will permanently delete "${currentName}" and all its blocks. This cannot be undone.`}
+        title="Delete Section"
+        body={`Remove "${currentName}" from this arrangement.`}
+        consequence="This permanently deletes the section and all its blocks. This cannot be undone."
         confirmLabel="Delete"
         variant="danger"
       />

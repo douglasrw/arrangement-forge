@@ -245,7 +245,10 @@ export default function LibraryPage() {
         onClose={() => setDeleteTarget(null)}
         onConfirm={() => deleteTarget && handleDelete(deleteTarget)}
         title="Delete Project"
-        body={`Delete "${deleteTarget?.name}"? This cannot be undone.`}
+        body={
+          deleteTarget ? `Remove "${deleteTarget.name}" from your library.` : undefined
+        }
+        consequence="This permanently removes the project from your library. This cannot be undone."
         confirmLabel="Delete"
         cancelLabel="Cancel"
         variant="danger"

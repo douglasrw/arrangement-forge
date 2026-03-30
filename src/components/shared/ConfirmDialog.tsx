@@ -1,4 +1,4 @@
-import { useEffect, useRef } from "react"
+import { useEffect, useId, useRef } from "react"
 import { cn } from "@/lib/utils"
 
 interface ConfirmDialogProps {
@@ -7,6 +7,7 @@ interface ConfirmDialogProps {
   onConfirm: () => void
   title?: string
   body?: string
+  consequence?: string
   confirmLabel?: string
   cancelLabel?: string
   variant?: "danger" | "warning"
@@ -16,13 +17,37 @@ export function ConfirmDialog({
   open,
   onClose,
   onConfirm,
-  title = "Delete Section?",
-  body = 'This will permanently delete "Verse" and all its blocks. This cannot be undone.',
+  title = "Delete Section",
+  body = 'Remove "Verse" from this arrangement.',
+  consequence = "This permanently deletes the section and all its blocks. This cannot be undone.",
   confirmLabel = "Delete",
   cancelLabel = "Cancel",
   variant = "danger",
 }: ConfirmDialogProps) {
   const overlayRef = useRef<HTMLDivElement>(null)
+  const titleId = useId()
+  const bodyId = useId()
+  const consequenceId = useId()
+  const describedBy = [body ? bodyId : null, consequence ? consequenceId : null]
+    .filter(Boolean)
+    .join(" ")
+
+  const toneStyles =
+    variant === "danger"
+      ? {
+          icon: "text-confirm-danger",
+          consequenceCard: "border-destructive/40 bg-destructive/10",
+          consequenceLabel: "text-confirm-danger",
+          confirmButton:
+            "border-destructive bg-destructive text-destructive-foreground hover:bg-destructive/90 focus-visible:ring-destructive/25 shadow-lg shadow-destructive/25",
+        }
+      : {
+          icon: "text-warning",
+          consequenceCard: "border-warning/40 bg-warning/10",
+          consequenceLabel: "text-warning",
+          confirmButton:
+            "border-warning bg-warning text-background hover:bg-warning/90 focus-visible:ring-warning/25 shadow-lg shadow-warning/25",
+        }
 
   /* Close on Escape */
   useEffect(() => {
@@ -43,10 +68,11 @@ export function ConfirmDialog({
       onClick={(e) => {
         if (e.target === overlayRef.current) onClose()
       }}
+      data-dialog-variant={variant}
       role="dialog"
       aria-modal="true"
-      aria-labelledby="confirm-title"
-      aria-describedby="confirm-body"
+      aria-labelledby={titleId}
+      aria-describedby={describedBy || undefined}
     >
       <div className="mx-4 w-full max-w-sm rounded-2xl border border-border/50 bg-card p-6 shadow-2xl shadow-black/60">
         {/* Warning icon */}
@@ -57,7 +83,7 @@ export function ConfirmDialog({
               height="32"
               viewBox="0 0 24 24"
               fill="none"
-              className="text-warning"
+              className={cn(toneStyles.icon)}
             >
               <path
                 d="M12 2L1 21h22L12 2z"
@@ -80,37 +106,62 @@ export function ConfirmDialog({
 
         {/* Title */}
         <h2
-          id="confirm-title"
+          id={titleId}
           className="text-center text-lg font-semibold text-zinc-100"
         >
           {title}
         </h2>
 
-        {/* Body */}
-        <p
-          id="confirm-body"
-          className="mt-2 text-center text-sm leading-relaxed text-muted-foreground"
-        >
-          {body}
-        </p>
+        {body ? (
+          <p
+            id={bodyId}
+            className="mt-2 text-center text-sm leading-relaxed text-muted-foreground"
+          >
+            {body}
+          </p>
+        ) : null}
+
+        {consequence ? (
+          <div
+            className={cn(
+              "mt-4 rounded-xl border px-4 py-3 text-left",
+              toneStyles.consequenceCard
+            )}
+          >
+            <p
+              className={cn(
+                "text-[11px] font-semibold uppercase tracking-[0.18em]",
+                toneStyles.consequenceLabel
+              )}
+            >
+              Consequence
+            </p>
+            <p
+              id={consequenceId}
+              className="mt-1 text-sm leading-relaxed text-zinc-100"
+            >
+              {consequence}
+            </p>
+          </div>
+        ) : null}
 
         {/* Buttons */}
         <div className="mt-6 flex gap-3">
           <button
             type="button"
             onClick={onClose}
-            className="flex-1 rounded-xl bg-input py-2.5 text-sm font-medium text-zinc-200 transition-colors hover:bg-zinc-600"
+            data-confirm-action="cancel"
+            className="flex-1 rounded-xl border border-border/80 bg-background px-3 py-2.5 text-sm font-medium text-foreground transition-colors hover:bg-secondary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/60"
           >
             {cancelLabel}
           </button>
           <button
             type="button"
             onClick={onConfirm}
+            data-confirm-action="confirm"
             className={cn(
-              "flex-1 rounded-xl border py-2.5 text-sm font-medium transition-colors",
-              variant === "danger"
-                ? "border-destructive/30 bg-destructive/10 text-confirm-danger hover:bg-destructive/20"
-                : "border-warning/30 bg-warning/10 text-warning hover:bg-warning/20"
+              "flex-1 rounded-xl border px-3 py-2.5 text-sm font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2",
+              toneStyles.confirmButton
             )}
           >
             {confirmLabel}
