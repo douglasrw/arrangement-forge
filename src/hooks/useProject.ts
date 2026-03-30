@@ -5,7 +5,11 @@ import { useCallback } from 'react';
 import { getDefaultProjectStyle } from '@/lib/genre-config';
 import { supabase } from '@/lib/supabase';
 import { useAuthStore } from '@/store/auth-store';
-import { getProjectArrangementTruth, useProjectStore } from '@/store/project-store';
+import {
+  getProjectArrangementTruth,
+  syncPersistedProjectArrangement,
+  useProjectStore,
+} from '@/store/project-store';
 import { useUiStore } from '@/store/ui-store';
 import type {
   Project,
@@ -79,16 +83,18 @@ export interface ProjectExportReadiness {
 
 export type ProjectSaveStatus =
   | 'project-draft'
+  | 'project-draft-with-loaded-arrangement'
   | 'project-draft-over-saved-arrangement'
   | 'arrangement-draft'
-  | 'loaded-arrangement';
+  | 'arrangement-draft-over-saved-arrangement';
 
 interface ProjectSaveCopy {
   statusLabel:
     | 'Project draft'
+    | 'Project draft + loaded snapshot'
     | 'Project draft + saved snapshot'
     | 'Arrangement draft only'
-    | 'Loaded arrangement + saved snapshot';
+    | 'Arrangement draft + saved snapshot';
   savingLabel:
     | 'Saving project draft…'
     | 'Saving first arrangement snapshot…'
@@ -127,10 +133,14 @@ function getPersistedArrangementProjectPatch(
 function describeProjectSaveCurrentState(
   arrangementTruth: ReturnType<typeof getProjectArrangementTruth>
 ): string {
-  if (arrangementTruth.hasArrangementRows) {
+  if (arrangementTruth.hasDraftArrangementRows) {
     return arrangementTruth.hasPersistedArrangement
-      ? 'Loaded arrangement rows and a saved arrangement snapshot both exist right now.'
+      ? 'Loaded arrangement rows are currently ahead of the saved arrangement snapshot.'
       : 'Loaded arrangement rows exist only in the current draft state.';
+  }
+
+  if (arrangementTruth.hasArrangementRows) {
+    return 'Project fields and chat are in draft state, while the loaded arrangement rows already match the saved arrangement snapshot.';
   }
 
   return arrangementTruth.hasPersistedArrangement
@@ -141,10 +151,14 @@ function describeProjectSaveCurrentState(
 function describeProjectSaveNextStep(
   arrangementTruth: ReturnType<typeof getProjectArrangementTruth>
 ): string {
-  if (arrangementTruth.hasArrangementRows) {
+  if (arrangementTruth.hasDraftArrangementRows) {
     return arrangementTruth.hasPersistedArrangement
-      ? 'Save now to write the loaded arrangement rows back to the saved arrangement snapshot.'
+      ? 'Save now to replace the saved arrangement snapshot with the current draft arrangement rows.'
       : 'Save now to create the first saved arrangement snapshot from the loaded arrangement rows.';
+  }
+
+  if (arrangementTruth.hasArrangementRows) {
+    return 'Save now to persist project fields and chat without replacing arrangement rows.';
   }
 
   return 'Save now to persist project fields and chat without replacing arrangement rows.';
@@ -156,8 +170,10 @@ function getProjectSaveStatus(
   switch (arrangementTruth.status) {
     case 'draft-only':
       return 'arrangement-draft';
+    case 'draft-over-persisted':
+      return 'arrangement-draft-over-saved-arrangement';
     case 'loaded-and-persisted':
-      return 'loaded-arrangement';
+      return 'project-draft-with-loaded-arrangement';
     case 'persisted-only':
       return 'project-draft-over-saved-arrangement';
     case 'missing':
@@ -173,10 +189,15 @@ function getProjectSaveCopy(saveStatus: ProjectSaveStatus): ProjectSaveCopy {
         statusLabel: 'Arrangement draft only',
         savingLabel: 'Saving first arrangement snapshot…',
       };
-    case 'loaded-arrangement':
+    case 'arrangement-draft-over-saved-arrangement':
       return {
-        statusLabel: 'Loaded arrangement + saved snapshot',
+        statusLabel: 'Arrangement draft + saved snapshot',
         savingLabel: 'Saving arrangement snapshot…',
+      };
+    case 'project-draft-with-loaded-arrangement':
+      return {
+        statusLabel: 'Project draft + loaded snapshot',
+        savingLabel: 'Saving project draft…',
       };
     case 'project-draft-over-saved-arrangement':
       return {
@@ -198,12 +219,13 @@ export function getProjectSavePlan(state: {
   sections: Section[];
   blocks: Block[];
   chords: Chord[];
+  persistedArrangementFingerprint?: string | null;
 }): ProjectSavePlan {
   const arrangementTruth = getProjectArrangementTruth(state);
   const saveStatus = getProjectSaveStatus(arrangementTruth);
   const saveCopy = getProjectSaveCopy(saveStatus);
 
-  if (arrangementTruth.hasArrangementRows) {
+  if (arrangementTruth.hasDraftArrangementRows) {
     return {
       saveStatus,
       saveTarget: 'arrangement',
@@ -232,6 +254,7 @@ export function getProjectExportReadiness(state: {
   sections: Section[];
   blocks: Block[];
   chords: Chord[];
+  persistedArrangementFingerprint?: string | null;
 }): ProjectExportReadiness {
   const arrangementTruth = getProjectArrangementTruth(state);
   const hasArrangementRows = arrangementTruth.hasArrangementRows;
@@ -289,10 +312,16 @@ export function getProjectExportReadiness(state: {
       arrangementTruth,
       currentState: hasArrangementRows
         ? hasTextTruth
-          ? 'Project text and loaded arrangement rows are both ready to export.'
-          : arrangementTruth.hasPersistedArrangement
-            ? 'Loaded arrangement rows are ready to export from the current session.'
-            : 'Loaded arrangement rows are ready to export from the current draft state.'
+          ? arrangementTruth.hasDraftArrangementRows
+            ? 'Project text and loaded draft arrangement rows are both ready to export.'
+            : arrangementTruth.hasPersistedArrangement
+              ? 'Project text and the loaded saved arrangement snapshot are both ready to export.'
+              : 'Project text and loaded arrangement rows are both ready to export.'
+          : arrangementTruth.hasDraftArrangementRows
+            ? 'Loaded arrangement rows are ready to export from the current draft state.'
+            : arrangementTruth.hasPersistedArrangement
+              ? 'Loaded arrangement rows are ready to export from the saved arrangement snapshot already loaded in this session.'
+              : 'Loaded arrangement rows are ready to export from the current draft state.'
         : 'Project text is ready to export even though no arrangement rows are loaded.',
       nextStep: 'Export now to download the chord chart and arrangement snapshot.',
     };
@@ -501,14 +530,27 @@ export function useProject() {
         );
 
       if (useProjectStore.getState().project?.id === project.id) {
-        useProjectStore.setState((state) => ({
-          project: state.project
-            ? {
-                ...state.project,
-                ...persistedProjectPatch,
-              }
-            : state.project,
-        }));
+        useProjectStore.setState((state) => {
+          if (!state.project) {
+            return { project: state.project };
+          }
+
+          const nextProject = {
+            ...state.project,
+            ...persistedProjectPatch,
+          };
+
+          syncPersistedProjectArrangement(nextProject, {
+            stems: state.stems,
+            sections: state.sections,
+            blocks: state.blocks,
+            chords: state.chords,
+          });
+
+          return {
+            project: nextProject,
+          };
+        });
       }
 
       markSaved();

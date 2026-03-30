@@ -299,7 +299,7 @@ describe('TopBar save indicator truth', () => {
     expect(dot?.className).toContain('bg-status-unsaved');
   });
 
-  it('shows loaded-arrangement truth when loaded rows and a saved snapshot both exist', () => {
+  it('shows project-draft-with-loaded-arrangement truth when loaded rows still match the saved snapshot', () => {
     useProjectStore.setState({
       project: makeProject({ hasArrangement: true }),
       stems: [makeStem()],
@@ -319,9 +319,38 @@ describe('TopBar save indicator truth', () => {
 
     const { dot, label } = getTopBarSaveIndicator(mounted.container);
 
-    expect(label?.textContent).toBe('Loaded arrangement + saved snapshot');
+    expect(label?.textContent).toBe('Project draft + loaded snapshot');
     expect(label?.title).toBe(
-      'Loaded arrangement rows and a saved arrangement snapshot both exist right now. Save now to write the loaded arrangement rows back to the saved arrangement snapshot.'
+      'Project fields and chat are in draft state, while the loaded arrangement rows already match the saved arrangement snapshot. Save now to persist project fields and chat without replacing arrangement rows.'
+    );
+    expect(dot?.className).toContain('bg-status-unsaved');
+  });
+
+  it('shows arrangement-draft-over-saved-arrangement truth when loaded rows move ahead of the saved snapshot', () => {
+    useProjectStore.getState().hydrateProject({
+      project: makeProject({ hasArrangement: true }),
+      stems: [makeStem()],
+      sections: [makeSection()],
+      blocks: [makeBlock()],
+      chords: [makeChord()],
+      chatMessages: [],
+    });
+    useProjectStore.getState().updateBlock('block-1', { style: 'arpeggiated' });
+    useUiStore.setState({
+      unsavedChanges: true,
+      systemStatus: 'ready',
+      lastSavedAt: null,
+    });
+
+    const mounted = renderTopBar();
+    mountedRoot = mounted.root;
+    mountedContainer = mounted.container;
+
+    const { dot, label } = getTopBarSaveIndicator(mounted.container);
+
+    expect(label?.textContent).toBe('Arrangement draft + saved snapshot');
+    expect(label?.title).toBe(
+      'Loaded arrangement rows are currently ahead of the saved arrangement snapshot. Save now to replace the saved arrangement snapshot with the current draft arrangement rows.'
     );
     expect(dot?.className).toContain('bg-status-unsaved');
   });
@@ -684,7 +713,7 @@ describe('TopBar export baseline', () => {
     expect(exportButton?.disabled).toBe(false);
     expect(exportButton?.textContent).toBe('Export chart + snapshot');
     expect(exportButton?.title).toBe(
-      'Loaded arrangement rows are ready to export from the current session. Export now to download the chord chart and arrangement snapshot.'
+      'Loaded arrangement rows are ready to export from the saved arrangement snapshot already loaded in this session. Export now to download the chord chart and arrangement snapshot.'
     );
 
     await act(async () => {

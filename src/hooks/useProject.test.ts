@@ -9,6 +9,7 @@ import { useAuthStore } from '@/store/auth-store';
 import { useProjectStore } from '@/store/project-store';
 import { useSelectionStore } from '@/store/selection-store';
 import { useUiStore } from '@/store/ui-store';
+import { snapshotArrangement } from '@/lib/undo-helpers';
 import type { AiChatMessage, Chord, Project } from '@/types';
 
 type Row = Record<string, unknown>;
@@ -348,10 +349,11 @@ describe('useProject export readiness', () => {
         hasArrangementRows: true,
         hasPersistedArrangement: true,
         hasAnyArrangementTruth: true,
-        currentState: 'Loaded arrangement rows and a saved arrangement snapshot both exist right now.',
-        nextStep: 'Save the loaded arrangement rows if you want them to replace the saved arrangement snapshot.',
+        hasDraftArrangementRows: false,
+        currentState: 'Loaded arrangement rows already match the saved arrangement snapshot.',
+        nextStep: 'Edit the arrangement to create a draft, or save project fields and chat without replacing arrangement rows.',
       },
-      currentState: 'Loaded arrangement rows are ready to export from the current session.',
+      currentState: 'Loaded arrangement rows are ready to export from the saved arrangement snapshot already loaded in this session.',
       nextStep: 'Export now to download the chord chart and arrangement snapshot.',
     });
     expect(readiness).not.toHaveProperty('message');
@@ -377,6 +379,7 @@ describe('useProject export readiness', () => {
         hasArrangementRows: false,
         hasPersistedArrangement: true,
         hasAnyArrangementTruth: true,
+        hasDraftArrangementRows: false,
         currentState: 'A saved arrangement snapshot exists, but its rows are not loaded in the project store right now.',
         nextStep: 'Reload the arrangement rows before editing, saving, or exporting the current arrangement snapshot.',
       },
@@ -409,6 +412,7 @@ describe('useProject export readiness', () => {
         hasArrangementRows: false,
         hasPersistedArrangement: false,
         hasAnyArrangementTruth: false,
+        hasDraftArrangementRows: false,
         currentState: 'No arrangement rows or saved arrangement snapshot exist yet.',
         nextStep: 'Generate or import an arrangement before saving or exporting arrangement rows.',
       },
@@ -441,6 +445,7 @@ describe('useProject export readiness', () => {
         hasArrangementRows: false,
         hasPersistedArrangement: true,
         hasAnyArrangementTruth: true,
+        hasDraftArrangementRows: false,
         currentState: 'A saved arrangement snapshot exists, but its rows are not loaded in the project store right now.',
         nextStep: 'Reload the arrangement rows before editing, saving, or exporting the current arrangement snapshot.',
       },
@@ -473,6 +478,7 @@ describe('useProject export readiness', () => {
         hasArrangementRows: false,
         hasPersistedArrangement: false,
         hasAnyArrangementTruth: false,
+        hasDraftArrangementRows: false,
         currentState: 'No arrangement rows or saved arrangement snapshot exist yet.',
         nextStep: 'Generate or import an arrangement before saving or exporting arrangement rows.',
       },
@@ -517,6 +523,7 @@ describe('useProject save planning', () => {
         hasArrangementRows: true,
         hasPersistedArrangement: false,
         hasAnyArrangementTruth: true,
+        hasDraftArrangementRows: true,
         currentState: 'Arrangement rows are loaded, but no saved arrangement snapshot exists yet.',
         nextStep: 'Save the current arrangement rows to create the first saved arrangement snapshot.',
       },
@@ -542,23 +549,76 @@ describe('useProject save planning', () => {
       sections: [],
       blocks: [],
       chords: [],
+      persistedArrangementFingerprint: snapshotArrangement({
+        stems: [],
+        sections: [],
+        blocks: [],
+        chords: [],
+      }),
     });
 
     expect(plan).toEqual({
-      saveStatus: 'loaded-arrangement',
+      saveStatus: 'arrangement-draft-over-saved-arrangement',
       saveTarget: 'arrangement',
       saveAction: 'save-arrangement',
-      statusLabel: 'Loaded arrangement + saved snapshot',
+      statusLabel: 'Arrangement draft + saved snapshot',
       savingLabel: 'Saving arrangement snapshot…',
-      currentState: 'Loaded arrangement rows and a saved arrangement snapshot both exist right now.',
-      nextStep: 'Save now to write the loaded arrangement rows back to the saved arrangement snapshot.',
+      currentState: 'Loaded arrangement rows are currently ahead of the saved arrangement snapshot.',
+      nextStep: 'Save now to replace the saved arrangement snapshot with the current draft arrangement rows.',
+      arrangementTruth: {
+        status: 'draft-over-persisted',
+        hasArrangementRows: true,
+        hasPersistedArrangement: true,
+        hasAnyArrangementTruth: true,
+        hasDraftArrangementRows: true,
+        currentState: 'Loaded arrangement rows are currently ahead of the saved arrangement snapshot.',
+        nextStep: 'Save the current arrangement rows to replace the saved arrangement snapshot.',
+      },
+    });
+  });
+
+  it('keeps project-only persistence when loaded rows already match the saved arrangement snapshot', () => {
+    const currentArrangement = {
+      stems: [
+        {
+          id: 'stem-1',
+          projectId: 'project-loaded-arrangement',
+          instrument: 'piano',
+          sortOrder: 0,
+          volume: 0.8,
+          pan: 0,
+          isMuted: false,
+          isSolo: false,
+          createdAt: '2026-03-28T00:00:00Z',
+        },
+      ],
+      sections: [],
+      blocks: [],
+      chords: [],
+    };
+
+    const plan = getProjectSavePlan({
+      project: buildStoredProject('project-loaded-arrangement', true),
+      ...currentArrangement,
+      persistedArrangementFingerprint: snapshotArrangement(currentArrangement),
+    });
+
+    expect(plan).toEqual({
+      saveStatus: 'project-draft-with-loaded-arrangement',
+      saveTarget: 'project',
+      saveAction: 'save-project',
+      statusLabel: 'Project draft + loaded snapshot',
+      savingLabel: 'Saving project draft…',
+      currentState: 'Project fields and chat are in draft state, while the loaded arrangement rows already match the saved arrangement snapshot.',
+      nextStep: 'Save now to persist project fields and chat without replacing arrangement rows.',
       arrangementTruth: {
         status: 'loaded-and-persisted',
         hasArrangementRows: true,
         hasPersistedArrangement: true,
         hasAnyArrangementTruth: true,
-        currentState: 'Loaded arrangement rows and a saved arrangement snapshot both exist right now.',
-        nextStep: 'Save the loaded arrangement rows if you want them to replace the saved arrangement snapshot.',
+        hasDraftArrangementRows: false,
+        currentState: 'Loaded arrangement rows already match the saved arrangement snapshot.',
+        nextStep: 'Edit the arrangement to create a draft, or save project fields and chat without replacing arrangement rows.',
       },
     });
   });
@@ -585,6 +645,7 @@ describe('useProject save planning', () => {
         hasArrangementRows: false,
         hasPersistedArrangement: false,
         hasAnyArrangementTruth: false,
+        hasDraftArrangementRows: false,
         currentState: 'No arrangement rows or saved arrangement snapshot exist yet.',
         nextStep: 'Generate or import an arrangement before saving or exporting arrangement rows.',
       },
@@ -613,6 +674,7 @@ describe('useProject save planning', () => {
         hasArrangementRows: false,
         hasPersistedArrangement: true,
         hasAnyArrangementTruth: true,
+        hasDraftArrangementRows: false,
         currentState: 'A saved arrangement snapshot exists, but its rows are not loaded in the project store right now.',
         nextStep: 'Reload the arrangement rows before editing, saving, or exporting the current arrangement snapshot.',
       },
@@ -638,10 +700,16 @@ describe('useProject save planning', () => {
       sections: [],
       blocks: [],
       chords: [],
+      persistedArrangementFingerprint: snapshotArrangement({
+        stems: [],
+        sections: [],
+        blocks: [],
+        chords: [],
+      }),
     });
 
     expect(plan.nextStep).toBe(
-      'Save now to write the loaded arrangement rows back to the saved arrangement snapshot.'
+      'Save now to replace the saved arrangement snapshot with the current draft arrangement rows.'
     );
     expect(plan).not.toHaveProperty('summary');
   });
@@ -1278,6 +1346,81 @@ describe('useProject save paths', () => {
       generatedAt: expect.any(String),
       generatedTempo: 120,
     });
+  });
+
+  it('saveProject keeps loaded saved arrangements on the project path when only project truth is draft', async () => {
+    const stemsDeleteEq = vi.fn(() => Promise.resolve({ error: null }));
+    const stemsDelete = vi.fn(() => ({ eq: stemsDeleteEq }));
+    const stemsUpsert = vi.fn(() => Promise.resolve({ error: null }));
+    const projectUpsert = vi.fn(() => Promise.resolve({ error: null }));
+    const chatDeleteEq = vi.fn(() => Promise.resolve({ error: null }));
+    const chatDelete = vi.fn(() => ({ eq: chatDeleteEq }));
+    const chatInsert = vi.fn(() => Promise.resolve({ error: null }));
+
+    supabaseMock.from.mockImplementation((table: string) => {
+      switch (table) {
+        case 'stems':
+          return { delete: stemsDelete, upsert: stemsUpsert };
+        case 'projects':
+          return { upsert: projectUpsert };
+        case 'ai_chat_messages':
+          return { delete: chatDelete, insert: chatInsert };
+        default:
+          return createTableQuery();
+      }
+    });
+
+    useProjectStore.setState({
+      project: {
+        ...buildStoredProject('project-loaded-save', true),
+        generationHints: 'Keep the voicings darker',
+      },
+      stems: [
+        {
+          id: 'stem-1',
+          projectId: 'project-loaded-save',
+          instrument: 'piano',
+          sortOrder: 0,
+          volume: 0.8,
+          pan: 0,
+          isMuted: false,
+          isSolo: false,
+          createdAt: '2026-03-28T00:00:00Z',
+        },
+      ],
+      sections: [],
+      blocks: [],
+      chords: [],
+      chatMessages: [buildStoredMessage('project-loaded-save', { content: 'Keep the save local' })],
+      drumOnlyUpdate: false,
+      allInstrumentsUpdate: false,
+    });
+    useUiStore.setState({ unsavedChanges: true });
+
+    const mounted = renderHarness();
+    mountedRoot = mounted.root;
+    mountedContainer = mounted.container;
+
+    await act(async () => {
+      await hookValue!.saveProject();
+      await Promise.resolve();
+    });
+
+    expect(stemsDelete).not.toHaveBeenCalled();
+    expect(stemsUpsert).toHaveBeenCalledWith([
+      expect.objectContaining({
+        project_id: 'project-loaded-save',
+        instrument: 'piano',
+      }),
+    ]);
+    expect(projectUpsert).toHaveBeenCalledTimes(1);
+    expect(chatDeleteEq).toHaveBeenCalledWith('project_id', 'project-loaded-save');
+    expect(chatInsert).toHaveBeenCalledWith([
+      expect.objectContaining({
+        project_id: 'project-loaded-save',
+        content: 'Keep the save local',
+      }),
+    ]);
   });
 
   it('saveArrangement replaces persisted arrangement rows and saves current project metadata', async () => {

@@ -270,6 +270,7 @@ export interface ProjectExportSnapshot {
 export type ProjectArrangementTruthStatus =
   | 'missing'
   | 'draft-only'
+  | 'draft-over-persisted'
   | 'persisted-only'
   | 'loaded-and-persisted';
 
@@ -278,22 +279,91 @@ export interface ProjectArrangementTruth {
   hasArrangementRows: boolean;
   hasPersistedArrangement: boolean;
   hasAnyArrangementTruth: boolean;
+  hasDraftArrangementRows: boolean;
   currentState: string;
   nextStep: string;
+}
+
+const persistedArrangementFingerprintByProject = new WeakMap<Project, string>();
+
+function captureArrangementFingerprint(state: {
+  stems: Stem[];
+  sections: Section[];
+  blocks: Block[];
+  chords: Chord[];
+}): string {
+  return snapshotArrangement(state);
+}
+
+function rememberPersistedArrangementFingerprint(
+  project: Project,
+  state: {
+    stems: Stem[];
+    sections: Section[];
+    blocks: Block[];
+    chords: Chord[];
+  }
+) {
+  persistedArrangementFingerprintByProject.set(project, captureArrangementFingerprint(state));
+}
+
+export function syncPersistedProjectArrangement(
+  project: Project,
+  state: {
+    stems: Stem[];
+    sections: Section[];
+    blocks: Block[];
+    chords: Chord[];
+  }
+) {
+  rememberPersistedArrangementFingerprint(project, state);
+}
+
+function carryPersistedArrangementFingerprint(previousProject: Project, nextProject: Project) {
+  const fingerprint = persistedArrangementFingerprintByProject.get(previousProject);
+
+  if (fingerprint) {
+    persistedArrangementFingerprintByProject.set(nextProject, fingerprint);
+  }
+}
+
+function getPersistedArrangementFingerprint(state: {
+  project: Project | null;
+  persistedArrangementFingerprint?: string | null;
+}): string | null {
+  if (state.persistedArrangementFingerprint !== undefined) {
+    return state.persistedArrangementFingerprint;
+  }
+
+  if (!state.project) {
+    return null;
+  }
+
+  return persistedArrangementFingerprintByProject.get(state.project) ?? null;
 }
 
 function describeProjectArrangementTruth({
   hasArrangementRows,
   hasPersistedArrangement,
+  hasDraftArrangementRows,
 }: {
   hasArrangementRows: boolean;
   hasPersistedArrangement: boolean;
+  hasDraftArrangementRows: boolean;
 }): Pick<ProjectArrangementTruth, 'status' | 'currentState' | 'nextStep'> {
+  if (hasArrangementRows && hasPersistedArrangement && hasDraftArrangementRows) {
+    return {
+      status: 'draft-over-persisted',
+      currentState: 'Loaded arrangement rows are currently ahead of the saved arrangement snapshot.',
+      nextStep: 'Save the current arrangement rows to replace the saved arrangement snapshot.',
+    };
+  }
+
   if (hasArrangementRows && hasPersistedArrangement) {
     return {
       status: 'loaded-and-persisted',
-      currentState: 'Loaded arrangement rows and a saved arrangement snapshot both exist right now.',
-      nextStep: 'Save the loaded arrangement rows if you want them to replace the saved arrangement snapshot.',
+      currentState: 'Loaded arrangement rows already match the saved arrangement snapshot.',
+      nextStep: 'Edit the arrangement to create a draft, or save project fields and chat without replacing arrangement rows.',
     };
   }
 
@@ -326,6 +396,7 @@ export function getProjectArrangementTruth(state: {
   sections: Section[];
   blocks: Block[];
   chords: Chord[];
+  persistedArrangementFingerprint?: string | null;
 }): ProjectArrangementTruth {
   const hasArrangementRows = Boolean(
     state.stems.length ||
@@ -334,9 +405,22 @@ export function getProjectArrangementTruth(state: {
     state.chords.length
   );
   const hasPersistedArrangement = Boolean(state.project?.hasArrangement);
+  const persistedArrangementFingerprint = getPersistedArrangementFingerprint(state);
+  const currentArrangementFingerprint = hasArrangementRows
+    ? captureArrangementFingerprint(state)
+    : null;
+  const hasDraftArrangementRows = hasArrangementRows
+    ? hasPersistedArrangement
+      ? Boolean(
+          persistedArrangementFingerprint &&
+          currentArrangementFingerprint !== persistedArrangementFingerprint
+        )
+      : true
+    : false;
   const arrangementTruth = describeProjectArrangementTruth({
     hasArrangementRows,
     hasPersistedArrangement,
+    hasDraftArrangementRows,
   });
 
   return {
@@ -344,6 +428,7 @@ export function getProjectArrangementTruth(state: {
     hasArrangementRows,
     hasPersistedArrangement,
     hasAnyArrangementTruth: hasArrangementRows || hasPersistedArrangement,
+    hasDraftArrangementRows,
   };
 }
 
@@ -497,7 +582,14 @@ export const useProjectStore = create<ProjectStore>()((set, get) => ({
   drumOnlyUpdate: false,
   allInstrumentsUpdate: false,
 
-  setProject: (project) => set({ project }),
+  setProject: (project) =>
+    set((state) => {
+      if (state.project && state.project.hasArrangement && project.hasArrangement) {
+        carryPersistedArrangementFingerprint(state.project, project);
+      }
+
+      return { project };
+    }),
 
   hydrateProject: ({ project, stems, sections, blocks, chords, chatMessages }) =>
     {
@@ -510,6 +602,15 @@ export const useProjectStore = create<ProjectStore>()((set, get) => ({
       useUiStore
         .getState()
         .syncProjectSession(project.hasArrangement && sections.length > 0 ? 'complete' : 'idle');
+
+      if (project.hasArrangement) {
+        rememberPersistedArrangementFingerprint(project, {
+          stems: normalizedStems,
+          sections,
+          blocks,
+          chords,
+        });
+      }
 
       set({
         project,
@@ -542,7 +643,19 @@ export const useProjectStore = create<ProjectStore>()((set, get) => ({
   },
 
   updateProject: (partial) => {
-    set((state) => ({ project: state.project ? { ...state.project, ...partial } : null }));
+    set((state) => {
+      if (!state.project) {
+        return { project: null };
+      }
+
+      const nextProject = { ...state.project, ...partial };
+
+      if (state.project.hasArrangement && nextProject.hasArrangement) {
+        carryPersistedArrangementFingerprint(state.project, nextProject);
+      }
+
+      return { project: nextProject };
+    });
     useUiStore.getState().markDirty();
   },
 

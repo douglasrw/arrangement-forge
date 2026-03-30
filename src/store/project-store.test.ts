@@ -7,7 +7,7 @@ import {
 import { useSelectionStore } from './selection-store';
 import { useUiStore } from './ui-store';
 import { useUndoStore } from './undo-store';
-import { parseSnapshot } from '@/lib/undo-helpers';
+import { parseSnapshot, snapshotArrangement } from '@/lib/undo-helpers';
 import { generateMidiForBlock } from '@/lib/midi-generator';
 import type { Project, Section, Block, Stem, Chord, AiChatMessage } from '@/types';
 
@@ -302,6 +302,7 @@ describe('projectStore', () => {
       hasArrangementRows: true,
       hasPersistedArrangement: false,
       hasAnyArrangementTruth: true,
+      hasDraftArrangementRows: true,
       currentState: 'Arrangement rows are loaded, but no saved arrangement snapshot exists yet.',
       nextStep: 'Save the current arrangement rows to create the first saved arrangement snapshot.',
     });
@@ -321,12 +322,13 @@ describe('projectStore', () => {
       hasArrangementRows: false,
       hasPersistedArrangement: true,
       hasAnyArrangementTruth: true,
+      hasDraftArrangementRows: false,
       currentState: 'A saved arrangement snapshot exists, but its rows are not loaded in the project store right now.',
       nextStep: 'Reload the arrangement rows before editing, saving, or exporting the current arrangement snapshot.',
     });
   });
 
-  it('reports when loaded rows already sit on top of a saved arrangement snapshot', () => {
+  it('reports when loaded rows already match a saved arrangement snapshot', () => {
     expect(
       getProjectArrangementTruth({
         project: makeProject({ hasArrangement: true }),
@@ -334,14 +336,47 @@ describe('projectStore', () => {
         sections: [makeSection()],
         blocks: [makeBlock()],
         chords: [],
+        persistedArrangementFingerprint: snapshotArrangement({
+          stems: [makeStem()],
+          sections: [makeSection()],
+          blocks: [makeBlock()],
+          chords: [],
+        }),
       })
     ).toEqual({
       status: 'loaded-and-persisted',
       hasArrangementRows: true,
       hasPersistedArrangement: true,
       hasAnyArrangementTruth: true,
-      currentState: 'Loaded arrangement rows and a saved arrangement snapshot both exist right now.',
-      nextStep: 'Save the loaded arrangement rows if you want them to replace the saved arrangement snapshot.',
+      hasDraftArrangementRows: false,
+      currentState: 'Loaded arrangement rows already match the saved arrangement snapshot.',
+      nextStep: 'Edit the arrangement to create a draft, or save project fields and chat without replacing arrangement rows.',
+    });
+  });
+
+  it('reports when loaded rows have become a draft over a saved arrangement snapshot', () => {
+    expect(
+      getProjectArrangementTruth({
+        project: makeProject({ hasArrangement: true }),
+        stems: [makeStem()],
+        sections: [makeSection()],
+        blocks: [makeBlock({ style: 'arpeggiated' })],
+        chords: [],
+        persistedArrangementFingerprint: snapshotArrangement({
+          stems: [makeStem()],
+          sections: [makeSection()],
+          blocks: [makeBlock()],
+          chords: [],
+        }),
+      })
+    ).toEqual({
+      status: 'draft-over-persisted',
+      hasArrangementRows: true,
+      hasPersistedArrangement: true,
+      hasAnyArrangementTruth: true,
+      hasDraftArrangementRows: true,
+      currentState: 'Loaded arrangement rows are currently ahead of the saved arrangement snapshot.',
+      nextStep: 'Save the current arrangement rows to replace the saved arrangement snapshot.',
     });
   });
 
@@ -355,7 +390,7 @@ describe('projectStore', () => {
     });
 
     expect(truth.currentState).toBe(
-      'Loaded arrangement rows and a saved arrangement snapshot both exist right now.'
+      'Loaded arrangement rows already match the saved arrangement snapshot.'
     );
     expect(truth).not.toHaveProperty('summary');
   });

@@ -208,7 +208,7 @@ describe('StatusBar', () => {
     );
   });
 
-  it('renders loaded-arrangement truth instead of generic unsaved copy', () => {
+  it('renders project-draft-with-loaded-arrangement truth instead of generic unsaved copy', () => {
     useProjectStore.setState({
       project: makeProject({ hasArrangement: true }),
       stems: [makeStem()],
@@ -220,10 +220,31 @@ describe('StatusBar', () => {
     const container = renderStatusBar('unsaved');
     const label = container.querySelector('span[title]') as HTMLSpanElement | null;
 
-    expect(container.textContent).toContain('Loaded arrangement + saved snapshot');
+    expect(container.textContent).toContain('Project draft + loaded snapshot');
     expect(container.textContent).not.toContain('Unsaved changes');
     expect(label?.title).toBe(
-      'Loaded arrangement rows and a saved arrangement snapshot both exist right now. Save now to write the loaded arrangement rows back to the saved arrangement snapshot.'
+      'Project fields and chat are in draft state, while the loaded arrangement rows already match the saved arrangement snapshot. Save now to persist project fields and chat without replacing arrangement rows.'
+    );
+  });
+
+  it('renders arrangement-draft-over-saved-arrangement truth instead of generic unsaved copy', () => {
+    useProjectStore.getState().hydrateProject({
+      project: makeProject({ hasArrangement: true }),
+      stems: [makeStem()],
+      sections: [makeSection()],
+      blocks: [makeBlock()],
+      chords: [makeChord()],
+      chatMessages: [],
+    });
+    useProjectStore.getState().updateBlock('block-1', { style: 'arpeggiated' });
+
+    const container = renderStatusBar('unsaved');
+    const label = container.querySelector('span[title]') as HTMLSpanElement | null;
+
+    expect(container.textContent).toContain('Arrangement draft + saved snapshot');
+    expect(container.textContent).not.toContain('Unsaved changes');
+    expect(label?.title).toBe(
+      'Loaded arrangement rows are currently ahead of the saved arrangement snapshot. Save now to replace the saved arrangement snapshot with the current draft arrangement rows.'
     );
   });
 
