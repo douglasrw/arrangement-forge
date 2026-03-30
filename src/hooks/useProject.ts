@@ -64,7 +64,11 @@ function rowToMessage(row: Record<string, unknown>): AiChatMessage {
 
 export interface ProjectExportReadiness {
   canExport: boolean;
-  actionLabel: 'Export' | 'Export chart' | 'Reload to export' | 'Nothing to export';
+  actionLabel:
+    | 'Export chart + snapshot'
+    | 'Export chart'
+    | 'Reload saved snapshot'
+    | 'Nothing to export';
   hasTextTruth: boolean;
   hasArrangementRows: boolean;
   exportsArrangementSnapshot: boolean;
@@ -82,14 +86,13 @@ export type ProjectSaveStatus =
 interface ProjectSaveCopy {
   statusLabel:
     | 'Project draft'
-    | 'Project draft + saved arrangement'
-    | 'Arrangement draft'
-    | 'Loaded arrangement';
+    | 'Project draft + saved snapshot'
+    | 'Arrangement draft only'
+    | 'Loaded arrangement + saved snapshot';
   savingLabel:
-    | 'Saving project…'
     | 'Saving project draft…'
-    | 'Saving arrangement draft…'
-    | 'Saving loaded arrangement…';
+    | 'Saving first arrangement snapshot…'
+    | 'Saving arrangement snapshot…';
 }
 
 export interface ProjectSavePlan {
@@ -167,24 +170,24 @@ function getProjectSaveCopy(saveStatus: ProjectSaveStatus): ProjectSaveCopy {
   switch (saveStatus) {
     case 'arrangement-draft':
       return {
-        statusLabel: 'Arrangement draft',
-        savingLabel: 'Saving arrangement draft…',
+        statusLabel: 'Arrangement draft only',
+        savingLabel: 'Saving first arrangement snapshot…',
       };
     case 'loaded-arrangement':
       return {
-        statusLabel: 'Loaded arrangement',
-        savingLabel: 'Saving loaded arrangement…',
+        statusLabel: 'Loaded arrangement + saved snapshot',
+        savingLabel: 'Saving arrangement snapshot…',
       };
     case 'project-draft-over-saved-arrangement':
       return {
-        statusLabel: 'Project draft + saved arrangement',
+        statusLabel: 'Project draft + saved snapshot',
         savingLabel: 'Saving project draft…',
       };
     case 'project-draft':
     default:
       return {
         statusLabel: 'Project draft',
-        savingLabel: 'Saving project…',
+        savingLabel: 'Saving project draft…',
       };
   }
 }
@@ -266,7 +269,7 @@ export function getProjectExportReadiness(state: {
 
     return {
       canExport: true,
-      actionLabel: 'Export',
+      actionLabel: 'Export chart + snapshot',
       hasTextTruth,
       hasArrangementRows,
       exportsArrangementSnapshot: true,
@@ -285,7 +288,7 @@ export function getProjectExportReadiness(state: {
   if (arrangementTruth.status === 'persisted-only') {
     return {
       canExport: false,
-      actionLabel: 'Reload to export',
+      actionLabel: 'Reload saved snapshot',
       hasTextTruth: false,
       hasArrangementRows: false,
       exportsArrangementSnapshot: false,

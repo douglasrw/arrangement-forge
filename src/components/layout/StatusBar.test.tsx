@@ -201,7 +201,7 @@ describe('StatusBar', () => {
     const container = renderStatusBar('unsaved');
     const label = container.querySelector('span[title]') as HTMLSpanElement | null;
 
-    expect(container.textContent).toContain('Arrangement draft');
+    expect(container.textContent).toContain('Arrangement draft only');
     expect(container.textContent).not.toContain('Unsaved changes');
     expect(label?.title).toBe(
       'Loaded arrangement rows exist only in the current draft state. Save now to create the first saved arrangement snapshot from the loaded arrangement rows.'
@@ -220,7 +220,7 @@ describe('StatusBar', () => {
     const container = renderStatusBar('unsaved');
     const label = container.querySelector('span[title]') as HTMLSpanElement | null;
 
-    expect(container.textContent).toContain('Loaded arrangement');
+    expect(container.textContent).toContain('Loaded arrangement + saved snapshot');
     expect(container.textContent).not.toContain('Unsaved changes');
     expect(label?.title).toBe(
       'Loaded arrangement rows and a saved arrangement snapshot both exist right now. Save now to write the loaded arrangement rows back to the saved arrangement snapshot.'
@@ -239,7 +239,7 @@ describe('StatusBar', () => {
     const container = renderStatusBar('unsaved');
     const label = container.querySelector('span[title]') as HTMLSpanElement | null;
 
-    expect(container.textContent).toContain('Project draft + saved arrangement');
+    expect(container.textContent).toContain('Project draft + saved snapshot');
     expect(container.textContent).not.toContain('Unsaved changes');
     expect(label?.title).toBe(
       'Only project fields and chat will change; the saved arrangement snapshot exists but is not loaded in this session. Save now to persist project fields and chat without replacing arrangement rows.'
@@ -250,7 +250,7 @@ describe('StatusBar', () => {
     const container = renderStatusBar('saving');
     const label = container.querySelector('span[title]') as HTMLSpanElement | null;
 
-    expect(container.textContent).toContain('Saving project…');
+    expect(container.textContent).toContain('Saving project draft…');
     expect(container.textContent).not.toContain('Saving…');
     expect(label?.title).toBe(
       'Only project fields and chat are in play right now; no arrangement rows are loaded. Save now to persist project fields and chat without replacing arrangement rows.'

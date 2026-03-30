@@ -324,7 +324,7 @@ describe('useProject export readiness', () => {
 
     expect(readiness).toEqual({
       canExport: true,
-      actionLabel: 'Export',
+      actionLabel: 'Export chart + snapshot',
       hasTextTruth: false,
       hasArrangementRows: true,
       exportsArrangementSnapshot: true,
@@ -385,7 +385,7 @@ describe('useProject export readiness', () => {
 
     expect(readiness).toEqual({
       canExport: false,
-      actionLabel: 'Reload to export',
+      actionLabel: 'Reload saved snapshot',
       hasTextTruth: false,
       hasArrangementRows: false,
       exportsArrangementSnapshot: false,
@@ -461,8 +461,8 @@ describe('useProject save planning', () => {
       saveStatus: 'arrangement-draft',
       saveTarget: 'arrangement',
       saveAction: 'save-arrangement',
-      statusLabel: 'Arrangement draft',
-      savingLabel: 'Saving arrangement draft…',
+      statusLabel: 'Arrangement draft only',
+      savingLabel: 'Saving first arrangement snapshot…',
       currentState: 'Loaded arrangement rows exist only in the current draft state.',
       nextStep: 'Save now to create the first saved arrangement snapshot from the loaded arrangement rows.',
       arrangementTruth: {
@@ -501,8 +501,8 @@ describe('useProject save planning', () => {
       saveStatus: 'loaded-arrangement',
       saveTarget: 'arrangement',
       saveAction: 'save-arrangement',
-      statusLabel: 'Loaded arrangement',
-      savingLabel: 'Saving loaded arrangement…',
+      statusLabel: 'Loaded arrangement + saved snapshot',
+      savingLabel: 'Saving arrangement snapshot…',
       currentState: 'Loaded arrangement rows and a saved arrangement snapshot both exist right now.',
       nextStep: 'Save now to write the loaded arrangement rows back to the saved arrangement snapshot.',
       arrangementTruth: {
@@ -530,7 +530,7 @@ describe('useProject save planning', () => {
       saveTarget: 'project',
       saveAction: 'save-project',
       statusLabel: 'Project draft',
-      savingLabel: 'Saving project…',
+      savingLabel: 'Saving project draft…',
       currentState: 'Only project fields and chat are in play right now; no arrangement rows are loaded.',
       nextStep: 'Save now to persist project fields and chat without replacing arrangement rows.',
       arrangementTruth: {
@@ -557,7 +557,7 @@ describe('useProject save planning', () => {
       saveStatus: 'project-draft-over-saved-arrangement',
       saveTarget: 'project',
       saveAction: 'save-project',
-      statusLabel: 'Project draft + saved arrangement',
+      statusLabel: 'Project draft + saved snapshot',
       savingLabel: 'Saving project draft…',
       currentState: 'Only project fields and chat will change; the saved arrangement snapshot exists but is not loaded in this session.',
       nextStep: 'Save now to persist project fields and chat without replacing arrangement rows.',

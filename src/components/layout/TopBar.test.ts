@@ -292,7 +292,7 @@ describe('TopBar save indicator truth', () => {
 
     const { dot, label } = getTopBarSaveIndicator(mounted.container);
 
-    expect(label?.textContent).toBe('Arrangement draft');
+    expect(label?.textContent).toBe('Arrangement draft only');
     expect(label?.title).toBe(
       'Loaded arrangement rows exist only in the current draft state. Save now to create the first saved arrangement snapshot from the loaded arrangement rows.'
     );
@@ -319,7 +319,7 @@ describe('TopBar save indicator truth', () => {
 
     const { dot, label } = getTopBarSaveIndicator(mounted.container);
 
-    expect(label?.textContent).toBe('Loaded arrangement');
+    expect(label?.textContent).toBe('Loaded arrangement + saved snapshot');
     expect(label?.title).toBe(
       'Loaded arrangement rows and a saved arrangement snapshot both exist right now. Save now to write the loaded arrangement rows back to the saved arrangement snapshot.'
     );
@@ -346,7 +346,7 @@ describe('TopBar save indicator truth', () => {
 
     const { dot, label } = getTopBarSaveIndicator(mounted.container);
 
-    expect(label?.textContent).toBe('Project draft + saved arrangement');
+    expect(label?.textContent).toBe('Project draft + saved snapshot');
     expect(label?.title).toBe(
       'Only project fields and chat will change; the saved arrangement snapshot exists but is not loaded in this session. Save now to persist project fields and chat without replacing arrangement rows.'
     );
@@ -366,7 +366,7 @@ describe('TopBar save indicator truth', () => {
 
     const { dot, label } = getTopBarSaveIndicator(mounted.container);
 
-    expect(label?.textContent).toBe('Saving project…');
+    expect(label?.textContent).toBe('Saving project draft…');
     expect(label?.title).toBe(
       'Only project fields and chat are in play right now; no arrangement rows are loaded. Save now to persist project fields and chat without replacing arrangement rows.'
     );
@@ -546,7 +546,7 @@ describe('TopBar export baseline', () => {
     ) as HTMLButtonElement | null;
 
     expect(exportButton?.disabled).toBe(true);
-    expect(exportButton?.textContent).toBe('Reload to export');
+    expect(exportButton?.textContent).toBe('Reload saved snapshot');
     expect(exportButton?.title).toBe(
       'A saved arrangement snapshot exists, but its rows are not loaded in this session. Reload the saved arrangement rows before exporting the arrangement snapshot.'
     );
@@ -629,6 +629,7 @@ describe('TopBar export baseline', () => {
 
     expect(exportButton).not.toBeNull();
     expect(exportButton?.disabled).toBe(false);
+    expect(exportButton?.textContent).toBe('Export chart + snapshot');
     expect(exportButton?.title).toBe(
       'Loaded arrangement rows are ready to export from the current session. Export now to download the chord chart and arrangement snapshot.'
     );
