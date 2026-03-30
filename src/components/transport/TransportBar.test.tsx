@@ -200,11 +200,72 @@ describe('TransportBar transport controls', () => {
     const metronomeButton = mounted.container.querySelector(
       'button[aria-label="Toggle metronome"]'
     ) as HTMLButtonElement | null;
+    const playheadTruth = mounted.container.querySelector(
+      '[data-playhead-state="idle"]'
+    ) as HTMLDivElement | null;
 
     expect(loopButton?.getAttribute('aria-pressed')).toBe('true');
     expect(metronomeButton?.getAttribute('aria-pressed')).toBe('true');
-    expect(mounted.container.textContent).toContain('Bar 3');
+    expect(playheadTruth).not.toBeNull();
+    expect(mounted.container.textContent).toContain('Idle');
+    expect(mounted.container.textContent).toContain('Bar 3 Beat 2');
     expect(mounted.container.textContent).toContain('0:24 / 1:36');
+  });
+
+  it('surfaces idle playhead truth at the start of a ready timeline', () => {
+    useAudioState.transportState = {
+      ...useAudioState.transportState,
+      playbackState: 'stopped',
+      currentBar: 1,
+      currentBeat: 1,
+      elapsedSeconds: 0,
+      totalSeconds: 64,
+    };
+
+    const mounted = renderTransportBar();
+    mountedRoot = mounted.root;
+    mountedContainer = mounted.container;
+
+    const scrubber = mounted.container.querySelector(
+      'input[aria-label="Transport scrubber"]'
+    ) as HTMLInputElement | null;
+    const playheadTruth = mounted.container.querySelector(
+      '[data-playhead-state="idle"]'
+    ) as HTMLDivElement | null;
+
+    expect(playheadTruth).not.toBeNull();
+    expect(mounted.container.textContent).toContain('Idle');
+    expect(mounted.container.textContent).toContain('At start');
+    expect(scrubber?.getAttribute('aria-valuetext')).toContain('Idle at start');
+  });
+
+  it('surfaces active playhead truth while playback is moving', () => {
+    useAudioState.transportState = {
+      ...useAudioState.transportState,
+      playbackState: 'playing',
+      currentBar: 2,
+      currentBeat: 4,
+      elapsedSeconds: 16,
+      totalSeconds: 64,
+    };
+
+    const mounted = renderTransportBar();
+    mountedRoot = mounted.root;
+    mountedContainer = mounted.container;
+
+    const scrubber = mounted.container.querySelector(
+      'input[aria-label="Transport scrubber"]'
+    ) as HTMLInputElement | null;
+    const playheadTruth = mounted.container.querySelector(
+      '[data-playhead-state="active"]'
+    ) as HTMLDivElement | null;
+
+    expect(playheadTruth).not.toBeNull();
+    expect(mounted.container.textContent).toContain('Playing');
+    expect(mounted.container.textContent).toContain('Bar 2 Beat 4');
+    expect(scrubber?.getAttribute('aria-valuetext')).toContain(
+      'Playing at bar 2 beat 4, 0:16 of 1:04'
+    );
   });
 
   it('forwards loop and metronome toggles into the audio hook', () => {
@@ -312,6 +373,9 @@ describe('TransportBar transport controls', () => {
     const scrubber = mounted.container.querySelector(
       'input[aria-label="Transport scrubber"]'
     ) as HTMLInputElement | null;
+    const playheadTruth = mounted.container.querySelector(
+      '[data-playhead-state="unavailable"]'
+    ) as HTMLDivElement | null;
 
     expect(skipStartButton?.disabled).toBe(true);
     expect(stopButton?.disabled).toBe(false);
@@ -321,9 +385,11 @@ describe('TransportBar transport controls', () => {
     expect(metronomeButton?.disabled).toBe(true);
     expect(loopButton?.getAttribute('aria-pressed')).toBe('false');
     expect(metronomeButton?.getAttribute('aria-pressed')).toBe('false');
+    expect(playheadTruth).not.toBeNull();
     expect(scrubber?.disabled).toBe(true);
     expect(scrubber?.max).toBe('0');
     expect(scrubber?.value).toBe('0');
+    expect(mounted.container.textContent).toContain('Unavailable');
     expect(mounted.container.textContent).toContain('No timeline');
     expect(mounted.container.textContent).not.toContain('Bar 4');
   });

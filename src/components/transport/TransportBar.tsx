@@ -9,7 +9,7 @@ import {
   SkipForward,
 } from "lucide-react"
 import { useAudio } from "@/hooks/useAudio"
-import { Scrubber } from "@/components/transport/Scrubber"
+import { Scrubber, type ScrubberState } from "@/components/transport/Scrubber"
 import { useProjectStore } from "@/store/project-store"
 
 /* ------------------------------------------------------------------ */
@@ -41,6 +41,55 @@ function formatClock(seconds: number) {
   return `${mins}:${String(secs).padStart(2, "0")}`
 }
 
+function buildPlayheadTruth({
+  transportReady,
+  isPlaying,
+  timelineStatusLabel,
+  currentBar,
+  currentBeat,
+  elapsedSeconds,
+  totalSeconds,
+  totalBars,
+}: {
+  transportReady: boolean
+  isPlaying: boolean
+  timelineStatusLabel: string
+  currentBar: number
+  currentBeat: number
+  elapsedSeconds: number
+  totalSeconds: number
+  totalBars: number
+}): {
+  state: ScrubberState
+  summaryLabel: string
+  positionLabel: string
+  valueText: string
+} {
+  if (!transportReady) {
+    return {
+      state: "unavailable",
+      summaryLabel: "Unavailable",
+      positionLabel: timelineStatusLabel,
+      valueText: timelineStatusLabel,
+    }
+  }
+
+  const playheadBar = Math.max(1, Math.min(currentBar, totalBars || 1))
+  const playheadBeat = Math.max(1, currentBeat)
+  const hasPosition = elapsedSeconds > 0 || playheadBar > 1 || playheadBeat > 1
+  const summaryLabel = isPlaying ? "Playing" : "Idle"
+  const positionLabel = hasPosition
+    ? `Bar ${playheadBar} Beat ${playheadBeat}`
+    : "At start"
+
+  return {
+    state: isPlaying ? "active" : "idle",
+    summaryLabel,
+    positionLabel,
+    valueText: `${summaryLabel} ${hasPosition ? `at bar ${playheadBar} beat ${playheadBeat}` : "at start"}, ${formatClock(elapsedSeconds)} of ${formatClock(totalSeconds)}`,
+  }
+}
+
 /* ------------------------------------------------------------------ */
 /*  Transport Bar                                                      */
 /* ------------------------------------------------------------------ */
@@ -61,8 +110,8 @@ export function TransportBar() {
   const { project, sections, updateProject } = useProjectStore()
 
   const isPlaying = transportState.playbackState === "playing"
-  const bar = transportState.currentBar
-  const beat = transportState.currentBeat
+  const currentBar = transportState.currentBar
+  const currentBeat = transportState.currentBeat
   const elapsedSeconds = transportState.elapsedSeconds
   const totalSeconds = transportState.totalSeconds
 
@@ -152,7 +201,17 @@ export function TransportBar() {
   const timeStr = transportReady
     ? `${formatClock(elapsedSeconds)} / ${formatClock(totalSeconds)}`
     : timelineStatusLabel
-  const scrubberMax = timelineAvailable ? Math.max(totalSeconds, 0) : 0
+  const scrubberMax = transportReady ? Math.max(totalSeconds, 0) : 0
+  const playheadTruth = buildPlayheadTruth({
+    transportReady,
+    isPlaying,
+    timelineStatusLabel,
+    currentBar,
+    currentBeat,
+    elapsedSeconds,
+    totalSeconds,
+    totalBars,
+  })
 
   return (
     <footer className="flex h-16 w-full shrink-0 items-center gap-4 border-t border-border bg-secondary px-4">
@@ -225,9 +284,11 @@ export function TransportBar() {
         <div className="flex shrink-0 items-center gap-2 rounded-lg bg-secondary px-3 py-1 font-mono text-xs">
           {transportReady ? (
             <>
-              <span className="font-semibold text-zinc-200">{`Bar ${bar}`}</span>
+              <span className="font-semibold text-zinc-200">
+                {playheadTruth.summaryLabel}
+              </span>
               <span className="text-zinc-600">|</span>
-              <span className="text-zinc-500">{`Beat ${beat}`}</span>
+              <span className="text-zinc-500">{playheadTruth.positionLabel}</span>
             </>
           ) : (
             <span className="font-semibold text-zinc-500">{timelineStatusLabel}</span>
@@ -237,6 +298,9 @@ export function TransportBar() {
           value={transportReady ? elapsedSeconds : 0}
           max={scrubberMax}
           disabled={!transportReady}
+          state={playheadTruth.state}
+          stateLabel={playheadTruth.summaryLabel}
+          valueText={playheadTruth.valueText}
           onChange={seekToSeconds}
         />
         <span className="min-w-[88px] text-right font-mono text-xs text-zinc-500">
