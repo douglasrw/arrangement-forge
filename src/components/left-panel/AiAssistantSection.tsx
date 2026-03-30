@@ -7,6 +7,7 @@ import { useProjectStore } from "@/store/project-store"
 import { useUiStore } from "@/store/ui-store"
 import { cn } from "@/lib/utils"
 import type { AiChatMessage } from "@/types"
+import { getAiAssistantReadinessTruth } from "./left-panel-readiness"
 
 const SCOPE_STYLES: Record<AiChatMessage["scope"], string> = {
   setup: "bg-secondary text-muted-foreground",
@@ -31,12 +32,6 @@ function isFailureMessage(message: AiChatMessage) {
   return message.role === "assistant" && isGenerationFailureContent(message.content)
 }
 
-type ComposerStatus = {
-  title: string
-  detail: string
-  tone: "blocked" | "active"
-}
-
 export function AiAssistantSection() {
   const [input, setInput] = useState("")
   const project = useProjectStore((state) => state.project)
@@ -55,25 +50,18 @@ export function AiAssistantSection() {
   const hasChordChart = Boolean(project?.chordChartRaw.trim())
   const isGenerating = generationState === "generating"
   const canSend = Boolean(project && hasChordChart && trimmedInput && !isGenerating)
-  const composerStatus: ComposerStatus | null = !project
-    ? {
-        title: "Assistant blocked",
-        detail: "Load a project to enable the assistant composer.",
-        tone: "blocked",
+  const assistantReadiness = getAiAssistantReadinessTruth({
+    hasProject: Boolean(project),
+    hasChordChart,
+    generationState,
+  })
+  const composerStatus = assistantReadiness.status === "ready"
+    ? null
+    : {
+        title: assistantReadiness.title,
+        detail: assistantReadiness.detail,
+        tone: assistantReadiness.status === "blocked" ? "blocked" : "active",
       }
-    : !hasChordChart
-      ? {
-          title: "Chord chart required",
-          detail: "Add a chord chart to enable arrangement requests.",
-          tone: "blocked",
-        }
-      : isGenerating
-        ? {
-            title: "Generating arrangement",
-            detail: "The assistant is working from your latest request.",
-            tone: "active",
-          }
-        : null
 
   function handleSend() {
     if (!canSend) return

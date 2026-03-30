@@ -1,0 +1,254 @@
+import type { GenerationState } from "@/types"
+
+export type LeftPanelTruthTone = "ready" | "attention" | "neutral"
+
+type LeftPanelReadinessInputs = {
+  hasProject: boolean
+  hasChordChart: boolean
+  generationState: GenerationState
+  isImporting?: boolean
+}
+
+export type InputReadinessState = "waiting" | "empty" | "ready"
+
+export type InputReadinessTruth = {
+  state: InputReadinessState
+  badge: string
+  title: string
+  detail: string
+}
+
+export type AiAssistantReadinessTruth = {
+  status: "blocked" | "active" | "ready"
+  badge: string
+  title: string
+  detail: string
+  tone: LeftPanelTruthTone
+}
+
+export type StyleControlsReadinessTruth = {
+  badge: string
+  title: string
+  detail: string
+  tone: LeftPanelTruthTone
+}
+
+export type LeftPanelSectionTruth = {
+  badge: string
+  title: string
+  detail: string
+  tone: LeftPanelTruthTone
+}
+
+export type LeftPanelCoordinationTruth = {
+  badge: string
+  title: string
+  detail: string
+  tone: LeftPanelTruthTone
+  sections: {
+    input: LeftPanelSectionTruth
+    style: LeftPanelSectionTruth
+    ai: LeftPanelSectionTruth
+  }
+}
+
+export function getInputReadinessTruth({
+  hasProject,
+  hasChordChart,
+  generationState,
+  isImporting = false,
+}: LeftPanelReadinessInputs): InputReadinessTruth {
+  if (!hasProject) {
+    return {
+      state: "waiting",
+      badge: "Waiting",
+      title: "Project required",
+      detail: "Load or create a project to enter chords, add notes, or import a plain-text chart.",
+    }
+  }
+
+  if (isImporting) {
+    return {
+      state: "waiting",
+      badge: "Waiting",
+      title: "Import in progress",
+      detail: "Arrangement Forge is reading the selected file before it updates the current chord chart.",
+    }
+  }
+
+  if (generationState === "generating") {
+    return {
+      state: "waiting",
+      badge: "Waiting",
+      title: "Generation in progress",
+      detail: "The current chord chart stays visible while imports pause until the latest arrangement pass finishes.",
+    }
+  }
+
+  if (!hasChordChart) {
+    return {
+      state: "empty",
+      badge: "Empty",
+      title: "Chord chart needed",
+      detail: "Enter chords, paste chart text, or import a plain-text file to enable generation.",
+    }
+  }
+
+  return {
+    state: "ready",
+    badge: "Ready",
+    title: "Input is ready",
+    detail: "Chord chart is present. Review Description if needed, then generate the arrangement.",
+  }
+}
+
+export function getAiAssistantReadinessTruth({
+  hasProject,
+  hasChordChart,
+  generationState,
+}: LeftPanelReadinessInputs): AiAssistantReadinessTruth {
+  if (!hasProject) {
+    return {
+      status: "blocked",
+      badge: "Blocked",
+      title: "Project required",
+      detail: "Load a project to enable assistant requests.",
+      tone: "attention",
+    }
+  }
+
+  if (!hasChordChart) {
+    return {
+      status: "blocked",
+      badge: "Blocked",
+      title: "Chord chart required",
+      detail: "Add a chord chart in Input before asking the assistant to generate or revise the arrangement.",
+      tone: "attention",
+    }
+  }
+
+  if (generationState === "generating") {
+    return {
+      status: "active",
+      badge: "Active",
+      title: "Assistant requests are paused",
+      detail: "The current arrangement pass is still running, so new prompts unlock when it finishes.",
+      tone: "neutral",
+    }
+  }
+
+  return {
+    status: "ready",
+    badge: "Ready",
+    title: "Assistant is ready",
+    detail: "Ask for a generation or revision once the chord chart reflects the song you want.",
+    tone: "ready",
+  }
+}
+
+export function getStyleControlsReadinessTruth({
+  hasProject,
+  generationState,
+}: LeftPanelReadinessInputs): StyleControlsReadinessTruth {
+  if (!hasProject) {
+    return {
+      badge: "Waiting",
+      title: "Project required",
+      detail: "Load a project before changing song-wide style defaults.",
+      tone: "attention",
+    }
+  }
+
+  if (generationState === "generating") {
+    return {
+      badge: "Next pass",
+      title: "Style edits steer the next run",
+      detail: "The active generation is already locked, so any changes here apply after this pass finishes.",
+      tone: "neutral",
+    }
+  }
+
+  return {
+    badge: "Ready",
+    title: "Song defaults are ready",
+    detail: "Genre, sub-style, and sliders shape the next generation pass before section or block overrides.",
+    tone: "ready",
+  }
+}
+
+function toInputSectionTruth(inputTruth: InputReadinessTruth): LeftPanelSectionTruth {
+  const tone = inputTruth.state === "ready"
+    ? "ready"
+    : inputTruth.state === "empty"
+      ? "neutral"
+      : "attention"
+
+  return {
+    badge: inputTruth.badge,
+    title: inputTruth.title,
+    detail: inputTruth.detail,
+    tone,
+  }
+}
+
+export function getLeftPanelCoordinationTruth(
+  inputs: LeftPanelReadinessInputs
+): LeftPanelCoordinationTruth {
+  const inputTruth = getInputReadinessTruth(inputs)
+  const styleTruth = getStyleControlsReadinessTruth(inputs)
+  const aiTruth = getAiAssistantReadinessTruth(inputs)
+
+  if (!inputs.hasProject) {
+    return {
+      badge: "Waiting",
+      title: "Project context is still missing",
+      detail: "Load or create a project to coordinate input, style defaults, and assistant requests from one panel.",
+      tone: "attention",
+      sections: {
+        input: toInputSectionTruth(inputTruth),
+        style: styleTruth,
+        ai: aiTruth,
+      },
+    }
+  }
+
+  if (inputs.generationState === "generating") {
+    return {
+      badge: "Active",
+      title: "Arrangement generation is in progress",
+      detail: "Input stays visible while the assistant waits and any style edits steer the next pass instead of this one.",
+      tone: "neutral",
+      sections: {
+        input: toInputSectionTruth(inputTruth),
+        style: styleTruth,
+        ai: aiTruth,
+      },
+    }
+  }
+
+  if (!inputs.hasChordChart) {
+    return {
+      badge: "Input first",
+      title: "The chord chart unlocks the rest of the panel",
+      detail: "Start in Input. A chord chart enables generation and assistant requests, while style defaults are already available for the next pass.",
+      tone: "neutral",
+      sections: {
+        input: toInputSectionTruth(inputTruth),
+        style: styleTruth,
+        ai: aiTruth,
+      },
+    }
+  }
+
+  return {
+    badge: "Ready",
+    title: "The left panel is coordinated",
+    detail: "Input is ready, style controls shape the next pass, and the assistant can request arrangement changes without hidden prerequisites.",
+    tone: "ready",
+    sections: {
+      input: toInputSectionTruth(inputTruth),
+      style: styleTruth,
+      ai: aiTruth,
+    },
+  }
+}

@@ -166,6 +166,55 @@ afterEach(() => {
 });
 
 describe('LeftPanel inspector truth regression', () => {
+  it('coordinates subsection readiness truth before the operator opens each section', () => {
+    const mounted = renderLeftPanel({ mode: 'default' });
+    mountedRoot = mounted.root;
+    mountedContainer = mounted.container;
+
+    expect(mounted.container.querySelector('[data-left-panel-coordination="input first"]')).not.toBeNull();
+    expect(mounted.container.textContent).toContain('The chord chart unlocks the rest of the panel');
+    expect(mounted.container.textContent).toContain(
+      'Start in Input. A chord chart enables generation and assistant requests, while style defaults are already available for the next pass.'
+    );
+    expect(mounted.container.textContent).toContain(
+      'Enter chords, paste chart text, or import a plain-text file to enable generation.'
+    );
+    expect(mounted.container.textContent).toContain(
+      'Genre, sub-style, and sliders shape the next generation pass before section or block overrides.'
+    );
+    expect(mounted.container.textContent).toContain(
+      'Add a chord chart in Input before asking the assistant to generate or revise the arrangement.'
+    );
+  });
+
+  it('keeps cross-section readiness honest while generation is running', () => {
+    useProjectStore.setState({
+      project: makeProject({
+        chordChartRaw: '[Verse]\nCmaj7 | Dm7 | G7 | Cmaj7',
+      }),
+    });
+    useUiStore.setState({
+      generationState: 'generating',
+      systemStatus: 'generating',
+    });
+
+    const mounted = renderLeftPanel({ mode: 'default' });
+    mountedRoot = mounted.root;
+    mountedContainer = mounted.container;
+
+    expect(mounted.container.querySelector('[data-left-panel-coordination="active"]')).not.toBeNull();
+    expect(mounted.container.textContent).toContain('Arrangement generation is in progress');
+    expect(mounted.container.textContent).toContain(
+      'Input stays visible while the assistant waits and any style edits steer the next pass instead of this one.'
+    );
+    expect(mounted.container.textContent).toContain('Generation in progress');
+    expect(mounted.container.textContent).toContain('Style edits steer the next run');
+    expect(mounted.container.textContent).toContain('Assistant requests are paused');
+    expect(mounted.container.textContent).toContain(
+      'The current arrangement pass is still running, so new prompts unlock when it finishes.'
+    );
+  });
+
   it('keeps the operator-visible inspector honest across section and block contexts', () => {
     const mounted = renderLeftPanel({
       mode: 'section',

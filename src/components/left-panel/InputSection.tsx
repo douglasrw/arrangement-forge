@@ -2,6 +2,7 @@ import { useState, type ChangeEvent } from "react"
 import { cn } from "@/lib/utils"
 import { parseChordInput } from "@/lib/chords"
 import { ChordPalette } from "./ChordPalette"
+import { getInputReadinessTruth } from "./left-panel-readiness"
 import { useProjectStore } from "@/store/project-store"
 import { useGenerate } from "@/hooks/useGenerate"
 import { useUiStore } from "@/store/ui-store"
@@ -9,16 +10,9 @@ import { useUiStore } from "@/store/ui-store"
 const INPUT_TABS = ["Chord", "Text", "Upload"] as const
 type InputTab = (typeof INPUT_TABS)[number]
 type UploadFeedbackTone = "neutral" | "success" | "error"
-type InputReadinessState = "waiting" | "empty" | "ready"
 type ImportedChordChartUpload = {
   chordChartRaw: string
   generationHints: string
-}
-type InputReadiness = {
-  state: InputReadinessState
-  badge: string
-  title: string
-  detail: string
 }
 
 const DEFAULT_UPLOAD_FEEDBACK = "Accepted format: plain-text chord chart (.txt)."
@@ -177,61 +171,6 @@ function formatImportedNotesFeedback(
   return `Imported ${fileName} and updated Description with ${noteCount} note ${noteCount === 1 ? "line" : "lines"}.`
 }
 
-function getInputReadiness({
-  hasProject,
-  hasChordChart,
-  isGenerating,
-  isImporting,
-}: {
-  hasProject: boolean
-  hasChordChart: boolean
-  isGenerating: boolean
-  isImporting: boolean
-}): InputReadiness {
-  if (!hasProject) {
-    return {
-      state: "waiting",
-      badge: "Waiting",
-      title: "Project required",
-      detail: "Load or create a project to enter chords, add notes, or import a plain-text chart.",
-    }
-  }
-
-  if (isImporting) {
-    return {
-      state: "waiting",
-      badge: "Waiting",
-      title: "Import in progress",
-      detail: "Arrangement Forge is reading the selected file before it updates the current chord chart.",
-    }
-  }
-
-  if (isGenerating) {
-    return {
-      state: "waiting",
-      badge: "Waiting",
-      title: "Generation in progress",
-      detail: "The current chord chart stays visible while imports pause until the latest arrangement pass finishes.",
-    }
-  }
-
-  if (!hasChordChart) {
-    return {
-      state: "empty",
-      badge: "Empty",
-      title: "Chord chart needed",
-      detail: "Enter chords, paste chart text, or import a plain-text file to enable generation.",
-    }
-  }
-
-  return {
-    state: "ready",
-    badge: "Ready",
-    title: "Input is ready",
-    detail: "Chord chart is present. Review Description if needed, then generate the arrangement.",
-  }
-}
-
 export function InputSection() {
   const [activeTab, setActiveTab] = useState<InputTab>("Chord")
   const [isImporting, setIsImporting] = useState(false)
@@ -254,10 +193,10 @@ export function InputSection() {
   const timeSignature = project?.timeSignature ?? "4/4"
   const hasChordChart = Boolean(chordChartRaw.trim())
   const isGenerating = generationState === "generating"
-  const inputReadiness = getInputReadiness({
+  const inputReadiness = getInputReadinessTruth({
     hasProject,
     hasChordChart,
-    isGenerating,
+    generationState,
     isImporting,
   })
   const uploadBlocked = !hasProject || isGenerating || isImporting

@@ -143,8 +143,8 @@ describe('AiAssistantSection', () => {
       '[data-testid="ai-assistant-composer-state"]'
     );
 
-    expect(composerState?.textContent).toContain('Assistant blocked');
-    expect(composerState?.textContent).toContain('Load a project to enable the assistant composer.');
+    expect(composerState?.textContent).toContain('Project required');
+    expect(composerState?.textContent).toContain('Load a project to enable assistant requests.');
 
     const input = mounted.container.querySelector('#ai-input') as HTMLInputElement | null;
     expect(input?.disabled).toBe(true);
@@ -165,7 +165,9 @@ describe('AiAssistantSection', () => {
     );
 
     expect(composerState?.textContent).toContain('Chord chart required');
-    expect(composerState?.textContent).toContain('Add a chord chart to enable arrangement requests.');
+    expect(composerState?.textContent).toContain(
+      'Add a chord chart in Input before asking the assistant to generate or revise the arrangement.'
+    );
   });
 
   it('shows an active generating readiness state beyond the input placeholder', () => {
@@ -185,8 +187,10 @@ describe('AiAssistantSection', () => {
       '[data-testid="ai-assistant-composer-state"]'
     );
 
-    expect(composerState?.textContent).toContain('Generating arrangement');
-    expect(composerState?.textContent).toContain('The assistant is working from your latest request.');
+    expect(composerState?.textContent).toContain('Assistant requests are paused');
+    expect(composerState?.textContent).toContain(
+      'The current arrangement pass is still running, so new prompts unlock when it finishes.'
+    );
 
     const input = mounted.container.querySelector('#ai-input') as HTMLInputElement | null;
     expect(input?.disabled).toBe(true);
