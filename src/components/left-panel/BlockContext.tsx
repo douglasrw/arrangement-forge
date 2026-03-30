@@ -76,6 +76,14 @@ interface BlockChordTruth {
 }
 
 type TruthTone = "default" | "missing"
+type BlockScopeTone = "default" | "missing"
+
+interface BlockScopeTruth {
+  title: string
+  meta: string
+  summary: string
+  tone: BlockScopeTone
+}
 
 const TRUTH_TONE_STYLES: Record<
   TruthTone,
@@ -101,6 +109,69 @@ const TRUTH_TONE_STYLES: Record<
     value: "text-warning",
     footer: "text-warning",
   },
+}
+
+const BLOCK_SCOPE_TONE_STYLES: Record<
+  BlockScopeTone,
+  {
+    panel: string
+    title: string
+    meta: string
+    summary: string
+  }
+> = {
+  default: {
+    panel: "border-border/70 bg-secondary/30",
+    title: "text-zinc-200",
+    meta: "text-muted-foreground",
+    summary: "text-muted-foreground",
+  },
+  missing: {
+    panel: "border-warning/30 bg-warning/10",
+    title: "text-warning",
+    meta: "text-warning",
+    summary: "text-warning",
+  },
+}
+
+function getBlockScopeTruth({
+  hasLiveBlock,
+  blockId,
+  instrumentLabel,
+  startBar,
+  endBar,
+}: {
+  hasLiveBlock: boolean
+  blockId: string | null
+  instrumentLabel: string
+  startBar: number
+  endBar: number
+}): BlockScopeTruth {
+  if (hasLiveBlock) {
+    return {
+      title: instrumentLabel,
+      meta: `Bars ${startBar} – ${endBar}`,
+      summary: `Active scope: ${instrumentLabel} block across bars ${startBar} – ${endBar}.`,
+      tone: "default",
+    }
+  }
+
+  if (blockId) {
+    return {
+      title: "Block unavailable",
+      meta: `Last requested block: ${instrumentLabel} across bars ${startBar} – ${endBar}.`,
+      summary:
+        "The selected block is no longer available, so block scope is missing rather than ready.",
+      tone: "missing",
+    }
+  }
+
+  return {
+    title: "No block selected",
+    meta: `Inspector fallback: ${instrumentLabel} across bars ${startBar} – ${endBar}.`,
+    summary: "No live block is selected, so block scope is missing rather than ready.",
+    tone: "missing",
+  }
 }
 
 function formatMixerVolume(gain: number): string {
@@ -255,6 +326,7 @@ export function BlockContext({
   /* Derive live block from store */
   const liveBlock = blocks.find((b) => b.id === blockId)
   const liveSection = sections.find((section) => section.id === liveBlock?.sectionId)
+  const hasLiveBlock = liveBlock != null
 
   /* Use live block data if available, otherwise fall back to props */
   const resolvedStartBar = liveBlock?.startBar ?? startBar
@@ -262,6 +334,13 @@ export function BlockContext({
 
   const color = INSTRUMENT_COLORS[instrument]
   const label = INSTRUMENT_LABELS[instrument]
+  const blockScopeTruth = getBlockScopeTruth({
+    hasLiveBlock,
+    blockId,
+    instrumentLabel: label,
+    startBar: resolvedStartBar,
+    endBar: resolvedEndBar,
+  })
   const activePattern = liveBlock?.style ?? styleName
   const liveStem =
     stems.find((stem) => stem.id === (liveBlock?.stemId ?? stemId)) ??
@@ -321,6 +400,7 @@ export function BlockContext({
     : liveBlock?.dynamicsOverride == null
   const inheritedDynamicsSourceLabel =
     inheritedDynamics.source === "section" ? "Section" : "Project"
+  const blockScopeTone = BLOCK_SCOPE_TONE_STYLES[blockScopeTruth.tone]
   const audioTruthTone = TRUTH_TONE_STYLES[blockAudioTruth.tone]
   const chordTruthTone = TRUTH_TONE_STYLES[blockChordTruth.tone]
 
@@ -383,7 +463,7 @@ export function BlockContext({
       </button>
 
       <div className="border-t border-border px-4 pb-4 pt-4">
-        <div className="rounded-lg border border-border/70 bg-secondary/30 p-3">
+        <div className={cn("rounded-lg border p-3", blockScopeTone.panel)}>
           <div className="flex items-center justify-between gap-3">
             <div className="flex items-center gap-2">
               <div
@@ -396,6 +476,7 @@ export function BlockContext({
             </div>
             <ScopeBadge
               scope="block"
+              tone={blockScopeTruth.tone}
               className="shrink-0"
             />
           </div>
@@ -405,16 +486,18 @@ export function BlockContext({
               className="size-2.5 rounded-sm"
               style={{ backgroundColor: color }}
             />
-            <span className="text-sm font-medium text-zinc-200">{label}</span>
+            <span className={cn("text-sm font-medium", blockScopeTone.title)}>
+              {blockScopeTruth.title}
+            </span>
           </div>
-          <p className="mt-0.5 text-xs text-muted-foreground">
-            Bars {resolvedStartBar} &ndash; {resolvedEndBar}
+          <p className={cn("mt-0.5 text-xs", blockScopeTone.meta)}>
+            {blockScopeTruth.meta}
           </p>
           <p
             id="block-scope-summary"
-            className="mt-2 text-xs text-muted-foreground"
+            className={cn("mt-2 text-xs", blockScopeTone.summary)}
           >
-            Active scope: {label} block across bars {resolvedStartBar} &ndash; {resolvedEndBar}.
+            {blockScopeTruth.summary}
           </p>
         </div>
 

@@ -84,6 +84,12 @@ function setRangeValue(input: HTMLInputElement, value: string) {
   input.dispatchEvent(new Event('change', { bubbles: true }));
 }
 
+function getSectionScopeBadge(container: HTMLElement) {
+  return container.querySelector('[data-scope="section"]') as
+    | HTMLSpanElement
+    | null;
+}
+
 let mountedRoot: Root | null = null;
 let mountedContainer: HTMLDivElement | null = null;
 
@@ -158,10 +164,12 @@ describe('SectionContext truth surface', () => {
     const dynamicsSlider = mounted.container.querySelector(
       '#section-slider-Dynamics'
     ) as HTMLInputElement | null;
+    const scopeBadge = getSectionScopeBadge(mounted.container);
 
     expect(nameInput?.value).toBe('Verse');
     expect(mounted.container.textContent).toContain('8 bars');
-    expect(mounted.container.textContent).toContain('Section Scope');
+    expect(scopeBadge?.textContent).toBe('Section Active');
+    expect(scopeBadge?.getAttribute('data-scope-tone')).toBe('default');
     expect(mounted.container.textContent).toContain(
       'Active scope: Verse section across 8 bars.'
     );
@@ -575,8 +583,10 @@ describe('SectionContext truth surface', () => {
     const deleteButton = Array.from(
       mounted.container.querySelectorAll('button')
     ).find((button) => button.textContent?.trim() === 'Delete Section');
+    const scopeBadge = getSectionScopeBadge(mounted.container);
 
-    expect(mounted.container.textContent).toContain('Section Scope');
+    expect(scopeBadge?.textContent).toBe('Section Missing');
+    expect(scopeBadge?.getAttribute('data-scope-tone')).toBe('missing');
     expect(mounted.container.textContent).toContain('Section unavailable');
     expect(mounted.container.textContent).toContain(
       'Last requested section: Fallback Section (4 bars).'

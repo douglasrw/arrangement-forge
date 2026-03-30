@@ -151,6 +151,12 @@ function expectNoLegacyUnavailablePanel(text: string) {
   expect(text).not.toContain('Custom Chord Overrides');
 }
 
+function getBlockScopeBadge(container: HTMLElement) {
+  return container.querySelector('[data-scope="block"]') as
+    | HTMLSpanElement
+    | null;
+}
+
 let mountedRoot: Root | null = null;
 let mountedContainer: HTMLDivElement | null = null;
 
@@ -270,10 +276,12 @@ describe('BlockContext truth surface', () => {
     const dynamicsResetButton = mounted.container.querySelector(
       '#block-reset-Dynamics'
     ) as HTMLButtonElement | null;
+    const scopeBadge = getBlockScopeBadge(mounted.container);
 
     expect(mounted.container.textContent).toContain('Bars 3 – 6');
     expect(mounted.container.textContent).toContain('Block Inspector');
-    expect(mounted.container.textContent).toContain('Block Scope');
+    expect(scopeBadge?.textContent).toBe('Block Active');
+    expect(scopeBadge?.getAttribute('data-scope-tone')).toBe('default');
     expect(mounted.container.textContent).toContain(
       'Active scope: Piano block across bars 3 – 6.'
     );
@@ -687,6 +695,42 @@ describe('BlockContext truth surface', () => {
       'Per-block chord overrides are still unavailable here, so there is no narrower block-specific scope to reveal instead.'
     );
     expectNoLegacyUnavailablePanel(text);
+  });
+
+  it('marks a missing selected block as missing scope instead of a normal ready badge', () => {
+    useProjectStore.setState({
+      project: makeProject(),
+      stems: [makeStem()],
+      sections: [makeSection()],
+      blocks: [],
+      chords: [],
+      chatMessages: [],
+      drumOnlyUpdate: false,
+      allInstrumentsUpdate: false,
+    });
+
+    useSelectionStore.setState({
+      level: 'block',
+      sectionId: 'section-1',
+      blockId: 'missing-block',
+      stemId: 'stem-1',
+    });
+
+    const mounted = renderBlockContext();
+    mountedRoot = mounted.root;
+    mountedContainer = mounted.container;
+
+    const scopeBadge = getBlockScopeBadge(mounted.container);
+
+    expect(scopeBadge?.textContent).toBe('Block Missing');
+    expect(scopeBadge?.getAttribute('data-scope-tone')).toBe('missing');
+    expect(mounted.container.textContent).toContain('Block unavailable');
+    expect(mounted.container.textContent).toContain(
+      'Last requested block: Piano across bars 1 – 2.'
+    );
+    expect(mounted.container.textContent).toContain(
+      'The selected block is no longer available, so block scope is missing rather than ready.'
+    );
   });
 
   it('refreshes override truth when selection moves between blocks with different saved state', () => {
