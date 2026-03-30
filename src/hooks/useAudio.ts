@@ -79,17 +79,20 @@ function buildPlaybackTruth({
     };
   }
 
-  if (failedArrangementSignature === arrangementSignature) {
-    if (engineReadiness.failureStage === 'engine-start') {
-      return {
-        status: 'unavailable',
-        reason: 'load-failed',
-        summary: 'Audio engine blocked',
-        detail: `The audio engine could not start: ${engineReadiness.failureMessage ?? 'The audio engine could not start.'}`,
-        nextStep: 'Resolve the audio engine start error, then press play again.',
-      };
-    }
+  if (
+    engineReadiness.failureStage === 'engine-start'
+    && !engineReadiness.isInitialized
+  ) {
+    return {
+      status: 'unavailable',
+      reason: 'load-failed',
+      summary: 'Audio engine blocked',
+      detail: `The audio engine could not start: ${engineReadiness.failureMessage ?? 'The audio engine could not start.'}`,
+      nextStep: 'Resolve the audio engine start error, then press play again.',
+    };
+  }
 
+  if (failedArrangementSignature === arrangementSignature) {
     if (engineReadiness.failureStage === 'hot-swap') {
       return {
         status: 'unavailable',

@@ -626,6 +626,44 @@ describe('useAudio transport config', () => {
     expect(useUiStore.getState().errorMessage).toBe('AudioContext was not allowed to start');
   });
 
+  it('keeps engine-start failure truth visible after the arrangement changes', async () => {
+    initMock.mockImplementationOnce(async () => {
+      engineState.failureStage = 'engine-start';
+      engineState.failureMessage = 'AudioContext was not allowed to start';
+      throw new Error('AudioContext was not allowed to start');
+    });
+
+    useProjectStore.setState({
+      project: makeProject(),
+      stems: [makeStem()],
+      sections: [makeSection()],
+      blocks: [makeBlock()],
+      chords: [],
+      chatMessages: [],
+      drumOnlyUpdate: false,
+      allInstrumentsUpdate: false,
+    });
+
+    const mounted = renderHarness();
+    mountedRoot = mounted.root;
+    mountedContainer = mounted.container;
+
+    await act(async () => {
+      await hookValue?.play();
+    });
+
+    act(() => {
+      useProjectStore.setState({
+        blocks: [makeBlock({ id: 'blk-2', startBar: 2, endBar: 5 })],
+      });
+    });
+
+    expect(hookValue?.playbackReadiness).toBe('unavailable');
+    expect(hookValue?.playbackTruth.summary).toBe('Audio engine blocked');
+    expect(hookValue?.playbackTruth.detail).toContain('AudioContext was not allowed to start');
+    expect(hookValue?.playbackTruth.nextStep).toBe('Resolve the audio engine start error, then press play again.');
+  });
+
   it('captures play-triggered arrangement load failures and prevents playback', async () => {
     initMock.mockImplementationOnce(async () => undefined);
     loadArrangementMock.mockRejectedValueOnce(new Error('Piano samples unavailable'));
