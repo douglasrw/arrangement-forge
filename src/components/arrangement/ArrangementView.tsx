@@ -1,11 +1,11 @@
 import { cn } from "@/lib/utils"
+import { ChordLane, CHORD_LANE_HEIGHT } from "@/components/arrangement/ChordLane"
 import { SequencerBlock, INSTRUMENT_COLORS } from "@/components/sequencer-block"
 import { useProjectStore } from "@/store/project-store"
 import { useSelectionStore } from "@/store/selection-store"
 import { useUiStore } from "@/store/ui-store"
 import { useAudio } from "@/hooks/useAudio"
 import { useGenerate } from "@/hooks/useGenerate"
-import { formatChord } from "@/lib/chords"
 import { useShallow } from "zustand/react/shallow"
 import { useRef, useState, useEffect, useCallback } from "react"
 import type { Instrument } from "@/components/sequencer-block"
@@ -17,10 +17,45 @@ const BAR_W = 40
 
 const SECTION_H = 44
 const RULER_H = 24
-const CHORD_H = 32
+const CHORD_H = CHORD_LANE_HEIGHT
 const MIN_LANE_H = 56
 const BORDER_PX = 8 // lane border-b (5×1px) + chord border-t (1px) + rounding
 const FIXED_H = SECTION_H + RULER_H + CHORD_H + BORDER_PX
+const ARRANGEMENT_LANE_ORDER: Instrument[] = ["drums", "bass", "piano", "guitar", "strings"]
+const ARRANGEMENT_LANE_LABELS: Record<Instrument, string> = {
+  drums: "DRUMS",
+  bass: "BASS",
+  piano: "PIANO",
+  guitar: "GUITAR",
+  strings: "STRINGS",
+}
+
+function getArrangementLaneTruth(instrument: Instrument, hasStem: boolean, blockCount: number) {
+  const instrumentLabel = ARRANGEMENT_LANE_LABELS[instrument]
+  const lowerLabel = instrumentLabel.toLowerCase()
+
+  if (!hasStem) {
+    return {
+      state: "unavailable" as const,
+      badge: "Unavailable",
+      message: `No ${lowerLabel} stem loaded yet.`,
+    }
+  }
+
+  if (blockCount === 0) {
+    return {
+      state: "empty" as const,
+      badge: "Empty lane",
+      message: `No ${lowerLabel} blocks loaded yet.`,
+    }
+  }
+
+  return {
+    state: "ready" as const,
+    badge: null,
+    message: null,
+  }
+}
 
 /* ------------------------------------------------------------------ */
 /*  Empty state                                                        */
@@ -85,20 +120,17 @@ export function ArrangementView({
   onBlockSelect,
   onSectionSelect,
 }: ArrangementViewProps) {
-  const { sections, blocks, stems, chords, project } = useProjectStore(
+  const { sections, blocks, stems } = useProjectStore(
     useShallow((s) => ({
       sections: s.sections,
       blocks: s.blocks,
       stems: s.stems,
-      chords: s.chords,
-      project: s.project,
     }))
   )
-  const { generationState, chordDisplayMode } = useUiStore()
+  const { generationState } = useUiStore()
   const { sectionId: selectedSectionId, blockId: selectedBlockId, selectSection, selectBlock, selectSong } = useSelectionStore()
   const { transportState, seek } = useAudio()
   const { runGeneration } = useGenerate()
-  const key = project?.key ?? "C"
   const hasAnyBlockSelected = selectedBlockId !== null
 
   /* Measure container height → compute dynamic lane height */
@@ -111,13 +143,13 @@ export function ArrangementView({
     const el = containerRef.current
     if (!el) return
     const available = el.clientHeight - FIXED_H
-    const stemCount = stems.length || 5
+    const stemCount = ARRANGEMENT_LANE_ORDER.length
     const perLane = Math.floor(available / stemCount)
     setLaneH(Math.max(MIN_LANE_H, perLane))
 
     const scrollEl = scrollRef.current
     if (scrollEl) setScrollableW(scrollEl.clientWidth)
-  }, [stems.length])
+  }, [])
 
   useEffect(() => {
     recalcLayout()
@@ -145,6 +177,25 @@ export function ArrangementView({
 
   /* Sort sections by sortOrder */
   const sortedSections = [...sections].sort((a, b) => a.sortOrder - b.sortOrder)
+  const arrangementLanes = ARRANGEMENT_LANE_ORDER.map((instrument) => {
+    const stem = stems.find((candidate) => candidate.instrument === instrument)
+    const laneBlocks = stem
+      ? blocks
+        .filter((block) => block.stemId === stem.id)
+        .sort((a, b) => a.startBar - b.startBar)
+      : []
+    const truth = getArrangementLaneTruth(instrument, Boolean(stem), laneBlocks.length)
+
+    return {
+      id: stem?.id ?? `missing-${instrument}`,
+      stemId: stem?.id ?? null,
+      instrument,
+      label: ARRANGEMENT_LANE_LABELS[instrument],
+      color: INSTRUMENT_COLORS[instrument] ?? "var(--muted-foreground)",
+      laneBlocks,
+      ...truth,
+    }
+  })
 
   /* Compute total bars and effective bar width (expand to fill viewport) */
   const totalBars = sortedSections.reduce((sum, s) => sum + s.barCount, 0)
@@ -152,17 +203,6 @@ export function ArrangementView({
     ? Math.max(BAR_W, Math.floor(scrollableW / totalBars))
     : BAR_W
   const GRID_W = totalBars * effectiveBarW
-
-  /* Build instrument config from stems */
-  const INSTRUMENT_CONFIG = stems
-    .slice()
-    .sort((a, b) => a.sortOrder - b.sortOrder)
-    .map((stem) => ({
-      id: stem.id,
-      instrument: stem.instrument,
-      color: INSTRUMENT_COLORS[stem.instrument] ?? "var(--muted-foreground)",
-      label: stem.instrument.toUpperCase(),
-    }))
 
   /* Playhead position from audio engine — clamp to song bounds */
   const playheadBar = Math.max(1, Math.min(transportState.currentBar, totalBars || 1))
@@ -186,35 +226,45 @@ export function ArrangementView({
           style={{ height: RULER_H }}
         />
         {/* Instrument rows — fixed height, matches grid lanes */}
-        {INSTRUMENT_CONFIG.map((inst, i) => {
+        {arrangementLanes.map((lane, i) => {
           const isEven = i % 2 === 1
-          const isSelected = selectedBlockId !== null && blocks.some((b) => b.stemId === inst.id && b.id === selectedBlockId)
-          const laneBlocks = blocks
-            .filter((b) => b.stemId === inst.id)
-            .sort((a, b) => a.startBar - b.startBar)
+          const isSelected = lane.stemId !== null && selectedBlockId !== null && lane.laneBlocks.some((block) => block.id === selectedBlockId)
+          const isInteractive = lane.state === "ready"
           return (
             <button
               type="button"
-              key={inst.id}
+              key={lane.id}
               className={cn(
-                "flex shrink-0 items-center gap-1.5 border-b border-secondary px-2 cursor-pointer hover:bg-secondary/60 transition-colors",
+                "flex shrink-0 items-center justify-between gap-2 border-b border-secondary px-2 transition-colors",
+                isInteractive
+                  ? "cursor-pointer hover:bg-secondary/60"
+                  : "cursor-default",
                 isSelected ? "border-l-4 bg-secondary" : "border-l-2"
               )}
               style={{
                 height: laneH,
-                borderLeftColor: inst.color,
+                borderLeftColor: lane.color,
                 ...(!isSelected && {
-                  backgroundColor: isEven ? "color-mix(in srgb, var(--background) 60%, transparent)" : "var(--card)",
+                  backgroundColor:
+                    lane.state === "ready"
+                      ? isEven
+                        ? "color-mix(in srgb, var(--background) 60%, transparent)"
+                        : "var(--card)"
+                      : "color-mix(in srgb, var(--surface-sunken) 82%, var(--background))",
                 }),
               }}
+              data-lane-instrument={lane.instrument}
+              data-lane-state={lane.state}
+              aria-label={lane.state === "ready" ? `${lane.label} lane` : `${lane.label} lane ${lane.state}`}
+              disabled={!isInteractive}
               onClick={() => {
-                if (laneBlocks.length > 0) {
-                  selectBlock(laneBlocks[0].id, inst.id)
+                if (lane.stemId && lane.laneBlocks.length > 0) {
+                  selectBlock(lane.laneBlocks[0].id, lane.stemId)
                   onBlockSelect?.({
-                    instrument: inst.instrument,
-                    styleName: laneBlocks[0].style ?? "Default",
-                    startBar: laneBlocks[0].startBar,
-                    endBar: laneBlocks[0].endBar,
+                    instrument: lane.instrument,
+                    styleName: lane.laneBlocks[0].style ?? "Default",
+                    startBar: lane.laneBlocks[0].startBar,
+                    endBar: lane.laneBlocks[0].endBar,
                   })
                 }
               }}
@@ -222,11 +272,27 @@ export function ArrangementView({
               <span
                 className={cn(
                   "text-xs font-semibold uppercase tracking-wider",
-                  isSelected ? "text-foreground" : "text-muted-foreground"
+                  isSelected
+                    ? "text-foreground"
+                    : lane.state === "ready"
+                      ? "text-muted-foreground"
+                      : "text-muted-foreground/80"
                 )}
               >
-                {inst.label}
+                {lane.label}
               </span>
+              {lane.badge ? (
+                <span
+                  className={cn(
+                    "rounded-full border px-1.5 py-0.5 text-[8px] font-semibold uppercase tracking-[0.16em]",
+                    lane.state === "empty"
+                      ? "border-warning/30 bg-warning/10 text-warning"
+                      : "border-border/70 bg-secondary/50 text-muted-foreground"
+                  )}
+                >
+                  {lane.badge}
+                </span>
+              ) : null}
             </button>
           )
         })}
@@ -342,13 +408,12 @@ export function ArrangementView({
           </div>
 
           {/* == Stem lane rows (fixed height) == */}
-          {INSTRUMENT_CONFIG.map((inst, laneIdx) => {
+          {arrangementLanes.map((lane, laneIdx) => {
             const isEven = laneIdx % 2 === 1
-            const laneBlocks = blocks.filter((b) => b.stemId === inst.id)
 
             return (
               <div
-                key={inst.id}
+                key={lane.id}
                 className="relative shrink-0 border-b border-secondary"
                 style={{
                   height: laneH,
@@ -356,91 +421,94 @@ export function ArrangementView({
                     ? "color-mix(in srgb, var(--background) 60%, transparent)"
                     : "var(--card)",
                 }}
+                data-lane-instrument={lane.instrument}
+                data-lane-state={lane.state}
               >
-                {/* Vertical grid lines */}
-                {Array.from({ length: totalBars }).map((_, i) => {
-                  const barNum = i + 1
-                  const isMajor = (barNum - 1) % 4 === 0
-                  return (
-                    <div
-                      key={barNum}
-                      className="absolute top-0 h-full w-px"
-                      style={{
-                        left: i * effectiveBarW,
-                        backgroundColor: isMajor
-                          ? "rgba(63,63,70,0.3)"
-                          : "rgba(39,39,42,0.3)",
-                      }}
-                    />
-                  )
-                })}
+                {lane.state === "ready" ? (
+                  <>
+                    {/* Vertical grid lines */}
+                    {Array.from({ length: totalBars }).map((_, i) => {
+                      const barNum = i + 1
+                      const isMajor = (barNum - 1) % 4 === 0
+                      return (
+                        <div
+                          key={barNum}
+                          className="absolute top-0 h-full w-px"
+                          style={{
+                            left: i * effectiveBarW,
+                            backgroundColor: isMajor
+                              ? "rgba(63,63,70,0.3)"
+                              : "rgba(39,39,42,0.3)",
+                          }}
+                        />
+                      )
+                    })}
 
-                {/* Blocks */}
-                {laneBlocks.map((block) => {
-                  const left = (block.startBar - 1) * effectiveBarW
-                  const width = (block.endBar - block.startBar + 1) * effectiveBarW
-                  const isSelected = block.id === selectedBlockId
-                  return (
+                    {/* Blocks */}
+                    {lane.laneBlocks.map((block) => {
+                      const left = (block.startBar - 1) * effectiveBarW
+                      const width = (block.endBar - block.startBar + 1) * effectiveBarW
+                      const isSelected = block.id === selectedBlockId
+                      return (
+                        <div
+                          key={block.id}
+                          className="absolute top-1 bottom-1"
+                          style={{ left, width }}
+                        >
+                          <SequencerBlock
+                            instrument={lane.instrument}
+                            styleName={block.style ?? "Default"}
+                            state={isSelected ? "selected" : "default"}
+                            dimmed={hasAnyBlockSelected && !isSelected}
+                            aria-label={`${lane.instrument} block, bars ${block.startBar}-${block.endBar}`}
+                            onClick={() => {
+                              const isDeselecting = block.id === selectedBlockId
+                              if (isDeselecting) {
+                                selectSong()
+                                onBlockSelect?.(null)
+                              } else if (lane.stemId) {
+                                selectBlock(block.id, lane.stemId)
+                                onBlockSelect?.({
+                                  instrument: lane.instrument,
+                                  styleName: block.style ?? "Default",
+                                  startBar: block.startBar,
+                                  endBar: block.endBar,
+                                })
+                              }
+                            }}
+                            className="h-full w-full !min-w-0"
+                          />
+                        </div>
+                      )
+                    })}
+                  </>
+                ) : (
+                  <div className="absolute inset-2 flex items-center justify-center">
                     <div
-                      key={block.id}
-                      className="absolute top-1 bottom-1"
-                      style={{ left, width }}
+                      className={cn(
+                        "inline-flex max-w-full items-center gap-2 rounded-lg border px-3 py-2 text-xs",
+                        lane.state === "empty"
+                          ? "border-warning/30 bg-warning/10 text-warning"
+                          : "border-border/70 bg-secondary/40 text-muted-foreground"
+                      )}
+                      role="status"
+                      title={lane.message ?? undefined}
                     >
-                      <SequencerBlock
-                        instrument={inst.instrument}
-                        styleName={block.style ?? "Default"}
-                        state={isSelected ? "selected" : "default"}
-                        dimmed={hasAnyBlockSelected && !isSelected}
-                        aria-label={`${inst.instrument} block, bars ${block.startBar}-${block.endBar}`}
-                        onClick={() => {
-                          const isDeselecting = block.id === selectedBlockId
-                          if (isDeselecting) {
-                            selectSong()
-                            onBlockSelect?.(null)
-                          } else {
-                            selectBlock(block.id, inst.id)
-                            onBlockSelect?.({
-                              instrument: inst.instrument,
-                              styleName: block.style ?? "Default",
-                              startBar: block.startBar,
-                              endBar: block.endBar,
-                            })
-                          }
-                        }}
-                        className="h-full w-full !min-w-0"
-                      />
+                      <span className="font-semibold uppercase tracking-[0.16em]">
+                        {lane.badge}
+                      </span>
+                      <span className="truncate">
+                        {lane.message}
+                      </span>
                     </div>
-                  )
-                })}
+                  </div>
+                )}
               </div>
             )
           })}
 
           {/* == Chord lane == */}
-          <div
-            className="relative shrink-0 border-t border-border/50"
-            style={{
-              height: CHORD_H,
-              backgroundColor: "var(--surface-sunken)",
-            }}
-          >
-            {/* Vertical ticks at each chord */}
-            {chords.map((chord) => {
-              const displayText = formatChord(chord, key, chordDisplayMode)
-              return (
-                <div
-                  key={`${chord.id}-${chord.barNumber}`}
-                  className="absolute top-0 flex h-full flex-col items-start"
-                  style={{ left: (chord.barNumber - 1) * effectiveBarW }}
-                >
-                  <div className="h-2 w-px bg-zinc-600" />
-                  <span className="mt-0.5 pl-1 font-mono text-[10px] text-muted-foreground">
-                    {displayText}
-                  </span>
-                </div>
-              )
-            })}
-          </div>
+          <ChordLane barWidth={effectiveBarW} />
 
           {/* == Playhead (spans full height as overlay) == */}
           <div
