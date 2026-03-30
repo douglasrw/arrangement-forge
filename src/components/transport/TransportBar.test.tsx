@@ -477,6 +477,48 @@ describe('TransportBar transport controls', () => {
     }
   );
 
+  it('keeps the transport timeline available for loaded draft arrangement rows', () => {
+    useAudioState.transportState = {
+      ...useAudioState.transportState,
+      totalSeconds: 0,
+    };
+    useAudioState.playbackReadiness = 'loading';
+    useAudioState.playbackTruth = {
+      status: 'loading',
+      action: 'load-and-play',
+      reason: 'awaiting-user-play',
+      summary: 'Load to play',
+      detail: 'Arrangement audio is not loaded into the engine yet.',
+      nextStep: 'Press play to load arrangement audio.',
+    };
+
+    useProjectStore.setState({
+      project: makeProject({
+        hasArrangement: false,
+        generatedAt: null,
+        generatedTempo: null,
+      }),
+      sections: makeSections(),
+    });
+
+    const mounted = renderTransportBar();
+    mountedRoot = mounted.root;
+    mountedContainer = mounted.container;
+
+    const playButton = mounted.container.querySelector(
+      'button[aria-label="Load and play"]'
+    ) as HTMLButtonElement | null;
+    const guidance = mounted.container.querySelector(
+      '[data-transport-guidance="awaiting-user-play"]'
+    ) as HTMLDivElement | null;
+
+    expect(playButton?.disabled).toBe(false);
+    expect(guidance?.textContent).toContain('Arrangement audio is not loaded into the engine yet.');
+    expect(guidance?.textContent).toContain('Press play to load arrangement audio.');
+    expect(mounted.container.textContent).toContain('Load to play');
+    expect(mounted.container.textContent).not.toContain('No timeline');
+  });
+
   it('surfaces loading readiness truth before playback is ready', () => {
     useAudioState.transportState = {
       ...useAudioState.transportState,

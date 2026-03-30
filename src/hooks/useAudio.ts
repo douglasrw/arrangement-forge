@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { AudioEngine } from '@/audio/engine';
-import { useProjectStore } from '@/store/project-store';
+import { getProjectArrangementTruth, useProjectStore } from '@/store/project-store';
 import { useUiStore } from '@/store/ui-store';
 import type {
   AudioEngineConfig,
@@ -166,7 +166,17 @@ export function useAudio() {
   const lastArrangementSignatureRef = useRef('');
   const lastMixerSignatureRef = useRef('');
 
-  const { project, blocks, stems, sections, drumOnlyUpdate, clearDrumOnlyUpdate, allInstrumentsUpdate, clearAllInstrumentsUpdate } = useProjectStore();
+  const {
+    project,
+    blocks,
+    stems,
+    sections,
+    chords,
+    drumOnlyUpdate,
+    clearDrumOnlyUpdate,
+    allInstrumentsUpdate,
+    clearAllInstrumentsUpdate,
+  } = useProjectStore();
   const { setSystemStatus } = useUiStore();
 
   const arrangementSignature = JSON.stringify({
@@ -204,8 +214,15 @@ export function useAudio() {
       isSolo: stem.isSolo,
     }))
   );
+  const arrangementTruth = getProjectArrangementTruth({
+    project,
+    stems,
+    sections,
+    blocks,
+    chords,
+  });
   const totalBars = sections.reduce((sum, section) => sum + section.barCount, 0);
-  const hasArrangementTruth = Boolean(project?.hasArrangement) && totalBars > 0;
+  const hasArrangementTruth = arrangementTruth.hasArrangementRows && totalBars > 0;
   const engineReadiness = engine.getReadinessSnapshot();
   const playbackTruth = buildPlaybackTruth({
     projectExists: Boolean(project),

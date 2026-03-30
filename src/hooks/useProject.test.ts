@@ -871,6 +871,12 @@ describe('useProject save paths', () => {
       unsavedChanges: false,
       systemStatus: 'ready',
     });
+    expect(useProjectStore.getState().project).toMatchObject({
+      id: 'project-arrangement-draft',
+      hasArrangement: true,
+      generatedAt: expect.any(String),
+      generatedTempo: 120,
+    });
   });
 
   it('saveArrangement replaces persisted arrangement rows and saves current project metadata', async () => {

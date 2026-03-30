@@ -514,6 +514,33 @@ describe('useAudio transport config', () => {
     expect(hookValue?.playbackTruth.nextStep).toBe('Press play to load arrangement audio.');
   });
 
+  it('treats loaded draft arrangement rows as playable audio truth before they are persisted', () => {
+    useProjectStore.setState({
+      project: makeProject({
+        hasArrangement: false,
+        generatedAt: null,
+        generatedTempo: null,
+      }),
+      stems: [makeStem()],
+      sections: [makeSection()],
+      blocks: [makeBlock()],
+      chords: [],
+      chatMessages: [],
+      drumOnlyUpdate: false,
+      allInstrumentsUpdate: false,
+    });
+
+    const mounted = renderHarness();
+    mountedRoot = mounted.root;
+    mountedContainer = mounted.container;
+
+    expect(hookValue?.playbackReadiness).toBe('loading');
+    expect(hookValue?.playbackTruth.action).toBe('load-and-play');
+    expect(hookValue?.playbackTruth.summary).toBe('Load to play');
+    expect(hookValue?.playbackTruth.detail).toBe('The audio engine has not started yet.');
+    expect(hookValue?.playbackTruth.nextStep).toBe('Press play to load arrangement audio.');
+  });
+
   it('surfaces hot-swap failures instead of only logging them', async () => {
     engineState.isInitialized = true;
 

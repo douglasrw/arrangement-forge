@@ -213,7 +213,6 @@ export function useGenerate() {
       // Populate stores
       setArrangement({ stems: newStems, sections: newSections, blocks: newBlocks, chords: newChords });
       updateProject({
-        hasArrangement: true,
         generatedAt: now,
         generatedTempo: project.tempo,
       });

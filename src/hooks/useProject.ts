@@ -84,6 +84,17 @@ export type LoadProjectResult =
 
 const PROJECT_NOT_FOUND_MESSAGE = 'Project not found';
 
+function getPersistedArrangementProjectPatch(
+  project: Project,
+  persistedAt: string = new Date().toISOString()
+): Pick<Project, 'hasArrangement' | 'generatedAt' | 'generatedTempo'> {
+  return {
+    hasArrangement: true,
+    generatedAt: project.generatedAt ?? persistedAt,
+    generatedTempo: project.generatedTempo ?? project.tempo,
+  };
+}
+
 export function getProjectSavePlan(state: {
   project: Project | null;
   stems: Stem[];
@@ -298,6 +309,8 @@ export function useProject() {
     if (!project) return;
     setSystemStatus('saving');
     try {
+      const persistedProjectPatch = getPersistedArrangementProjectPatch(project);
+
       // Replace the persisted arrangement so regeneration cannot leave stale
       // sections or chord rows behind.
       await supabase.from('stems').delete().eq('project_id', project.id);
@@ -335,11 +348,20 @@ export function useProject() {
         .upsert(
           camelToSnake({
             ...project,
-            hasArrangement: true,
-            generatedAt: project.generatedAt ?? new Date().toISOString(),
-            generatedTempo: project.generatedTempo ?? project.tempo,
+            ...persistedProjectPatch,
           } as unknown as Record<string, unknown>)
         );
+
+      if (useProjectStore.getState().project?.id === project.id) {
+        useProjectStore.setState((state) => ({
+          project: state.project
+            ? {
+                ...state.project,
+                ...persistedProjectPatch,
+              }
+            : state.project,
+        }));
+      }
 
       markSaved();
       setSystemStatus('ready');

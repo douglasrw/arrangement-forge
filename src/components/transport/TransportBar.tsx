@@ -10,7 +10,7 @@ import {
 } from "lucide-react"
 import { useAudio } from "@/hooks/useAudio"
 import { Scrubber, type ScrubberState } from "@/components/transport/Scrubber"
-import { useProjectStore } from "@/store/project-store"
+import { getProjectArrangementTruth, useProjectStore } from "@/store/project-store"
 
 /* ------------------------------------------------------------------ */
 /*  Metronome icon (not available in lucide)                           */
@@ -107,7 +107,7 @@ export function TransportBar() {
     setMetronomeEnabled,
     setLoopEnabled,
   } = useAudio()
-  const { project, sections, updateProject } = useProjectStore()
+  const { project, stems, sections, blocks, chords, updateProject } = useProjectStore()
 
   const isPlaying = transportState.playbackState === "playing"
   const currentBar = transportState.currentBar
@@ -120,7 +120,14 @@ export function TransportBar() {
   const loopActive = audioConfig.loopEnabled
   const metronomeActive = audioConfig.metronomeEnabled
   const totalBars = sections.reduce((sum, section) => sum + section.barCount, 0)
-  const timelineAvailable = Boolean(project?.hasArrangement) && totalBars > 0
+  const arrangementTruth = getProjectArrangementTruth({
+    project,
+    stems,
+    sections,
+    blocks,
+    chords,
+  })
+  const timelineAvailable = arrangementTruth.hasArrangementRows && totalBars > 0
   const playbackAction = playbackTruth.action
   const playbackReady = playbackReadiness === "ready"
   const playbackNeedsLoad = playbackAction === "load-and-play"

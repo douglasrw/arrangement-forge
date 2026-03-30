@@ -90,6 +90,20 @@ beforeEach(() => {
   hookValue = null;
   consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => undefined);
   saveArrangementMock.mockClear();
+  saveArrangementMock.mockImplementation(async () => {
+    const currentProject = useProjectStore.getState().project;
+
+    if (!currentProject) {
+      return;
+    }
+
+    useProjectStore.setState({
+      project: {
+        ...currentProject,
+        hasArrangement: true,
+      },
+    });
+  });
   saveProjectMock.mockClear();
   generateMock.mockReset();
   generateMidiForBlockMock.mockReset();
@@ -224,6 +238,24 @@ describe('useGenerate assistant prompt flow', () => {
   });
 
   it('turns an assistant prompt into generation, project changes, and chat history', async () => {
+    const persistedFlagsSeenBeforeSave: boolean[] = [];
+
+    saveArrangementMock.mockImplementationOnce(async () => {
+      persistedFlagsSeenBeforeSave.push(Boolean(useProjectStore.getState().project?.hasArrangement));
+
+      const currentProject = useProjectStore.getState().project;
+      if (!currentProject) {
+        return;
+      }
+
+      useProjectStore.setState({
+        project: {
+          ...currentProject,
+          hasArrangement: true,
+        },
+      });
+    });
+
     parseChordChartMock.mockReturnValue({
       chords: [{ bar_number: 1, degree: 'I', quality: 'maj7', bass_degree: null }],
     });
@@ -275,6 +307,7 @@ describe('useGenerate assistant prompt flow', () => {
     );
 
     const state = useProjectStore.getState();
+    expect(persistedFlagsSeenBeforeSave).toEqual([false]);
     expect(state.project).toMatchObject({
       hasArrangement: true,
       generatedTempo: 120,
