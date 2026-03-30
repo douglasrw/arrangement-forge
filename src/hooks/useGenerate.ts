@@ -2,7 +2,7 @@
 // Also provides regenerateMidi() for reactive slider → playback updates.
 
 import { useCallback, useEffect, useRef } from 'react';
-import { useProjectStore } from '@/store/project-store';
+import { getProjectArrangementTruth, useProjectStore } from '@/store/project-store';
 import { useUiStore } from '@/store/ui-store';
 import { useUndoStore } from '@/store/undo-store';
 import { useProject } from '@/hooks/useProject';
@@ -97,12 +97,20 @@ export function useGenerate() {
   const { setGenerationState, setSystemStatus } = useUiStore();
   const { pushUndo } = useUndoStore();
   const { saveArrangement, saveProject } = useProject();
+  const arrangementTruth = getProjectArrangementTruth({
+    project,
+    stems,
+    sections,
+    blocks,
+    chords,
+  });
+  const hasArrangementRows = arrangementTruth.hasArrangementRows;
 
   const runGeneration = useCallback(async (options: RunGenerationOptions = {}) => {
     if (!project) return;
     const { isRegeneration = false, assistantPrompt } = options;
     const trimmedAssistantPrompt = assistantPrompt?.trim() || null;
-    const hadArrangement = project.hasArrangement;
+    const hadArrangement = hasArrangementRows;
     const shouldRegenerate = hadArrangement || isRegeneration;
     const generationScope = getGenerationScope(shouldRegenerate, Boolean(trimmedAssistantPrompt));
 
@@ -254,11 +262,12 @@ export function useGenerate() {
       await saveProject();
 
       console.error('Generation error:', err);
-      setGenerationState(project.hasArrangement ? 'complete' : 'idle');
+      setGenerationState(hasArrangementRows ? 'complete' : 'idle');
       setSystemStatus('error', err instanceof Error ? err.message : 'Generation failed');
     }
   }, [
     project, stems, sections, blocks, chords,
+    hasArrangementRows,
     setArrangement, updateProject,
     setGenerationState, setSystemStatus,
     pushUndo, saveArrangement, saveProject, addChatMessage,
@@ -268,7 +277,7 @@ export function useGenerate() {
    * Does NOT create new sections/stems/blocks — only updates midiData on existing blocks.
    * Used for reactive slider → playback updates. */
   const regenerateMidi = useCallback(() => {
-    if (!project || !project.hasArrangement) return;
+    if (!project || !hasArrangementRows) return;
     if (blocks.length === 0 || sections.length === 0 || stems.length === 0) return;
 
     const beatsPerBar = parseInt(project.timeSignature.split('/')[0]) || 4;
@@ -329,13 +338,13 @@ export function useGenerate() {
 
     // Update blocks in store — this triggers useAudio's loadArrangement effect
     setArrangement({ stems, sections, blocks: updatedBlocks, chords });
-  }, [project, blocks, sections, stems, chords, setArrangement]);
+  }, [project, hasArrangementRows, blocks, sections, stems, chords, setArrangement]);
 
   /** Regenerate MIDI data for drum blocks only.
    * Non-drum blocks remain reference-equal (unchanged).
    * Sets the drumOnlyUpdate flag so useAudio can hot-swap instead of full reload. */
   const regenerateDrumsOnly = useCallback(() => {
-    if (!project || !project.hasArrangement) return;
+    if (!project || !hasArrangementRows) return;
     if (blocks.length === 0 || sections.length === 0 || stems.length === 0) return;
 
     const beatsPerBar = parseInt(project.timeSignature.split('/')[0]) || 4;
@@ -401,12 +410,12 @@ export function useGenerate() {
     // Update blocks via drum-only path — sets drumOnlyUpdate flag
     setDrumBlocks(updatedBlocks);
     useUiStore.getState().markDirty();
-  }, [project, blocks, sections, stems, chords, setDrumBlocks]);
+  }, [project, hasArrangementRows, blocks, sections, stems, chords, setDrumBlocks]);
 
   /** Regenerate MIDI data for ALL instrument blocks (drums + pitched).
    * Uses per-instrument hot-swap path so playback is not interrupted. */
   const regenerateAllInstruments = useCallback(() => {
-    if (!project || !project.hasArrangement) return;
+    if (!project || !hasArrangementRows) return;
     if (blocks.length === 0 || sections.length === 0 || stems.length === 0) return;
 
     const beatsPerBar = parseInt(project.timeSignature.split('/')[0]) || 4;
@@ -468,7 +477,7 @@ export function useGenerate() {
     // Update blocks via all-instruments path — sets allInstrumentsUpdate flag
     setAllInstrumentBlocks(updatedBlocks);
     useUiStore.getState().markDirty();
-  }, [project, blocks, sections, stems, chords, setAllInstrumentBlocks]);
+  }, [project, hasArrangementRows, blocks, sections, stems, chords, setAllInstrumentBlocks]);
 
   // Reactive MIDI regeneration on style slider changes
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -476,7 +485,7 @@ export function useGenerate() {
 
   useEffect(() => {
     // Only react if arrangement exists
-    if (!project?.hasArrangement || blocks.length === 0) return;
+    if (!hasArrangementRows || blocks.length === 0) return;
 
     // Skip the initial render (don't regenerate on page load)
     if (isInitialRender.current) {
@@ -493,7 +502,7 @@ export function useGenerate() {
       if (debounceRef.current) clearTimeout(debounceRef.current);
     };
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [project?.energy, project?.groove, project?.feel, project?.swingPct, project?.dynamics]);
+  }, [hasArrangementRows, project?.energy, project?.groove, project?.feel, project?.swingPct, project?.dynamics]);
 
   return { runGeneration, regenerateMidi, regenerateDrumsOnly, regenerateAllInstruments };
 }

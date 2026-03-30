@@ -382,7 +382,7 @@ describe('useGenerate assistant prompt flow', () => {
     );
   });
 
-  it('treats assistant revisions on an existing arrangement as regenerations with undo history', async () => {
+  it('treats assistant revisions on loaded draft arrangement rows as regenerations with undo history', async () => {
     parseChordChartMock.mockReturnValue({
       chords: [{ bar_number: 1, degree: 'ii', quality: 'min7', bass_degree: null }],
     });
@@ -406,9 +406,9 @@ describe('useGenerate assistant prompt flow', () => {
 
     useProjectStore.setState({
       project: makeProject({
-        hasArrangement: true,
-        generatedAt: '2026-03-28T00:00:00Z',
-        generatedTempo: 120,
+        hasArrangement: false,
+        generatedAt: null,
+        generatedTempo: null,
       }),
       stems: [
         {
@@ -491,6 +491,99 @@ describe('useGenerate assistant prompt flow', () => {
     expect(saveProjectMock).not.toHaveBeenCalled();
   });
 
+  it('keeps regeneration state complete when a loaded draft arrangement fails to regenerate', async () => {
+    parseChordChartMock.mockReturnValue({
+      chords: [{ bar_number: 1, degree: 'ii', quality: 'min7', bass_degree: null }],
+    });
+    generateMock.mockImplementation(() => {
+      throw new Error('Generator offline');
+    });
+
+    useProjectStore.setState({
+      project: makeProject({
+        hasArrangement: false,
+        generatedAt: null,
+        generatedTempo: null,
+      }),
+      stems: [
+        {
+          id: 'stem-existing',
+          projectId: 'p1',
+          instrument: 'piano',
+          sortOrder: 0,
+          volume: 0.8,
+          pan: 0,
+          isMuted: false,
+          isSolo: false,
+          createdAt: '2026-03-28T00:00:00Z',
+        },
+      ],
+      sections: [
+        {
+          id: 'section-existing',
+          projectId: 'p1',
+          name: 'Verse',
+          sortOrder: 0,
+          barCount: 4,
+          startBar: 1,
+          energyOverride: null,
+          grooveOverride: null,
+          feelOverride: null,
+          swingPctOverride: null,
+          dynamicsOverride: null,
+          createdAt: '2026-03-28T00:00:00Z',
+        },
+      ],
+      blocks: [
+        {
+          id: 'block-existing',
+          stemId: 'stem-existing',
+          sectionId: 'section-existing',
+          startBar: 1,
+          endBar: 4,
+          chordDegree: 'I',
+          chordQuality: 'maj7',
+          chordBassDegree: null,
+          style: 'old_comp',
+          energyOverride: null,
+          dynamicsOverride: null,
+          midiData: [],
+          createdAt: '2026-03-28T00:00:00Z',
+        },
+      ],
+      chords: [
+        {
+          id: 'chord-existing',
+          projectId: 'p1',
+          barNumber: 1,
+          degree: 'I',
+          quality: 'maj7',
+          bassDegree: null,
+        },
+      ],
+      chatMessages: [],
+      drumOnlyUpdate: false,
+      allInstrumentsUpdate: false,
+    });
+
+    const mounted = renderHarness();
+    mountedRoot = mounted.root;
+    mountedContainer = mounted.container;
+
+    await act(async () => {
+      await hookValue!.runGeneration({ assistantPrompt: 'Revoice the bridge' });
+      await Promise.resolve();
+    });
+
+    expect(useUiStore.getState()).toMatchObject({
+      generationState: 'complete',
+      systemStatus: 'error',
+      errorMessage: 'Generator offline',
+    });
+    expect(saveArrangementMock).not.toHaveBeenCalled();
+    expect(saveProjectMock).toHaveBeenCalledTimes(1);
+  });
+
   it('records setup-scoped failures even when generation was not assistant-initiated', async () => {
     parseChordChartMock.mockReturnValue({
       chords: [{ bar_number: 1, degree: 'I', quality: 'maj7', bass_degree: null }],
@@ -561,7 +654,7 @@ describe('useGenerate assistant prompt flow', () => {
     expect(saveProjectMock).toHaveBeenCalledTimes(1);
   });
 
-  it('regenerateAllInstruments preserves block style and block start bar when rebuilding MIDI', async () => {
+  it('regenerateAllInstruments preserves block style and block start bar for loaded draft arrangement rows', async () => {
     generateMidiForBlockMock.mockImplementation(
       (
         _instrument: string,
@@ -583,7 +676,7 @@ describe('useGenerate assistant prompt flow', () => {
     );
 
     useProjectStore.setState({
-      project: makeProject({ hasArrangement: true, genre: 'Rock' }),
+      project: makeProject({ hasArrangement: false, genre: 'Rock' }),
       stems: [
         {
           id: 'stem-piano',

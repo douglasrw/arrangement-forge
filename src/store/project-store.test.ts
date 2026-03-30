@@ -542,8 +542,8 @@ describe('projectStore', () => {
     });
   });
 
-  it('updateBlock regenerates MIDI from the selected block style instead of the genre default', () => {
-    useProjectStore.getState().setProject(makeProject({ hasArrangement: true, genre: 'Rock' }));
+  it('updateBlock regenerates MIDI from the selected block style for loaded draft arrangement rows', () => {
+    useProjectStore.getState().setProject(makeProject({ hasArrangement: false, genre: 'Rock' }));
     useProjectStore.getState().setArrangement({
       stems: [makeStem()],
       sections: [makeSection({ barCount: 1 })],
@@ -565,8 +565,8 @@ describe('projectStore', () => {
     expect(updatedBlock?.midiData).toHaveLength(8);
   });
 
-  it('updateSection regenerates drum MIDI when section style overrides change', () => {
-    const project = makeProject({ hasArrangement: true });
+  it('updateSection regenerates drum MIDI when section style overrides change on loaded draft arrangement rows', () => {
+    const project = makeProject({ hasArrangement: false });
     const stem = makeStem({ id: 'st-drums', instrument: 'drums' });
     const section = makeSection({ barCount: 1 });
     const baseMidi = generateMidiForBlock(

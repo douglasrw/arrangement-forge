@@ -179,7 +179,7 @@ function regenerateBlockWithProjectState(state: {
   sections: Section[];
   chords: Chord[];
 }, currentBlock: Block, nextBlock: Block, forceMidiRefresh: boolean = false): Block {
-  if (!state.project || !state.project.hasArrangement) {
+  if (!state.project) {
     return nextBlock;
   }
 
