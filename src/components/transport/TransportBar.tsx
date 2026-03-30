@@ -147,12 +147,17 @@ export function TransportBar() {
     : transportReady
       ? undefined
       : `${playbackTruth.detail} ${playbackTruth.nextStep}`.trim()
+  const transportGuidance = !timelineAvailable
+    ? "Generate or import an arrangement to enable playback and transport controls."
+    : transportReady
+      ? null
+      : `${playbackTruth.detail} ${playbackTruth.nextStep}`.trim()
   const timelineStatusLabel = !timelineAvailable
     ? "No timeline"
     : playbackTruth.summary
   const readinessLabel = transportReady
     ? "Ready"
-    : playbackTruth.summary
+    : timelineStatusLabel
   const readinessClassName = transportReady
     ? "bg-emerald-500/10 text-emerald-300"
     : playbackReadiness === "loading"
@@ -189,9 +194,6 @@ export function TransportBar() {
     setEditingBpm(false)
     updateProject({ tempo: val })
   }
-  const timeStr = transportReady
-    ? `${formatClock(elapsedSeconds)} / ${formatClock(totalSeconds)}`
-    : timelineStatusLabel
   const scrubberMax = transportReady ? Math.max(totalSeconds, 0) : 0
   const playheadTruth = buildPlayheadTruth({
     transportReady,
@@ -285,18 +287,33 @@ export function TransportBar() {
             <span className="font-semibold text-zinc-500">{timelineStatusLabel}</span>
           )}
         </div>
-        <Scrubber
-          value={transportReady ? elapsedSeconds : 0}
-          max={scrubberMax}
-          disabled={!transportReady}
-          state={playheadTruth.state}
-          stateLabel={playheadTruth.summaryLabel}
-          valueText={playheadTruth.valueText}
-          onChange={seekToSeconds}
-        />
-        <span className="min-w-[88px] text-right font-mono text-xs text-zinc-500">
-          {timeStr}
-        </span>
+        {transportReady ? (
+          <>
+            <Scrubber
+              value={elapsedSeconds}
+              max={scrubberMax}
+              disabled={false}
+              state={playheadTruth.state}
+              stateLabel={playheadTruth.summaryLabel}
+              valueText={playheadTruth.valueText}
+              onChange={seekToSeconds}
+            />
+            <span className="min-w-[88px] text-right font-mono text-xs text-zinc-500">
+              {`${formatClock(elapsedSeconds)} / ${formatClock(totalSeconds)}`}
+            </span>
+          </>
+        ) : (
+          <div
+            data-transport-guidance={!timelineAvailable ? "no-timeline" : playbackTruth.reason}
+            className="flex min-w-0 flex-1 items-center rounded-full border border-border/70 bg-secondary/70 px-3 py-1 text-[11px] leading-tight text-zinc-400"
+            title={transportGuidance ?? undefined}
+            aria-live="polite"
+          >
+            <span className="max-h-8 overflow-hidden">
+              {transportGuidance}
+            </span>
+          </div>
+        )}
       </div>
 
       {/* ---- RIGHT: Tempo + toggles ---- */}

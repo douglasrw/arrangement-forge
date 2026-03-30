@@ -386,10 +386,9 @@ describe('TransportBar transport controls', () => {
     const scrubber = mounted.container.querySelector(
       'input[aria-label="Transport scrubber"]'
     ) as HTMLInputElement | null;
-    const playheadTruth = mounted.container.querySelector(
-      '[data-playhead-state="unavailable"]'
+    const guidance = mounted.container.querySelector(
+      '[data-transport-guidance="no-timeline"]'
     ) as HTMLDivElement | null;
-
     expect(skipStartButton?.disabled).toBe(true);
     expect(stopButton?.disabled).toBe(false);
     expect(playButton?.disabled).toBe(true);
@@ -398,12 +397,10 @@ describe('TransportBar transport controls', () => {
     expect(metronomeButton?.disabled).toBe(true);
     expect(loopButton?.getAttribute('aria-pressed')).toBe('false');
     expect(metronomeButton?.getAttribute('aria-pressed')).toBe('false');
-    expect(playheadTruth).not.toBeNull();
-    expect(scrubber?.disabled).toBe(true);
-    expect(scrubber?.max).toBe('0');
-    expect(scrubber?.value).toBe('0');
-    expect(mounted.container.textContent).toContain('Unavailable');
+    expect(scrubber).toBeNull();
+    expect(guidance?.textContent).toContain('Generate or import an arrangement to enable playback and transport controls.');
     expect(mounted.container.textContent).toContain('No timeline');
+    expect(mounted.container.textContent).not.toContain('Ready');
     expect(mounted.container.textContent).not.toContain('Bar 4');
   });
 
@@ -456,6 +453,9 @@ describe('TransportBar transport controls', () => {
       const scrubber = mounted.container.querySelector(
         'input[aria-label="Transport scrubber"]'
       ) as HTMLInputElement | null;
+      const guidance = mounted.container.querySelector(
+        '[data-transport-guidance="no-timeline"]'
+      ) as HTMLDivElement | null;
 
       expect(skipStartButton?.disabled).toBe(true);
       expect(playButton?.disabled).toBe(true);
@@ -464,10 +464,10 @@ describe('TransportBar transport controls', () => {
       expect(metronomeButton?.disabled).toBe(true);
       expect(loopButton?.getAttribute('aria-pressed')).toBe('false');
       expect(metronomeButton?.getAttribute('aria-pressed')).toBe('false');
-      expect(scrubber?.disabled).toBe(true);
-      expect(scrubber?.max).toBe('0');
-      expect(scrubber?.value).toBe('0');
+      expect(scrubber).toBeNull();
+      expect(guidance?.textContent).toContain('Generate or import an arrangement to enable playback and transport controls.');
       expect(mounted.container.textContent).toContain('No timeline');
+      expect(mounted.container.textContent).not.toContain('Ready');
       expect(mounted.container.textContent).not.toContain('Load to play');
       expect(mounted.container.textContent).not.toContain('Loading audio');
       expect(mounted.container.textContent).not.toContain('Bar 4');
@@ -508,12 +508,17 @@ describe('TransportBar transport controls', () => {
     const scrubber = mounted.container.querySelector(
       'input[aria-label="Transport scrubber"]'
     ) as HTMLInputElement | null;
+    const guidance = mounted.container.querySelector(
+      '[data-transport-guidance="awaiting-user-play"]'
+    ) as HTMLDivElement | null;
 
     expect(skipStartButton?.disabled).toBe(true);
     expect(playButton?.disabled).toBe(false);
     expect(loopButton?.disabled).toBe(true);
     expect(metronomeButton?.disabled).toBe(true);
-    expect(scrubber?.disabled).toBe(true);
+    expect(scrubber).toBeNull();
+    expect(guidance?.textContent).toContain('Arrangement audio is not loaded into the engine yet.');
+    expect(guidance?.textContent).toContain('Press play to load arrangement audio.');
     expect(mounted.container.textContent).toContain('Load to play');
     expect(mounted.container.textContent).toContain('Load to play');
   });
@@ -541,10 +546,19 @@ describe('TransportBar transport controls', () => {
     const metronomeButton = mounted.container.querySelector(
       'button[aria-label="Toggle metronome"]'
     ) as HTMLButtonElement | null;
+    const scrubber = mounted.container.querySelector(
+      'input[aria-label="Transport scrubber"]'
+    ) as HTMLInputElement | null;
+    const guidance = mounted.container.querySelector(
+      '[data-transport-guidance="loading-arrangement"]'
+    ) as HTMLDivElement | null;
 
     expect(playButton?.disabled).toBe(true);
     expect(loopButton?.disabled).toBe(true);
     expect(metronomeButton?.disabled).toBe(true);
+    expect(scrubber).toBeNull();
+    expect(guidance?.textContent).toContain('Arrangement audio is loading into the engine right now.');
+    expect(guidance?.textContent).toContain('Wait for the current audio load to finish.');
     expect(mounted.container.textContent).toContain('Loading audio');
     expect(mounted.container.textContent).not.toContain('Load to play');
   });
@@ -572,10 +586,19 @@ describe('TransportBar transport controls', () => {
     const metronomeButton = mounted.container.querySelector(
       'button[aria-label="Toggle metronome"]'
     ) as HTMLButtonElement | null;
+    const scrubber = mounted.container.querySelector(
+      'input[aria-label="Transport scrubber"]'
+    ) as HTMLInputElement | null;
+    const guidance = mounted.container.querySelector(
+      '[data-transport-guidance="load-failed"]'
+    ) as HTMLDivElement | null;
 
     expect(playButton?.disabled).toBe(true);
     expect(loopButton?.disabled).toBe(true);
     expect(metronomeButton?.disabled).toBe(true);
+    expect(scrubber).toBeNull();
+    expect(guidance?.textContent).toContain('Audio failed to load: Salamander drum samples missing');
+    expect(guidance?.textContent).toContain('Fix the sample error, then press play to try again.');
     expect(mounted.container.textContent).toContain('Unavailable');
     expect(mounted.container.textContent).not.toContain('Loading');
     expect(mounted.container.textContent).not.toContain('Load to play');
