@@ -113,12 +113,36 @@ describe('undoStore', () => {
     expect(useUndoStore.getState().canRedo()).toBe(true);
   });
 
+  it('does not advertise undo when the top undo boundary is not restorable', () => {
+    useUndoStore.getState().pushUndo('Broken action', {
+      undo: 'not json',
+      redo: makeSnapshot('after'),
+    });
+
+    expect(useUndoStore.getState().canUndo()).toBe(false);
+    expect(useUndoStore.getState().getUndoDescription()).toBeNull();
+  });
+
+  it('does not advertise redo when the top redo boundary is not restorable', () => {
+    useUndoStore.getState().pushUndo('Broken redo', {
+      undo: makeSnapshot('before'),
+      redo: 'not json',
+    });
+
+    expect(useUndoStore.getState().undo()).not.toBeNull();
+    expect(useUndoStore.getState().canRedo()).toBe(false);
+    expect(useUndoStore.getState().getRedoDescription()).toBeNull();
+  });
+
   it('getUndoDescription returns null when empty', () => {
     expect(useUndoStore.getState().getUndoDescription()).toBeNull();
   });
 
   it('getUndoDescription returns formatted string', () => {
-    useUndoStore.getState().pushUndo('Split block', { undo: 'a', redo: 'b' });
+    useUndoStore.getState().pushUndo('Split block', {
+      undo: makeSnapshot('before'),
+      redo: makeSnapshot('after'),
+    });
     expect(useUndoStore.getState().getUndoDescription()).toBe('Undo: Split block');
   });
 

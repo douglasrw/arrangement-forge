@@ -2,6 +2,8 @@ import { create } from 'zustand';
 import {
   createUndoBoundaryEntry,
   createUndoBoundaryTransition,
+  parseRedoSnapshot,
+  parseUndoSnapshot,
   type UndoBoundaryEntry,
   type UndoBoundarySnapshots,
   type UndoBoundaryTransition,
@@ -71,16 +73,26 @@ export const useUndoStore = create<UndoStore>()((set, get) => ({
     };
   },
 
-  canUndo: () => get().undoStack.length > 0,
-  canRedo: () => get().redoStack.length > 0,
+  canUndo: () => {
+    const stack = get().undoStack;
+    const entry = stack[stack.length - 1];
+    return entry ? parseUndoSnapshot(entry) !== null : false;
+  },
+  canRedo: () => {
+    const stack = get().redoStack;
+    const entry = stack[stack.length - 1];
+    return entry ? parseRedoSnapshot(entry) !== null : false;
+  },
 
   getUndoDescription: () => {
     const stack = get().undoStack;
-    return stack.length > 0 ? `Undo: ${stack[stack.length - 1].description}` : null;
+    const entry = stack[stack.length - 1];
+    return entry && parseUndoSnapshot(entry) !== null ? `Undo: ${entry.description}` : null;
   },
 
   getRedoDescription: () => {
     const stack = get().redoStack;
-    return stack.length > 0 ? `Redo: ${stack[stack.length - 1].description}` : null;
+    const entry = stack[stack.length - 1];
+    return entry && parseRedoSnapshot(entry) !== null ? `Redo: ${entry.description}` : null;
   },
 }));

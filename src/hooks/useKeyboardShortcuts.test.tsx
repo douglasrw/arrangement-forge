@@ -257,7 +257,7 @@ describe('useKeyboardShortcuts undo boundary truth', () => {
     expect(useUndoStore.getState().undoStack).toHaveLength(1);
   });
 
-  it('keeps the undo boundary available when the restore snapshot is invalid', () => {
+  it('leaves the arrangement unchanged when the undo boundary is invalid', () => {
     const after = makeArrangement('after');
 
     useProjectStore.getState().setArrangement(after);
