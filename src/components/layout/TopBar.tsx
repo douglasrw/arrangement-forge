@@ -545,7 +545,8 @@ export function TopBar() {
   }
 
   const canExport = exportReadiness.canExport;
-  const exportTitle = exportFeedback ?? exportReadiness.message;
+  const exportTitle = exportFeedback
+    ?? `${exportReadiness.currentState} ${exportReadiness.nextStep}`.trim();
   const exportButtonLabel = exportFeedback
     ? 'Exported'
     : exportReadiness.actionLabel;

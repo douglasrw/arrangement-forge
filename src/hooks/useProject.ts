@@ -68,7 +68,8 @@ export interface ProjectExportReadiness {
   hasTextTruth: boolean;
   hasArrangementRows: boolean;
   arrangementTruth: ReturnType<typeof getProjectArrangementTruth>;
-  message: string;
+  currentState: string;
+  nextStep: string;
 }
 
 export type ProjectSaveStatus =
@@ -238,7 +239,8 @@ export function getProjectExportReadiness(state: {
       hasTextTruth: false,
       hasArrangementRows: false,
       arrangementTruth,
-      message: 'Open a project to export',
+      currentState: 'No project is open right now.',
+      nextStep: 'Open a project to export.',
     };
   }
 
@@ -253,7 +255,14 @@ export function getProjectExportReadiness(state: {
       hasTextTruth,
       hasArrangementRows,
       arrangementTruth,
-      message: 'Download chord chart and arrangement snapshot',
+      currentState: hasArrangementRows
+        ? hasTextTruth
+          ? 'Project text and loaded arrangement rows are both ready to export.'
+          : arrangementTruth.hasPersistedArrangement
+            ? 'Loaded arrangement rows are ready to export from the current session.'
+            : 'Loaded arrangement rows are ready to export from the current draft state.'
+        : 'Project text is ready to export even though no arrangement rows are loaded.',
+      nextStep: 'Export now to download the chord chart and arrangement snapshot.',
     };
   }
 
@@ -264,7 +273,8 @@ export function getProjectExportReadiness(state: {
       hasTextTruth: false,
       hasArrangementRows: false,
       arrangementTruth,
-      message: 'Reload the saved arrangement rows before exporting the arrangement snapshot',
+      currentState: 'A saved arrangement snapshot exists, but its rows are not loaded in this session.',
+      nextStep: 'Reload the saved arrangement rows before exporting the arrangement snapshot.',
     };
   }
 
@@ -274,7 +284,8 @@ export function getProjectExportReadiness(state: {
     hasTextTruth: false,
     hasArrangementRows: false,
     arrangementTruth,
-    message: 'Add a chord chart, description, or arrangement to export',
+    currentState: 'No chord chart, generation hints, or arrangement rows are ready to export yet.',
+    nextStep: 'Add a chord chart, description, or arrangement before exporting.',
   };
 }
 

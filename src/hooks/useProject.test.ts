@@ -335,8 +335,10 @@ describe('useProject export readiness', () => {
         currentState: 'Loaded arrangement rows and a saved arrangement snapshot both exist right now.',
         nextStep: 'Save the loaded arrangement rows if you want them to replace the saved arrangement snapshot.',
       },
-      message: 'Download chord chart and arrangement snapshot',
+      currentState: 'Loaded arrangement rows are ready to export from the current session.',
+      nextStep: 'Export now to download the chord chart and arrangement snapshot.',
     });
+    expect(readiness).not.toHaveProperty('message');
   });
 
   it('explains the blocked export state when saved arrangement metadata exists without loaded rows', () => {
@@ -365,7 +367,8 @@ describe('useProject export readiness', () => {
         currentState: 'A saved arrangement snapshot exists, but its rows are not loaded in the project store right now.',
         nextStep: 'Reload the arrangement rows before editing, saving, or exporting the current arrangement snapshot.',
       },
-      message: 'Reload the saved arrangement rows before exporting the arrangement snapshot',
+      currentState: 'A saved arrangement snapshot exists, but its rows are not loaded in this session.',
+      nextStep: 'Reload the saved arrangement rows before exporting the arrangement snapshot.',
     });
   });
 
@@ -395,7 +398,8 @@ describe('useProject export readiness', () => {
         currentState: 'No arrangement rows or saved arrangement snapshot exist yet.',
         nextStep: 'Generate or import an arrangement before saving or exporting arrangement rows.',
       },
-      message: 'Add a chord chart, description, or arrangement to export',
+      currentState: 'No chord chart, generation hints, or arrangement rows are ready to export yet.',
+      nextStep: 'Add a chord chart, description, or arrangement before exporting.',
     });
   });
 });

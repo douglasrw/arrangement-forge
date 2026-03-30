@@ -519,7 +519,9 @@ describe('TopBar export baseline', () => {
 
     expect(exportButton?.disabled).toBe(true);
     expect(exportButton?.textContent).toBe('Nothing to export');
-    expect(exportButton?.title).toBe('Add a chord chart, description, or arrangement to export');
+    expect(exportButton?.title).toBe(
+      'No chord chart, generation hints, or arrangement rows are ready to export yet. Add a chord chart, description, or arrangement before exporting.'
+    );
   });
 
   it('keeps blocked export truth explicit when only a saved arrangement snapshot exists', () => {
@@ -546,7 +548,7 @@ describe('TopBar export baseline', () => {
     expect(exportButton?.disabled).toBe(true);
     expect(exportButton?.textContent).toBe('Reload to export');
     expect(exportButton?.title).toBe(
-      'Reload the saved arrangement rows before exporting the arrangement snapshot'
+      'A saved arrangement snapshot exists, but its rows are not loaded in this session. Reload the saved arrangement rows before exporting the arrangement snapshot.'
     );
   });
 
@@ -574,7 +576,9 @@ describe('TopBar export baseline', () => {
 
     expect(exportButton).not.toBeNull();
     expect(exportButton?.disabled).toBe(false);
-    expect(exportButton?.title).toBe('Download chord chart and arrangement snapshot');
+    expect(exportButton?.title).toBe(
+      'Loaded arrangement rows are ready to export from the current session. Export now to download the chord chart and arrangement snapshot.'
+    );
 
     await act(async () => {
       exportButton?.dispatchEvent(new MouseEvent('click', { bubbles: true }));
