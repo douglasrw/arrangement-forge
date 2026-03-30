@@ -1289,6 +1289,59 @@ describe('useProject save paths', () => {
     });
   });
 
+  it('saveProject keeps dirty truth when the project draft write fails', async () => {
+    const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+    const projectUpsert = vi.fn(() =>
+      Promise.resolve({ error: new Error('project draft write blocked') })
+    );
+    const chatDeleteEq = vi.fn(() => Promise.resolve({ error: null }));
+    const chatDelete = vi.fn(() => ({ eq: chatDeleteEq }));
+    const chatInsert = vi.fn(() => Promise.resolve({ error: null }));
+
+    supabaseMock.from.mockImplementation((table: string) => {
+      switch (table) {
+        case 'projects':
+          return { upsert: projectUpsert };
+        case 'ai_chat_messages':
+          return { delete: chatDelete, insert: chatInsert };
+        default:
+          return createTableQuery();
+      }
+    });
+
+    useProjectStore.setState({
+      project: buildStoredProject('project-save-error'),
+      stems: [],
+      sections: [],
+      blocks: [],
+      chords: [],
+      chatMessages: [buildStoredMessage('project-save-error', { content: 'Do not lose draft truth' })],
+      drumOnlyUpdate: false,
+      allInstrumentsUpdate: false,
+    });
+    useUiStore.setState({ unsavedChanges: true });
+
+    const mounted = renderHarness();
+    mountedRoot = mounted.root;
+    mountedContainer = mounted.container;
+
+    await act(async () => {
+      await hookValue!.saveProject();
+      await Promise.resolve();
+    });
+
+    expect(projectUpsert).toHaveBeenCalledTimes(1);
+    expect(chatDelete).not.toHaveBeenCalled();
+    expect(chatInsert).not.toHaveBeenCalled();
+    expect(useUiStore.getState()).toMatchObject({
+      unsavedChanges: true,
+      systemStatus: 'error',
+      errorMessage: 'Failed to save project draft: project draft write blocked',
+    });
+
+    consoleErrorSpy.mockRestore();
+  });
+
   it('saveProject routes arrangement drafts through the arrangement replacement path', async () => {
     const stemsDeleteEq = vi.fn(() => Promise.resolve({ error: null }));
     const stemsDelete = vi.fn(() => ({ eq: stemsDeleteEq }));

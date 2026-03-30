@@ -64,9 +64,9 @@ function rowToMessage(row: Record<string, unknown>): AiChatMessage {
   return snakeToCamel(row) as unknown as AiChatMessage;
 }
 
-function getLoadFailureMessage(tableLabel: string, error: unknown): string {
+function getFailureMessage(verb: 'load' | 'save', targetLabel: string, error: unknown): string {
   if (error instanceof Error && error.message.trim()) {
-    return `Failed to load ${tableLabel}: ${error.message}`;
+    return `Failed to ${verb} ${targetLabel}: ${error.message}`;
   }
 
   if (
@@ -76,10 +76,32 @@ function getLoadFailureMessage(tableLabel: string, error: unknown): string {
     typeof (error as { message?: unknown }).message === 'string' &&
     (error as { message: string }).message.trim()
   ) {
-    return `Failed to load ${tableLabel}: ${(error as { message: string }).message}`;
+    return `Failed to ${verb} ${targetLabel}: ${(error as { message: string }).message}`;
   }
 
-  return `Failed to load ${tableLabel}.`;
+  return `Failed to ${verb} ${targetLabel}.`;
+}
+
+function getLoadFailureMessage(tableLabel: string, error: unknown): string {
+  return getFailureMessage('load', tableLabel, error);
+}
+
+function getActionFailureMessage(actionLabel: string, error: unknown): string {
+  if (error instanceof Error && error.message.trim()) {
+    return `Failed to ${actionLabel}: ${error.message}`;
+  }
+
+  if (
+    typeof error === 'object' &&
+    error !== null &&
+    'message' in error &&
+    typeof (error as { message?: unknown }).message === 'string' &&
+    (error as { message: string }).message.trim()
+  ) {
+    return `Failed to ${actionLabel}: ${(error as { message: string }).message}`;
+  }
+
+  return `Failed to ${actionLabel}.`;
 }
 
 function throwIfLoadFailed(tableLabel: string, error: unknown) {
@@ -88,6 +110,19 @@ function throwIfLoadFailed(tableLabel: string, error: unknown) {
   }
 
   throw new Error(getLoadFailureMessage(tableLabel, error));
+}
+
+async function ensureWriteSucceeded<T extends { error?: unknown | null }>(
+  actionLabel: string,
+  operation: Promise<T>
+): Promise<T> {
+  const result = await operation;
+
+  if (result.error) {
+    throw new Error(getActionFailureMessage(actionLabel, result.error));
+  }
+
+  return result;
 }
 
 // ---------- Hook ----------
@@ -477,33 +512,48 @@ export function useProject() {
     if (!project) return;
     setSystemStatus('saving');
     try {
-      await supabase
-        .from('projects')
-        .upsert(camelToSnake(project as unknown as Record<string, unknown>));
+      await ensureWriteSucceeded(
+        'save project draft',
+        supabase
+          .from('projects')
+          .upsert(camelToSnake(project as unknown as Record<string, unknown>))
+      );
 
       if (stems.length) {
-        await supabase.from('stems').upsert(
-          stems.map((s) => camelToSnake(s as unknown as Record<string, unknown>))
+        await ensureWriteSucceeded(
+          'save project stems',
+          supabase.from('stems').upsert(
+            stems.map((s) => camelToSnake(s as unknown as Record<string, unknown>))
+          )
         );
       }
       if (sections.length) {
-        await supabase.from('sections').upsert(
-          sections.map((s) => camelToSnake(s as unknown as Record<string, unknown>))
+        await ensureWriteSucceeded(
+          'save project sections',
+          supabase.from('sections').upsert(
+            sections.map((s) => camelToSnake(s as unknown as Record<string, unknown>))
+          )
         );
       }
       if (blocks.length) {
-        await supabase.from('blocks').upsert(
-          blocks.map((b) => {
-            const row = camelToSnake(b as unknown as Record<string, unknown>);
-            row.midi_data = b.midiData; // keep jsonb as-is
-            delete row.midi_data_snake; // clean up any artefact
-            return row;
-          })
+        await ensureWriteSucceeded(
+          'save project blocks',
+          supabase.from('blocks').upsert(
+            blocks.map((b) => {
+              const row = camelToSnake(b as unknown as Record<string, unknown>);
+              row.midi_data = b.midiData; // keep jsonb as-is
+              delete row.midi_data_snake; // clean up any artefact
+              return row;
+            })
+          )
         );
       }
       if (chords.length) {
-        await supabase.from('chords').upsert(
-          chords.map((c) => camelToSnake(c as unknown as Record<string, unknown>))
+        await ensureWriteSucceeded(
+          'save project chords',
+          supabase.from('chords').upsert(
+            chords.map((c) => camelToSnake(c as unknown as Record<string, unknown>))
+          )
         );
       }
       await replaceChatMessages(project.id, chatMessages);
@@ -523,43 +573,67 @@ export function useProject() {
 
       // Replace the persisted arrangement so regeneration cannot leave stale
       // sections or chord rows behind.
-      await supabase.from('stems').delete().eq('project_id', project.id);
-      await supabase.from('sections').delete().eq('project_id', project.id);
-      await supabase.from('chords').delete().eq('project_id', project.id);
+      await ensureWriteSucceeded(
+        'replace persisted arrangement stems',
+        supabase.from('stems').delete().eq('project_id', project.id)
+      );
+      await ensureWriteSucceeded(
+        'replace persisted arrangement sections',
+        supabase.from('sections').delete().eq('project_id', project.id)
+      );
+      await ensureWriteSucceeded(
+        'replace persisted arrangement chords',
+        supabase.from('chords').delete().eq('project_id', project.id)
+      );
 
       // Insert new data
       if (stems.length) {
-        await supabase.from('stems').insert(
-          stems.map((s) => camelToSnake(s as unknown as Record<string, unknown>))
+        await ensureWriteSucceeded(
+          'save arrangement stems',
+          supabase.from('stems').insert(
+            stems.map((s) => camelToSnake(s as unknown as Record<string, unknown>))
+          )
         );
       }
       if (sections.length) {
-        await supabase.from('sections').insert(
-          sections.map((s) => camelToSnake(s as unknown as Record<string, unknown>))
+        await ensureWriteSucceeded(
+          'save arrangement sections',
+          supabase.from('sections').insert(
+            sections.map((s) => camelToSnake(s as unknown as Record<string, unknown>))
+          )
         );
       }
       if (blocks.length) {
-        await supabase.from('blocks').insert(
-          blocks.map((b) => ({
-            ...camelToSnake(b as unknown as Record<string, unknown>),
-            midi_data: b.midiData,
-          }))
+        await ensureWriteSucceeded(
+          'save arrangement blocks',
+          supabase.from('blocks').insert(
+            blocks.map((b) => ({
+              ...camelToSnake(b as unknown as Record<string, unknown>),
+              midi_data: b.midiData,
+            }))
+          )
         );
       }
       if (chords.length) {
-        await supabase.from('chords').insert(
-          chords.map((c) => camelToSnake(c as unknown as Record<string, unknown>))
+        await ensureWriteSucceeded(
+          'save arrangement chords',
+          supabase.from('chords').insert(
+            chords.map((c) => camelToSnake(c as unknown as Record<string, unknown>))
+          )
         );
       }
       await replaceChatMessages(project.id, chatMessages);
 
-      await supabase
-        .from('projects')
-        .upsert(
-          camelToSnake({
-            ...project,
-            ...persistedProjectPatch,
-          } as unknown as Record<string, unknown>)
+      await ensureWriteSucceeded(
+        'save arrangement project metadata',
+        supabase
+          .from('projects')
+          .upsert(
+            camelToSnake({
+              ...project,
+              ...persistedProjectPatch,
+            } as unknown as Record<string, unknown>)
+          )
         );
 
       if (useProjectStore.getState().project?.id === project.id) {
