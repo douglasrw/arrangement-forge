@@ -28,9 +28,11 @@ interface ChannelState {
   available: boolean
 }
 
-interface MixerStatusNotice {
-  tone: "loading" | "error"
-  message: string
+interface MixerReadinessTruth {
+  status: "ready" | "loading" | "unavailable"
+  badge: "Ready" | "Loading" | "Unavailable"
+  message: string | null
+  tone: "ready" | "loading" | "default" | "error"
 }
 
 interface DrumSubMixTruth {
@@ -97,25 +99,67 @@ function toChannelState(stem?: Stem): ChannelState {
   }
 }
 
-function getMixerStatusNotice(
-  systemStatus: SystemStatus,
+function getMixerReadinessTruth({
+  hasArrangementTruth,
+  stemsCount,
+  playbackReadiness,
+  isLoadingAudio,
+  systemStatus,
+  errorMessage,
+}: {
+  hasArrangementTruth: boolean
+  stemsCount: number
+  playbackReadiness: "ready" | "loading" | "unavailable"
+  isLoadingAudio: boolean
+  systemStatus: SystemStatus
   errorMessage: string | null
-): MixerStatusNotice | null {
+}): MixerReadinessTruth {
+  if (!hasArrangementTruth) {
+    return {
+      status: "unavailable",
+      badge: "Unavailable",
+      message: "Generate or import an arrangement to enable mixer controls.",
+      tone: "default",
+    }
+  }
+
+  if (stemsCount === 0) {
+    return {
+      status: "unavailable",
+      badge: "Unavailable",
+      message: "No mixer channels are loaded for this arrangement yet.",
+      tone: "default",
+    }
+  }
+
   if (systemStatus === "error") {
     return {
-      tone: "error",
+      status: "unavailable",
+      badge: "Unavailable",
       message: `Audio unavailable: ${errorMessage ?? "Instrument samples could not be loaded."}`,
+      tone: "error",
     }
   }
 
-  if (systemStatus === "loading-samples") {
+  if (
+    isLoadingAudio ||
+    systemStatus === "loading-samples" ||
+    playbackReadiness === "loading"
+  ) {
     return {
+      status: "loading",
+      badge: "Loading",
+      message: "Arrangement audio is loading. Mixer controls will unlock when audio is ready.",
       tone: "loading",
-      message: "Loading instrument samples. Mixer changes will apply when audio is ready.",
     }
   }
 
-  return null
+  return {
+    status: "ready",
+    badge: "Ready",
+    message: null,
+    tone: "ready",
+  }
 }
 
 function getDrumSubMixTruth({
@@ -127,14 +171,6 @@ function getDrumSubMixTruth({
   systemStatus: SystemStatus
   errorMessage: string | null
 }): DrumSubMixTruth {
-  if (drumKit) {
-    return {
-      status: "ready",
-      badge: null,
-      message: null,
-    }
-  }
-
   if (systemStatus === "loading-samples") {
     return {
       status: "loading",
@@ -148,6 +184,14 @@ function getDrumSubMixTruth({
       status: "error",
       badge: "Kit error",
       message: `Drum sub-mix unavailable: ${errorMessage ?? "Instrument samples could not be loaded."}`,
+    }
+  }
+
+  if (drumKit) {
+    return {
+      status: "ready",
+      badge: null,
+      message: null,
     }
   }
 
@@ -337,9 +381,11 @@ const DRUM_GROUPS = [
 function DrumSubMix({
   drumKit,
   truth,
+  interactionLocked = false,
 }: {
   drumKit: DrumKitLike | null
   truth: DrumSubMixTruth
+  interactionLocked?: boolean
 }) {
   const [levels, setLevels] = useState<Record<string, number>>({
     kick: DEFAULT_GROUP_LEVEL,
@@ -364,11 +410,11 @@ function DrumSubMix({
 
   const handleChange = useCallback(
     (groupName: string, value: number) => {
-      if (!drumKit) return
+      if (!drumKit || interactionLocked) return
       setLevels((prev) => ({ ...prev, [groupName]: value }))
       drumKit.setVoiceGroupGain(groupName, value / DEFAULT_GROUP_LEVEL)
     },
-    [drumKit]
+    [drumKit, interactionLocked]
   )
 
   return (
@@ -398,7 +444,7 @@ function DrumSubMix({
               min={0}
               max={100}
               value={levels[group.name]}
-              disabled={!drumKit}
+              disabled={!drumKit || interactionLocked}
               onChange={(e) => handleChange(group.name, Number(e.target.value))}
               className="h-1 w-20 cursor-pointer appearance-none rounded-full bg-input accent-primary disabled:cursor-not-allowed disabled:opacity-40 [&::-webkit-slider-thumb]:size-2.5 [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-primary"
             />
@@ -428,10 +474,16 @@ export function MixerDrawer() {
   const updateStem = useProjectStore((s) => s.updateStem)
   const centerStemPan = useProjectStore((s) => s.centerStemPan)
   const [drumSubOpen, setDrumSubOpen] = useState(false)
-  const { engine, transportState, audioConfig, setMasterVolume } = useAudio()
+  const {
+    engine,
+    transportState,
+    audioConfig,
+    playbackReadiness,
+    isLoadingAudio,
+    setMasterVolume,
+  } = useAudio()
 
   const drumKit = engine.getDrumKit()
-  const mixerStatusNotice = getMixerStatusNotice(systemStatus, errorMessage)
   const drumSubMixTruth = getDrumSubMixTruth({ drumKit, systemStatus, errorMessage })
   const hasArrangementTruth = hasProjectArrangementTruth({
     project,
@@ -443,6 +495,15 @@ export function MixerDrawer() {
   const isPlaying = transportState.playbackState === "playing"
   const stemByInstrument = new Map(stems.map((stem) => [stem.instrument, stem]))
   const masterVolume = gainToSliderValue(audioConfig.masterVolume)
+  const mixerReadiness = getMixerReadinessTruth({
+    hasArrangementTruth,
+    stemsCount: stems.length,
+    playbackReadiness,
+    isLoadingAudio,
+    systemStatus,
+    errorMessage,
+  })
+  const mixerReady = mixerReadiness.status === "ready"
 
   useEffect(() => {
     if (!stemByInstrument.has("drums")) {
@@ -488,11 +549,28 @@ export function MixerDrawer() {
       <button
         type="button"
         onClick={toggleMixer}
-        className="flex w-full items-center justify-between px-4 py-2"
+        className="flex w-full items-center justify-between gap-3 px-4 py-2"
       >
-        <span className="text-xs font-medium uppercase tracking-widest text-zinc-500">
-          Mixer
-        </span>
+        <div className="flex items-center gap-2">
+          <span className="text-xs font-medium uppercase tracking-widest text-zinc-500">
+            Mixer
+          </span>
+          <span
+            data-mixer-readiness={mixerReadiness.status}
+            className={cn(
+              "rounded-full px-2 py-0.5 text-[9px] font-semibold uppercase tracking-[0.18em]",
+              mixerReadiness.tone === "ready"
+                ? "bg-emerald-500/10 text-emerald-300"
+                : mixerReadiness.tone === "loading"
+                  ? "bg-amber-500/10 text-amber-300"
+                  : mixerReadiness.tone === "error"
+                    ? "bg-destructive/10 text-destructive"
+                    : "bg-card text-muted-foreground"
+            )}
+          >
+            {mixerReadiness.badge}
+          </span>
+        </div>
         {open ? (
           <X className="size-3.5 text-zinc-500" />
         ) : (
@@ -502,16 +580,18 @@ export function MixerDrawer() {
 
       {open && (
         <div>
-          {mixerStatusNotice && (
+          {mixerReadiness.message && (
             <div
               className={cn(
                 "mx-2 mb-2 rounded-md border px-3 py-2 text-[11px]",
-                mixerStatusNotice.tone === "error"
+                mixerReadiness.tone === "error"
                   ? "border-destructive/40 bg-destructive/10 text-destructive"
-                  : "border-border bg-card/80 text-muted-foreground"
+                  : mixerReadiness.tone === "loading"
+                    ? "border-amber-500/30 bg-amber-500/10 text-amber-200"
+                    : "border-border bg-card/80 text-muted-foreground"
               )}
             >
-              {mixerStatusNotice.message}
+              {mixerReadiness.message}
             </div>
           )}
 
@@ -584,7 +664,7 @@ export function MixerDrawer() {
                       type="button"
                       aria-label={`Toggle ${inst.label} mute`}
                       aria-pressed={ch.muted}
-                      disabled={!ch.available}
+                      disabled={!mixerReady || !ch.available}
                       onClick={() => updateChannel(inst.key, "muted", !ch.muted)}
                       className={cn(
                         "rounded px-1.5 py-0.5 text-[10px] font-bold transition-colors disabled:cursor-not-allowed disabled:opacity-40",
@@ -599,7 +679,7 @@ export function MixerDrawer() {
                       type="button"
                       aria-label={`Toggle ${inst.label} solo`}
                       aria-pressed={ch.solo}
-                      disabled={!ch.available}
+                      disabled={!mixerReady || !ch.available}
                       onClick={() => updateChannel(inst.key, "solo", !ch.solo)}
                       className={cn(
                         "rounded px-1.5 py-0.5 text-[10px] font-bold transition-colors disabled:cursor-not-allowed disabled:opacity-40",
@@ -617,7 +697,7 @@ export function MixerDrawer() {
                     onChange={(v) => updateChannel(inst.key, "volume", v)}
                     thumbColor={inst.color}
                     ariaLabel={`${inst.label} volume fader`}
-                    disabled={!ch.available}
+                    disabled={!mixerReady || !ch.available}
                   />
 
                   <span className="font-mono text-[10px] text-zinc-500">
@@ -637,7 +717,7 @@ export function MixerDrawer() {
                       max={PAN_SLIDER_VALUE}
                       step={1}
                       value={ch.pan}
-                      disabled={!ch.available}
+                      disabled={!mixerReady || !ch.available}
                       onChange={(e) => updateChannel(inst.key, "pan", Number(e.target.value))}
                       aria-label={`${inst.label} pan`}
                       className="h-1 w-full cursor-pointer appearance-none rounded-full bg-input disabled:cursor-not-allowed disabled:opacity-60"
@@ -659,7 +739,7 @@ export function MixerDrawer() {
                     <button
                       type="button"
                       aria-label={`Center ${inst.label} pan`}
-                      disabled={!stem || ch.pan === 0}
+                      disabled={!mixerReady || !stem || ch.pan === 0}
                       onClick={() => {
                         if (stem) {
                           centerStemPan(stem.id)
@@ -691,6 +771,7 @@ export function MixerDrawer() {
                   onChange={(v) => updateChannel("master", "volume", v)}
                   thumbColor="var(--master-thumb)"
                   ariaLabel="Master volume fader"
+                  disabled={!mixerReady}
                 />
               </div>
 
@@ -716,7 +797,11 @@ export function MixerDrawer() {
                   <X className="size-3" />
                 </button>
               </div>
-              <DrumSubMix drumKit={drumKit} truth={drumSubMixTruth} />
+              <DrumSubMix
+                drumKit={drumKit}
+                truth={drumSubMixTruth}
+                interactionLocked={!mixerReady}
+              />
             </div>
           )}
         </div>

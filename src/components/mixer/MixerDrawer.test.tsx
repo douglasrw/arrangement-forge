@@ -7,7 +7,7 @@ import { MixerDrawer } from './MixerDrawer';
 import type { DrumKitLike } from '@/audio/drum-kit';
 import { useProjectStore } from '@/store/project-store';
 import { useUiStore } from '@/store/ui-store';
-import type { AudioEngineConfig, Project, Stem, TransportState } from '@/types';
+import type { AudioEngineConfig, PlaybackReadiness, Project, Stem, TransportState } from '@/types';
 
 const useAudioState = vi.hoisted(() => ({
   transportState: {
@@ -26,6 +26,8 @@ const useAudioState = vi.hoisted(() => ({
     loopStartBar: 1,
     loopEndBar: 4,
   } as AudioEngineConfig,
+  playbackReadiness: 'ready' as PlaybackReadiness,
+  isLoadingAudio: false,
   engine: {
     getDrumKit: () => null,
   },
@@ -40,6 +42,8 @@ vi.mock('@/hooks/useAudio', () => ({
     engine: useAudioState.engine,
     transportState: useAudioState.transportState,
     audioConfig: useAudioState.audioConfig,
+    playbackReadiness: useAudioState.playbackReadiness,
+    isLoadingAudio: useAudioState.isLoadingAudio,
     setMasterVolume: setMasterVolumeMock,
   }),
 }));
@@ -152,6 +156,8 @@ beforeEach(() => {
     loopStartBar: 1,
     loopEndBar: 4,
   };
+  useAudioState.playbackReadiness = 'ready';
+  useAudioState.isLoadingAudio = false;
   useAudioState.engine = {
     getDrumKit: () => null,
   };
@@ -242,7 +248,12 @@ describe('MixerDrawer', () => {
     const masterSlider = mounted.container.querySelector(
       '[aria-label="Master volume fader"]'
     ) as HTMLDivElement | null;
+    const mixerReadiness = mounted.container.querySelector(
+      '[data-mixer-readiness]'
+    ) as HTMLSpanElement | null;
 
+    expect(mixerReadiness?.textContent).toBe('Ready');
+    expect(mixerReadiness?.getAttribute('data-mixer-readiness')).toBe('ready');
     expect(pianoMuteButton?.getAttribute('aria-pressed')).toBe('true');
     expect(pianoSlider?.getAttribute('aria-valuenow')).toBe('40');
     expect(pianoPan?.value).toBe('-40');
@@ -390,17 +401,84 @@ describe('MixerDrawer', () => {
     expect(setMasterVolumeMock.mock.calls[0]?.[0]).toBeCloseTo(62 / 80);
   });
 
-  it('surfaces audio load failures in the mixer itself', () => {
+  it('surfaces loading readiness truth and blocks mixer interaction until audio is ready', () => {
+    useAudioState.playbackReadiness = 'loading';
+    useAudioState.isLoadingAudio = true;
+
     useUiStore.setState({
-      systemStatus: 'error',
-      errorMessage: 'Salamander drum samples missing',
+      systemStatus: 'loading-samples',
+    });
+
+    useProjectStore.setState({
+      stems: [makeStem({ id: 'st-piano', instrument: 'piano', sortOrder: 0 })],
     });
 
     const mounted = renderMixer();
     mountedRoot = mounted.root;
     mountedContainer = mounted.container;
 
+    const mixerReadiness = mounted.container.querySelector(
+      '[data-mixer-readiness]'
+    ) as HTMLSpanElement | null;
+    const pianoMuteButton = mounted.container.querySelector(
+      'button[aria-label="Toggle PIANO mute"]'
+    ) as HTMLButtonElement | null;
+    const pianoSlider = mounted.container.querySelector(
+      '[aria-label="PIANO volume fader"]'
+    ) as HTMLDivElement | null;
+    const pianoPan = mounted.container.querySelector(
+      'input[aria-label="PIANO pan"]'
+    ) as HTMLInputElement | null;
+    const masterSlider = mounted.container.querySelector(
+      '[aria-label="Master volume fader"]'
+    ) as HTMLDivElement | null;
+
+    expect(mixerReadiness?.textContent).toBe('Loading');
+    expect(mixerReadiness?.getAttribute('data-mixer-readiness')).toBe('loading');
+    expect(mounted.container.textContent).toContain(
+      'Arrangement audio is loading. Mixer controls will unlock when audio is ready.'
+    );
+    expect(pianoMuteButton?.disabled).toBe(true);
+    expect(pianoSlider?.getAttribute('aria-disabled')).toBe('true');
+    expect(pianoPan?.disabled).toBe(true);
+    expect(masterSlider?.getAttribute('aria-disabled')).toBe('true');
+  });
+
+  it('surfaces unavailable readiness when audio loading fails in the mixer itself', () => {
+    useAudioState.playbackReadiness = 'unavailable';
+
+    useUiStore.setState({
+      systemStatus: 'error',
+      errorMessage: 'Salamander drum samples missing',
+    });
+
+    useProjectStore.setState({
+      stems: [makeStem({ id: 'st-piano', instrument: 'piano', sortOrder: 0 })],
+    });
+
+    const mounted = renderMixer();
+    mountedRoot = mounted.root;
+    mountedContainer = mounted.container;
+
+    const mixerReadiness = mounted.container.querySelector(
+      '[data-mixer-readiness]'
+    ) as HTMLSpanElement | null;
+    const pianoMuteButton = mounted.container.querySelector(
+      'button[aria-label="Toggle PIANO mute"]'
+    ) as HTMLButtonElement | null;
+    const pianoSlider = mounted.container.querySelector(
+      '[aria-label="PIANO volume fader"]'
+    ) as HTMLDivElement | null;
+    const masterSlider = mounted.container.querySelector(
+      '[aria-label="Master volume fader"]'
+    ) as HTMLDivElement | null;
+
+    expect(mixerReadiness?.textContent).toBe('Unavailable');
+    expect(mixerReadiness?.getAttribute('data-mixer-readiness')).toBe('unavailable');
     expect(mounted.container.textContent).toContain('Audio unavailable: Salamander drum samples missing');
+    expect(pianoMuteButton?.disabled).toBe(true);
+    expect(pianoSlider?.getAttribute('aria-disabled')).toBe('true');
+    expect(masterSlider?.getAttribute('aria-disabled')).toBe('true');
   });
 
   it('keeps drum pan controls honest while the drum sub-mix stays functional', () => {
@@ -503,7 +581,9 @@ describe('MixerDrawer', () => {
       drumButton?.dispatchEvent(new MouseEvent('click', { bubbles: true }));
     });
 
-    expect(mounted.container.textContent).toContain('Loading instrument samples. Mixer changes will apply when audio is ready.');
+    expect(mounted.container.textContent).toContain(
+      'Arrangement audio is loading. Mixer controls will unlock when audio is ready.'
+    );
     expect(mounted.container.textContent).toContain('Kit loading');
     expect(
       findElementByTitle(
