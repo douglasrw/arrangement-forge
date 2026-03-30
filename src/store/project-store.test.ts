@@ -299,6 +299,7 @@ describe('projectStore', () => {
       })
     ).toEqual({
       status: 'draft-only',
+      loadedRowsState: 'draft',
       hasArrangementRows: true,
       hasPersistedArrangement: false,
       hasAnyArrangementTruth: true,
@@ -319,6 +320,7 @@ describe('projectStore', () => {
       })
     ).toEqual({
       status: 'persisted-only',
+      loadedRowsState: 'not-loaded',
       hasArrangementRows: false,
       hasPersistedArrangement: true,
       hasAnyArrangementTruth: true,
@@ -346,6 +348,7 @@ describe('projectStore', () => {
       })
     ).toEqual({
       status: 'loaded-and-persisted',
+      loadedRowsState: 'saved-snapshot',
       hasArrangementRows: true,
       hasPersistedArrangement: true,
       hasAnyArrangementTruth: true,
@@ -372,6 +375,7 @@ describe('projectStore', () => {
       })
     ).toEqual({
       status: 'draft-over-persisted',
+      loadedRowsState: 'draft-over-saved-snapshot',
       hasArrangementRows: true,
       hasPersistedArrangement: true,
       hasAnyArrangementTruth: true,
@@ -393,6 +397,7 @@ describe('projectStore', () => {
     expect(truth.currentState).toBe(
       'Loaded arrangement rows already match the saved arrangement snapshot.'
     );
+    expect(truth.loadedRowsState).toBe('saved-snapshot');
     expect(truth).not.toHaveProperty('summary');
   });
 

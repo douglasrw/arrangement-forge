@@ -135,7 +135,8 @@ export interface ProjectExportReadiness {
     | 'export-chart-and-snapshot'
     | 'reload-saved-snapshot';
   actionLabel:
-    | 'Export chart + snapshot'
+    | 'Export chart + draft snapshot'
+    | 'Export chart + saved snapshot'
     | 'Export chart'
     | 'Reload saved snapshot'
     | 'Nothing to export';
@@ -324,6 +325,10 @@ export function getProjectExportReadiness(state: {
 }): ProjectExportReadiness {
   const arrangementTruth = getProjectArrangementTruth(state);
   const hasArrangementRows = arrangementTruth.hasArrangementRows;
+  const exportSnapshotActionLabel =
+    arrangementTruth.loadedRowsState === 'saved-snapshot'
+      ? 'Export chart + saved snapshot'
+      : 'Export chart + draft snapshot';
 
   if (!state.project) {
     return {
@@ -376,7 +381,7 @@ export function getProjectExportReadiness(state: {
     return {
       canExport: true,
       actionType: 'export-chart-and-snapshot',
-      actionLabel: 'Export chart + snapshot',
+      actionLabel: exportSnapshotActionLabel,
       hasTextTruth,
       hasArrangementRows,
       exportsArrangementSnapshot: true,

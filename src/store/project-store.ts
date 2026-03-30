@@ -274,8 +274,15 @@ export type ProjectArrangementTruthStatus =
   | 'persisted-only'
   | 'loaded-and-persisted';
 
+export type ProjectArrangementLoadedRowsState =
+  | 'not-loaded'
+  | 'draft'
+  | 'draft-over-saved-snapshot'
+  | 'saved-snapshot';
+
 export interface ProjectArrangementTruth {
   status: ProjectArrangementTruthStatus;
+  loadedRowsState: ProjectArrangementLoadedRowsState;
   hasArrangementRows: boolean;
   hasPersistedArrangement: boolean;
   hasAnyArrangementTruth: boolean;
@@ -350,10 +357,11 @@ function describeProjectArrangementTruth({
   hasArrangementRows: boolean;
   hasPersistedArrangement: boolean;
   hasDraftArrangementRows: boolean;
-}): Pick<ProjectArrangementTruth, 'status' | 'currentState' | 'nextStep'> {
+}): Pick<ProjectArrangementTruth, 'status' | 'loadedRowsState' | 'currentState' | 'nextStep'> {
   if (hasArrangementRows && hasPersistedArrangement && hasDraftArrangementRows) {
     return {
       status: 'draft-over-persisted',
+      loadedRowsState: 'draft-over-saved-snapshot',
       currentState: 'Loaded arrangement rows are currently ahead of the saved arrangement snapshot.',
       nextStep: 'Save the current arrangement rows to replace the saved arrangement snapshot.',
     };
@@ -362,6 +370,7 @@ function describeProjectArrangementTruth({
   if (hasArrangementRows && hasPersistedArrangement) {
     return {
       status: 'loaded-and-persisted',
+      loadedRowsState: 'saved-snapshot',
       currentState: 'Loaded arrangement rows already match the saved arrangement snapshot.',
       nextStep: 'Edit the arrangement to create a draft, or save project fields and chat without replacing arrangement rows.',
     };
@@ -370,6 +379,7 @@ function describeProjectArrangementTruth({
   if (hasArrangementRows) {
     return {
       status: 'draft-only',
+      loadedRowsState: 'draft',
       currentState: 'Arrangement rows are loaded, but no saved arrangement snapshot exists yet.',
       nextStep: 'Save the current arrangement rows to create the first saved arrangement snapshot.',
     };
@@ -378,6 +388,7 @@ function describeProjectArrangementTruth({
   if (hasPersistedArrangement) {
     return {
       status: 'persisted-only',
+      loadedRowsState: 'not-loaded',
       currentState: 'A saved arrangement snapshot exists, but its rows are not loaded in the project store right now.',
       nextStep:
         'Use Reload saved snapshot in the top bar to load the arrangement rows before editing, saving, or exporting the current arrangement snapshot.',
@@ -386,6 +397,7 @@ function describeProjectArrangementTruth({
 
   return {
     status: 'missing',
+    loadedRowsState: 'not-loaded',
     currentState: 'No arrangement rows or saved arrangement snapshot exist yet.',
     nextStep: 'Generate or import an arrangement before saving or exporting arrangement rows.',
   };

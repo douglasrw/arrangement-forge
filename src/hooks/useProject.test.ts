@@ -341,12 +341,13 @@ describe('useProject export readiness', () => {
     expect(readiness).toEqual({
       canExport: true,
       actionType: 'export-chart-and-snapshot',
-      actionLabel: 'Export chart + snapshot',
+      actionLabel: 'Export chart + saved snapshot',
       hasTextTruth: false,
       hasArrangementRows: true,
       exportsArrangementSnapshot: true,
       arrangementTruth: {
         status: 'loaded-and-persisted',
+        loadedRowsState: 'saved-snapshot',
         hasArrangementRows: true,
         hasPersistedArrangement: true,
         hasAnyArrangementTruth: true,
@@ -378,6 +379,7 @@ describe('useProject export readiness', () => {
       exportsArrangementSnapshot: false,
       arrangementTruth: {
         status: 'persisted-only',
+        loadedRowsState: 'not-loaded',
         hasArrangementRows: false,
         hasPersistedArrangement: true,
         hasAnyArrangementTruth: true,
@@ -414,6 +416,7 @@ describe('useProject export readiness', () => {
       exportsArrangementSnapshot: false,
       arrangementTruth: {
         status: 'missing',
+        loadedRowsState: 'not-loaded',
         hasArrangementRows: false,
         hasPersistedArrangement: false,
         hasAnyArrangementTruth: false,
@@ -448,6 +451,7 @@ describe('useProject export readiness', () => {
       exportsArrangementSnapshot: false,
       arrangementTruth: {
         status: 'persisted-only',
+        loadedRowsState: 'not-loaded',
         hasArrangementRows: false,
         hasPersistedArrangement: true,
         hasAnyArrangementTruth: true,
@@ -484,6 +488,7 @@ describe('useProject export readiness', () => {
       exportsArrangementSnapshot: false,
       arrangementTruth: {
         status: 'missing',
+        loadedRowsState: 'not-loaded',
         hasArrangementRows: false,
         hasPersistedArrangement: false,
         hasAnyArrangementTruth: false,
@@ -494,6 +499,40 @@ describe('useProject export readiness', () => {
       currentState: 'No chord chart, generation hints, or arrangement rows are ready to export yet.',
       nextStep: 'Add a chord chart, description, or arrangement before exporting.',
     });
+  });
+
+  it('names draft snapshot export directly when loaded rows are ahead of the saved arrangement snapshot', () => {
+    const readiness = getProjectExportReadiness({
+      project: buildStoredProject('project-draft-export', true),
+      stems: [
+        {
+          id: 'stem-1',
+          projectId: 'project-draft-export',
+          instrument: 'piano',
+          sortOrder: 0,
+          volume: 0.8,
+          pan: 0,
+          isMuted: false,
+          isSolo: false,
+          createdAt: '2026-03-28T00:00:00Z',
+        },
+      ],
+      sections: [],
+      blocks: [],
+      chords: [],
+      persistedArrangementFingerprint: snapshotArrangement({
+        stems: [],
+        sections: [],
+        blocks: [],
+        chords: [],
+      }),
+    });
+
+    expect(readiness.actionLabel).toBe('Export chart + draft snapshot');
+    expect(readiness.arrangementTruth.loadedRowsState).toBe('draft-over-saved-snapshot');
+    expect(readiness.currentState).toBe(
+      'Project text and loaded draft arrangement rows are both ready to export.'
+    );
   });
 });
 
@@ -529,6 +568,7 @@ describe('useProject save planning', () => {
       nextStep: 'Save now to create the first saved arrangement snapshot from the loaded arrangement rows.',
       arrangementTruth: {
         status: 'draft-only',
+        loadedRowsState: 'draft',
         hasArrangementRows: true,
         hasPersistedArrangement: false,
         hasAnyArrangementTruth: true,
@@ -576,6 +616,7 @@ describe('useProject save planning', () => {
       nextStep: 'Save now to replace the saved arrangement snapshot with the current draft arrangement rows.',
       arrangementTruth: {
         status: 'draft-over-persisted',
+        loadedRowsState: 'draft-over-saved-snapshot',
         hasArrangementRows: true,
         hasPersistedArrangement: true,
         hasAnyArrangementTruth: true,
@@ -622,6 +663,7 @@ describe('useProject save planning', () => {
       nextStep: 'Save now to persist project fields and chat without replacing arrangement rows.',
       arrangementTruth: {
         status: 'loaded-and-persisted',
+        loadedRowsState: 'saved-snapshot',
         hasArrangementRows: true,
         hasPersistedArrangement: true,
         hasAnyArrangementTruth: true,
@@ -651,6 +693,7 @@ describe('useProject save planning', () => {
       nextStep: 'Save now to persist project fields and chat without replacing arrangement rows.',
       arrangementTruth: {
         status: 'missing',
+        loadedRowsState: 'not-loaded',
         hasArrangementRows: false,
         hasPersistedArrangement: false,
         hasAnyArrangementTruth: false,
@@ -680,6 +723,7 @@ describe('useProject save planning', () => {
       nextStep: 'Save now to persist project fields and chat without replacing arrangement rows.',
       arrangementTruth: {
         status: 'persisted-only',
+        loadedRowsState: 'not-loaded',
         hasArrangementRows: false,
         hasPersistedArrangement: true,
         hasAnyArrangementTruth: true,

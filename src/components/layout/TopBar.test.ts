@@ -513,6 +513,7 @@ describe('TopBar export baseline', () => {
 
     expect(exportButton).not.toBeNull();
     expect(exportButton?.disabled).toBe(false);
+    expect(exportButton?.textContent).toBe('Export chart + draft snapshot');
 
     await act(async () => {
       exportButton?.dispatchEvent(new MouseEvent('click', { bubbles: true }));
@@ -679,7 +680,7 @@ describe('TopBar export baseline', () => {
     });
 
     expect(exportButton?.disabled).toBe(false);
-    expect(exportButton?.textContent).toBe('Export chart + snapshot');
+    expect(exportButton?.textContent).toBe('Export chart + saved snapshot');
     expect(exportButton?.title).toBe(
       'Loaded arrangement rows are ready to export from the saved arrangement snapshot already loaded in this session. Export now to download the chord chart and arrangement snapshot.'
     );
@@ -815,7 +816,7 @@ describe('TopBar export baseline', () => {
 
     expect(exportButton).not.toBeNull();
     expect(exportButton?.disabled).toBe(false);
-    expect(exportButton?.textContent).toBe('Export chart + snapshot');
+    expect(exportButton?.textContent).toBe('Export chart + saved snapshot');
     expect(exportButton?.title).toBe(
       'Loaded arrangement rows are ready to export from the saved arrangement snapshot already loaded in this session. Export now to download the chord chart and arrangement snapshot.'
     );
@@ -843,6 +844,35 @@ describe('TopBar export baseline', () => {
     expect(exportText).toContain('Chord Chart\n(empty)');
     expect(exportText).toContain('Arrangement Summary');
     expect(exportText).toContain('Section Timeline\n- Verse (bars 1-4)');
+  });
+
+  it('shows draft snapshot export truth when the loaded arrangement rows have not been saved yet', () => {
+    useProjectStore.setState({
+      project: makeProject({
+        name: 'Unsaved Arrangement Export',
+        chordChartRaw: 'Cmaj7 | Dm7 | G7 | Cmaj7',
+        generationHints: 'Let the melody breathe',
+        hasArrangement: false,
+      }),
+      stems: [makeStem()],
+      sections: [makeSection()],
+      blocks: [makeBlock()],
+      chords: [makeChord()],
+    });
+
+    const mounted = renderTopBar();
+    mountedRoot = mounted.root;
+    mountedContainer = mounted.container;
+
+    const exportButton = mounted.container.querySelector(
+      '[data-testid="topbar-export-button"]'
+    ) as HTMLButtonElement | null;
+
+    expect(exportButton?.disabled).toBe(false);
+    expect(exportButton?.textContent).toBe('Export chart + draft snapshot');
+    expect(exportButton?.title).toBe(
+      'Project text and loaded draft arrangement rows are both ready to export. Export now to download the chord chart and arrangement snapshot.'
+    );
   });
 });
 
