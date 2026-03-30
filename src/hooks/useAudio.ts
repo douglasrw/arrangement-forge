@@ -49,7 +49,6 @@ function buildPlaybackTruth({
   loadingArrangementSignature,
   loadedArrangementSignature,
   failedArrangementSignature,
-  errorMessage,
 }: {
   projectExists: boolean;
   hasArrangementTruth: boolean;
@@ -59,7 +58,6 @@ function buildPlaybackTruth({
   loadingArrangementSignature: string;
   loadedArrangementSignature: string;
   failedArrangementSignature: string;
-  errorMessage: string | null;
 }): PlaybackTruth {
   if (!projectExists || !hasArrangementTruth) {
     return {
@@ -82,11 +80,31 @@ function buildPlaybackTruth({
   }
 
   if (failedArrangementSignature === arrangementSignature) {
+    if (engineReadiness.failureStage === 'engine-start') {
+      return {
+        status: 'unavailable',
+        reason: 'load-failed',
+        summary: 'Audio engine blocked',
+        detail: `The audio engine could not start: ${engineReadiness.failureMessage ?? 'The audio engine could not start.'}`,
+        nextStep: 'Resolve the audio engine start error, then press play again.',
+      };
+    }
+
+    if (engineReadiness.failureStage === 'hot-swap') {
+      return {
+        status: 'unavailable',
+        reason: 'load-failed',
+        summary: 'Audio update failed',
+        detail: `Arrangement audio could not refresh: ${engineReadiness.failureMessage ?? 'Instrument update failed.'}`,
+        nextStep: 'Fix the instrument update error, then press play to reload arrangement audio.',
+      };
+    }
+
     return {
       status: 'unavailable',
       reason: 'load-failed',
-      summary: 'Unavailable',
-      detail: `Audio failed to load: ${errorMessage ?? 'Instrument samples could not be loaded.'}`,
+      summary: 'Audio load failed',
+      detail: `Arrangement audio failed to load: ${engineReadiness.failureMessage ?? 'Instrument samples could not be loaded.'}`,
       nextStep: 'Fix the sample error, then press play to try again.',
     };
   }
@@ -138,7 +156,7 @@ export function useAudio() {
   const lastMixerSignatureRef = useRef('');
 
   const { project, blocks, stems, sections, drumOnlyUpdate, clearDrumOnlyUpdate, allInstrumentsUpdate, clearAllInstrumentsUpdate } = useProjectStore();
-  const { errorMessage, setSystemStatus } = useUiStore();
+  const { setSystemStatus } = useUiStore();
 
   const arrangementSignature = JSON.stringify({
     projectId: project?.id ?? null,
@@ -187,7 +205,6 @@ export function useAudio() {
     loadingArrangementSignature,
     loadedArrangementSignature,
     failedArrangementSignature,
-    errorMessage,
   });
   const playbackReadiness = playbackTruth.status;
   const audioLoading = playbackTruth.reason === 'loading-arrangement';

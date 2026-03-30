@@ -5,6 +5,7 @@
 import * as Tone from 'tone';
 import type {
   AudioEngineConfig,
+  AudioEngineFailureStage,
   AudioEngineReadinessSnapshot,
   Block,
   Stem,
@@ -17,6 +18,18 @@ import type { DrumKitLike } from '@/audio/drum-kit';
 import { TransportController } from './transport';
 import { Metronome } from './metronome';
 import { getSampler } from './sampler-cache';
+
+function getAudioFailureMessage(error: unknown, fallback: string): string {
+  if (error instanceof Error && error.message.trim().length > 0) {
+    return error.message;
+  }
+
+  if (typeof error === 'string' && error.trim().length > 0) {
+    return error;
+  }
+
+  return fallback;
+}
 
 export class AudioEngine {
   private instruments = new Map<InstrumentType, Tone.Sampler | DrumKitLike>();
@@ -33,6 +46,8 @@ export class AudioEngine {
   private _initialized = false;
   private _masterVolume = 0.8;
   private _isLoading = false;
+  private _failureStage: AudioEngineFailureStage | null = null;
+  private _failureMessage: string | null = null;
   private arrangementEndEventId: number | null = null;
   private audioConfig: AudioEngineConfig = {
     metronomeEnabled: false,
@@ -53,10 +68,16 @@ export class AudioEngine {
 
   async init(): Promise<void> {
     if (this._initialized) return;
-    await Tone.start();
-    this.masterGain = new Tone.Gain(this._masterVolume).toDestination();
-    this.metronome.init();
-    this._initialized = true;
+    try {
+      await Tone.start();
+      this.masterGain = new Tone.Gain(this._masterVolume).toDestination();
+      this.metronome.init();
+      this.clearFailureState();
+      this._initialized = true;
+    } catch (error) {
+      this.recordFailure('engine-start', error, 'The audio engine could not start.');
+      throw error;
+    }
   }
 
   dispose(): void {
@@ -180,6 +201,8 @@ export class AudioEngine {
     return {
       isInitialized: this._initialized,
       isLoading: this._isLoading,
+      failureStage: this._failureStage,
+      failureMessage: this._failureMessage,
     };
   }
 
@@ -193,6 +216,7 @@ export class AudioEngine {
     if (this._isLoading) return; // prevent concurrent loads
 
     this._isLoading = true;
+    this.clearFailureState();
 
     try {
       const [numStr] = timeSignature.split('/');
@@ -284,6 +308,9 @@ export class AudioEngine {
 
       // Schedule metronome clicks (checks enabled at trigger time)
       this.metronome.scheduleClick(1, totalBars, tempo, timeSignature);
+    } catch (error) {
+      this.recordFailure('load-arrangement', error, 'Instrument samples could not be loaded.');
+      throw error;
     } finally {
       this._isLoading = false;
     }
@@ -303,53 +330,73 @@ export class AudioEngine {
     const sampler = this.instruments.get(instrument);
     if (!sampler) return;
 
-    // Cancel all scheduled events for this instrument
-    const existingIds = this.scheduledEventIds.get(instrument) ?? [];
-    for (const id of existingIds) {
-      Tone.getTransport().clear(id);
-    }
-
-    // Release any currently sounding notes for this instrument
-    sampler.releaseAll();
-
-    // Re-schedule notes from the updated blocks for this instrument only
-    const tempo = Tone.getTransport().bpm.value;
-    const secondsPerBeat = 60 / tempo;
-    const newIds: number[] = [];
-
-    // Filter blocks to only those belonging to the target instrument
-    const instrumentBlocks = updatedBlocks.filter((block) => {
-      const stem = stems.find((s) => s.id === block.stemId);
-      return stem?.instrument === instrument;
-    });
-
-    for (const block of instrumentBlocks) {
-      const blockStartSeconds = this.transportController.getTimeAtBar(block.startBar);
-
-      for (const note of block.midiData) {
-        const noteTime = blockStartSeconds + note.time * secondsPerBeat;
-        const noteDuration = note.duration * secondsPerBeat;
-        const velocity = note.velocity / 127;
-
-        const eventId = Tone.getTransport().schedule((t) => {
-          try {
-            sampler.triggerAttackRelease(
-              note.note,
-              noteDuration,
-              t,
-              velocity
-            );
-          } catch {
-            // Ignore scheduling errors
-          }
-        }, noteTime);
-
-        newIds.push(eventId);
+    try {
+      // Cancel all scheduled events for this instrument
+      const existingIds = this.scheduledEventIds.get(instrument) ?? [];
+      for (const id of existingIds) {
+        Tone.getTransport().clear(id);
       }
-    }
 
-    // Store the new event IDs for this instrument
-    this.scheduledEventIds.set(instrument, newIds);
+      // Release any currently sounding notes for this instrument
+      sampler.releaseAll();
+
+      // Re-schedule notes from the updated blocks for this instrument only
+      const tempo = Tone.getTransport().bpm.value;
+      const secondsPerBeat = 60 / tempo;
+      const newIds: number[] = [];
+
+      // Filter blocks to only those belonging to the target instrument
+      const instrumentBlocks = updatedBlocks.filter((block) => {
+        const stem = stems.find((s) => s.id === block.stemId);
+        return stem?.instrument === instrument;
+      });
+
+      for (const block of instrumentBlocks) {
+        const blockStartSeconds = this.transportController.getTimeAtBar(block.startBar);
+
+        for (const note of block.midiData) {
+          const noteTime = blockStartSeconds + note.time * secondsPerBeat;
+          const noteDuration = note.duration * secondsPerBeat;
+          const velocity = note.velocity / 127;
+
+          const eventId = Tone.getTransport().schedule((t) => {
+            try {
+              sampler.triggerAttackRelease(
+                note.note,
+                noteDuration,
+                t,
+                velocity
+              );
+            } catch {
+              // Ignore scheduling errors
+            }
+          }, noteTime);
+
+          newIds.push(eventId);
+        }
+      }
+
+      // Store the new event IDs for this instrument
+      this.scheduledEventIds.set(instrument, newIds);
+      this.clearFailureState();
+    } catch (error) {
+      this.recordFailure('hot-swap', error, 'Instrument update failed.');
+      throw error;
+    }
+  }
+
+  private clearFailureState(): void {
+    this._failureStage = null;
+    this._failureMessage = null;
+  }
+
+  private recordFailure(
+    stage: AudioEngineFailureStage,
+    error: unknown,
+    fallback: string
+  ): void {
+    this._failureStage = stage;
+    this._failureMessage = getAudioFailureMessage(error, fallback);
   }
 
   getTransportState(): TransportState {

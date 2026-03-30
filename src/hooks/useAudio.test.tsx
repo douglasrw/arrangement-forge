@@ -6,11 +6,21 @@ import { createRoot, type Root } from 'react-dom/client';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { useProjectStore } from '@/store/project-store';
 import { useUiStore } from '@/store/ui-store';
-import type { AudioEngineConfig, Block, Project, Section, Stem, TransportState } from '@/types';
+import type {
+  AudioEngineConfig,
+  AudioEngineFailureStage,
+  Block,
+  Project,
+  Section,
+  Stem,
+  TransportState,
+} from '@/types';
 
 const engineState = vi.hoisted(() => ({
   isInitialized: false,
   isLoading: false,
+  failureStage: null as AudioEngineFailureStage | null,
+  failureMessage: null as string | null,
   audioConfig: {
     metronomeEnabled: false,
     countIn: 'off',
@@ -31,13 +41,20 @@ const engineState = vi.hoisted(() => ({
 
 const initMock = vi.hoisted(() => vi.fn(async () => {
   engineState.isInitialized = true;
+  engineState.failureStage = null;
+  engineState.failureMessage = null;
 }));
-const loadArrangementMock = vi.hoisted(() => vi.fn(async () => undefined));
+const loadArrangementMock = vi.hoisted(() => vi.fn(async () => {
+  engineState.failureStage = null;
+  engineState.failureMessage = null;
+}));
 const getTransportStateMock = vi.hoisted(() => vi.fn(() => engineState.transportState));
 const getAudioConfigMock = vi.hoisted(() => vi.fn(() => ({ ...engineState.audioConfig })));
 const getReadinessSnapshotMock = vi.hoisted(() => vi.fn(() => ({
   isInitialized: engineState.isInitialized,
   isLoading: engineState.isLoading,
+  failureStage: engineState.failureStage,
+  failureMessage: engineState.failureMessage,
 })));
 const setMetronomeEnabledMock = vi.hoisted(() => vi.fn((enabled: boolean) => {
   engineState.audioConfig.metronomeEnabled = enabled;
@@ -203,6 +220,8 @@ beforeEach(() => {
   consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
   engineState.isInitialized = false;
   engineState.isLoading = false;
+  engineState.failureStage = null;
+  engineState.failureMessage = null;
   engineState.audioConfig = {
     metronomeEnabled: false,
     countIn: 'off',
@@ -429,7 +448,11 @@ describe('useAudio transport config', () => {
 
   it('marks playback unavailable after arrangement audio fails to load', async () => {
     engineState.isInitialized = true;
-    loadArrangementMock.mockRejectedValueOnce(new Error('Piano samples unavailable'));
+    loadArrangementMock.mockImplementationOnce(async () => {
+      engineState.failureStage = 'load-arrangement';
+      engineState.failureMessage = 'Piano samples unavailable';
+      throw new Error('Piano samples unavailable');
+    });
 
     useProjectStore.setState({
       project: makeProject(),
@@ -452,7 +475,9 @@ describe('useAudio transport config', () => {
     });
 
     expect(hookValue?.playbackReadiness).toBe('unavailable');
+    expect(hookValue?.playbackTruth.summary).toBe('Audio load failed');
     expect(hookValue?.playbackTruth.detail).toContain('Piano samples unavailable');
+    expect(hookValue?.playbackTruth.nextStep).toBe('Fix the sample error, then press play to try again.');
   });
 
   it('surfaces the next playback step before arrangement audio has been loaded', () => {
@@ -505,6 +530,8 @@ describe('useAudio transport config', () => {
 
     loadArrangementMock.mockClear();
     hotSwapInstrumentMock.mockImplementation(() => {
+      engineState.failureStage = 'hot-swap';
+      engineState.failureMessage = 'Piano sampler hot-swap failed';
       throw new Error('Piano sampler hot-swap failed');
     });
 
@@ -522,6 +549,81 @@ describe('useAudio transport config', () => {
     expect(useUiStore.getState().systemStatus).toBe('error');
     expect(useUiStore.getState().errorMessage).toBe('Piano sampler hot-swap failed');
     expect(loadArrangementMock).not.toHaveBeenCalled();
+    expect(hookValue?.playbackTruth.summary).toBe('Audio update failed');
+    expect(hookValue?.playbackTruth.nextStep).toBe('Fix the instrument update error, then press play to reload arrangement audio.');
+  });
+
+  it('keeps playback failure truth tied to the audio surface when another UI error lands later', async () => {
+    engineState.isInitialized = true;
+    loadArrangementMock.mockImplementationOnce(async () => {
+      engineState.failureStage = 'load-arrangement';
+      engineState.failureMessage = 'Piano samples unavailable';
+      throw new Error('Piano samples unavailable');
+    });
+
+    useProjectStore.setState({
+      project: makeProject(),
+      stems: [makeStem()],
+      sections: [makeSection()],
+      blocks: [makeBlock()],
+      chords: [],
+      chatMessages: [],
+      drumOnlyUpdate: false,
+      allInstrumentsUpdate: false,
+    });
+
+    const mounted = renderHarness();
+    mountedRoot = mounted.root;
+    mountedContainer = mounted.container;
+
+    await act(async () => {
+      await Promise.resolve();
+      await Promise.resolve();
+    });
+
+    act(() => {
+      useUiStore.setState({
+        systemStatus: 'error',
+        errorMessage: 'Autosave failed while syncing project metadata',
+      });
+    });
+
+    expect(hookValue?.playbackTruth.detail).toContain('Piano samples unavailable');
+    expect(hookValue?.playbackTruth.detail).not.toContain('Autosave failed while syncing project metadata');
+  });
+
+  it('surfaces engine start failures with an explicit next step', async () => {
+    initMock.mockImplementationOnce(async () => {
+      engineState.failureStage = 'engine-start';
+      engineState.failureMessage = 'AudioContext was not allowed to start';
+      throw new Error('AudioContext was not allowed to start');
+    });
+
+    useProjectStore.setState({
+      project: makeProject(),
+      stems: [makeStem()],
+      sections: [makeSection()],
+      blocks: [makeBlock()],
+      chords: [],
+      chatMessages: [],
+      drumOnlyUpdate: false,
+      allInstrumentsUpdate: false,
+    });
+
+    const mounted = renderHarness();
+    mountedRoot = mounted.root;
+    mountedContainer = mounted.container;
+
+    await act(async () => {
+      await hookValue?.play();
+    });
+
+    expect(playMock).not.toHaveBeenCalled();
+    expect(hookValue?.playbackReadiness).toBe('unavailable');
+    expect(hookValue?.playbackTruth.summary).toBe('Audio engine blocked');
+    expect(hookValue?.playbackTruth.detail).toContain('AudioContext was not allowed to start');
+    expect(hookValue?.playbackTruth.nextStep).toBe('Resolve the audio engine start error, then press play again.');
+    expect(useUiStore.getState().errorMessage).toBe('AudioContext was not allowed to start');
   });
 
   it('captures play-triggered arrangement load failures and prevents playback', async () => {
