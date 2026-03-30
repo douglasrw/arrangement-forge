@@ -605,6 +605,59 @@ describe('TopBar export baseline', () => {
     expect(exportText).not.toContain('Arrangement Summary');
   });
 
+  it('exports only the chart when project text exists without any arrangement rows yet', async () => {
+    useProjectStore.setState({
+      project: makeProject({
+        name: 'Text Only Chart',
+        chordChartRaw: 'Dm7 | G7 | Cmaj7 | Cmaj7',
+        generationHints: 'Keep the piano sparse',
+        hasArrangement: false,
+      }),
+      stems: [],
+      sections: [],
+      blocks: [],
+      chords: [],
+    });
+
+    const mounted = renderTopBar();
+    mountedRoot = mounted.root;
+    mountedContainer = mounted.container;
+
+    const exportButton = mounted.container.querySelector(
+      '[data-testid="topbar-export-button"]'
+    ) as HTMLButtonElement | null;
+
+    expect(exportButton).not.toBeNull();
+    expect(exportButton?.disabled).toBe(false);
+    expect(exportButton?.textContent).toBe('Export chart');
+    expect(exportButton?.title).toBe(
+      'Project text is ready to export, but no arrangement rows are loaded yet. Export now to download the chord chart, or generate or import arrangement rows before exporting an arrangement snapshot.'
+    );
+
+    await act(async () => {
+      exportButton?.dispatchEvent(new MouseEvent('click', { bubbles: true }));
+      await Promise.resolve();
+    });
+
+    expect(downloadRequests).toEqual([
+      {
+        href: 'blob:export-url-1',
+        download: 'text-only-chart-chord-chart.txt',
+      },
+    ]);
+    expect(createObjectUrlMock).toHaveBeenCalledTimes(1);
+    expect(exportButton?.textContent).toBe('Exported');
+    expect(exportButton?.title).toBe('Exported text-only-chart-chord-chart.txt');
+
+    const chartBlob = createObjectUrlMock.mock.calls[0]?.[0] as Blob;
+    const exportText = await chartBlob.text();
+
+    expect(exportText).toContain('Project: Text Only Chart');
+    expect(exportText).toContain('Chord Chart\nDm7 | G7 | Cmaj7 | Cmaj7');
+    expect(exportText).toContain('Generation Hints\nKeep the piano sparse');
+    expect(exportText).not.toContain('Arrangement Summary');
+  });
+
   it('exports arrangement-only projects instead of treating them as an empty-state dead end', async () => {
     useProjectStore.setState({
       project: makeProject({

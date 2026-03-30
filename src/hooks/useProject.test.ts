@@ -370,6 +370,38 @@ describe('useProject export readiness', () => {
     });
   });
 
+  it('keeps chart-only export truth explicit when project text exists without any arrangement rows yet', () => {
+    const readiness = getProjectExportReadiness({
+      project: {
+        ...buildStoredProject('project-text-only'),
+        chordChartRaw: 'Dm7 | G7 | Cmaj7 | Cmaj7',
+        generationHints: 'Keep the piano sparse',
+      },
+      stems: [],
+      sections: [],
+      blocks: [],
+      chords: [],
+    });
+
+    expect(readiness).toEqual({
+      canExport: true,
+      actionLabel: 'Export chart',
+      hasTextTruth: true,
+      hasArrangementRows: false,
+      exportsArrangementSnapshot: false,
+      arrangementTruth: {
+        status: 'missing',
+        hasArrangementRows: false,
+        hasPersistedArrangement: false,
+        hasAnyArrangementTruth: false,
+        currentState: 'No arrangement rows or saved arrangement snapshot exist yet.',
+        nextStep: 'Generate or import an arrangement before saving or exporting arrangement rows.',
+      },
+      currentState: 'Project text is ready to export, but no arrangement rows are loaded yet.',
+      nextStep: 'Export now to download the chord chart, or generate or import arrangement rows before exporting an arrangement snapshot.',
+    });
+  });
+
   it('explains the blocked export state when saved arrangement metadata exists without loaded rows', () => {
     const readiness = getProjectExportReadiness({
       project: {

@@ -254,7 +254,20 @@ export function getProjectExportReadiness(state: {
   );
 
   if (hasTextTruth || hasArrangementRows) {
-    if (hasTextTruth && arrangementTruth.status === 'persisted-only') {
+    if (hasTextTruth && !hasArrangementRows) {
+      if (arrangementTruth.status === 'persisted-only') {
+        return {
+          canExport: true,
+          actionLabel: 'Export chart',
+          hasTextTruth,
+          hasArrangementRows: false,
+          exportsArrangementSnapshot: false,
+          arrangementTruth,
+          currentState: 'Project text is ready to export, but the saved arrangement snapshot is not loaded in this session.',
+          nextStep: 'Export now to download the chord chart, or reload the saved arrangement rows before exporting the arrangement snapshot.',
+        };
+      }
+
       return {
         canExport: true,
         actionLabel: 'Export chart',
@@ -262,8 +275,8 @@ export function getProjectExportReadiness(state: {
         hasArrangementRows: false,
         exportsArrangementSnapshot: false,
         arrangementTruth,
-        currentState: 'Project text is ready to export, but the saved arrangement snapshot is not loaded in this session.',
-        nextStep: 'Export now to download the chord chart, or reload the saved arrangement rows before exporting the arrangement snapshot.',
+        currentState: 'Project text is ready to export, but no arrangement rows are loaded yet.',
+        nextStep: 'Export now to download the chord chart, or generate or import arrangement rows before exporting an arrangement snapshot.',
       };
     }
 
