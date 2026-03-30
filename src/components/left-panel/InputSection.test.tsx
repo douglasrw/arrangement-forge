@@ -81,6 +81,15 @@ function getUploadFileInput(container: HTMLDivElement) {
   return fileInput as HTMLInputElement;
 }
 
+function getGenerateButton(container: HTMLDivElement) {
+  const generateButton = Array.from(container.querySelectorAll('button')).find(
+    (button) => ['Generate', 'Generating...', 'Importing...'].includes(button.textContent ?? '')
+  ) as HTMLButtonElement | undefined;
+
+  expect(generateButton).not.toBeUndefined();
+  return generateButton as HTMLButtonElement;
+}
+
 async function importFile(fileInput: HTMLInputElement, file: File) {
   Object.defineProperty(fileInput, 'files', {
     configurable: true,
@@ -139,6 +148,70 @@ afterEach(() => {
 });
 
 describe('InputSection upload tab', () => {
+  it('surfaces empty readiness truth before a chord chart exists', () => {
+    const mounted = renderSection();
+    mountedRoot = mounted.root;
+    mountedContainer = mounted.container;
+
+    const readiness = mounted.container.querySelector('[data-input-readiness]') as HTMLDivElement | null;
+
+    expect(readiness?.getAttribute('data-input-readiness')).toBe('empty');
+    expect(mounted.container.textContent).toContain('Chord chart needed');
+    expect(getGenerateButton(mounted.container).disabled).toBe(true);
+  });
+
+  it('surfaces ready readiness when the project already has a chord chart', () => {
+    useProjectStore.setState({
+      project: makeProject({
+        chordChartRaw: '[Verse]\nCmaj7 | Dm7 | G7 | Cmaj7',
+      }),
+    });
+
+    const mounted = renderSection();
+    mountedRoot = mounted.root;
+    mountedContainer = mounted.container;
+
+    const readiness = mounted.container.querySelector('[data-input-readiness]') as HTMLDivElement | null;
+
+    expect(readiness?.getAttribute('data-input-readiness')).toBe('ready');
+    expect(mounted.container.textContent).toContain('Input is ready');
+    expect(getGenerateButton(mounted.container).disabled).toBe(false);
+  });
+
+  it('shows waiting readiness truth and blocks uploads while generation is running', () => {
+    useProjectStore.setState({
+      project: makeProject({
+        chordChartRaw: '[Verse]\nCmaj7 | Dm7 | G7 | Cmaj7',
+      }),
+    });
+    useUiStore.setState({
+      generationState: 'generating',
+      systemStatus: 'generating',
+    });
+
+    const mounted = renderSection();
+    mountedRoot = mounted.root;
+    mountedContainer = mounted.container;
+
+    const readiness = mounted.container.querySelector('[data-input-readiness]') as HTMLDivElement | null;
+
+    expect(readiness?.getAttribute('data-input-readiness')).toBe('waiting');
+    expect(mounted.container.textContent).toContain('Generation in progress');
+
+    openUploadTab(mounted.container);
+
+    const uploadPanel = mounted.container.querySelector('[data-upload-readiness]') as HTMLDivElement | null;
+    expect(uploadPanel?.getAttribute('data-upload-readiness')).toBe('blocked');
+
+    const fileInput = getUploadFileInput(mounted.container);
+    expect(fileInput.disabled).toBe(true);
+    expect(mounted.container.textContent).toContain(
+      'Import is paused while the current arrangement is generating.'
+    );
+    expect(getGenerateButton(mounted.container).disabled).toBe(true);
+    expect(getGenerateButton(mounted.container).textContent).toBe('Generating...');
+  });
+
   it('imports a plain-text chord chart file into the current project', async () => {
     const mounted = renderSection();
     mountedRoot = mounted.root;
@@ -157,12 +230,7 @@ describe('InputSection upload tab', () => {
     expect(mounted.container.textContent).toContain(
       'Imported bridge-chart.txt into the current chord chart.'
     );
-
-    const generateButton = Array.from(mounted.container.querySelectorAll('button')).find(
-      (button) => button.textContent === 'Generate'
-    ) as HTMLButtonElement | undefined;
-
-    expect(generateButton?.disabled).toBe(false);
+    expect(getGenerateButton(mounted.container).disabled).toBe(false);
   });
 
   it('moves imported note text into the project description and keeps the chart generate-ready', async () => {
@@ -193,12 +261,7 @@ describe('InputSection upload tab', () => {
     expect(mounted.container.textContent).toContain(
       'Imported arrangement-with-notes.txt and updated Description with 1 note line.'
     );
-
-    const generateButton = Array.from(mounted.container.querySelectorAll('button')).find(
-      (button) => button.textContent === 'Generate'
-    ) as HTMLButtonElement | undefined;
-
-    expect(generateButton?.disabled).toBe(false);
+    expect(getGenerateButton(mounted.container).disabled).toBe(false);
   });
 
   it('preserves imported upload state when switching between upload, text, and chord tabs', async () => {

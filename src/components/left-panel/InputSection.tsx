@@ -9,9 +9,16 @@ import { useUiStore } from "@/store/ui-store"
 const INPUT_TABS = ["Chord", "Text", "Upload"] as const
 type InputTab = (typeof INPUT_TABS)[number]
 type UploadFeedbackTone = "neutral" | "success" | "error"
+type InputReadinessState = "waiting" | "empty" | "ready"
 type ImportedChordChartUpload = {
   chordChartRaw: string
   generationHints: string
+}
+type InputReadiness = {
+  state: InputReadinessState
+  badge: string
+  title: string
+  detail: string
 }
 
 const DEFAULT_UPLOAD_FEEDBACK = "Accepted format: plain-text chord chart (.txt)."
@@ -170,6 +177,61 @@ function formatImportedNotesFeedback(
   return `Imported ${fileName} and updated Description with ${noteCount} note ${noteCount === 1 ? "line" : "lines"}.`
 }
 
+function getInputReadiness({
+  hasProject,
+  hasChordChart,
+  isGenerating,
+  isImporting,
+}: {
+  hasProject: boolean
+  hasChordChart: boolean
+  isGenerating: boolean
+  isImporting: boolean
+}): InputReadiness {
+  if (!hasProject) {
+    return {
+      state: "waiting",
+      badge: "Waiting",
+      title: "Project required",
+      detail: "Load or create a project to enter chords, add notes, or import a plain-text chart.",
+    }
+  }
+
+  if (isImporting) {
+    return {
+      state: "waiting",
+      badge: "Waiting",
+      title: "Import in progress",
+      detail: "Arrangement Forge is reading the selected file before it updates the current chord chart.",
+    }
+  }
+
+  if (isGenerating) {
+    return {
+      state: "waiting",
+      badge: "Waiting",
+      title: "Generation in progress",
+      detail: "The current chord chart stays visible while imports pause until the latest arrangement pass finishes.",
+    }
+  }
+
+  if (!hasChordChart) {
+    return {
+      state: "empty",
+      badge: "Empty",
+      title: "Chord chart needed",
+      detail: "Enter chords, paste chart text, or import a plain-text file to enable generation.",
+    }
+  }
+
+  return {
+    state: "ready",
+    badge: "Ready",
+    title: "Input is ready",
+    detail: "Chord chart is present. Review Description if needed, then generate the arrangement.",
+  }
+}
+
 export function InputSection() {
   const [activeTab, setActiveTab] = useState<InputTab>("Chord")
   const [isImporting, setIsImporting] = useState(false)
@@ -190,7 +252,23 @@ export function InputSection() {
   const generationHints = project?.generationHints ?? ""
   const projectKey = project?.key ?? "C"
   const timeSignature = project?.timeSignature ?? "4/4"
+  const hasChordChart = Boolean(chordChartRaw.trim())
   const isGenerating = generationState === "generating"
+  const inputReadiness = getInputReadiness({
+    hasProject,
+    hasChordChart,
+    isGenerating,
+    isImporting,
+  })
+  const uploadBlocked = !hasProject || isGenerating || isImporting
+  const canGenerate = hasProject && hasChordChart && !isGenerating && !isImporting
+  const uploadStatusMessage = !hasProject
+    ? "Load a project to enable chord chart imports."
+    : isGenerating
+      ? "Import is paused while the current arrangement is generating."
+      : isImporting
+        ? "Importing chord chart..."
+        : uploadFeedback.message
 
   async function handleUploadChange(event: ChangeEvent<HTMLInputElement>) {
     const input = event.currentTarget
@@ -250,6 +328,49 @@ export function InputSection() {
 
   return (
     <div className="flex flex-col gap-3">
+      <div
+        data-input-readiness={inputReadiness.state}
+        role="status"
+        aria-live="polite"
+        className={cn(
+          "flex items-start gap-2 rounded-md border px-3 py-2 text-xs leading-relaxed",
+          inputReadiness.state === "ready"
+            ? "border-emerald-500/30 bg-emerald-500/10 text-foreground"
+            : inputReadiness.state === "empty"
+              ? "border-border bg-secondary/40 text-foreground"
+              : "border-amber-500/30 bg-amber-500/10 text-foreground"
+        )}
+      >
+        <span
+          className={cn(
+            "mt-1 size-1.5 shrink-0 rounded-full",
+            inputReadiness.state === "ready"
+              ? "bg-emerald-300"
+              : inputReadiness.state === "empty"
+                ? "bg-muted-foreground"
+                : "bg-amber-300"
+          )}
+        />
+        <div className="min-w-0">
+          <div className="flex items-center gap-2">
+            <span
+              className={cn(
+                "rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.18em]",
+                inputReadiness.state === "ready"
+                  ? "bg-emerald-500/10 text-emerald-300"
+                  : inputReadiness.state === "empty"
+                    ? "bg-card text-muted-foreground"
+                    : "bg-amber-500/10 text-amber-300"
+              )}
+            >
+              {inputReadiness.badge}
+            </span>
+            <span className="font-medium text-foreground">{inputReadiness.title}</span>
+          </div>
+          <p className="mt-1 text-muted-foreground">{inputReadiness.detail}</p>
+        </div>
+      </div>
+
       {/* Tab switcher row */}
       <div className="flex gap-1 rounded-md bg-secondary p-0.5">
         {INPUT_TABS.map((tab) => (
@@ -331,7 +452,15 @@ export function InputSection() {
 
       {/* Upload tab */}
       {activeTab === "Upload" && (
-        <div className="flex flex-col gap-3 rounded-md border border-border bg-secondary/50 p-3">
+        <div
+          data-upload-readiness={uploadBlocked ? "blocked" : "ready"}
+          className={cn(
+            "flex flex-col gap-3 rounded-md border p-3",
+            uploadBlocked
+              ? "border-amber-500/30 bg-amber-500/10"
+              : "border-border bg-secondary/50"
+          )}
+        >
           <div className="space-y-1">
             <p className="text-xs font-medium text-foreground">Import a chord chart text file</p>
             <p className="text-xs leading-relaxed text-muted-foreground">
@@ -344,7 +473,7 @@ export function InputSection() {
             type="file"
             accept=".txt,text/*"
             onChange={(event) => void handleUploadChange(event)}
-            disabled={!hasProject || isImporting}
+            disabled={uploadBlocked}
             className={cn(
               "block w-full rounded-md border border-border bg-background px-3 py-2 text-xs text-foreground",
               "file:mr-3 file:rounded-sm file:border-0 file:bg-primary file:px-3 file:py-1.5",
@@ -356,7 +485,9 @@ export function InputSection() {
           <p
             className={cn(
               "text-xs",
-              isImporting
+              uploadBlocked && !isImporting
+                ? "text-amber-200"
+                : isImporting
                 ? "text-muted-foreground"
                 : uploadFeedback.tone === "error"
                   ? "text-destructive"
@@ -365,7 +496,7 @@ export function InputSection() {
                     : "text-muted-foreground"
             )}
           >
-            {isImporting ? "Importing chord chart..." : uploadFeedback.message}
+            {uploadStatusMessage}
           </p>
         </div>
       )}
@@ -374,15 +505,15 @@ export function InputSection() {
       <button
         type="button"
         onClick={() => void runGeneration()}
-        disabled={isGenerating || !chordChartRaw.trim()}
+        disabled={!canGenerate}
         className={cn(
           "w-full rounded-md px-4 py-2 text-sm font-medium transition-colors",
-          isGenerating || !chordChartRaw.trim()
+          !canGenerate
             ? "cursor-not-allowed opacity-50 bg-primary text-primary-foreground"
             : "bg-primary text-primary-foreground hover:bg-primary/90"
         )}
       >
-        {isGenerating ? "Generating..." : "Generate"}
+        {isImporting ? "Importing..." : isGenerating ? "Generating..." : "Generate"}
       </button>
     </div>
   )
