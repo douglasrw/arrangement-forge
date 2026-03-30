@@ -320,6 +320,39 @@ describe('MixerDrawer', () => {
     ).toBe(true);
   });
 
+  it('keeps saved arrangement snapshot truth explicit when mixer rows are not loaded', () => {
+    useProjectStore.setState({
+      project: makeProject({ hasArrangement: true }),
+      stems: [],
+      sections: [],
+      blocks: [],
+      chords: [],
+    });
+
+    const mounted = renderMixer();
+    mountedRoot = mounted.root;
+    mountedContainer = mounted.container;
+
+    const mixerReadiness = mounted.container.querySelector(
+      '[data-mixer-readiness]'
+    ) as HTMLSpanElement | null;
+
+    expect(mixerReadiness?.textContent).toBe('Reload arrangement');
+    expect(mixerReadiness?.getAttribute('data-mixer-readiness')).toBe('unavailable');
+    expect(mounted.container.textContent).toContain(
+      'A saved arrangement snapshot exists, but its rows are not loaded in this session. Reload the saved arrangement rows to enable mixer controls.'
+    );
+    expect(
+      findElementByTitle(
+        mounted.container,
+        'Reload the saved arrangement rows to enable piano.'
+      )?.textContent
+    ).toContain('Reload arrangement');
+    expect(
+      (mounted.container.querySelector('button[aria-label="Toggle PIANO mute"]') as HTMLButtonElement | null)?.disabled
+    ).toBe(true);
+  });
+
   it('surfaces imported off-grid pan truth and lets the operator center it', () => {
     useProjectStore.getState().setArrangement({
       stems: [makeStem({ id: 'st-piano', instrument: 'piano', pan: 0.006 })],

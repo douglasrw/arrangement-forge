@@ -2,7 +2,7 @@ import { useState, useCallback, useEffect } from "react"
 import { cn } from "@/lib/utils"
 import { X, ChevronDown, ChevronUp } from "lucide-react"
 import { useAudio } from "@/hooks/useAudio"
-import { hasProjectArrangementTruth, useProjectStore } from "@/store/project-store"
+import { getProjectArrangementTruth, type ProjectArrangementTruthStatus, useProjectStore } from "@/store/project-store"
 import { useUiStore } from "@/store/ui-store"
 import type { DrumKitLike } from "@/audio/drum-kit"
 import type { PlaybackTruth, Stem, SystemStatus } from "@/types"
@@ -100,19 +100,28 @@ function toChannelState(stem?: Stem): ChannelState {
 }
 
 function getMixerReadinessTruth({
-  hasArrangementTruth,
+  arrangementTruthStatus,
   stemsCount,
   playbackTruth,
 }: {
-  hasArrangementTruth: boolean
+  arrangementTruthStatus: ProjectArrangementTruthStatus
   stemsCount: number
   playbackTruth: PlaybackTruth
 }): MixerReadinessTruth {
-  if (!hasArrangementTruth) {
+  if (arrangementTruthStatus === "missing") {
     return {
       status: "unavailable",
       badge: "Unavailable",
       message: "Generate or import an arrangement to enable mixer controls.",
+      tone: "default",
+    }
+  }
+
+  if (arrangementTruthStatus === "persisted-only") {
+    return {
+      status: "unavailable",
+      badge: "Reload arrangement",
+      message: "A saved arrangement snapshot exists, but its rows are not loaded in this session. Reload the saved arrangement rows to enable mixer controls.",
       tone: "default",
     }
   }
@@ -195,18 +204,26 @@ function getDrumSubMixTruth({
 function getLaneTruth({
   stem,
   instrumentLabel,
-  hasArrangementTruth,
+  arrangementTruthStatus,
   isDrums,
   drumSubMixTruth,
 }: {
   stem?: Stem
   instrumentLabel: string
-  hasArrangementTruth: boolean
+  arrangementTruthStatus: ProjectArrangementTruthStatus
   isDrums: boolean
   drumSubMixTruth: DrumSubMixTruth
 }): LaneTruth {
   if (!stem) {
-    if (hasArrangementTruth) {
+    if (arrangementTruthStatus === "persisted-only") {
+      return {
+        badge: "Reload arrangement",
+        detail: `Reload the saved arrangement rows to enable ${instrumentLabel.toLowerCase()}.`,
+        tone: "default",
+      }
+    }
+
+    if (arrangementTruthStatus !== "missing") {
       return {
         badge: "No stem",
         detail: `No ${instrumentLabel.toLowerCase()} stem is loaded for this arrangement.`,
@@ -474,7 +491,7 @@ export function MixerDrawer() {
 
   const drumKit = engine.getDrumKit()
   const drumSubMixTruth = getDrumSubMixTruth({ drumKit, systemStatus, errorMessage })
-  const hasArrangementTruth = hasProjectArrangementTruth({
+  const arrangementTruth = getProjectArrangementTruth({
     project,
     stems,
     sections,
@@ -485,7 +502,7 @@ export function MixerDrawer() {
   const stemByInstrument = new Map(stems.map((stem) => [stem.instrument, stem]))
   const masterVolume = gainToSliderValue(audioConfig.masterVolume)
   const mixerReadiness = getMixerReadinessTruth({
-    hasArrangementTruth,
+    arrangementTruthStatus: arrangementTruth.status,
     stemsCount: stems.length,
     playbackTruth,
   })
@@ -589,7 +606,7 @@ export function MixerDrawer() {
               const laneTruth = getLaneTruth({
                 stem,
                 instrumentLabel: inst.label,
-                hasArrangementTruth,
+                arrangementTruthStatus: arrangementTruth.status,
                 isDrums,
                 drumSubMixTruth,
               })
