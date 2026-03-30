@@ -139,6 +139,9 @@ export function TransportBar() {
   const playbackActive = transportReady && isPlaying
   const loopPressed = transportReady && loopActive
   const metronomePressed = transportReady && metronomeActive
+  const noTimelineGuidance = arrangementTruth.status === "persisted-only"
+    ? "A saved arrangement snapshot exists, but its rows are not loaded in this session. Reload the saved arrangement rows to enable playback and transport controls."
+    : "Generate or import an arrangement to enable playback and transport controls."
   const playButtonDisabled = !timelineAvailable || playbackUnavailable || playbackLoading
   const playButtonLabel = playbackActive
     ? "Pause"
@@ -154,12 +157,12 @@ export function TransportBar() {
           ? "Load and play"
           : "Play unavailable"
   const transportUnavailableTitle = !timelineAvailable
-    ? "No arrangement timeline available yet"
+    ? noTimelineGuidance
     : transportReady
       ? undefined
       : `${playbackTruth.detail} ${playbackTruth.nextStep}`.trim()
   const transportGuidance = !timelineAvailable
-    ? "Generate or import an arrangement to enable playback and transport controls."
+    ? noTimelineGuidance
     : transportReady
       ? null
       : `${playbackTruth.detail} ${playbackTruth.nextStep}`.trim()

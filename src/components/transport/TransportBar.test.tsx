@@ -519,6 +519,35 @@ describe('TransportBar transport controls', () => {
     expect(mounted.container.textContent).not.toContain('No timeline');
   });
 
+  it('keeps persisted snapshot truth explicit when the arrangement rows are not loaded', () => {
+    useProjectStore.setState({
+      project: makeProject({ hasArrangement: true }),
+      sections: [],
+    });
+
+    const mounted = renderTransportBar();
+    mountedRoot = mounted.root;
+    mountedContainer = mounted.container;
+
+    const playButton = mounted.container.querySelector(
+      'button[aria-label="Play unavailable"]'
+    ) as HTMLButtonElement | null;
+    const guidance = mounted.container.querySelector(
+      '[data-transport-guidance="no-timeline"]'
+    ) as HTMLDivElement | null;
+
+    expect(playButton?.disabled).toBe(true);
+    expect(playButton?.title).toBe(
+      'A saved arrangement snapshot exists, but its rows are not loaded in this session. Reload the saved arrangement rows to enable playback and transport controls.'
+    );
+    expect(guidance?.textContent).toContain(
+      'A saved arrangement snapshot exists, but its rows are not loaded in this session. Reload the saved arrangement rows to enable playback and transport controls.'
+    );
+    expect(guidance?.textContent).not.toContain(
+      'Generate or import an arrangement to enable playback and transport controls.'
+    );
+  });
+
   it('surfaces loading readiness truth before playback is ready', () => {
     useAudioState.transportState = {
       ...useAudioState.transportState,

@@ -13,6 +13,7 @@ export type PlaybackTruthAction =
 export type PlaybackTruthReason =
   | 'ready'
   | 'no-arrangement'
+  | 'saved-arrangement-not-loaded'
   | 'no-stems'
   | 'awaiting-user-play'
   | 'loading-arrangement'

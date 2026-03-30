@@ -541,6 +541,34 @@ describe('useAudio transport config', () => {
     expect(hookValue?.playbackTruth.nextStep).toBe('Press play to load arrangement audio.');
   });
 
+  it('keeps saved arrangement snapshot truth explicit when rows are not loaded into the session', () => {
+    useProjectStore.setState({
+      project: makeProject({ hasArrangement: true }),
+      stems: [],
+      sections: [],
+      blocks: [],
+      chords: [],
+      chatMessages: [],
+      drumOnlyUpdate: false,
+      allInstrumentsUpdate: false,
+    });
+
+    const mounted = renderHarness();
+    mountedRoot = mounted.root;
+    mountedContainer = mounted.container;
+
+    expect(hookValue?.playbackReadiness).toBe('unavailable');
+    expect(hookValue?.playbackTruth.action).toBe('unavailable');
+    expect(hookValue?.playbackTruth.reason).toBe('saved-arrangement-not-loaded');
+    expect(hookValue?.playbackTruth.summary).toBe('Reload arrangement');
+    expect(hookValue?.playbackTruth.detail).toBe(
+      'A saved arrangement snapshot exists, but its rows are not loaded into the editor right now.'
+    );
+    expect(hookValue?.playbackTruth.nextStep).toBe(
+      'Reload the saved arrangement rows before starting playback.'
+    );
+  });
+
   it('surfaces hot-swap failures instead of only logging them', async () => {
     engineState.isInitialized = true;
 

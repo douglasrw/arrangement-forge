@@ -42,7 +42,8 @@ function getErrorMessage(error: unknown, fallback: string): string {
 
 function buildPlaybackTruth({
   projectExists,
-  hasArrangementTruth,
+  hasArrangementRows,
+  hasPersistedArrangement,
   stemsCount,
   engineReadiness,
   arrangementSignature,
@@ -51,7 +52,8 @@ function buildPlaybackTruth({
   failedArrangementSignature,
 }: {
   projectExists: boolean;
-  hasArrangementTruth: boolean;
+  hasArrangementRows: boolean;
+  hasPersistedArrangement: boolean;
   stemsCount: number;
   engineReadiness: AudioEngineReadinessSnapshot;
   arrangementSignature: string;
@@ -59,7 +61,7 @@ function buildPlaybackTruth({
   loadedArrangementSignature: string;
   failedArrangementSignature: string;
 }): PlaybackTruth {
-  if (!projectExists || !hasArrangementTruth) {
+  if (!projectExists || (!hasArrangementRows && !hasPersistedArrangement)) {
     return {
       status: 'unavailable',
       action: 'unavailable',
@@ -67,6 +69,17 @@ function buildPlaybackTruth({
       summary: 'Unavailable',
       detail: 'No arrangement audio is available yet.',
       nextStep: 'Generate or import an arrangement to enable playback.',
+    };
+  }
+
+  if (!hasArrangementRows && hasPersistedArrangement) {
+    return {
+      status: 'unavailable',
+      action: 'unavailable',
+      reason: 'saved-arrangement-not-loaded',
+      summary: 'Reload arrangement',
+      detail: 'A saved arrangement snapshot exists, but its rows are not loaded into the editor right now.',
+      nextStep: 'Reload the saved arrangement rows before starting playback.',
     };
   }
 
@@ -222,11 +235,12 @@ export function useAudio() {
     chords,
   });
   const totalBars = sections.reduce((sum, section) => sum + section.barCount, 0);
-  const hasArrangementTruth = arrangementTruth.hasArrangementRows && totalBars > 0;
+  const hasArrangementRows = arrangementTruth.hasArrangementRows && totalBars > 0;
   const engineReadiness = engine.getReadinessSnapshot();
   const playbackTruth = buildPlaybackTruth({
     projectExists: Boolean(project),
-    hasArrangementTruth,
+    hasArrangementRows,
+    hasPersistedArrangement: arrangementTruth.hasPersistedArrangement,
     stemsCount: stems.length,
     engineReadiness,
     arrangementSignature,
@@ -271,19 +285,19 @@ export function useAudio() {
   }, [engine]);
 
   useEffect(() => {
-    if (!project || stems.length === 0 || !hasArrangementTruth) {
+    if (!project || stems.length === 0 || !hasArrangementRows) {
       lastArrangementSignatureRef.current = '';
       lastMixerSignatureRef.current = '';
       setLoadingArrangementSignature('');
       setLoadedArrangementSignature('');
       setFailedArrangementSignature('');
     }
-  }, [hasArrangementTruth, project, stems.length]);
+  }, [hasArrangementRows, project, stems.length]);
 
   // Auto-load arrangement into audio engine when structure changes.
   // Stem mix updates are handled separately so mixer moves do not reload samples.
   useEffect(() => {
-    if (!engine.isInitialized || stems.length === 0 || !project || !hasArrangementTruth) return;
+    if (!engine.isInitialized || stems.length === 0 || !project || !hasArrangementRows) return;
 
     // All-instruments update: hot-swap every instrument without full reload
     if (allInstrumentsUpdate) {
@@ -370,7 +384,7 @@ export function useAudio() {
     drumOnlyUpdate,
     engine,
     isReady,
-    hasArrangementTruth,
+    hasArrangementRows,
     project,
     sections,
     reportAudioFailure,
@@ -409,7 +423,7 @@ export function useAudio() {
   const play = useCallback(async () => {
     try {
       if (!engine.isInitialized) await initEngine();
-      if (!project || !hasArrangementTruth) return;
+      if (!project || !hasArrangementRows) return;
       if (audioLoading) return;
 
       // Ensure arrangement is loaded before playing.
@@ -441,7 +455,7 @@ export function useAudio() {
     audioLoading,
     blocks,
     engine,
-    hasArrangementTruth,
+    hasArrangementRows,
     initEngine,
     loadedArrangementSignature,
     project,
