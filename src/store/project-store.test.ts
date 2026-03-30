@@ -1,5 +1,9 @@
 import { describe, it, expect, beforeEach } from 'vitest';
-import { serializeProjectExportSnapshot, useProjectStore } from './project-store';
+import {
+  getProjectArrangementTruth,
+  serializeProjectExportSnapshot,
+  useProjectStore,
+} from './project-store';
 import { useSelectionStore } from './selection-store';
 import { useUiStore } from './ui-store';
 import { useUndoStore } from './undo-store';
@@ -281,6 +285,38 @@ describe('projectStore', () => {
       errorMessage: null,
       unsavedChanges: false,
       lastSavedAt: null,
+    });
+  });
+
+  it('separates draft arrangement rows from persisted arrangement metadata', () => {
+    expect(
+      getProjectArrangementTruth({
+        project: makeProject({ hasArrangement: false }),
+        stems: [makeStem()],
+        sections: [],
+        blocks: [],
+        chords: [makeChord()],
+      })
+    ).toEqual({
+      hasDraftArrangement: true,
+      hasPersistedArrangement: false,
+      hasAnyArrangementTruth: true,
+    });
+  });
+
+  it('keeps persisted arrangement metadata visible even before rows are loaded', () => {
+    expect(
+      getProjectArrangementTruth({
+        project: makeProject({ hasArrangement: true }),
+        stems: [],
+        sections: [],
+        blocks: [],
+        chords: [],
+      })
+    ).toEqual({
+      hasDraftArrangement: false,
+      hasPersistedArrangement: true,
+      hasAnyArrangementTruth: true,
     });
   });
 

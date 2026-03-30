@@ -267,6 +267,34 @@ export interface ProjectExportSnapshot {
   chords: Chord[];
 }
 
+export interface ProjectArrangementTruth {
+  hasDraftArrangement: boolean;
+  hasPersistedArrangement: boolean;
+  hasAnyArrangementTruth: boolean;
+}
+
+export function getProjectArrangementTruth(state: {
+  project: Project | null;
+  stems: Stem[];
+  sections: Section[];
+  blocks: Block[];
+  chords: Chord[];
+}): ProjectArrangementTruth {
+  const hasDraftArrangement = Boolean(
+    state.stems.length ||
+    state.sections.length ||
+    state.blocks.length ||
+    state.chords.length
+  );
+  const hasPersistedArrangement = Boolean(state.project?.hasArrangement);
+
+  return {
+    hasDraftArrangement,
+    hasPersistedArrangement,
+    hasAnyArrangementTruth: hasDraftArrangement || hasPersistedArrangement,
+  };
+}
+
 export function hasProjectArrangementTruth(state: {
   project: Project | null;
   stems: Stem[];
@@ -274,13 +302,7 @@ export function hasProjectArrangementTruth(state: {
   blocks: Block[];
   chords: Chord[];
 }): boolean {
-  return Boolean(
-    state.project?.hasArrangement ||
-    state.stems.length ||
-    state.sections.length ||
-    state.blocks.length ||
-    state.chords.length
-  );
+  return getProjectArrangementTruth(state).hasAnyArrangementTruth;
 }
 
 export function serializeProjectExportSnapshot(

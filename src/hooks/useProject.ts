@@ -5,7 +5,7 @@ import { useCallback } from 'react';
 import { getDefaultProjectStyle } from '@/lib/genre-config';
 import { supabase } from '@/lib/supabase';
 import { useAuthStore } from '@/store/auth-store';
-import { useProjectStore } from '@/store/project-store';
+import { getProjectArrangementTruth, useProjectStore } from '@/store/project-store';
 import { useUiStore } from '@/store/ui-store';
 import type {
   Project,
@@ -69,6 +69,13 @@ export interface ProjectExportReadiness {
   message: string;
 }
 
+export interface ProjectSavePlan {
+  saveTarget: 'project' | 'arrangement';
+  nextStep: 'save-project' | 'save-arrangement';
+  summary: string;
+  arrangementTruth: ReturnType<typeof getProjectArrangementTruth>;
+}
+
 export type LoadProjectResult =
   | { status: 'ready' }
   | { status: 'missing-project'; message: string }
@@ -82,12 +89,41 @@ export function hasArrangementExportTruth(state: {
   blocks: Block[];
   chords: Chord[];
 }): boolean {
-  return Boolean(
-    state.stems.length ||
-      state.sections.length ||
-      state.blocks.length ||
-      state.chords.length
-  );
+  return getProjectArrangementTruth({
+    project: null,
+    stems: state.stems,
+    sections: state.sections,
+    blocks: state.blocks,
+    chords: state.chords,
+  }).hasDraftArrangement;
+}
+
+export function getProjectSavePlan(state: {
+  project: Project | null;
+  stems: Stem[];
+  sections: Section[];
+  blocks: Block[];
+  chords: Chord[];
+}): ProjectSavePlan {
+  const arrangementTruth = getProjectArrangementTruth(state);
+
+  if (arrangementTruth.hasDraftArrangement) {
+    return {
+      saveTarget: 'arrangement',
+      nextStep: 'save-arrangement',
+      summary: arrangementTruth.hasPersistedArrangement
+        ? 'Replace the saved arrangement snapshot with the current arrangement draft.'
+        : 'Promote the current arrangement draft into the first saved arrangement snapshot.',
+      arrangementTruth,
+    };
+  }
+
+  return {
+    saveTarget: 'project',
+    nextStep: 'save-project',
+    summary: 'Persist project fields and chat without replacing arrangement rows.',
+    arrangementTruth,
+  };
 }
 
 export function getProjectExportReadiness(state: {
@@ -214,7 +250,7 @@ export function useProject() {
     []
   );
 
-  const saveProject = useCallback(async () => {
+  const persistProjectDraft = useCallback(async () => {
     const { project, stems, sections, blocks, chords, chatMessages } = useProjectStore.getState();
     if (!project) return;
     setSystemStatus('saving');
@@ -255,6 +291,72 @@ export function useProject() {
       handleError(err);
     }
   }, [setSystemStatus, markSaved, handleError, replaceChatMessages]);
+
+  const persistArrangementDraft = useCallback(async () => {
+    const { project, stems, sections, blocks, chords, chatMessages } = useProjectStore.getState();
+    if (!project) return;
+    setSystemStatus('saving');
+    try {
+      // Replace the persisted arrangement so regeneration cannot leave stale
+      // sections or chord rows behind.
+      await supabase.from('stems').delete().eq('project_id', project.id);
+      await supabase.from('sections').delete().eq('project_id', project.id);
+      await supabase.from('chords').delete().eq('project_id', project.id);
+
+      // Insert new data
+      if (stems.length) {
+        await supabase.from('stems').insert(
+          stems.map((s) => camelToSnake(s as unknown as Record<string, unknown>))
+        );
+      }
+      if (sections.length) {
+        await supabase.from('sections').insert(
+          sections.map((s) => camelToSnake(s as unknown as Record<string, unknown>))
+        );
+      }
+      if (blocks.length) {
+        await supabase.from('blocks').insert(
+          blocks.map((b) => ({
+            ...camelToSnake(b as unknown as Record<string, unknown>),
+            midi_data: b.midiData,
+          }))
+        );
+      }
+      if (chords.length) {
+        await supabase.from('chords').insert(
+          chords.map((c) => camelToSnake(c as unknown as Record<string, unknown>))
+        );
+      }
+      await replaceChatMessages(project.id, chatMessages);
+
+      await supabase
+        .from('projects')
+        .upsert(
+          camelToSnake({
+            ...project,
+            hasArrangement: true,
+            generatedAt: project.generatedAt ?? new Date().toISOString(),
+            generatedTempo: project.generatedTempo ?? project.tempo,
+          } as unknown as Record<string, unknown>)
+        );
+
+      markSaved();
+      setSystemStatus('ready');
+    } catch (err) {
+      handleError(err);
+    }
+  }, [setSystemStatus, markSaved, handleError, replaceChatMessages]);
+
+  const saveProject = useCallback(async () => {
+    const savePlan = getProjectSavePlan(useProjectStore.getState());
+
+    if (savePlan.saveTarget === 'arrangement') {
+      await persistArrangementDraft();
+      return;
+    }
+
+    await persistProjectDraft();
+  }, [persistArrangementDraft, persistProjectDraft]);
 
   const createProject = useCallback(async (): Promise<string | null> => {
     try {
@@ -323,59 +425,8 @@ export function useProject() {
   }, [setLibraryCount, setSystemStatus, handleError]);
 
   const saveArrangement = useCallback(async () => {
-    const { project, stems, sections, blocks, chords, chatMessages } = useProjectStore.getState();
-    if (!project) return;
-    setSystemStatus('saving');
-    try {
-      // Replace the persisted arrangement so regeneration cannot leave stale
-      // sections or chord rows behind.
-      await supabase.from('stems').delete().eq('project_id', project.id);
-      await supabase.from('sections').delete().eq('project_id', project.id);
-      await supabase.from('chords').delete().eq('project_id', project.id);
-
-      // Insert new data
-      if (stems.length) {
-        await supabase.from('stems').insert(
-          stems.map((s) => camelToSnake(s as unknown as Record<string, unknown>))
-        );
-      }
-      if (sections.length) {
-        await supabase.from('sections').insert(
-          sections.map((s) => camelToSnake(s as unknown as Record<string, unknown>))
-        );
-      }
-      if (blocks.length) {
-        await supabase.from('blocks').insert(
-          blocks.map((b) => ({
-            ...camelToSnake(b as unknown as Record<string, unknown>),
-            midi_data: b.midiData,
-          }))
-        );
-      }
-      if (chords.length) {
-        await supabase.from('chords').insert(
-          chords.map((c) => camelToSnake(c as unknown as Record<string, unknown>))
-        );
-      }
-      await replaceChatMessages(project.id, chatMessages);
-
-      await supabase
-        .from('projects')
-        .upsert(
-          camelToSnake({
-            ...project,
-            hasArrangement: true,
-            generatedAt: project.generatedAt ?? new Date().toISOString(),
-            generatedTempo: project.generatedTempo ?? project.tempo,
-          } as unknown as Record<string, unknown>)
-        );
-
-      markSaved();
-      setSystemStatus('ready');
-    } catch (err) {
-      handleError(err);
-    }
-  }, [setSystemStatus, markSaved, handleError, replaceChatMessages]);
+    await persistArrangementDraft();
+  }, [persistArrangementDraft]);
 
   return {
     loadProject,

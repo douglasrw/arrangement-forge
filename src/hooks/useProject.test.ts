@@ -3,7 +3,7 @@
 import { act, createElement } from 'react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { createRoot, type Root } from 'react-dom/client';
-import { getProjectExportReadiness, useProject } from './useProject';
+import { getProjectExportReadiness, getProjectSavePlan, useProject } from './useProject';
 import type { LoadProjectResult } from './useProject';
 import { useAuthStore } from '@/store/auth-store';
 import { useProjectStore } from '@/store/project-store';
@@ -352,6 +352,62 @@ describe('useProject export readiness', () => {
   });
 });
 
+describe('useProject save planning', () => {
+  it('chooses arrangement persistence when draft arrangement rows exist', () => {
+    const plan = getProjectSavePlan({
+      project: buildStoredProject('project-arrangement-draft'),
+      stems: [
+        {
+          id: 'stem-1',
+          projectId: 'project-arrangement-draft',
+          instrument: 'piano',
+          sortOrder: 0,
+          volume: 0.8,
+          pan: 0,
+          isMuted: false,
+          isSolo: false,
+          createdAt: '2026-03-28T00:00:00Z',
+        },
+      ],
+      sections: [],
+      blocks: [],
+      chords: [],
+    });
+
+    expect(plan).toEqual({
+      saveTarget: 'arrangement',
+      nextStep: 'save-arrangement',
+      summary: 'Promote the current arrangement draft into the first saved arrangement snapshot.',
+      arrangementTruth: {
+        hasDraftArrangement: true,
+        hasPersistedArrangement: false,
+        hasAnyArrangementTruth: true,
+      },
+    });
+  });
+
+  it('keeps project-only persistence when no arrangement rows are loaded', () => {
+    const plan = getProjectSavePlan({
+      project: buildStoredProject('project-shell-only'),
+      stems: [],
+      sections: [],
+      blocks: [],
+      chords: [],
+    });
+
+    expect(plan).toEqual({
+      saveTarget: 'project',
+      nextStep: 'save-project',
+      summary: 'Persist project fields and chat without replacing arrangement rows.',
+      arrangementTruth: {
+        hasDraftArrangement: false,
+        hasPersistedArrangement: false,
+        hasAnyArrangementTruth: false,
+      },
+    });
+  });
+});
+
 describe('useProject loadProject', () => {
   it('replaces stale state when opening project B after project A', async () => {
     const mounted = renderHarness();
@@ -594,6 +650,172 @@ describe('useProject save paths', () => {
         created_at: '2026-03-28T00:00:00Z',
       }),
     ]);
+    expect(useUiStore.getState()).toMatchObject({
+      unsavedChanges: false,
+      systemStatus: 'ready',
+    });
+  });
+
+  it('saveProject routes arrangement drafts through the arrangement replacement path', async () => {
+    const stemsDeleteEq = vi.fn(() => Promise.resolve({ error: null }));
+    const stemsDelete = vi.fn(() => ({ eq: stemsDeleteEq }));
+    const stemsInsert = vi.fn(() => Promise.resolve({ error: null }));
+    const sectionsDeleteEq = vi.fn(() => Promise.resolve({ error: null }));
+    const sectionsDelete = vi.fn(() => ({ eq: sectionsDeleteEq }));
+    const sectionsInsert = vi.fn(() => Promise.resolve({ error: null }));
+    const chordsDeleteEq = vi.fn(() => Promise.resolve({ error: null }));
+    const chordsDelete = vi.fn(() => ({ eq: chordsDeleteEq }));
+    const chordsInsert = vi.fn(() => Promise.resolve({ error: null }));
+    const blocksInsert = vi.fn(() => Promise.resolve({ error: null }));
+    const chatDeleteEq = vi.fn(() => Promise.resolve({ error: null }));
+    const chatDelete = vi.fn(() => ({ eq: chatDeleteEq }));
+    const chatInsert = vi.fn(() => Promise.resolve({ error: null }));
+    const projectUpsert = vi.fn(() => Promise.resolve({ error: null }));
+
+    supabaseMock.from.mockImplementation((table: string) => {
+      switch (table) {
+        case 'stems':
+          return { delete: stemsDelete, insert: stemsInsert };
+        case 'sections':
+          return { delete: sectionsDelete, insert: sectionsInsert };
+        case 'chords':
+          return { delete: chordsDelete, insert: chordsInsert };
+        case 'blocks':
+          return { insert: blocksInsert };
+        case 'projects':
+          return { upsert: projectUpsert };
+        case 'ai_chat_messages':
+          return { delete: chatDelete, insert: chatInsert };
+        default:
+          return createTableQuery();
+      }
+    });
+
+    useProjectStore.setState({
+      project: {
+        ...buildStoredProject('project-arrangement-draft'),
+        chordChartRaw: 'Am7 | D7 | Gmaj7 | Cmaj7',
+        generationHints: 'Keep the voicings darker',
+      },
+      stems: [
+        {
+          id: 'stem-1',
+          projectId: 'project-arrangement-draft',
+          instrument: 'piano',
+          sortOrder: 0,
+          volume: 0.8,
+          pan: 0,
+          isMuted: false,
+          isSolo: false,
+          createdAt: '2026-03-28T00:00:00Z',
+        },
+      ],
+      sections: [
+        {
+          id: 'section-1',
+          projectId: 'project-arrangement-draft',
+          name: 'Verse',
+          sortOrder: 0,
+          barCount: 8,
+          startBar: 1,
+          energyOverride: null,
+          grooveOverride: null,
+          feelOverride: null,
+          swingPctOverride: null,
+          dynamicsOverride: null,
+          createdAt: '2026-03-28T00:00:00Z',
+        },
+      ],
+      blocks: [
+        {
+          id: 'block-1',
+          stemId: 'stem-1',
+          sectionId: 'section-1',
+          startBar: 1,
+          endBar: 8,
+          chordDegree: 'I',
+          chordQuality: 'maj7',
+          chordBassDegree: null,
+          style: 'jazz_comp',
+          energyOverride: null,
+          dynamicsOverride: null,
+          midiData: [],
+          createdAt: '2026-03-28T00:00:00Z',
+        },
+      ],
+      chords: [
+        {
+          id: 'chord-1',
+          projectId: 'project-arrangement-draft',
+          barNumber: 1,
+          degree: 'I',
+          quality: 'maj7',
+          bassDegree: null,
+        },
+      ],
+      chatMessages: [buildStoredMessage('project-arrangement-draft', { content: 'Generation summary' })],
+      drumOnlyUpdate: false,
+      allInstrumentsUpdate: false,
+    });
+    useUiStore.setState({ unsavedChanges: true });
+
+    const mounted = renderHarness();
+    mountedRoot = mounted.root;
+    mountedContainer = mounted.container;
+
+    await act(async () => {
+      await hookValue!.saveProject();
+      await Promise.resolve();
+    });
+
+    expect(stemsDelete).toHaveBeenCalledTimes(1);
+    expect(stemsDeleteEq).toHaveBeenCalledWith('project_id', 'project-arrangement-draft');
+    expect(sectionsDelete).toHaveBeenCalledTimes(1);
+    expect(sectionsDeleteEq).toHaveBeenCalledWith('project_id', 'project-arrangement-draft');
+    expect(chordsDelete).toHaveBeenCalledTimes(1);
+    expect(chordsDeleteEq).toHaveBeenCalledWith('project_id', 'project-arrangement-draft');
+    expect(stemsInsert).toHaveBeenCalledWith([
+      expect.objectContaining({
+        project_id: 'project-arrangement-draft',
+        instrument: 'piano',
+      }),
+    ]);
+    expect(sectionsInsert).toHaveBeenCalledWith([
+      expect.objectContaining({
+        project_id: 'project-arrangement-draft',
+        name: 'Verse',
+      }),
+    ]);
+    expect(blocksInsert).toHaveBeenCalledWith([
+      expect.objectContaining({
+        stem_id: 'stem-1',
+        section_id: 'section-1',
+        midi_data: [],
+      }),
+    ]);
+    expect(chordsInsert).toHaveBeenCalledWith([
+      expect.objectContaining({
+        project_id: 'project-arrangement-draft',
+        degree: 'I',
+      }),
+    ]);
+    expect(chatDelete).toHaveBeenCalledTimes(1);
+    expect(chatDeleteEq).toHaveBeenCalledWith('project_id', 'project-arrangement-draft');
+    expect(chatInsert).toHaveBeenCalledWith([
+      expect.objectContaining({
+        project_id: 'project-arrangement-draft',
+        content: 'Generation summary',
+      }),
+    ]);
+    expect(projectUpsert).toHaveBeenCalledWith(
+      expect.objectContaining({
+        id: 'project-arrangement-draft',
+        chord_chart_raw: 'Am7 | D7 | Gmaj7 | Cmaj7',
+        generation_hints: 'Keep the voicings darker',
+        has_arrangement: true,
+        generated_tempo: 120,
+      })
+    );
     expect(useUiStore.getState()).toMatchObject({
       unsavedChanges: false,
       systemStatus: 'ready',
