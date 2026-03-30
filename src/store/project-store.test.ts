@@ -7,7 +7,7 @@ import {
 import { useSelectionStore } from './selection-store';
 import { useUiStore } from './ui-store';
 import { useUndoStore } from './undo-store';
-import { parseSnapshot, snapshotArrangement } from '@/lib/undo-helpers';
+import { parseRedoSnapshot, parseUndoSnapshot, snapshotArrangement } from '@/lib/undo-helpers';
 import { generateMidiForBlock } from '@/lib/midi-generator';
 import type { Project, Section, Block, Stem, Chord, AiChatMessage } from '@/types';
 
@@ -1024,6 +1024,20 @@ function hasSnapshotKeys(json: string): boolean {
   );
 }
 
+function parseRequiredUndoSnapshot(entry: { stateBefore: string; stateAfter: string } | null) {
+  expect(entry).not.toBeNull();
+  const snapshot = parseUndoSnapshot(entry!);
+  expect(snapshot).not.toBeNull();
+  return snapshot!;
+}
+
+function parseRequiredRedoSnapshot(entry: { stateBefore: string; stateAfter: string } | null) {
+  expect(entry).not.toBeNull();
+  const snapshot = parseRedoSnapshot(entry!);
+  expect(snapshot).not.toBeNull();
+  return snapshot!;
+}
+
 describe('undo push coverage', () => {
   it('splitBlock pushes undo entry with unified snapshot format', () => {
     useProjectStore.getState().setArrangement({
@@ -1237,10 +1251,7 @@ describe('undo/redo round-trip', () => {
 
     // Undo
     const entry = useUndoStore.getState().undo();
-    expect(entry).not.toBeNull();
-    const snapshot = parseSnapshot(entry!.stateBefore);
-    expect(snapshot).not.toBeNull();
-    useProjectStore.getState().setArrangement(snapshot!);
+    useProjectStore.getState().setArrangement(parseRequiredUndoSnapshot(entry));
     expect(useProjectStore.getState().blocks).toHaveLength(1);
     expect(useProjectStore.getState().blocks[0].startBar).toBe(originalBlocks[0].startBar);
     expect(useProjectStore.getState().blocks[0].endBar).toBe(originalBlocks[0].endBar);
@@ -1255,14 +1266,12 @@ describe('undo/redo round-trip', () => {
 
     // Undo
     const undoEntry = useUndoStore.getState().undo();
-    const undoSnap = parseSnapshot(undoEntry!.stateBefore);
-    useProjectStore.getState().setArrangement(undoSnap!);
+    useProjectStore.getState().setArrangement(parseRequiredUndoSnapshot(undoEntry));
     expect(useProjectStore.getState().blocks).toHaveLength(1);
 
     // Redo
     const redoEntry = useUndoStore.getState().redo();
-    const redoSnap = parseSnapshot(redoEntry!.stateAfter);
-    useProjectStore.getState().setArrangement(redoSnap!);
+    useProjectStore.getState().setArrangement(parseRequiredRedoSnapshot(redoEntry));
     expect(useProjectStore.getState().blocks).toHaveLength(2);
   });
 
@@ -1287,16 +1296,16 @@ describe('undo/redo round-trip', () => {
 
     // Undo C
     const entryC = useUndoStore.getState().undo();
-    useProjectStore.getState().setArrangement(parseSnapshot(entryC!.stateBefore)!);
+    useProjectStore.getState().setArrangement(parseRequiredUndoSnapshot(entryC));
 
     // Undo B
     const entryB = useUndoStore.getState().undo();
-    useProjectStore.getState().setArrangement(parseSnapshot(entryB!.stateBefore)!);
+    useProjectStore.getState().setArrangement(parseRequiredUndoSnapshot(entryB));
     expect(useProjectStore.getState().chords[0].quality).toBe('maj7');
 
     // Undo A
     const entryA = useUndoStore.getState().undo();
-    useProjectStore.getState().setArrangement(parseSnapshot(entryA!.stateBefore)!);
+    useProjectStore.getState().setArrangement(parseRequiredUndoSnapshot(entryA));
     expect(useProjectStore.getState().blocks).toHaveLength(1);
     expect(useProjectStore.getState().blocks[0].startBar).toBe(s0Blocks[0].startBar);
     expect(useProjectStore.getState().blocks[0].endBar).toBe(s0Blocks[0].endBar);
@@ -1315,7 +1324,7 @@ describe('undo/redo round-trip', () => {
 
     // Undo A
     const entry = useUndoStore.getState().undo();
-    useProjectStore.getState().setArrangement(parseSnapshot(entry!.stateBefore)!);
+    useProjectStore.getState().setArrangement(parseRequiredUndoSnapshot(entry));
     expect(useUndoStore.getState().redoStack).toHaveLength(1);
 
     // Action B (new action after undo)
@@ -1343,7 +1352,7 @@ describe('undo/redo round-trip', () => {
 
     // Undo
     const entry = useUndoStore.getState().undo();
-    useProjectStore.getState().setArrangement(parseSnapshot(entry!.stateBefore)!);
+    useProjectStore.getState().setArrangement(parseRequiredUndoSnapshot(entry));
     expect(useProjectStore.getState().sections).toHaveLength(1);
     expect(useProjectStore.getState().blocks).toHaveLength(2);
   });
@@ -1361,7 +1370,7 @@ describe('undo/redo round-trip', () => {
 
     // Undo
     const entry = useUndoStore.getState().undo();
-    useProjectStore.getState().setArrangement(parseSnapshot(entry!.stateBefore)!);
+    useProjectStore.getState().setArrangement(parseRequiredUndoSnapshot(entry));
     expect(useProjectStore.getState().chords[0].quality).toBe('maj7');
   });
 
@@ -1386,7 +1395,7 @@ describe('undo/redo round-trip', () => {
     useProjectStore.getState().updateSection('s1', { barCount: 12 });
 
     const entry = useUndoStore.getState().undo();
-    useProjectStore.getState().setArrangement(parseSnapshot(entry!.stateBefore)!);
+    useProjectStore.getState().setArrangement(parseRequiredUndoSnapshot(entry));
 
     const state = useProjectStore.getState();
     expect(state.sections.find((section) => section.id === 's2')).toMatchObject({
@@ -1422,14 +1431,14 @@ describe('undo/redo round-trip', () => {
     useProjectStore.getState().updateBlock('b1', { style: 'arpeggiated' });
 
     const undoEntry = useUndoStore.getState().undo();
-    useProjectStore.getState().setArrangement(parseSnapshot(undoEntry!.stateBefore)!);
+    useProjectStore.getState().setArrangement(parseRequiredUndoSnapshot(undoEntry));
     expect(useProjectStore.getState().blocks[0]).toMatchObject({
       style: 'block_chords',
       midiData: originalMidi,
     });
 
     const redoEntry = useUndoStore.getState().redo();
-    useProjectStore.getState().setArrangement(parseSnapshot(redoEntry!.stateAfter)!);
+    useProjectStore.getState().setArrangement(parseRequiredRedoSnapshot(redoEntry));
     expect(useProjectStore.getState().blocks[0]).toMatchObject({
       style: 'arpeggiated',
     });

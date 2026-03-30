@@ -55,3 +55,11 @@ export function parseUndoBoundarySnapshot(
   const snapshot = boundary === 'undo' ? entry.stateBefore : entry.stateAfter;
   return parseSnapshot(snapshot);
 }
+
+export function parseUndoSnapshot(entry: UndoBoundaryEntry): ArrangementSnapshot | null {
+  return parseUndoBoundarySnapshot(entry, 'undo');
+}
+
+export function parseRedoSnapshot(entry: UndoBoundaryEntry): ArrangementSnapshot | null {
+  return parseUndoBoundarySnapshot(entry, 'redo');
+}

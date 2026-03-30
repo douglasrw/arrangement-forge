@@ -1,5 +1,11 @@
 import { describe, it, expect } from 'vitest';
-import { parseSnapshot, parseUndoBoundarySnapshot, snapshotArrangement } from './undo-helpers';
+import {
+  parseRedoSnapshot,
+  parseSnapshot,
+  parseUndoBoundarySnapshot,
+  parseUndoSnapshot,
+  snapshotArrangement,
+} from './undo-helpers';
 
 describe('snapshotArrangement', () => {
   it('returns valid JSON with all four keys', () => {
@@ -71,6 +77,52 @@ describe('parseUndoBoundarySnapshot', () => {
         { stateBefore: beforeSnapshot, stateAfter: afterSnapshot },
         'redo'
       )
+    ).toMatchObject({
+      stems: [{ id: 'after-stem' }],
+    });
+  });
+});
+
+describe('parseUndoSnapshot', () => {
+  it('parses the restore target for undo entries without a boundary literal', () => {
+    expect(
+      parseUndoSnapshot({
+        stateBefore: JSON.stringify({
+          stems: [{ id: 'before-stem' }],
+          sections: [],
+          blocks: [],
+          chords: [],
+        }),
+        stateAfter: JSON.stringify({
+          stems: [{ id: 'after-stem' }],
+          sections: [],
+          blocks: [],
+          chords: [],
+        }),
+      })
+    ).toMatchObject({
+      stems: [{ id: 'before-stem' }],
+    });
+  });
+});
+
+describe('parseRedoSnapshot', () => {
+  it('parses the restore target for redo entries without a boundary literal', () => {
+    expect(
+      parseRedoSnapshot({
+        stateBefore: JSON.stringify({
+          stems: [{ id: 'before-stem' }],
+          sections: [],
+          blocks: [],
+          chords: [],
+        }),
+        stateAfter: JSON.stringify({
+          stems: [{ id: 'after-stem' }],
+          sections: [],
+          blocks: [],
+          chords: [],
+        }),
+      })
     ).toMatchObject({
       stems: [{ id: 'after-stem' }],
     });

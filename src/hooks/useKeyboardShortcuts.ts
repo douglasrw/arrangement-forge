@@ -6,7 +6,7 @@ import { useSelectionStore } from '@/store/selection-store';
 import { useProjectStore } from '@/store/project-store';
 import { useUndoStore } from '@/store/undo-store';
 import { useProject } from '@/hooks/useProject';
-import { parseUndoBoundarySnapshot } from '@/lib/undo-helpers';
+import { parseRedoSnapshot, parseUndoSnapshot } from '@/lib/undo-helpers';
 
 function isInputFocused(): boolean {
   const el = document.activeElement;
@@ -43,7 +43,7 @@ export function useKeyboardShortcuts() {
         if (canUndo() && generationState !== 'generating') {
           const entry = undo();
           if (entry) {
-            const snapshot = parseUndoBoundarySnapshot(entry, 'undo');
+            const snapshot = parseUndoSnapshot(entry);
             if (snapshot) {
               useProjectStore.getState().setArrangement(snapshot);
             }
@@ -58,7 +58,7 @@ export function useKeyboardShortcuts() {
         if (canRedo() && generationState !== 'generating') {
           const entry = redo();
           if (entry) {
-            const snapshot = parseUndoBoundarySnapshot(entry, 'redo');
+            const snapshot = parseRedoSnapshot(entry);
             if (snapshot) {
               useProjectStore.getState().setArrangement(snapshot);
             }
