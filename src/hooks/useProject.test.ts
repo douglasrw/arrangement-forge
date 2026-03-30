@@ -1116,6 +1116,119 @@ describe('useProject loadProject', () => {
       lastSavedAt: null,
     });
   });
+
+  it('keeps loadProject in error truth when arrangement blocks fail to load', async () => {
+    const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+    const loadError = new Error('blocks query failed');
+    const projectRows = buildProjectRows('project-block-failure', {
+      hasArrangement: true,
+      includeContent: true,
+    });
+
+    supabaseMock.from.mockImplementation((table: string) => {
+      switch (table) {
+        case 'projects':
+          return {
+            select: () => ({
+              eq: () => ({
+                maybeSingle: () =>
+                  Promise.resolve({
+                    data: projectRows.projects.singleData ?? null,
+                    error: null,
+                  }),
+              }),
+            }),
+          };
+        case 'stems':
+          return {
+            select: () => ({
+              eq: () =>
+                Promise.resolve({
+                  data: (projectRows.stems.data ?? []) as Row[],
+                  error: null,
+                }),
+            }),
+          };
+        case 'sections':
+          return {
+            select: () => ({
+              eq: () => ({
+                order: () =>
+                  Promise.resolve({
+                    data: (projectRows.sections.data ?? []) as Row[],
+                    error: null,
+                  }),
+              }),
+            }),
+          };
+        case 'chords':
+          return {
+            select: () => ({
+              eq: () => ({
+                order: () =>
+                  Promise.resolve({
+                    data: (projectRows.chords.data ?? []) as Row[],
+                    error: null,
+                  }),
+              }),
+            }),
+          };
+        case 'ai_chat_messages':
+          return {
+            select: () => ({
+              eq: () => ({
+                order: () =>
+                  Promise.resolve({
+                    data: (projectRows.ai_chat_messages.data ?? []) as Row[],
+                    error: null,
+                  }),
+              }),
+            }),
+          };
+        case 'blocks':
+          return {
+            select: () => ({
+              in: () => Promise.resolve({ data: [], error: loadError }),
+            }),
+          };
+        default:
+          return createTableQuery();
+      }
+    });
+
+    const mounted = renderHarness();
+    mountedRoot = mounted.root;
+    mountedContainer = mounted.container;
+    expect(hookValue).not.toBeNull();
+
+    let loadResult: LoadProjectResult | undefined;
+    await act(async () => {
+      loadResult = await hookValue!.loadProject('project-block-failure');
+      await Promise.resolve();
+    });
+
+    expect(loadResult).toEqual({
+      status: 'error',
+      message: 'Failed to load project blocks: blocks query failed',
+    });
+    expect(useProjectStore.getState()).toMatchObject({
+      project: null,
+      stems: [],
+      sections: [],
+      blocks: [],
+      chords: [],
+      chatMessages: [],
+    });
+    expect(useUiStore.getState()).toMatchObject({
+      generationState: 'idle',
+      systemStatus: 'error',
+      errorMessage: 'Failed to load project blocks: blocks query failed',
+      unsavedChanges: false,
+      lastSavedAt: null,
+    });
+
+    consoleErrorSpy.mockRestore();
+  });
 });
 
 describe('useProject save paths', () => {

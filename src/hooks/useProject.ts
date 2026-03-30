@@ -64,6 +64,32 @@ function rowToMessage(row: Record<string, unknown>): AiChatMessage {
   return snakeToCamel(row) as unknown as AiChatMessage;
 }
 
+function getLoadFailureMessage(tableLabel: string, error: unknown): string {
+  if (error instanceof Error && error.message.trim()) {
+    return `Failed to load ${tableLabel}: ${error.message}`;
+  }
+
+  if (
+    typeof error === 'object' &&
+    error !== null &&
+    'message' in error &&
+    typeof (error as { message?: unknown }).message === 'string' &&
+    (error as { message: string }).message.trim()
+  ) {
+    return `Failed to load ${tableLabel}: ${(error as { message: string }).message}`;
+  }
+
+  return `Failed to load ${tableLabel}.`;
+}
+
+function throwIfLoadFailed(tableLabel: string, error: unknown) {
+  if (!error) {
+    return;
+  }
+
+  throw new Error(getLoadFailureMessage(tableLabel, error));
+}
+
 // ---------- Hook ----------
 
 export interface ProjectExportReadiness {
@@ -387,6 +413,11 @@ export function useProject() {
           };
         }
 
+        throwIfLoadFailed('project stems', stemsRes.error);
+        throwIfLoadFailed('project sections', sectionsRes.error);
+        throwIfLoadFailed('project chords', chordsRes.error);
+        throwIfLoadFailed('project chat history', messagesRes.error);
+
         const store = useProjectStore.getState();
         const project = rowToProject(projectRes.data as Record<string, unknown>);
 
@@ -396,6 +427,8 @@ export function useProject() {
         const blocksForProject = stemIds.length > 0
           ? await supabase.from('blocks').select('*').in('stem_id', stemIds)
           : { data: [], error: null };
+
+        throwIfLoadFailed('project blocks', blocksForProject.error);
 
         store.hydrateProject({
           project,
