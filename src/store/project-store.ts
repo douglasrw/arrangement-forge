@@ -732,7 +732,7 @@ export const useProjectStore = create<ProjectStore>()((set, get) => ({
     const before = snapshotArrangement(get());
     set((state) => ({ sections: [...state.sections, section] }));
     const after = snapshotArrangement(get());
-    useUndoStore.getState().pushUndo(`Add section: ${section.name}`, before, after);
+    useUndoStore.getState().pushUndo(`Add section: ${section.name}`, { undo: before, redo: after });
     useUiStore.getState().markDirty();
   },
 
@@ -770,7 +770,7 @@ export const useProjectStore = create<ProjectStore>()((set, get) => ({
     });
     reconcileSelectionWithArrangement(get());
     const after = snapshotArrangement(get());
-    useUndoStore.getState().pushUndo('Update section', before, after);
+    useUndoStore.getState().pushUndo('Update section', { undo: before, redo: after });
     useUiStore.getState().markDirty();
   },
 
@@ -782,7 +782,7 @@ export const useProjectStore = create<ProjectStore>()((set, get) => ({
     }));
     reconcileSelectionWithArrangement(get());
     const after = snapshotArrangement(get());
-    useUndoStore.getState().pushUndo('Remove section', before, after);
+    useUndoStore.getState().pushUndo('Remove section', { undo: before, redo: after });
     useUiStore.getState().markDirty();
   },
 
@@ -797,7 +797,7 @@ export const useProjectStore = create<ProjectStore>()((set, get) => ({
         .filter(Boolean) as Section[],
     }));
     const after = snapshotArrangement(get());
-    useUndoStore.getState().pushUndo('Reorder sections', before, after);
+    useUndoStore.getState().pushUndo('Reorder sections', { undo: before, redo: after });
     useUiStore.getState().markDirty();
   },
 
@@ -814,7 +814,7 @@ export const useProjectStore = create<ProjectStore>()((set, get) => ({
       }),
     }));
     const after = snapshotArrangement(get());
-    useUndoStore.getState().pushUndo('Update block', before, after);
+    useUndoStore.getState().pushUndo('Update block', { undo: before, redo: after });
     useUiStore.getState().markDirty();
   },
 
@@ -830,7 +830,7 @@ export const useProjectStore = create<ProjectStore>()((set, get) => ({
     const newBlocks = blocks.map((b) => (b.id === blockId ? block1 : b)).concat(block2);
     set({ blocks: newBlocks });
     const after = snapshotArrangement(get());
-    useUndoStore.getState().pushUndo(`Split block at bar ${atBar}`, before, after);
+    useUndoStore.getState().pushUndo(`Split block at bar ${atBar}`, { undo: before, redo: after });
     useUiStore.getState().markDirty();
   },
 
@@ -848,7 +848,7 @@ export const useProjectStore = create<ProjectStore>()((set, get) => ({
     set({ blocks: newBlocks });
     reconcileSelectionWithArrangement(get());
     const after = snapshotArrangement(get());
-    useUndoStore.getState().pushUndo(`Merge blocks (bars ${b1.startBar}-${b2.endBar})`, before, after);
+    useUndoStore.getState().pushUndo(`Merge blocks (bars ${b1.startBar}-${b2.endBar})`, { undo: before, redo: after });
     useUiStore.getState().markDirty();
   },
 
@@ -858,7 +858,7 @@ export const useProjectStore = create<ProjectStore>()((set, get) => ({
     set({ blocks: newBlocks });
     reconcileSelectionWithArrangement(get());
     const after = snapshotArrangement(get());
-    useUndoStore.getState().pushUndo('Delete block', before, after);
+    useUndoStore.getState().pushUndo('Delete block', { undo: before, redo: after });
     useUiStore.getState().markDirty();
   },
 
@@ -870,7 +870,7 @@ export const useProjectStore = create<ProjectStore>()((set, get) => ({
     const copy: Block = { ...original, id: genId() };
     set({ blocks: [...blocks, copy] });
     const after = snapshotArrangement(get());
-    useUndoStore.getState().pushUndo('Duplicate block', before, after);
+    useUndoStore.getState().pushUndo('Duplicate block', { undo: before, redo: after });
     useUiStore.getState().markDirty();
   },
 
@@ -880,7 +880,7 @@ export const useProjectStore = create<ProjectStore>()((set, get) => ({
       chords: state.chords.map((c) => (c.barNumber === barNumber ? { ...c, ...chord } : c)),
     }));
     const after = snapshotArrangement(get());
-    useUndoStore.getState().pushUndo(`Update chord at bar ${barNumber}`, before, after);
+    useUndoStore.getState().pushUndo(`Update chord at bar ${barNumber}`, { undo: before, redo: after });
     useUiStore.getState().markDirty();
   },
 

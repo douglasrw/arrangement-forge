@@ -1,9 +1,12 @@
 import { create } from 'zustand';
+import {
+  createUndoBoundaryEntry,
+  type UndoBoundaryEntry,
+  type UndoBoundarySnapshots,
+} from '@/lib/undo-helpers';
 
-export interface UndoEntry {
+export interface UndoEntry extends UndoBoundaryEntry {
   description: string;
-  stateBefore: string; // Snapshot to restore when undoing this entry
-  stateAfter: string; // Snapshot to restore when redoing this entry
 }
 
 interface UndoStore {
@@ -11,7 +14,7 @@ interface UndoStore {
   redoStack: UndoEntry[];
   maxUndo: number;
 
-  pushUndo: (description: string, before: string, after: string) => void;
+  pushUndo: (description: string, snapshots: UndoBoundarySnapshots) => void;
   undo: () => UndoEntry | null;
   redo: () => UndoEntry | null;
   canUndo: () => boolean;
@@ -25,9 +28,12 @@ export const useUndoStore = create<UndoStore>()((set, get) => ({
   redoStack: [],
   maxUndo: 50,
 
-  pushUndo: (description, before, after) => {
+  pushUndo: (description, snapshots) => {
     set((state) => {
-      const stack = [...state.undoStack, { description, stateBefore: before, stateAfter: after }];
+      const stack = [
+        ...state.undoStack,
+        { description, ...createUndoBoundaryEntry(snapshots) },
+      ];
       return {
         undoStack: stack.length > state.maxUndo ? stack.slice(stack.length - state.maxUndo) : stack,
         redoStack: [],

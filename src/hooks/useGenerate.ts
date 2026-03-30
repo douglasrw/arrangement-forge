@@ -242,7 +242,7 @@ export function useGenerate() {
         const after = snapshotArrangement({
           stems: newStems, sections: newSections, blocks: newBlocks, chords: newChords,
         });
-        pushUndo('Full regeneration', before, after);
+        pushUndo('Full regeneration', { undo: before, redo: after });
       }
 
       setGenerationState('complete');

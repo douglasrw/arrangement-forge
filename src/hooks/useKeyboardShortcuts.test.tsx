@@ -209,8 +209,10 @@ describe('useKeyboardShortcuts undo boundary truth', () => {
     useProjectStore.getState().setArrangement(after);
     useUndoStore.getState().pushUndo(
       'Boundary test',
-      JSON.stringify(before),
-      JSON.stringify(after)
+      {
+        undo: JSON.stringify(before),
+        redo: JSON.stringify(after),
+      }
     );
 
     const mounted = renderHarness();
@@ -232,8 +234,10 @@ describe('useKeyboardShortcuts undo boundary truth', () => {
     useProjectStore.getState().setArrangement(after);
     useUndoStore.getState().pushUndo(
       'Boundary test',
-      JSON.stringify(before),
-      JSON.stringify(after)
+      {
+        undo: JSON.stringify(before),
+        redo: JSON.stringify(after),
+      }
     );
 
     const mounted = renderHarness();

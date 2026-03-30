@@ -16,6 +16,11 @@ export interface UndoBoundaryEntry {
   stateAfter: string;
 }
 
+export interface UndoBoundarySnapshots {
+  undo: string;
+  redo: string;
+}
+
 export function snapshotArrangement(state: {
   stems: Stem[];
   sections: Section[];
@@ -54,6 +59,15 @@ export function parseUndoBoundarySnapshot(
 ): ArrangementSnapshot | null {
   const snapshot = boundary === 'undo' ? entry.stateBefore : entry.stateAfter;
   return parseSnapshot(snapshot);
+}
+
+export function createUndoBoundaryEntry(
+  snapshots: UndoBoundarySnapshots
+): UndoBoundaryEntry {
+  return {
+    stateBefore: snapshots.undo,
+    stateAfter: snapshots.redo,
+  };
 }
 
 export function parseUndoSnapshot(entry: UndoBoundaryEntry): ArrangementSnapshot | null {
