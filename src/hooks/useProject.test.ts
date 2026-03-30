@@ -383,10 +383,12 @@ describe('useProject export readiness', () => {
         hasAnyArrangementTruth: true,
         hasDraftArrangementRows: false,
         currentState: 'A saved arrangement snapshot exists, but its rows are not loaded in the project store right now.',
-        nextStep: 'Reload the arrangement rows before editing, saving, or exporting the current arrangement snapshot.',
+        nextStep:
+          'Use Reload saved snapshot in the top bar to load the arrangement rows before editing, saving, or exporting the current arrangement snapshot.',
       },
       currentState: 'Project text is ready to export, but the saved arrangement snapshot is not loaded in this session.',
-      nextStep: 'Export now to download the chord chart, or reload the saved arrangement rows before exporting the arrangement snapshot.',
+      nextStep:
+        'Export now to download the chord chart, or use Reload saved snapshot in the top bar before exporting the arrangement snapshot.',
     });
   });
 
@@ -451,10 +453,12 @@ describe('useProject export readiness', () => {
         hasAnyArrangementTruth: true,
         hasDraftArrangementRows: false,
         currentState: 'A saved arrangement snapshot exists, but its rows are not loaded in the project store right now.',
-        nextStep: 'Reload the arrangement rows before editing, saving, or exporting the current arrangement snapshot.',
+        nextStep:
+          'Use Reload saved snapshot in the top bar to load the arrangement rows before editing, saving, or exporting the current arrangement snapshot.',
       },
       currentState: 'A saved arrangement snapshot exists, but its rows are not loaded in this session.',
-      nextStep: 'Reload the saved arrangement rows before exporting the arrangement snapshot.',
+      nextStep:
+        'Use Reload saved snapshot in the top bar to load the arrangement rows before exporting the arrangement snapshot.',
     });
   });
 
@@ -681,7 +685,8 @@ describe('useProject save planning', () => {
         hasAnyArrangementTruth: true,
         hasDraftArrangementRows: false,
         currentState: 'A saved arrangement snapshot exists, but its rows are not loaded in the project store right now.',
-        nextStep: 'Reload the arrangement rows before editing, saving, or exporting the current arrangement snapshot.',
+        nextStep:
+          'Use Reload saved snapshot in the top bar to load the arrangement rows before editing, saving, or exporting the current arrangement snapshot.',
       },
     });
   });

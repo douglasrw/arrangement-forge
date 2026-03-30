@@ -324,7 +324,8 @@ describe('projectStore', () => {
       hasAnyArrangementTruth: true,
       hasDraftArrangementRows: false,
       currentState: 'A saved arrangement snapshot exists, but its rows are not loaded in the project store right now.',
-      nextStep: 'Reload the arrangement rows before editing, saving, or exporting the current arrangement snapshot.',
+      nextStep:
+        'Use Reload saved snapshot in the top bar to load the arrangement rows before editing, saving, or exporting the current arrangement snapshot.',
     });
   });
 

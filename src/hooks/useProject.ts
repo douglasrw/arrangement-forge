@@ -355,7 +355,8 @@ export function getProjectExportReadiness(state: {
           exportsArrangementSnapshot: false,
           arrangementTruth,
           currentState: 'Project text is ready to export, but the saved arrangement snapshot is not loaded in this session.',
-          nextStep: 'Export now to download the chord chart, or reload the saved arrangement rows before exporting the arrangement snapshot.',
+          nextStep:
+            'Export now to download the chord chart, or use Reload saved snapshot in the top bar before exporting the arrangement snapshot.',
         };
       }
 
@@ -407,7 +408,8 @@ export function getProjectExportReadiness(state: {
       exportsArrangementSnapshot: false,
       arrangementTruth,
       currentState: 'A saved arrangement snapshot exists, but its rows are not loaded in this session.',
-      nextStep: 'Reload the saved arrangement rows before exporting the arrangement snapshot.',
+      nextStep:
+        'Use Reload saved snapshot in the top bar to load the arrangement rows before exporting the arrangement snapshot.',
     };
   }
 

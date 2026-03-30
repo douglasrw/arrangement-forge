@@ -340,12 +340,12 @@ describe('MixerDrawer', () => {
     expect(mixerReadiness?.textContent).toBe('Reload arrangement');
     expect(mixerReadiness?.getAttribute('data-mixer-readiness')).toBe('unavailable');
     expect(mounted.container.textContent).toContain(
-      'A saved arrangement snapshot exists, but its rows are not loaded in this session. Reload the saved arrangement rows to enable mixer controls.'
+      'A saved arrangement snapshot exists, but its rows are not loaded in this session. Use Reload saved snapshot in the top bar to enable mixer controls.'
     );
     expect(
       findElementByTitle(
         mounted.container,
-        'Reload the saved arrangement rows to enable piano.'
+        'Use Reload saved snapshot in the top bar to enable piano.'
       )?.textContent
     ).toContain('Reload arrangement');
     expect(

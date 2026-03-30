@@ -79,7 +79,7 @@ function buildPlaybackTruth({
       reason: 'saved-arrangement-not-loaded',
       summary: 'Reload arrangement',
       detail: 'A saved arrangement snapshot exists, but its rows are not loaded into the editor right now.',
-      nextStep: 'Reload the saved arrangement rows before starting playback.',
+      nextStep: 'Use Reload saved snapshot in the top bar before starting playback.',
     };
   }
 

@@ -607,7 +607,7 @@ describe('TopBar export baseline', () => {
     expect(exportButton?.disabled).toBe(false);
     expect(exportButton?.textContent).toBe('Reload saved snapshot');
     expect(exportButton?.title).toBe(
-      'A saved arrangement snapshot exists, but its rows are not loaded in this session. Reload the saved arrangement rows before exporting the arrangement snapshot.'
+      'A saved arrangement snapshot exists, but its rows are not loaded in this session. Use Reload saved snapshot in the top bar to load the arrangement rows before exporting the arrangement snapshot.'
     );
   });
 
@@ -697,7 +697,7 @@ describe('TopBar export baseline', () => {
     expect(exportButton?.disabled).toBe(false);
     expect(exportButton?.textContent).toBe('Export chart');
     expect(exportButton?.title).toBe(
-      'Project text is ready to export, but the saved arrangement snapshot is not loaded in this session. Export now to download the chord chart, or reload the saved arrangement rows before exporting the arrangement snapshot.'
+      'Project text is ready to export, but the saved arrangement snapshot is not loaded in this session. Export now to download the chord chart, or use Reload saved snapshot in the top bar before exporting the arrangement snapshot.'
     );
 
     await act(async () => {

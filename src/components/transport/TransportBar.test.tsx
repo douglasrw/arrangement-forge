@@ -538,10 +538,10 @@ describe('TransportBar transport controls', () => {
 
     expect(playButton?.disabled).toBe(true);
     expect(playButton?.title).toBe(
-      'A saved arrangement snapshot exists, but its rows are not loaded in this session. Reload the saved arrangement rows to enable playback and transport controls.'
+      'A saved arrangement snapshot exists, but its rows are not loaded in this session. Use Reload saved snapshot in the top bar to enable playback and transport controls.'
     );
     expect(guidance?.textContent).toContain(
-      'A saved arrangement snapshot exists, but its rows are not loaded in this session. Reload the saved arrangement rows to enable playback and transport controls.'
+      'A saved arrangement snapshot exists, but its rows are not loaded in this session. Use Reload saved snapshot in the top bar to enable playback and transport controls.'
     );
     expect(guidance?.textContent).not.toContain(
       'Generate or import an arrangement to enable playback and transport controls.'

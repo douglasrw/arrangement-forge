@@ -565,7 +565,7 @@ describe('useAudio transport config', () => {
       'A saved arrangement snapshot exists, but its rows are not loaded into the editor right now.'
     );
     expect(hookValue?.playbackTruth.nextStep).toBe(
-      'Reload the saved arrangement rows before starting playback.'
+      'Use Reload saved snapshot in the top bar before starting playback.'
     );
   });
 

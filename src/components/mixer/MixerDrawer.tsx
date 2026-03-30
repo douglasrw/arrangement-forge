@@ -121,7 +121,7 @@ function getMixerReadinessTruth({
     return {
       status: "unavailable",
       badge: "Reload arrangement",
-      message: "A saved arrangement snapshot exists, but its rows are not loaded in this session. Reload the saved arrangement rows to enable mixer controls.",
+      message: "A saved arrangement snapshot exists, but its rows are not loaded in this session. Use Reload saved snapshot in the top bar to enable mixer controls.",
       tone: "default",
     }
   }
@@ -218,7 +218,7 @@ function getLaneTruth({
     if (arrangementTruthStatus === "persisted-only") {
       return {
         badge: "Reload arrangement",
-        detail: `Reload the saved arrangement rows to enable ${instrumentLabel.toLowerCase()}.`,
+        detail: `Use Reload saved snapshot in the top bar to enable ${instrumentLabel.toLowerCase()}.`,
         tone: "default",
       }
     }
