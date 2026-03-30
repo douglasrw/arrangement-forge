@@ -519,6 +519,7 @@ export function TopBar() {
 
     const chartFileName = getProjectExportFilename(project);
     const snapshotFileName = getProjectSnapshotFilename(project);
+    const downloadedFiles = [chartFileName];
 
     downloadExportFile(
       formatProjectChordChartExport(project, {
@@ -530,18 +531,27 @@ export function TopBar() {
       chartFileName,
       'text/plain;charset=utf-8'
     );
-    downloadExportFile(
-      serializeProjectExportSnapshot({
-        project,
-        stems,
-        sections,
-        blocks,
-        chords,
-      }),
-      snapshotFileName,
-      'application/json;charset=utf-8'
+
+    if (exportReadiness.exportsArrangementSnapshot) {
+      downloadExportFile(
+        serializeProjectExportSnapshot({
+          project,
+          stems,
+          sections,
+          blocks,
+          chords,
+        }),
+        snapshotFileName,
+        'application/json;charset=utf-8'
+      );
+      downloadedFiles.push(snapshotFileName);
+    }
+
+    setExportFeedback(
+      downloadedFiles.length === 1
+        ? `Exported ${downloadedFiles[0]}`
+        : `Exported ${downloadedFiles[0]} and ${downloadedFiles[1]}`
     );
-    setExportFeedback(`Exported ${chartFileName} and ${snapshotFileName}`);
   }
 
   const canExport = exportReadiness.canExport;

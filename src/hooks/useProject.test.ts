@@ -327,6 +327,7 @@ describe('useProject export readiness', () => {
       actionLabel: 'Export',
       hasTextTruth: false,
       hasArrangementRows: true,
+      exportsArrangementSnapshot: true,
       arrangementTruth: {
         status: 'loaded-and-persisted',
         hasArrangementRows: true,
@@ -339,6 +340,34 @@ describe('useProject export readiness', () => {
       nextStep: 'Export now to download the chord chart and arrangement snapshot.',
     });
     expect(readiness).not.toHaveProperty('message');
+  });
+
+  it('keeps chart-only export truth explicit when project text is ready but the saved arrangement snapshot is not loaded', () => {
+    const readiness = getProjectExportReadiness({
+      project: buildStoredProject('project-text-over-saved-arrangement', true),
+      stems: [],
+      sections: [],
+      blocks: [],
+      chords: [],
+    });
+
+    expect(readiness).toEqual({
+      canExport: true,
+      actionLabel: 'Export chart',
+      hasTextTruth: true,
+      hasArrangementRows: false,
+      exportsArrangementSnapshot: false,
+      arrangementTruth: {
+        status: 'persisted-only',
+        hasArrangementRows: false,
+        hasPersistedArrangement: true,
+        hasAnyArrangementTruth: true,
+        currentState: 'A saved arrangement snapshot exists, but its rows are not loaded in the project store right now.',
+        nextStep: 'Reload the arrangement rows before editing, saving, or exporting the current arrangement snapshot.',
+      },
+      currentState: 'Project text is ready to export, but the saved arrangement snapshot is not loaded in this session.',
+      nextStep: 'Export now to download the chord chart, or reload the saved arrangement rows before exporting the arrangement snapshot.',
+    });
   });
 
   it('explains the blocked export state when saved arrangement metadata exists without loaded rows', () => {
@@ -359,6 +388,7 @@ describe('useProject export readiness', () => {
       actionLabel: 'Reload to export',
       hasTextTruth: false,
       hasArrangementRows: false,
+      exportsArrangementSnapshot: false,
       arrangementTruth: {
         status: 'persisted-only',
         hasArrangementRows: false,
@@ -390,6 +420,7 @@ describe('useProject export readiness', () => {
       actionLabel: 'Nothing to export',
       hasTextTruth: false,
       hasArrangementRows: false,
+      exportsArrangementSnapshot: false,
       arrangementTruth: {
         status: 'missing',
         hasArrangementRows: false,

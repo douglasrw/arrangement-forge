@@ -64,9 +64,10 @@ function rowToMessage(row: Record<string, unknown>): AiChatMessage {
 
 export interface ProjectExportReadiness {
   canExport: boolean;
-  actionLabel: 'Export' | 'Reload to export' | 'Nothing to export';
+  actionLabel: 'Export' | 'Export chart' | 'Reload to export' | 'Nothing to export';
   hasTextTruth: boolean;
   hasArrangementRows: boolean;
+  exportsArrangementSnapshot: boolean;
   arrangementTruth: ReturnType<typeof getProjectArrangementTruth>;
   currentState: string;
   nextStep: string;
@@ -238,6 +239,7 @@ export function getProjectExportReadiness(state: {
       actionLabel: 'Nothing to export',
       hasTextTruth: false,
       hasArrangementRows: false,
+      exportsArrangementSnapshot: false,
       arrangementTruth,
       currentState: 'No project is open right now.',
       nextStep: 'Open a project to export.',
@@ -249,11 +251,25 @@ export function getProjectExportReadiness(state: {
   );
 
   if (hasTextTruth || hasArrangementRows) {
+    if (hasTextTruth && arrangementTruth.status === 'persisted-only') {
+      return {
+        canExport: true,
+        actionLabel: 'Export chart',
+        hasTextTruth,
+        hasArrangementRows: false,
+        exportsArrangementSnapshot: false,
+        arrangementTruth,
+        currentState: 'Project text is ready to export, but the saved arrangement snapshot is not loaded in this session.',
+        nextStep: 'Export now to download the chord chart, or reload the saved arrangement rows before exporting the arrangement snapshot.',
+      };
+    }
+
     return {
       canExport: true,
       actionLabel: 'Export',
       hasTextTruth,
       hasArrangementRows,
+      exportsArrangementSnapshot: true,
       arrangementTruth,
       currentState: hasArrangementRows
         ? hasTextTruth
@@ -272,6 +288,7 @@ export function getProjectExportReadiness(state: {
       actionLabel: 'Reload to export',
       hasTextTruth: false,
       hasArrangementRows: false,
+      exportsArrangementSnapshot: false,
       arrangementTruth,
       currentState: 'A saved arrangement snapshot exists, but its rows are not loaded in this session.',
       nextStep: 'Reload the saved arrangement rows before exporting the arrangement snapshot.',
@@ -283,6 +300,7 @@ export function getProjectExportReadiness(state: {
     actionLabel: 'Nothing to export',
     hasTextTruth: false,
     hasArrangementRows: false,
+    exportsArrangementSnapshot: false,
     arrangementTruth,
     currentState: 'No chord chart, generation hints, or arrangement rows are ready to export yet.',
     nextStep: 'Add a chord chart, description, or arrangement before exporting.',
