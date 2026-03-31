@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import {
+  countRestorableUndoBoundaries,
   createUndoBoundaryTruth,
   createUndoBoundaryExecutionTruth,
   createUndoBoundaryEntry,
@@ -35,34 +36,42 @@ interface UndoStore {
   getRedoDescription: (generationState?: GenerationState) => string | null;
 }
 
-function getUndoBoundaryTruthForEntry(
-  entry: UndoEntry | undefined,
+function getUndoBoundaryTruthForStack(
+  stack: UndoEntry[],
   generationState?: GenerationState
 ): UndoBoundaryTruth {
+  const entry = stack[stack.length - 1];
+
   return createUndoBoundaryExecutionTruth(
-    createUndoBoundaryTruth(entry ?? null, 'undo', entry?.description ?? null),
+    createUndoBoundaryTruth(entry ?? null, 'undo', entry?.description ?? null, {
+      hiddenRestorableBoundaryCount: countRestorableUndoBoundaries(stack.slice(0, -1), 'undo'),
+    }),
     generationState
   );
 }
 
-function getRedoBoundaryTruthForEntry(
-  entry: UndoEntry | undefined,
+function getRedoBoundaryTruthForStack(
+  stack: UndoEntry[],
   generationState?: GenerationState
 ): UndoBoundaryTruth {
+  const entry = stack[stack.length - 1];
+
   return createUndoBoundaryExecutionTruth(
-    createUndoBoundaryTruth(entry ?? null, 'redo', entry?.description ?? null),
+    createUndoBoundaryTruth(entry ?? null, 'redo', entry?.description ?? null, {
+      hiddenRestorableBoundaryCount: countRestorableUndoBoundaries(stack.slice(0, -1), 'redo'),
+    }),
     generationState
   );
 }
 
-function getHistoryTruthForEntries(
-  undoEntry: UndoEntry | undefined,
-  redoEntry: UndoEntry | undefined,
+function getHistoryTruthForStacks(
+  undoStack: UndoEntry[],
+  redoStack: UndoEntry[],
   generationState?: GenerationState
 ): UndoHistoryTruth {
   return createUndoHistoryTruth(
-    getUndoBoundaryTruthForEntry(undoEntry, generationState),
-    getRedoBoundaryTruthForEntry(redoEntry, generationState)
+    getUndoBoundaryTruthForStack(undoStack, generationState),
+    getRedoBoundaryTruthForStack(redoStack, generationState)
   );
 }
 
@@ -87,7 +96,7 @@ export const useUndoStore = create<UndoStore>()((set, get) => ({
   undo: (generationState) => {
     const { undoStack, redoStack } = get();
     const entry = undoStack[undoStack.length - 1];
-    const truth = getUndoBoundaryTruthForEntry(entry, generationState);
+    const truth = getUndoBoundaryTruthForStack(undoStack, generationState);
     if (!entry || truth.status !== 'available' || !truth.transition) return null;
     set({ undoStack: undoStack.slice(0, -1), redoStack: [...redoStack, entry] });
     return {
@@ -99,7 +108,7 @@ export const useUndoStore = create<UndoStore>()((set, get) => ({
   redo: (generationState) => {
     const { undoStack, redoStack } = get();
     const entry = redoStack[redoStack.length - 1];
-    const truth = getRedoBoundaryTruthForEntry(entry, generationState);
+    const truth = getRedoBoundaryTruthForStack(redoStack, generationState);
     if (!entry || truth.status !== 'available' || !truth.transition) return null;
     set({ redoStack: redoStack.slice(0, -1), undoStack: [...undoStack, entry] });
     return {
@@ -110,21 +119,17 @@ export const useUndoStore = create<UndoStore>()((set, get) => ({
 
   getUndoBoundaryTruth: (generationState) => {
     const stack = get().undoStack;
-    return getUndoBoundaryTruthForEntry(stack[stack.length - 1], generationState);
+    return getUndoBoundaryTruthForStack(stack, generationState);
   },
 
   getRedoBoundaryTruth: (generationState) => {
     const stack = get().redoStack;
-    return getRedoBoundaryTruthForEntry(stack[stack.length - 1], generationState);
+    return getRedoBoundaryTruthForStack(stack, generationState);
   },
 
   getHistoryTruth: (generationState) => {
     const { undoStack, redoStack } = get();
-    return getHistoryTruthForEntries(
-      undoStack[undoStack.length - 1],
-      redoStack[redoStack.length - 1],
-      generationState
-    );
+    return getHistoryTruthForStacks(undoStack, redoStack, generationState);
   },
 
   canUndo: (generationState) => {

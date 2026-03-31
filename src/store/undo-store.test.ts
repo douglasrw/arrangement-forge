@@ -204,6 +204,29 @@ describe('undoStore', () => {
     });
   });
 
+  it('explains when a blocked undo boundary traps older restorable undo history behind it', () => {
+    useUndoStore.getState().pushUndo('Older action', {
+      undo: makeSnapshot('older-before'),
+      redo: makeSnapshot('older-after'),
+    });
+    useUndoStore.getState().pushUndo('Broken action', {
+      undo: 'not json',
+      redo: makeSnapshot('broken-after'),
+    });
+
+    expect(useUndoStore.getState().getUndoBoundaryTruth()).toMatchObject({
+      boundary: 'undo',
+      status: 'blocked',
+      statusLabel: 'Undo blocked: Broken action',
+      currentState:
+        'The latest undo boundary is still on the stack, but the arrangement captured before Broken action cannot be read. ' +
+        'One older undo boundary is still preserved behind this blocked step, but it cannot be reached until the latest boundary is repaired or removed.',
+      nextStep:
+        'Do not offer Undo for the arrangement captured before Broken action until a valid restore snapshot is stored. ' +
+        'Repair or remove the latest undo boundary before trying to reach the older undo history still preserved behind it.',
+    });
+  });
+
   it('surfaces redo as the next history truth after undo consumes the undo boundary', () => {
     useUndoStore.getState().pushUndo('Split block', {
       undo: makeSnapshot('before'),

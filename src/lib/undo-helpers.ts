@@ -50,6 +50,10 @@ export interface UndoHistoryTruth {
   tooltip: string;
 }
 
+interface UndoBoundaryTruthOptions {
+  hiddenRestorableBoundaryCount?: number;
+}
+
 export function snapshotArrangement(state: {
   stems: Stem[];
   sections: Section[];
@@ -88,6 +92,15 @@ export function parseUndoBoundarySnapshot(
 ): ArrangementSnapshot | null {
   const snapshot = boundary === 'undo' ? entry.undoSnapshot : entry.redoSnapshot;
   return parseSnapshot(snapshot);
+}
+
+export function countRestorableUndoBoundaries(
+  entries: UndoBoundaryEntry[],
+  boundary: UndoBoundary
+): number {
+  return entries.reduce((count, entry) => {
+    return parseUndoBoundarySnapshot(entry, boundary) ? count + 1 : count;
+  }, 0);
 }
 
 export function createUndoBoundaryTransition(
@@ -139,6 +152,30 @@ function getUndoBoundaryCaptureTarget(
   const actionTarget = getUndoBoundaryActionTarget(description);
 
   return boundary === 'undo' ? `before ${actionTarget}` : `after ${actionTarget}`;
+}
+
+function formatTrappedUndoHistoryCurrentState(
+  boundary: UndoBoundary,
+  hiddenRestorableBoundaryCount: number
+): string {
+  const noun = hiddenRestorableBoundaryCount === 1 ? 'boundary is' : 'boundaries are';
+  const pronoun = hiddenRestorableBoundaryCount === 1 ? 'it' : 'they';
+  const quantity =
+    hiddenRestorableBoundaryCount === 1
+      ? 'One older'
+      : `${hiddenRestorableBoundaryCount} older`;
+
+  return (
+    `${quantity} ${boundary} ${noun} still preserved behind this blocked step, ` +
+    `but ${pronoun} cannot be reached until the latest boundary is repaired or removed.`
+  );
+}
+
+function formatTrappedUndoHistoryNextStep(boundary: UndoBoundary): string {
+  return (
+    `Repair or remove the latest ${boundary} boundary before trying to reach ` +
+    `the older ${boundary} history still preserved behind it.`
+  );
 }
 
 function createPausedUndoBoundaryTruth(boundaryTruth: UndoBoundaryTruth): UndoBoundaryTruth {
@@ -203,7 +240,8 @@ function getCompanionUndoHistoryBoundaryTruth(
 export function createUndoBoundaryTruth(
   entry: UndoBoundaryEntry | null | undefined,
   boundary: UndoBoundary,
-  description: string | null = null
+  description: string | null = null,
+  options: UndoBoundaryTruthOptions = {}
 ): UndoBoundaryTruth {
   const action = getUndoBoundaryActionLabel(boundary);
   const normalizedDescription = description?.trim() || null;
@@ -227,6 +265,15 @@ export function createUndoBoundaryTruth(
   const transition = createUndoBoundaryTransition(entry, boundary);
   if (!transition.restoreSnapshot) {
     const captureTarget = getUndoBoundaryCaptureTarget(boundary, normalizedDescription);
+    const hiddenRestorableBoundaryCount = options.hiddenRestorableBoundaryCount ?? 0;
+    const trappedHistoryCurrentState =
+      hiddenRestorableBoundaryCount > 0
+        ? ` ${formatTrappedUndoHistoryCurrentState(boundary, hiddenRestorableBoundaryCount)}`
+        : '';
+    const trappedHistoryNextStep =
+      hiddenRestorableBoundaryCount > 0
+        ? ` ${formatTrappedUndoHistoryNextStep(boundary)}`
+        : '';
 
     return {
       boundary,
@@ -236,10 +283,10 @@ export function createUndoBoundaryTruth(
       statusLabel: formatUndoBoundaryStatusLabel(action, 'blocked', normalizedDescription),
       currentState:
         `The latest ${boundary} boundary is still on the stack, but the arrangement captured ` +
-        `${captureTarget} cannot be read.`,
+        `${captureTarget} cannot be read.${trappedHistoryCurrentState}`,
       nextStep:
         `Do not offer ${action} for the arrangement captured ${captureTarget} until a valid ` +
-        `restore snapshot is stored.`,
+        `restore snapshot is stored.${trappedHistoryNextStep}`,
       transition,
     };
   }

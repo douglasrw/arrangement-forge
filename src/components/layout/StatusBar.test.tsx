@@ -667,6 +667,37 @@ describe('StatusBar', () => {
     );
   });
 
+  it('renders when a blocked undo boundary traps older undo history behind it', () => {
+    useUndoStore.getState().pushUndo('Older action', {
+      undo: makeSnapshot('older-before'),
+      redo: makeSnapshot('older-after'),
+    });
+    useUndoStore.getState().pushUndo('Broken action', {
+      undo: 'not json',
+      redo: makeSnapshot('broken-after'),
+    });
+
+    const container = renderStatusBar('saved');
+    const history = container.querySelector(
+      '[data-testid="status-bar-history"]'
+    ) as HTMLSpanElement | null;
+    const nextStep = container.querySelector(
+      '[data-testid="status-bar-history-next-step"]'
+    ) as HTMLSpanElement | null;
+
+    expect(history?.textContent).toBe('Undo blocked: Broken action');
+    expect(nextStep?.textContent).toBe(
+      'Do not offer Undo for the arrangement captured before Broken action until a valid restore snapshot is stored. ' +
+      'Repair or remove the latest undo boundary before trying to reach the older undo history still preserved behind it.'
+    );
+    expect(history?.title).toBe(
+      'The latest undo boundary is still on the stack, but the arrangement captured before Broken action cannot be read. ' +
+      'One older undo boundary is still preserved behind this blocked step, but it cannot be reached until the latest boundary is repaired or removed. ' +
+      'Do not offer Undo for the arrangement captured before Broken action until a valid restore snapshot is stored. ' +
+      'Repair or remove the latest undo boundary before trying to reach the older undo history still preserved behind it.'
+    );
+  });
+
   it('renders redo as the next explicit history truth after undo runs', () => {
     useUndoStore.getState().pushUndo('Split block', {
       undo: makeSnapshot('before'),
