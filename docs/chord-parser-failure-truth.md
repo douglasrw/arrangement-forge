@@ -3,10 +3,11 @@
 Status date: 2026-03-31
 
 Status: landed on `main`; reverified on 2026-03-31 at current head
-`cb527b72` after plain text section labels like `Verse:` stopped masquerading
-as invalid chord bars, so blocked bars, overflow, editor repair guidance, and
-generation-stop repair copy still stay explicit in the input panel instead of
-being inferred from truncated warning copy
+`13ea108e` after the chord-chart field hint kept the same blocked-bar,
+highlight, and overflow truth local to the text editor itself, so blocked
+bars, overflow, editor repair guidance, and generation-stop repair copy still
+stay explicit in the input panel instead of being inferred from truncated
+warning copy
 
 Purpose: preserve the current chord parser failure contract and its landing
 proof in one repo-local place so future work does not have to reconstruct it
@@ -63,6 +64,9 @@ from `src/lib/chord-chart-parser.ts`, `src/components/left-panel/InputSection.ts
 - the text-editor hint now reuses the same blocked-state and next-step truth as
   the status banner, so the operator does not need to switch back to the
   summary card to understand what must be repaired
+- the text-editor hint also keeps flagged-bar snippets and hidden overflow count
+  explicit on its own, so the raw chord-chart field stays self-contained even
+  when the blocked banner scrolls out of view
 - the surfaced warning snippets keep the first blocked bars visible in the same
   panel instead of forcing the operator to infer which bars failed
 - when more than three bars are blocked, the panel now says how many additional
@@ -90,6 +94,8 @@ Current focused proofs for this slice:
 
 - `cb527b72ec4fe308ca8e8e601c455812c4ecded2`:
   `commitpath_c40ed88d Accept plain section labels in chord parser`
+- `13ea108ebf09f79dcf430a4b2a0942bcb16930b1`:
+  `commitpath_c40ed88d Keep chord chart field hint truth local`
 - `46f62414ca31feb48d2094c1545d13f6fa47abcd`:
   `commitpath_c40ed88d Refresh chord parser failure truth evidence`
 - `5dee0b98294e0b60c6858fcb6b8150e5695a096a`:
@@ -198,7 +204,11 @@ Current focused proofs for this slice:
 - Commit `cb527b72` made direct text-entry section labels follow the same
   parser path as imported chord charts, so `Verse:` no longer creates a false
   blocked bar or shifts subsequent bar numbers.
-- After the 2026-03-31 recheck at current head `cb527b72`, this family again
+- Commit `13ea108e` kept the same family honest at the next `main` head by
+  making the raw chord-chart field hint carry the same flagged-bar and overflow
+  truth as the blocked banner, so the repair guidance remains local even when
+  the banner is not the operator's current focal surface.
+- After the 2026-03-31 recheck at current head `13ea108e`, this family again
   appears exhausted unless a new chord-parse behavior changes the contract or
   the proof surface.
 
@@ -211,6 +221,8 @@ The tests cover:
 - explicit overflow count when blocked-bar highlights are truncated
 - input-surface summary and next-step copy for blocked bars
 - visible warning snippets for invalid bars and unresolved repeat markers
+- self-contained text-editor hint copy when only the first blocked-bar
+  highlights are surfaced
 
 ## Deep Home
 
