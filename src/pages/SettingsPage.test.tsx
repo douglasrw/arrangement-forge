@@ -333,6 +333,9 @@ describe('SettingsPage truth surface', () => {
     mountedContainer = mounted.container;
 
     expect(mounted.container.textContent).toContain(
+      'Saved profile truth for this field stays simple: Display names may be left blank and save exactly as entered.'
+    );
+    expect(mounted.container.textContent).toContain(
       'Saved profile validation only accepts chord modes letter or roman and default genres from the supported list below.'
     );
     expect(mounted.container.textContent).toContain(

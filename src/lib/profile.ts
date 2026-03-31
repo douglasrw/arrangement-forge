@@ -18,10 +18,12 @@ function formatSupportedValues(values: readonly string[]): string {
 }
 
 export function describeSupportedProfileSettingsTruth(): {
+  displayName: string;
   chordDisplayModes: string;
   defaultGenres: string;
 } {
   return {
+    displayName: 'Display names may be left blank and save exactly as entered.',
     chordDisplayModes: formatSupportedValues(SUPPORTED_CHORD_DISPLAY_MODES),
     defaultGenres: formatSupportedValues(GENRES),
   };

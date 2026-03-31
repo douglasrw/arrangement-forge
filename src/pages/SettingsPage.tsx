@@ -418,7 +418,14 @@ export default function SettingsPage() {
           {/* Profile card */}
           <Card className={settingsCardClasses}>
             <CardHeader className={settingsCardHeaderClasses}>
-              <h2 className={sectionHeadingClasses}>Profile</h2>
+              <div className="flex flex-col gap-1.5">
+                <h2 className={sectionHeadingClasses}>Profile</h2>
+                <p className="text-sm text-muted-foreground">
+                  Saved profile truth for this field stays simple:
+                  {' '}
+                  {supportedProfileSettingsTruth.displayName}
+                </p>
+              </div>
             </CardHeader>
             <CardContent className={settingsCardContentClasses}>
               <div className="flex flex-col gap-4">

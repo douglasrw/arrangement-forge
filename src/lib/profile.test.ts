@@ -1,7 +1,15 @@
 import { describe, expect, it } from 'vitest';
-import { rowToProfile } from './profile';
+import { describeSupportedProfileSettingsTruth, rowToProfile } from './profile';
 
 describe('rowToProfile', () => {
+  it('describes the current saved profile settings truth for each editable field', () => {
+    expect(describeSupportedProfileSettingsTruth()).toEqual({
+      displayName: 'Display names may be left blank and save exactly as entered.',
+      chordDisplayModes: 'letter or roman',
+      defaultGenres: 'Jazz, Blues, Rock, Funk, Country, Gospel, R&B, Latin, or Pop',
+    });
+  });
+
   it('maps a Supabase profile row into the shared Profile shape', () => {
     expect(
       rowToProfile({
