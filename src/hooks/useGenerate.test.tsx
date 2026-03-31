@@ -255,7 +255,7 @@ describe('useGenerate assistant prompt flow', () => {
       truth: {
         state: 'blocked',
         currentState:
-          'Bar 2 currently parses as N.C., so Generate stays blocked until the chart is fixed.',
+          '1 of 2 bars are ready. Bar 2 currently parses as N.C., so Generate stays blocked until the chart is fixed.',
         summary: '1 bar has an unrecognized chord token.',
         nextStep: 'Fix or replace bar 2 before generating.',
         issueHighlights: ['Line 1, bar 2: could not parse "xyz??"'],
@@ -278,7 +278,7 @@ describe('useGenerate assistant prompt flow', () => {
       generationState: 'idle',
       systemStatus: 'error',
       errorMessage:
-        'Bar 2 currently parses as N.C., so Generate stays blocked until the chart is fixed. 1 bar has an unrecognized chord token. Next step: Fix or replace bar 2 before generating. Flagged chart locations: Line 1, bar 2: could not parse "xyz??"',
+        '1 of 2 bars are ready. Bar 2 currently parses as N.C., so Generate stays blocked until the chart is fixed. 1 bar has an unrecognized chord token. Next step: Fix or replace bar 2 before generating. Flagged chart locations: Line 1, bar 2: could not parse "xyz??"',
     });
     expect(saveProjectMock).toHaveBeenCalledTimes(1);
     expect(useProjectStore.getState().chatMessages).toHaveLength(1);
@@ -286,7 +286,7 @@ describe('useGenerate assistant prompt flow', () => {
       role: 'assistant',
       scope: 'setup',
       content:
-        'Generation failed: Bar 2 currently parses as N.C., so Generate stays blocked until the chart is fixed. 1 bar has an unrecognized chord token. Next step: Fix or replace bar 2 before generating. Flagged chart locations: Line 1, bar 2: could not parse "xyz??"',
+        'Generation failed: 1 of 2 bars are ready. Bar 2 currently parses as N.C., so Generate stays blocked until the chart is fixed. 1 bar has an unrecognized chord token. Next step: Fix or replace bar 2 before generating. Flagged chart locations: Line 1, bar 2: could not parse "xyz??"',
     });
   });
 

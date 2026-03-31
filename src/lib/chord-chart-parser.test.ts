@@ -143,7 +143,7 @@ describe('parseChordChart', () => {
       state: 'blocked',
       title: 'Chord chart needs attention',
       currentState:
-        'Bar 2 currently parses as N.C., so Generate stays blocked until the chart is fixed.',
+        '1 of 2 bars are ready. Bar 2 currently parses as N.C., so Generate stays blocked until the chart is fixed.',
       summary: '1 bar has an unrecognized chord token.',
       nextStep: 'Fix or replace bar 2 before generating.',
       blockedBars: [2],
@@ -176,7 +176,7 @@ describe('parseChordChart', () => {
       state: 'blocked',
       title: 'Chord chart has parse issues',
       currentState:
-        'Bars 1 and 2 currently parse as N.C., so Generate stays blocked until the chart is fixed.',
+        '0 of 2 bars are ready. Bars 1 and 2 currently parse as N.C., so Generate stays blocked until the chart is fixed.',
       summary: '1 bar has an unrecognized chord token. 1 repeat marker follows an unresolved bar.',
       nextStep: 'Replace bars 1 and 2 with explicit chords or fix the bar before them.',
       blockedBars: [1, 2],
@@ -228,7 +228,7 @@ describe('parseChordChart', () => {
       state: 'blocked',
       title: 'Chord chart has parse issues',
       currentState:
-        'Bars 1 and 2 currently parse as N.C., so Generate stays blocked until the chart is fixed.',
+        '1 of 3 bars are ready. Bars 1 and 2 currently parse as N.C., so Generate stays blocked until the chart is fixed.',
       summary: '1 bar has an unrecognized chord token. 1 repeat marker follows an unresolved bar.',
       nextStep: 'Replace bars 1 and 2 with explicit chords or fix the bar before them.',
       blockedBars: [1, 2],

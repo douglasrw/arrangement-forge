@@ -336,7 +336,7 @@ describe('InputSection upload tab', () => {
     expect(chordChartHint?.getAttribute('data-chord-chart-editor-state')).toBe('blocked');
     expect(mounted.container.textContent).toContain('Chord chart has parse issues');
     expect(mounted.container.textContent).toContain(
-      'Bars 2 and 3 currently parse as N.C., so Generate stays blocked until the chart is fixed.'
+      '1 of 3 bars are ready. Bars 2 and 3 currently parse as N.C., so Generate stays blocked until the chart is fixed.'
     );
     expect(mounted.container.textContent).toContain('1 bar has an unrecognized chord token.');
     expect(mounted.container.textContent).toContain('1 repeat marker follows an unresolved bar.');
@@ -352,7 +352,7 @@ describe('InputSection upload tab', () => {
       'Line 1, bar 3: repeat marker "%" follows a bar that could not be resolved'
     );
     expect(chordChartHint?.textContent).toContain(
-      'Bars 2 and 3 currently parse as N.C., so Generate stays blocked until the chart is fixed.'
+      '1 of 3 bars are ready. Bars 2 and 3 currently parse as N.C., so Generate stays blocked until the chart is fixed.'
     );
     expect(chordChartHint?.textContent).toContain(
       '1 bar has an unrecognized chord token.'
@@ -396,7 +396,7 @@ describe('InputSection upload tab', () => {
     expect(readiness?.getAttribute('data-input-readiness')).toBe('blocked');
     expect(mounted.container.textContent).toContain('Chord chart has parse issues');
     expect(mounted.container.textContent).toContain(
-      'Bars 1 and 2 currently parse as N.C., so Generate stays blocked until the chart is fixed.'
+      '0 of 2 bars are ready. Bars 1 and 2 currently parse as N.C., so Generate stays blocked until the chart is fixed.'
     );
     expect(mounted.container.textContent).toContain('1 bar has an unrecognized chord token.');
     expect(mounted.container.textContent).toContain('1 repeat marker follows an unresolved bar.');
@@ -407,7 +407,7 @@ describe('InputSection upload tab', () => {
       'Flagged chart locations: Line 1, bar 1: could not parse "xyz??"'
     );
     expect(chordChartHint?.textContent).toContain(
-      'Bars 1 and 2 currently parse as N.C., so Generate stays blocked until the chart is fixed.'
+      '0 of 2 bars are ready. Bars 1 and 2 currently parse as N.C., so Generate stays blocked until the chart is fixed.'
     );
     expect(chordChartHint?.textContent).toContain(
       '1 bar has an unrecognized chord token.'
@@ -466,7 +466,7 @@ describe('InputSection upload tab', () => {
     await importFile(fileInput, file);
 
     expect(mounted.container.textContent).toContain(
-      'Chart is blocked: Chord chart needs attention. Bar 1 currently parses as N.C., so Generate stays blocked until the chart is fixed.'
+      'Chart is blocked: Chord chart needs attention. 2 of 3 bars are ready. Bar 1 currently parses as N.C., so Generate stays blocked until the chart is fixed.'
     );
     expect(mounted.container.textContent).toContain(
       'Why it is blocked: 1 repeat marker starts before any chord.'
@@ -768,7 +768,7 @@ describe('InputSection upload tab', () => {
       'Imported broken-bars.txt into the current chord chart. Existing Description was kept.'
     );
     expect(mounted.container.textContent).toContain(
-      'Chart is blocked: Chord chart has parse issues. Bars 2 and 3 currently parse as N.C., so Generate stays blocked until the chart is fixed.'
+      'Chart is blocked: Chord chart has parse issues. 2 of 4 bars are ready. Bars 2 and 3 currently parse as N.C., so Generate stays blocked until the chart is fixed.'
     );
     expect(mounted.container.textContent).toContain(
       'Why it is blocked: 1 bar has an unrecognized chord token. 1 repeat marker follows an unresolved bar.'
@@ -784,7 +784,7 @@ describe('InputSection upload tab', () => {
     );
     expect(mounted.container.textContent).toContain('Chord chart has parse issues');
     expect(mounted.container.textContent).toContain(
-      'Bars 2 and 3 currently parse as N.C., so Generate stays blocked until the chart is fixed.'
+      '2 of 4 bars are ready. Bars 2 and 3 currently parse as N.C., so Generate stays blocked until the chart is fixed.'
     );
     expect(
       mounted.container.querySelector('[data-upload-feedback-tone="blocked"]')
@@ -820,7 +820,7 @@ describe('InputSection upload tab', () => {
       'Imported broken-spaces.txt into the current chord chart. Existing Description was kept.'
     );
     expect(mounted.container.textContent).toContain(
-      'Chart is blocked: Chord chart has parse issues. Bars 2 and 3 currently parse as N.C., so Generate stays blocked until the chart is fixed.'
+      'Chart is blocked: Chord chart has parse issues. 2 of 4 bars are ready. Bars 2 and 3 currently parse as N.C., so Generate stays blocked until the chart is fixed.'
     );
     expect(mounted.container.textContent).toContain(
       'Next step: Replace bars 2 and 3 with explicit chords or fix the bar before them.'
@@ -833,7 +833,7 @@ describe('InputSection upload tab', () => {
     );
     expect(mounted.container.textContent).toContain('Chord chart has parse issues');
     expect(mounted.container.textContent).toContain(
-      'Bars 2 and 3 currently parse as N.C., so Generate stays blocked until the chart is fixed.'
+      '2 of 4 bars are ready. Bars 2 and 3 currently parse as N.C., so Generate stays blocked until the chart is fixed.'
     );
     expect(getGenerateButton(mounted.container).disabled).toBe(true);
   });

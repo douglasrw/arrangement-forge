@@ -178,6 +178,7 @@ function buildParseTruth(
   ).length;
   const blockedBars = issues.map((issue) => issue.barNumber);
   const barLabel = formatBarList(blockedBars);
+  const readyBarCount = Math.max(parsedBarCount - blockedBars.length, 0);
   const summaryParts: string[] = [];
 
   if (invalidTokenCount > 0) {
@@ -205,7 +206,7 @@ function buildParseTruth(
   return {
     state: 'blocked',
     title: blockedBars.length === 1 ? 'Chord chart needs attention' : 'Chord chart has parse issues',
-    currentState: `${barLabel} ${blockedBars.length === 1 ? 'currently parses' : 'currently parse'} as N.C., so Generate stays blocked until the chart is fixed.`,
+    currentState: `${readyBarCount} of ${parsedBarCount} ${parsedBarCount === 1 ? 'bar is' : 'bars are'} ready. ${barLabel} ${blockedBars.length === 1 ? 'currently parses' : 'currently parse'} as N.C., so Generate stays blocked until the chart is fixed.`,
     summary: summaryParts.join(' '),
     nextStep:
       repeatWithoutPreviousCount > 0 && repeatWithoutResolvedChordCount === 0
