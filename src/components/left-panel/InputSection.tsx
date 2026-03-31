@@ -232,6 +232,14 @@ export function InputSection() {
   const parseFeedbackOverflow = hasParseIssues && (parseTruth?.remainingIssueCount ?? 0) > 0
     ? `${parseTruth?.remainingIssueCount} more flagged ${parseTruth?.remainingIssueCount === 1 ? "bar needs" : "bars need"} review in the chord chart before generation.`
     : null
+  const chordChartEditorHint = hasParseIssues && parseTruth
+    ? [
+      parseTruth.currentState,
+      parseTruth.nextStep ? `Next step: ${parseTruth.nextStep}` : "Fix the flagged chord bars before generating.",
+      parseFeedbackHighlights,
+      parseFeedbackOverflow,
+    ].filter(Boolean).join(" ")
+    : "Use one bar per token or pipe-separated bar, and bracket section labels like [Verse] when needed."
 
   async function handleUploadChange(event: ChangeEvent<HTMLInputElement>) {
     const input = event.currentTarget
@@ -435,9 +443,7 @@ export function InputSection() {
                 hasParseIssues ? "text-destructive" : "text-muted-foreground"
               )}
             >
-              {hasParseIssues && parseTruth
-                ? `${parseTruth.currentState} Next step: ${parseTruth.nextStep ?? "Fix the flagged chord bars before generating."}`
-                : "Use one bar per token or pipe-separated bar, and bracket section labels like [Verse] when needed."}
+              {chordChartEditorHint}
             </p>
           </div>
 

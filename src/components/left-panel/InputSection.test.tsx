@@ -266,6 +266,10 @@ describe('InputSection upload tab', () => {
     expect(chordChartHint?.textContent).toContain(
       'Next step: Replace the flagged repeat bars with explicit chords or fix the bar before them.'
     );
+    expect(chordChartHint?.textContent).toContain('Flagged bars: Bar 2: could not parse "xyz??"');
+    expect(chordChartHint?.textContent).toContain(
+      'Bar 3: repeat marker "%" follows a bar that could not be resolved'
+    );
     expect(getGenerateButton(mounted.container).disabled).toBe(true);
   });
 
@@ -311,6 +315,37 @@ describe('InputSection upload tab', () => {
       'Bar 3: repeat marker "/" follows a bar that could not be resolved'
     );
     expect(mounted.container.textContent).toContain(
+      '1 more flagged bar needs review in the chord chart before generation.'
+    );
+  });
+
+  it('keeps the chord chart field hint self-contained when only the first parse highlights are surfaced', () => {
+    useProjectStore.setState({
+      project: makeProject({
+        chordChartRaw: 'xyz?? | % | / | % | Cmaj7',
+      }),
+    });
+
+    const mounted = renderSection();
+    mountedRoot = mounted.root;
+    mountedContainer = mounted.container;
+    openTextTab(mounted.container);
+
+    const chordChartHint = mounted.container.querySelector(
+      '[data-chord-chart-editor-state]'
+    ) as HTMLParagraphElement | null;
+
+    expect(chordChartHint?.textContent).toContain(
+      'Bars 1, 2, 3, and 4 will become N.C. during generation, so Generate stays blocked until the chart is fixed.'
+    );
+    expect(chordChartHint?.textContent).toContain('Flagged bars: Bar 1: could not parse "xyz??"');
+    expect(chordChartHint?.textContent).toContain(
+      'Bar 2: repeat marker "%" follows a bar that could not be resolved'
+    );
+    expect(chordChartHint?.textContent).toContain(
+      'Bar 3: repeat marker "/" follows a bar that could not be resolved'
+    );
+    expect(chordChartHint?.textContent).toContain(
       '1 more flagged bar needs review in the chord chart before generation.'
     );
   });
