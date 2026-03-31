@@ -190,6 +190,35 @@ describe('InputSection upload tab', () => {
     expect(getGenerateButton(mounted.container).disabled).toBe(false);
   });
 
+  it('keeps text-entry section labels from masquerading as invalid chord bars', () => {
+    useProjectStore.setState({
+      project: makeProject({
+        chordChartRaw: 'Verse:\nCmaj7 | Dm7 | G7 | Cmaj7',
+      }),
+    });
+
+    const mounted = renderSection();
+    mountedRoot = mounted.root;
+    mountedContainer = mounted.container;
+    openTextTab(mounted.container);
+
+    const readiness = mounted.container.querySelector('[data-input-readiness]') as HTMLDivElement | null;
+    const parseTruth = mounted.container.querySelector(
+      '[data-chord-chart-parse-state]'
+    ) as HTMLDivElement | null;
+    const chordChartInput = mounted.container.querySelector('#chord-chart-raw-input') as HTMLTextAreaElement | null;
+    const chordChartHint = mounted.container.querySelector(
+      '[data-chord-chart-editor-state]'
+    ) as HTMLParagraphElement | null;
+
+    expect(readiness?.getAttribute('data-input-readiness')).toBe('ready');
+    expect(parseTruth).toBeNull();
+    expect(chordChartInput?.getAttribute('aria-invalid')).toBe('false');
+    expect(chordChartHint?.getAttribute('data-chord-chart-editor-state')).toBe('ready');
+    expect(mounted.container.textContent).toContain('Input is ready');
+    expect(getGenerateButton(mounted.container).disabled).toBe(false);
+  });
+
   it('surfaces parse failure truth when the current chord chart has invalid bars', () => {
     useProjectStore.setState({
       project: makeProject({

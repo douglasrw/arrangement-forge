@@ -31,7 +31,13 @@ export interface ChordChartParseTruth {
 
 const REPEAT_MARKERS = new Set(['%', '/']);
 const NC_TOKENS = new Set(['n.c.', 'nc', '-']);
+const SECTION_HEADER_RE =
+  /^(verse|chorus|bridge|intro|outro|tag|interlude|pre-chorus|prechorus)(\s+\d+)?\s*:?\s*$/i;
 type ParsedBarState = 'chord' | 'no_chord' | 'issue';
+
+function isSectionHeaderLine(line: string) {
+  return /^\[.*\]$/.test(line) || SECTION_HEADER_RE.test(line);
+}
 
 /**
  * Parse a raw chord chart string into a sequence of ChordEntry objects.
@@ -64,8 +70,8 @@ export function parseChordChart(raw: string, key: string): ChordChartParseResult
   let prevBarState: ParsedBarState | null = null;
 
   for (const line of lines) {
-    // Skip section header lines like [Verse 1], [Chorus], [Bridge], etc.
-    if (/^\[.*\]$/.test(line)) continue;
+    // Skip section header lines like [Verse 1], Verse:, [Chorus], [Bridge], etc.
+    if (isSectionHeaderLine(line)) continue;
 
     // Tokenize: pipes are bar separators; within each segment, spaces separate bars
     const segments = line.includes('|') ? line.split('|') : [line];

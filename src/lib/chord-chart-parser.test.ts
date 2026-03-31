@@ -46,6 +46,19 @@ describe('parseChordChart', () => {
     expect(chords).toHaveLength(8);
   });
 
+  it('skips unbracketed section header lines without shifting bar truth', () => {
+    const { chords, issues, truth } = parseChordChart('Verse:\nCmaj7 | Dm7 | G7 | Cmaj7', 'C');
+
+    expect(chords).toHaveLength(4);
+    expect(chords[0].bar_number).toBe(1);
+    expect(chords[3].bar_number).toBe(4);
+    expect(issues).toHaveLength(0);
+    expect(truth).toMatchObject({
+      state: 'ready',
+      currentState: 'All chord bars resolved cleanly.',
+    });
+  });
+
   it('repeat marker copies previous chord', () => {
     const { chords, warnings } = parseChordChart('C | %', 'C');
     expect(chords).toHaveLength(2);
