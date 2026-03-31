@@ -81,6 +81,24 @@ function getGenerationScope(
   return hadArrangement || hasAssistantPrompt ? 'song' : 'setup';
 }
 
+function summarizeGenerationUndoPrompt(assistantPrompt: string): string {
+  const normalizedPrompt = assistantPrompt.replace(/\s+/g, ' ').trim();
+
+  if (normalizedPrompt.length <= 48) {
+    return normalizedPrompt;
+  }
+
+  return `${normalizedPrompt.slice(0, 45).trimEnd()}...`;
+}
+
+function describeGenerationUndoBoundary(assistantPrompt: string | null): string {
+  if (!assistantPrompt) {
+    return 'Arrangement regeneration';
+  }
+
+  return `Assistant revision: ${summarizeGenerationUndoPrompt(assistantPrompt)}`;
+}
+
 export function useGenerate() {
   const {
     project,
@@ -242,7 +260,7 @@ export function useGenerate() {
         const after = snapshotArrangement({
           stems: newStems, sections: newSections, blocks: newBlocks, chords: newChords,
         });
-        pushUndo('Full regeneration', { undo: before, redo: after });
+        pushUndo(describeGenerationUndoBoundary(trimmedAssistantPrompt), { undo: before, redo: after });
       }
 
       setGenerationState('complete');
