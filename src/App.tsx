@@ -52,6 +52,9 @@ function LoadingScreen({
               </p>
             ) : null}
             <p className="text-xs text-foreground/80">{protectedRouteTruth.routeTruth}</p>
+            {protectedRouteTruth.fallbackHandling ? (
+              <p className="text-xs text-foreground/80">{protectedRouteTruth.fallbackHandling}</p>
+            ) : null}
           </div>
         </div>
       </div>

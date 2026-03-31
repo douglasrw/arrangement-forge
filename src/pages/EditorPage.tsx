@@ -21,6 +21,7 @@ function EditorShellState({
   currentRoute,
   fallbackRoute,
   routeTruth,
+  fallbackHandling,
   nextStep,
   testId,
   tone = 'loading',
@@ -36,6 +37,7 @@ function EditorShellState({
   currentRoute: string;
   fallbackRoute?: string;
   routeTruth: string;
+  fallbackHandling?: string | null;
   nextStep: string;
   testId: string;
   tone?: 'loading' | 'error';
@@ -73,6 +75,7 @@ function EditorShellState({
           <p className="text-xs text-foreground/80">Editor fallback route: {fallbackRoute}</p>
         ) : null}
         <p className="text-xs text-foreground/80">{routeTruth}</p>
+        {fallbackHandling ? <p className="text-xs text-foreground/80">{fallbackHandling}</p> : null}
         <p className="text-xs text-foreground/80">Next step: {nextStep}</p>
       </div>
       {actionHref && actionLabel ? (
@@ -127,6 +130,7 @@ function EditorRouteReadyBanner({
   routeModeLabel,
   routeReadiness,
   routeTruth,
+  fallbackHandling,
 }: {
   projectId: string;
   currentRoute: string;
@@ -134,6 +138,7 @@ function EditorRouteReadyBanner({
   routeModeLabel: string;
   routeReadiness: string;
   routeTruth: string;
+  fallbackHandling: string | null;
 }) {
   return (
     <div
@@ -156,6 +161,9 @@ function EditorRouteReadyBanner({
       <p className="text-[11px] text-foreground/80">Current route: {currentRoute}</p>
       <p className="text-[11px] text-foreground/80">Editor fallback route: {fallbackRoute}</p>
       <p className="text-[11px] text-foreground/80">{routeTruth}</p>
+      {fallbackHandling ? (
+        <p className="text-[11px] text-foreground/80">{fallbackHandling}</p>
+      ) : null}
       <div className="flex flex-wrap gap-2 pt-1">
         <Link
           to="/project"
@@ -235,6 +243,7 @@ export default function EditorPage({
             currentRoute={routeTruth.currentRoute}
             fallbackRoute={routeTruth.fallbackRoute ?? undefined}
             routeTruth={routeTruth.routeTruth}
+            fallbackHandling={routeTruth.fallbackHandling}
             nextStep="Wait for the current route load to finish before editing this arrangement."
             testId="editor-shell-loading-state"
             routeStatus="loading"
@@ -258,6 +267,7 @@ export default function EditorPage({
             currentRoute={routeTruth.currentRoute}
             fallbackRoute={routeTruth.fallbackRoute ?? undefined}
             routeTruth={routeTruth.routeTruth}
+            fallbackHandling={routeTruth.fallbackHandling}
             nextStep="Return to the library, then open an existing project or create a new one to finish this editor route."
             testId="editor-shell-no-project-state"
             actionHref="/library"
@@ -287,6 +297,7 @@ export default function EditorPage({
             currentRoute={routeTruth.currentRoute}
             fallbackRoute={routeTruth.fallbackRoute ?? undefined}
             routeTruth={routeTruth.routeTruth}
+            fallbackHandling={routeTruth.fallbackHandling}
             nextStep="Return to the library and open a different project."
             testId="editor-shell-missing-project-state"
             tone="error"
@@ -317,6 +328,7 @@ export default function EditorPage({
             currentRoute={routeTruth.currentRoute}
             fallbackRoute={routeTruth.fallbackRoute ?? undefined}
             routeTruth={routeTruth.routeTruth}
+            fallbackHandling={routeTruth.fallbackHandling}
             nextStep={
               routeMode === 'project-id' && !id
                 ? 'Return to the library, then open a project to replace this malformed editor route.'
@@ -343,6 +355,7 @@ export default function EditorPage({
           routeModeLabel={routeTruth.routeModeLabel}
           routeReadiness={routeTruth.routeReadiness}
           routeTruth={routeTruth.routeTruth}
+          fallbackHandling={routeTruth.fallbackHandling}
         />
       }
     />

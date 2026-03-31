@@ -259,6 +259,9 @@ describe('EditorPage route loading gate', () => {
       'Route truth: /project/project-b is still resolving before the editor becomes ready.'
     );
     expect(document.body.textContent).toContain(
+      'Fallback handling: if you stop waiting on this route, /project clears the active workspace and parks the editor until you choose a project from the library.'
+    );
+    expect(document.body.textContent).toContain(
       'Next step: Wait for the current route load to finish before editing this arrangement.'
     );
     expect(queryProjectNameTrigger()?.textContent).toBe('Loading project route');
@@ -354,6 +357,9 @@ describe('EditorPage route loading gate', () => {
     expect(document.body.textContent).toContain('Editor fallback route: /project');
     expect(document.body.textContent).toContain(
       'Route truth: /project/project-a is loaded in this workspace. If you leave this project route, /project is the editor fallback route until you choose another project from the library.'
+    );
+    expect(document.body.textContent).toContain(
+      'Fallback handling: opening /project clears the active workspace and parks the editor until you choose another project from the library.'
     );
     expect(queryReadyBannerLink('/project')).not.toBeNull();
     expect(queryReadyBannerLink('/library')).not.toBeNull();
@@ -468,6 +474,9 @@ describe('EditorPage route loading gate', () => {
       'Route truth: /project/missing-project cannot open because the requested project is unavailable.'
     );
     expect(document.body.textContent).toContain(
+      'Fallback handling: use /project to clear the blocked workspace state, then choose a different project from the library.'
+    );
+    expect(document.body.textContent).toContain(
       'Next step: Return to the library and open a different project.'
     );
     expect(queryBackToLibraryLink()).not.toBeNull();
@@ -511,6 +520,9 @@ describe('EditorPage route loading gate', () => {
       'Route truth: /project/project-a is blocked until Arrangement Forge can load the requested project.'
     );
     expect(document.body.textContent).toContain(
+      'Fallback handling: use /project to clear the failed workspace state, then choose a project from the library or retry the requested route later.'
+    );
+    expect(document.body.textContent).toContain(
       'Next step: Return to the library, then retry this project after the load failure is resolved.'
     );
     expect(queryBackToLibraryLink()).not.toBeNull();
@@ -550,6 +562,9 @@ describe('EditorPage route loading gate', () => {
     expect(document.body.textContent).toContain('Editor fallback route: /project');
     expect(document.body.textContent).toContain(
       'Route truth: /project/:id cannot open because the route is missing a project id.'
+    );
+    expect(document.body.textContent).toContain(
+      'Fallback handling: switch to /project to clear this malformed route and park the editor until you choose a project from the library.'
     );
     expect(document.body.textContent).toContain(
       'Next step: Return to the library, then open a project to replace this malformed editor route.'
@@ -667,6 +682,9 @@ describe('EditorPage route loading gate', () => {
       'Route truth: /project is the editor fallback route, and it stays parked here until you choose a project from the library.'
     );
     expect(document.body.textContent).toContain(
+      'Fallback handling: this /project route has already cleared the active workspace and will stay parked until you choose a project from the library.'
+    );
+    expect(document.body.textContent).toContain(
       'Next step: Return to the library, then open an existing project or create a new one to finish this editor route.'
     );
     expect(getStatusBarText()).toContain('No project selected');
@@ -710,6 +728,9 @@ describe('EditorPage route loading gate', () => {
     );
     expect(document.body.textContent).toContain('Current route: /project');
     expect(document.body.textContent).toContain('Editor fallback route: /project');
+    expect(document.body.textContent).toContain(
+      'Fallback handling: this /project route has already cleared the active workspace and will stay parked until you choose a project from the library.'
+    );
   });
 
   it('keeps the exact /project fallback route visible when no project is selected', async () => {

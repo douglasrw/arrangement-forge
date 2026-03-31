@@ -11,6 +11,8 @@ describe('editor-route-truth', () => {
       routeReadiness: '/project/project-1 is reserved until authentication finishes.',
       routeTruth:
         'Route truth: /project/project-1 stays reserved during authentication, and /project remains the editor fallback route if you need to choose a different project after recovery.',
+      fallbackHandling:
+        'Fallback handling: if you leave this requested project route after recovery, /project clears the active workspace and parks the editor until you choose a different project.',
     });
   });
 
@@ -33,6 +35,8 @@ describe('editor-route-truth', () => {
         '/project is parked as the editor fallback route until you choose a project from the library.',
       routeTruth:
         'Route truth: /project is the editor fallback route, and it stays parked here until you choose a project from the library.',
+      fallbackHandling:
+        'Fallback handling: this /project route has already cleared the active workspace and will stay parked until you choose a project from the library.',
     });
   });
 
@@ -53,6 +57,8 @@ describe('editor-route-truth', () => {
       currentState: 'The requested editor route is malformed because no project id was provided.',
       routeReadiness: '/project/:id is blocked because the route is missing a project id.',
       routeTruth: 'Route truth: /project/:id cannot open because the route is missing a project id.',
+      fallbackHandling:
+        'Fallback handling: switch to /project to clear this malformed route and park the editor until you choose a project from the library.',
     });
   });
 });

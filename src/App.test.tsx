@@ -245,6 +245,9 @@ describe('App protected route recovery truth', () => {
     expect(mounted.container.textContent).toContain(
       'Route truth: /project is the editor fallback route, and it stays reserved until authentication finishes and you can choose a project.'
     );
+    expect(mounted.container.textContent).toContain(
+      'Fallback handling: after authentication, opening /project clears the active workspace and parks the editor until you choose a project from the library.'
+    );
     expect(mounted.container.querySelector('[data-testid="login-page"]')).toBeNull();
     expect(mounted.container.querySelector('[data-testid="editor-page"]')).toBeNull();
   });
@@ -273,6 +276,9 @@ describe('App protected route recovery truth', () => {
     expect(mounted.container.textContent).toContain('Editor fallback route: /project');
     expect(mounted.container.textContent).toContain(
       'Route truth: /project is the editor fallback route, and it stays reserved until authentication finishes and you can choose a project.'
+    );
+    expect(mounted.container.textContent).toContain(
+      'Fallback handling: after authentication, opening /project clears the active workspace and parks the editor until you choose a project from the library.'
     );
     expect(mounted.container.querySelector('[data-testid="login-page"]')).toBeNull();
     expect(mounted.container.querySelector('[data-testid="editor-page"]')).toBeNull();

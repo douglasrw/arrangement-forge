@@ -18,12 +18,14 @@ export type ProtectedRouteTruth = EditorRouteBase & {
   recoveryDestination: string;
   routeReadiness: string;
   routeTruth: string;
+  fallbackHandling: string | null;
 };
 
 export type EditorRouteTruth = EditorRouteBase & {
   currentState: string;
   routeReadiness: string;
   routeTruth: string;
+  fallbackHandling: string | null;
 };
 
 const EDITOR_FALLBACK_ROUTE = '/project';
@@ -54,6 +56,8 @@ export function getProtectedRouteTruth(path: string): ProtectedRouteTruth {
       routeReadiness: '/project is reserved as the editor fallback route until authentication finishes.',
       routeTruth:
         'Route truth: /project is the editor fallback route, and it stays reserved until authentication finishes and you can choose a project.',
+      fallbackHandling:
+        'Fallback handling: after authentication, opening /project clears the active workspace and parks the editor until you choose a project from the library.',
     };
   }
 
@@ -70,6 +74,8 @@ export function getProtectedRouteTruth(path: string): ProtectedRouteTruth {
       routeModeLabel: 'requested project route',
       routeReadiness: `${routePath} is reserved until authentication finishes.`,
       routeTruth: `Route truth: ${routePath} stays reserved during authentication, and /project remains the editor fallback route if you need to choose a different project after recovery.`,
+      fallbackHandling:
+        'Fallback handling: if you leave this requested project route after recovery, /project clears the active workspace and parks the editor until you choose a different project.',
     };
   }
 
@@ -82,6 +88,7 @@ export function getProtectedRouteTruth(path: string): ProtectedRouteTruth {
       routeModeLabel: 'protected settings route',
       routeReadiness: `${routePath} is reserved until authentication finishes.`,
       routeTruth: `Route truth: ${routePath} stays reserved until authentication finishes.`,
+      fallbackHandling: null,
     };
   }
 
@@ -94,6 +101,7 @@ export function getProtectedRouteTruth(path: string): ProtectedRouteTruth {
       routeModeLabel: 'protected library route',
       routeReadiness: `${routePath} is reserved until authentication finishes.`,
       routeTruth: `Route truth: ${routePath} stays reserved until authentication finishes.`,
+      fallbackHandling: null,
     };
   }
 
@@ -105,6 +113,7 @@ export function getProtectedRouteTruth(path: string): ProtectedRouteTruth {
     routeModeLabel: 'protected route',
     routeReadiness: `${routePath || '/'} is reserved until authentication finishes.`,
     routeTruth: `Route truth: ${routePath || '/'} stays reserved until authentication finishes.`,
+    fallbackHandling: null,
   };
 }
 
@@ -147,6 +156,8 @@ export function getEditorRouteTruth({
         '/project is parked as the editor fallback route until you choose a project from the library.',
       routeTruth:
         'Route truth: /project is the editor fallback route, and it stays parked here until you choose a project from the library.',
+      fallbackHandling:
+        'Fallback handling: this /project route has already cleared the active workspace and will stay parked until you choose a project from the library.',
     };
   }
 
@@ -163,6 +174,8 @@ export function getEditorRouteTruth({
         ? `/project/${projectId} is blocked because that project is unavailable.`
         : 'The requested editor route is blocked because that project is unavailable.',
       routeTruth: `Route truth: ${routeLabel} cannot open because the requested project is unavailable.`,
+      fallbackHandling:
+        'Fallback handling: use /project to clear the blocked workspace state, then choose a different project from the library.',
     };
   }
 
@@ -176,6 +189,8 @@ export function getEditorRouteTruth({
         currentState: 'The requested editor route is malformed because no project id was provided.',
         routeReadiness: '/project/:id is blocked because the route is missing a project id.',
         routeTruth: 'Route truth: /project/:id cannot open because the route is missing a project id.',
+        fallbackHandling:
+          'Fallback handling: switch to /project to clear this malformed route and park the editor until you choose a project from the library.',
       };
     }
 
@@ -191,6 +206,8 @@ export function getEditorRouteTruth({
         ? `/project/${projectId} is blocked until the load failure is resolved.`
         : 'The requested editor route is blocked until the load failure is resolved.',
       routeTruth: `Route truth: ${routeLabel} is blocked until Arrangement Forge can load the requested project.`,
+      fallbackHandling:
+        'Fallback handling: use /project to clear the failed workspace state, then choose a project from the library or retry the requested route later.',
     };
   }
 
@@ -207,6 +224,8 @@ export function getEditorRouteTruth({
         ? `/project/${projectId} is ready in this workspace.`
         : 'The requested editor route is ready in this workspace.',
       routeTruth: `Route truth: ${routeLabel} is loaded in this workspace. If you leave this project route, /project is the editor fallback route until you choose another project from the library.`,
+      fallbackHandling:
+        'Fallback handling: opening /project clears the active workspace and parks the editor until you choose another project from the library.',
     };
   }
 
@@ -225,5 +244,8 @@ export function getEditorRouteTruth({
       ? `/project/${projectId} is still loading before the editor becomes interactive.`
       : 'The requested editor route is still loading before the editor becomes interactive.',
     routeTruth: `Route truth: ${routeLabel} is still resolving before the editor becomes ready.`,
+    fallbackHandling: projectId
+      ? 'Fallback handling: if you stop waiting on this route, /project clears the active workspace and parks the editor until you choose a project from the library.'
+      : 'Fallback handling: /project clears the active workspace and parks the editor until you choose a project from the library.',
   };
 }
