@@ -81,7 +81,7 @@ export function AiAssistantSection() {
     : !hasChordChart
       ? "Add a chord chart before asking the assistant to generate or revise the arrangement."
       : hasParseIssues
-        ? "Fix the flagged chord bars in Input before asking the assistant to generate or revise the arrangement."
+        ? `${assistantReadiness.detail} Assistant history will appear here after the chord chart is fixed and you send a request.`
       : isGenerating
         ? "Generating from your latest request..."
         : "Assistant history is empty. Ask for a generation or revision and the result will be tracked here."

@@ -224,7 +224,10 @@ describe('AiAssistantSection', () => {
       'Fix the chord chart in Input before asking the assistant to generate or revise the arrangement.'
     );
     expect(mounted.container.textContent).toContain(
-      'Fix the flagged chord bars in Input before asking the assistant to generate or revise the arrangement.'
+      'Bars 2 and 3 currently parse as N.C., so Generate stays blocked until the chart is fixed.'
+    );
+    expect(mounted.container.textContent).toContain(
+      'Assistant history will appear here after the chord chart is fixed and you send a request.'
     );
     expect(sendButton?.disabled).toBe(true);
   });
@@ -254,6 +257,12 @@ describe('AiAssistantSection', () => {
       'Fix the chord chart in Input before asking the assistant to generate or revise the arrangement.'
     );
     expect(composerState?.textContent).not.toContain('flagged bars');
+    expect(mounted.container.textContent).toContain(
+      'No playable chord bars are present yet, so Generate stays blocked until the chart includes at least one chord bar.'
+    );
+    expect(mounted.container.textContent).toContain(
+      'Assistant history will appear here after the chord chart is fixed and you send a request.'
+    );
   });
 
   it('renders failed assistant generations with a distinct failure bubble', () => {
