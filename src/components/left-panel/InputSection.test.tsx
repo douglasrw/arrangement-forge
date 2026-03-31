@@ -288,16 +288,22 @@ describe('InputSection upload tab', () => {
     expect(chordChartInput?.getAttribute('aria-invalid')).toBe('true');
     expect(mounted.container.textContent).toContain('Chord chart needs chord bars');
     expect(mounted.container.textContent).toContain(
-      'No playable chord bars are present yet, so Generate stays blocked until the chart includes at least one chord bar.'
+      'The current chart only contains N.C. or rest bars, so Generate stays blocked until at least one playable chord bar is entered.'
     );
     expect(mounted.container.textContent).toContain(
-      'Section labels and blank lines do not create playable bars on their own.'
+      'Bars marked as N.C. or rest do not create playable harmony on their own.'
     );
     expect(mounted.container.textContent).toContain(
-      'Next step: Add at least one chord bar such as Cmaj7 | Fmaj7 | G7 | Cmaj7.'
+      'Next step: Replace at least one N.C. or rest bar with a chord such as Cmaj7 | Fmaj7 | G7 | Cmaj7.'
     );
     expect(chordChartHint?.textContent).toContain(
-      'No playable chord bars are present yet, so Generate stays blocked until the chart includes at least one chord bar.'
+      'The current chart only contains N.C. or rest bars, so Generate stays blocked until at least one playable chord bar is entered.'
+    );
+    expect(chordChartHint?.textContent).toContain(
+      'Bars marked as N.C. or rest do not create playable harmony on their own.'
+    );
+    expect(chordChartHint?.textContent).toContain(
+      'Next step: Replace at least one N.C. or rest bar with a chord such as Cmaj7 | Fmaj7 | G7 | Cmaj7.'
     );
     expect(getGenerateButton(mounted.container).disabled).toBe(true);
   });

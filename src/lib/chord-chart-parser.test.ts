@@ -87,9 +87,10 @@ describe('parseChordChart', () => {
       state: 'blocked',
       title: 'Chord chart needs chord bars',
       currentState:
-        'No playable chord bars are present yet, so Generate stays blocked until the chart includes at least one chord bar.',
-      summary: 'Section labels and blank lines do not create playable bars on their own.',
-      nextStep: 'Add at least one chord bar such as Cmaj7 | Fmaj7 | G7 | Cmaj7.',
+        'The current chart only contains N.C. or rest bars, so Generate stays blocked until at least one playable chord bar is entered.',
+      summary: 'Bars marked as N.C. or rest do not create playable harmony on their own.',
+      nextStep:
+        'Replace at least one N.C. or rest bar with a chord such as Cmaj7 | Fmaj7 | G7 | Cmaj7.',
       blockedBars: [],
       issueHighlights: [],
       remainingIssueCount: 0,

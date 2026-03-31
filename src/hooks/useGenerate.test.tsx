@@ -336,8 +336,9 @@ describe('useGenerate assistant prompt flow', () => {
       truth: {
         state: 'blocked',
         currentState:
-          'No playable chord bars are present yet, so Generate stays blocked until the chart includes at least one chord bar.',
-        nextStep: 'Add at least one chord bar such as Cmaj7 | Fmaj7 | G7 | Cmaj7.',
+          'The current chart only contains N.C. or rest bars, so Generate stays blocked until at least one playable chord bar is entered.',
+        nextStep:
+          'Replace at least one N.C. or rest bar with a chord such as Cmaj7 | Fmaj7 | G7 | Cmaj7.',
       },
     });
 
@@ -356,14 +357,14 @@ describe('useGenerate assistant prompt flow', () => {
       generationState: 'idle',
       systemStatus: 'error',
       errorMessage:
-        'No playable chord bars are present yet, so Generate stays blocked until the chart includes at least one chord bar. Next step: Add at least one chord bar such as Cmaj7 | Fmaj7 | G7 | Cmaj7.',
+        'The current chart only contains N.C. or rest bars, so Generate stays blocked until at least one playable chord bar is entered. Next step: Replace at least one N.C. or rest bar with a chord such as Cmaj7 | Fmaj7 | G7 | Cmaj7.',
     });
     expect(saveProjectMock).toHaveBeenCalledTimes(1);
     expect(useProjectStore.getState().chatMessages[0]).toMatchObject({
       role: 'assistant',
       scope: 'setup',
       content:
-        'Generation failed: No playable chord bars are present yet, so Generate stays blocked until the chart includes at least one chord bar. Next step: Add at least one chord bar such as Cmaj7 | Fmaj7 | G7 | Cmaj7.',
+        'Generation failed: The current chart only contains N.C. or rest bars, so Generate stays blocked until at least one playable chord bar is entered. Next step: Replace at least one N.C. or rest bar with a chord such as Cmaj7 | Fmaj7 | G7 | Cmaj7.',
     });
   });
 

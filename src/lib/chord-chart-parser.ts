@@ -55,7 +55,7 @@ export function parseChordChart(raw: string, key: string): ChordChartParseResult
       chords: [],
       warnings: [],
       issues: [],
-      truth: buildParseTruth([], [], false, false),
+      truth: buildParseTruth([], [], false, false, 0),
     };
   }
 
@@ -116,7 +116,7 @@ export function parseChordChart(raw: string, key: string): ChordChartParseResult
     chords,
     warnings,
     issues,
-    truth: buildParseTruth(issues, warnings, true, hasPlayableBars),
+    truth: buildParseTruth(issues, warnings, true, hasPlayableBars, barNumber),
   };
 }
 
@@ -124,9 +124,25 @@ function buildParseTruth(
   issues: ChordChartParseIssue[],
   warnings: string[],
   hasChartContent: boolean,
-  hasPlayableBars: boolean
+  hasPlayableBars: boolean,
+  parsedBarCount: number
 ): ChordChartParseTruth {
   if (hasChartContent && !hasPlayableBars && issues.length === 0) {
+    if (parsedBarCount > 0) {
+      return {
+        state: 'blocked',
+        title: 'Chord chart needs chord bars',
+        currentState:
+          'The current chart only contains N.C. or rest bars, so Generate stays blocked until at least one playable chord bar is entered.',
+        summary: 'Bars marked as N.C. or rest do not create playable harmony on their own.',
+        nextStep:
+          'Replace at least one N.C. or rest bar with a chord such as Cmaj7 | Fmaj7 | G7 | Cmaj7.',
+        blockedBars: [],
+        issueHighlights: [],
+        remainingIssueCount: 0,
+      };
+    }
+
     return {
       state: 'blocked',
       title: 'Chord chart needs chord bars',
