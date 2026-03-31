@@ -734,7 +734,7 @@ describe('InputSection upload tab', () => {
       'Imported broken-bars.txt into the current chord chart. Existing Description was kept.'
     );
     expect(mounted.container.textContent).toContain(
-      'Chart is blocked: Bars 2 and 3 currently parse as N.C., so Generate stays blocked until the chart is fixed.'
+      'Chart is blocked: Chord chart has parse issues. Bars 2 and 3 currently parse as N.C., so Generate stays blocked until the chart is fixed.'
     );
     expect(mounted.container.textContent).toContain(
       'Why it is blocked: 1 bar has an unrecognized chord token. 1 repeat marker follows an unresolved bar.'
@@ -783,7 +783,7 @@ describe('InputSection upload tab', () => {
       'Imported broken-spaces.txt into the current chord chart. Existing Description was kept.'
     );
     expect(mounted.container.textContent).toContain(
-      'Chart is blocked: Bars 2 and 3 currently parse as N.C., so Generate stays blocked until the chart is fixed.'
+      'Chart is blocked: Chord chart has parse issues. Bars 2 and 3 currently parse as N.C., so Generate stays blocked until the chart is fixed.'
     );
     expect(mounted.container.textContent).toContain(
       'Next step: Replace bars 2 and 3 with explicit chords or fix the bar before them.'
@@ -863,7 +863,7 @@ describe('InputSection upload tab', () => {
       'Imported headers-only.txt into the current chord chart. Existing Description was kept.'
     );
     expect(mounted.container.textContent).toContain(
-      'Chart is blocked: No playable chord bars are present yet, so Generate stays blocked until the chart includes at least one chord bar.'
+      'Chart is blocked: Chord chart needs chord bars. No playable chord bars are present yet, so Generate stays blocked until the chart includes at least one chord bar.'
     );
     expect(mounted.container.textContent).toContain(
       'Why it is blocked: Section labels and blank lines do not create playable bars on their own.'
@@ -903,7 +903,7 @@ describe('InputSection upload tab', () => {
       'Imported rests-only.txt into the current chord chart. Existing Description was kept.'
     );
     expect(mounted.container.textContent).toContain(
-      'Chart is blocked: The current chart only contains N.C. or rest bars, so Generate stays blocked until at least one playable chord bar is entered.'
+      'Chart is blocked: Chord chart needs chord bars. The current chart only contains N.C. or rest bars, so Generate stays blocked until at least one playable chord bar is entered.'
     );
     expect(mounted.container.textContent).toContain(
       'Why it is blocked: Bars marked as N.C. or rest do not create playable harmony on their own.'

@@ -2,8 +2,8 @@
 
 Status date: 2026-03-31
 
-Status: landed on `main`; reverified on 2026-03-31 against product head
-`f280d7d7` with no remaining bounded product delta visible in this family
+Status: landed on `main`; reverified on 2026-03-31 with upload blocked-title
+truth preserved and no remaining bounded product delta visible in this family
 
 Purpose: preserve the current chord parser failure contract and its landing
 proof in one repo-local place so future work does not have to reconstruct it
@@ -84,9 +84,10 @@ and scattered tests.
 - plain-text imports now keep bar-delimited rows in the chord chart even when
   one or more bars are invalid, so uploaded parser failures stay visible in the
   same blocked-state surface instead of being dropped during import
-- blocked upload feedback now reuses the same parser `truth.currentState` and
-  `truth.nextStep`, so file-import failures stay explicit on the upload surface
-  instead of collapsing back into generic success or generic blocked copy
+- blocked upload feedback now reuses the same parser `truth.title`,
+  `truth.currentState`, and `truth.nextStep`, so file-import failures name the
+  same blocked family as the main parser surface instead of collapsing back
+  into generic success or generic blocked copy
 - blocked upload feedback now also reuses parser `truth.summary`, so the upload
   surface keeps why the chart is blocked explicit instead of surfacing only the
   blocked state and repair step
@@ -132,7 +133,7 @@ Current focused proofs for this slice:
 
 - `pnpm test -- --run src/lib/chord-chart-parser.test.ts src/components/left-panel/InputSection.test.tsx src/components/left-panel/AiAssistantSection.test.tsx src/components/left-panel/LeftPanel.test.tsx src/hooks/useGenerate.test.tsx`
 - `pnpm run type-check`
-- verification head: `f280d7d7db09ee3018bf429163f22d195d5e5998`
+- verification head: current repo `HEAD` at verification time
 
 ## Tracked Landing
 
