@@ -19,6 +19,7 @@ export type SignUpResult = { status: 'session-pending' } | { status: 'confirmati
 export type UseAuthResult = {
   user: User | null;
   profile: ReturnType<typeof useAuthStore.getState>['profile'];
+  authStoreTruth: AuthStoreTruthSlice;
   authState: AuthStoreTruthSlice;
   authTruth: AuthTruth;
   authGate: AuthGateTruth;
@@ -36,8 +37,8 @@ type HydrationResult =
   | { status: 'stale' };
 
 export function useAuth(): UseAuthResult {
-  const authState = useAuthStore(useShallow(selectAuthStoreTruthSlice));
-  const { user, profile, authTruth, authGate } = authState;
+  const authStoreTruth = useAuthStore(useShallow(selectAuthStoreTruthSlice));
+  const { user, profile, authTruth, authGate } = authStoreTruth;
   const authTransitionIdRef = useRef(0);
 
   const beginSessionCheck = useCallback(() => {
@@ -206,7 +207,8 @@ export function useAuth(): UseAuthResult {
   return {
     user,
     profile,
-    authState,
+    authStoreTruth,
+    authState: authStoreTruth,
     authGate,
     authTruth,
     initAuth,

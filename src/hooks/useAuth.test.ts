@@ -246,6 +246,27 @@ describe('useAuth auth action failures', () => {
     expect(hookValue).toMatchObject({
       user: null,
       profile: null,
+      authStoreTruth: {
+        user: null,
+        profile: null,
+        authTruth: {
+          status: 'signed-out',
+          access: 'blocked',
+          currentState: 'No saved session was found.',
+          nextStep: 'sign-in',
+          nextStepLabel: 'Sign in',
+          nextStepDetail: 'Sign in to reopen the app.',
+          signedOutReason: 'no-session',
+        },
+        authGate: {
+          access: 'blocked',
+          currentState: 'No saved session was found.',
+          nextStep: 'sign-in',
+          nextStepLabel: 'Sign in',
+          nextStepDetail: 'Sign in to reopen the app.',
+          signedOutReason: 'no-session',
+        },
+      },
       authState: {
         user: null,
         profile: null,
@@ -289,6 +310,35 @@ describe('useAuth auth action failures', () => {
     expect('isLoading' in hookValue!).toBe(false);
     expect('isAuthenticated' in hookValue!).toBe(false);
     expect('signedOutReason' in hookValue!).toBe(false);
+  });
+
+  it('exposes the named auth store truth surface without forcing consumers through the legacy alias', () => {
+    const mounted = renderHarness();
+    mountedRoot = mounted.root;
+    mountedContainer = mounted.container;
+
+    expect(hookValue!.authStoreTruth).toEqual(hookValue!.authState);
+    expect(hookValue!.authStoreTruth).toEqual({
+      user: null,
+      profile: null,
+      authTruth: {
+        status: 'signed-out',
+        access: 'blocked',
+        currentState: 'No saved session was found.',
+        nextStep: 'sign-in',
+        nextStepLabel: 'Sign in',
+        nextStepDetail: 'Sign in to reopen the app.',
+        signedOutReason: 'no-session',
+      },
+      authGate: {
+        access: 'blocked',
+        currentState: 'No saved session was found.',
+        nextStep: 'sign-in',
+        nextStepLabel: 'Sign in',
+        nextStepDetail: 'Sign in to reopen the app.',
+        signedOutReason: 'no-session',
+      },
+    });
   });
 
   it('marks the auth gate as checking-session after sign-in succeeds', async () => {
@@ -472,7 +522,7 @@ describe('useAuth auth action failures', () => {
       await Promise.resolve();
     });
 
-    expect(hookValue!.authState).toEqual({
+    expect(hookValue!.authStoreTruth).toEqual({
       user: { id: 'user-1', email: 'ash@example.com' },
       profile: {
         id: 'user-1',
@@ -500,6 +550,7 @@ describe('useAuth auth action failures', () => {
         signedOutReason: null,
       },
     });
+    expect(hookValue!.authState).toEqual(hookValue!.authStoreTruth);
   });
 
   it('preserves Google auth failures from Supabase', async () => {
