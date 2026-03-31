@@ -9,6 +9,7 @@ export type AuthStatus = 'checking-session' | 'authenticated' | 'signed-out';
 export type SignedOutReason =
   | 'no-session'
   | 'signed-out'
+  | 'email-confirmation-required'
   | 'missing-profile'
   | 'profile-load-failed'
   | 'session-lookup-failed';

@@ -91,6 +91,11 @@ function getSignedOutNotice(reason: SignedOutReason | null, recoveryDestination:
         title: 'You have been signed out',
         description: `Sign in again to return to ${recoveryDestination}.`,
       };
+    case 'email-confirmation-required':
+      return {
+        title: 'Check your email to finish signing up',
+        description: `Arrangement Forge created your account but did not receive an active session yet. Open the confirmation email, then sign in again and it will return you to ${recoveryDestination}.`,
+      };
     case 'missing-profile':
       return {
         title: 'Profile setup is incomplete',
@@ -200,12 +205,19 @@ export default function LoginPage() {
     setError(null);
     setActiveSubmissionPath(submissionPath);
     try {
+      let shouldNavigate = false;
+
       if (submissionPath === 'signin') {
         await signIn(email, password);
+        shouldNavigate = true;
       } else {
-        await signUp(email, password);
+        const signUpResult = await signUp(email, password);
+        shouldNavigate = signUpResult.status === 'session-pending';
       }
-      navigate(recoveryPath, { replace: true });
+
+      if (shouldNavigate) {
+        navigate(recoveryPath, { replace: true });
+      }
     } catch (err) {
       setError({
         path: submissionPath,

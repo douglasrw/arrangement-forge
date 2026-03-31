@@ -273,6 +273,39 @@ describe('useAuth auth action failures', () => {
     });
   });
 
+  it('keeps the auth gate signed out with an explicit reason when sign-up needs email confirmation', async () => {
+    supabaseMock.auth.signUp.mockResolvedValue({
+      data: {
+        session: null,
+        user: { id: 'user-1', email: 'ash@example.com' },
+      },
+      error: null,
+    });
+
+    const mounted = renderHarness();
+    mountedRoot = mounted.root;
+    mountedContainer = mounted.container;
+
+    let signUpResult: Awaited<ReturnType<ReturnType<typeof useAuth>['signUp']>> | null = null;
+
+    await act(async () => {
+      signUpResult = await hookValue!.signUp('ash@example.com', 'secret-1');
+    });
+
+    expect(signUpResult).toEqual({
+      status: 'confirmation-required',
+    });
+    expect(useAuthStore.getState()).toMatchObject({
+      user: null,
+      profile: null,
+      authStatus: 'signed-out',
+      signedOutReason: 'email-confirmation-required',
+      isLoading: false,
+      isAuthenticated: false,
+    });
+    expect(useUiStore.getState().chordDisplayMode).toBe('letter');
+  });
+
   it('preserves Google auth failures from Supabase', async () => {
     const failure = new Error('Google popup blocked');
     supabaseMock.auth.signInWithOAuth.mockResolvedValue({ error: failure });

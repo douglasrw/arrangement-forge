@@ -8,6 +8,10 @@ import type { SignedOutReason } from '@/store/auth-store';
 import { useAuthStore } from '@/store/auth-store';
 import { useUiStore } from '@/store/ui-store';
 
+export type SignUpResult =
+  | { status: 'session-pending' }
+  | { status: 'confirmation-required' };
+
 export function useAuth() {
   const authStore = useAuthStore();
 
@@ -118,13 +122,20 @@ export function useAuth() {
     }
   }, []);
 
-  const signUp = useCallback(async (email: string, password: string) => {
+  const signUp = useCallback(async (email: string, password: string): Promise<SignUpResult> => {
     const { data, error } = await supabase.auth.signUp({ email, password });
     if (error) throw error;
     if (data.session?.user) {
       useAuthStore.getState().beginSessionCheck();
+      return {
+        status: 'session-pending',
+      };
     }
-  }, []);
+    clearSessionState('email-confirmation-required');
+    return {
+      status: 'confirmation-required',
+    };
+  }, [clearSessionState]);
 
   const signInWithGoogle = useCallback(async () => {
     const { error } = await supabase.auth.signInWithOAuth({ provider: 'google' });

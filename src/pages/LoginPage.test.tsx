@@ -4,12 +4,13 @@ import { act } from 'react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { createRoot, type Root } from 'react-dom/client';
 import LoginPage from './LoginPage';
+import type { SignUpResult } from '@/hooks/useAuth';
 
 const authApi = vi.hoisted(() => ({
   authStatus: 'signed-out',
   signedOutReason: 'no-session',
   signIn: vi.fn<(email: string, password: string) => Promise<void>>(),
-  signUp: vi.fn<(email: string, password: string) => Promise<void>>(),
+  signUp: vi.fn<(email: string, password: string) => Promise<SignUpResult>>(),
   signInWithGoogle: vi.fn<() => Promise<void>>(),
 }));
 
@@ -120,7 +121,9 @@ beforeEach(() => {
   locationMock.state = null;
 
   authApi.signIn.mockResolvedValue(undefined);
-  authApi.signUp.mockResolvedValue(undefined);
+  authApi.signUp.mockResolvedValue({
+    status: 'session-pending',
+  });
   authApi.signInWithGoogle.mockResolvedValue(undefined);
 });
 
@@ -320,6 +323,39 @@ describe('LoginPage failure truth', () => {
       signUpRequest.resolve?.(undefined);
       await Promise.resolve();
     });
+  });
+
+  it('keeps sign-up on the login surface when email confirmation is still required', async () => {
+    locationMock.state = {
+      redirectTo: '/settings',
+    };
+    authApi.signUp.mockImplementation(async () => {
+      authApi.signedOutReason = 'email-confirmation-required';
+      return {
+        status: 'confirmation-required',
+      };
+    });
+
+    const mounted = renderLoginPage();
+    mountedRoot = mounted.root;
+    mountedContainer = mounted.container;
+
+    act(() => {
+      clickButton(findButtonByText(mounted.container, 'Sign Up'));
+    });
+
+    fillCredentials(mounted.container, 'ash@example.com', 'secret-1');
+
+    await act(async () => {
+      submitLoginForm(mounted.container);
+      await Promise.resolve();
+    });
+
+    expect(authApi.signUp).toHaveBeenCalledWith('ash@example.com', 'secret-1');
+    expect(navigateMock).not.toHaveBeenCalled();
+    expect(mounted.container.textContent).toContain('Check your email to finish signing up');
+    expect(mounted.container.textContent).toContain('return you to settings');
+    expect(mounted.container.querySelector('form')).not.toBeNull();
   });
 
   it('clears loading state honestly when Google auth fails', async () => {
