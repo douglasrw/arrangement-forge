@@ -388,6 +388,31 @@ describe('StatusBar', () => {
     );
   });
 
+  it('renders block override context when the history boundary comes from a block override edit', () => {
+    useProjectStore.setState({
+      project: makeProject(),
+      stems: [makeStem({ instrument: 'piano' })],
+      sections: [makeSection({ name: 'Verse' })],
+      blocks: [makeBlock({ startBar: 1, endBar: 4, energyOverride: null })],
+      chords: [],
+    });
+
+    useProjectStore.getState().updateBlock('block-1', { energyOverride: 95 });
+
+    const container = renderStatusBar('saved');
+    const history = container.querySelector(
+      '[data-testid="status-bar-history"]'
+    ) as HTMLSpanElement | null;
+
+    expect(history?.textContent).toBe(
+      'Undo: Change piano block energy override in Verse (bars 1-4): inherit -> 95'
+    );
+    expect(history?.title).toBe(
+      'Undo is ready to restore the arrangement captured before Change piano block energy override in Verse (bars 1-4): inherit -> 95. ' +
+      'Use Undo to restore the arrangement captured before Change piano block energy override in Verse (bars 1-4): inherit -> 95.'
+    );
+  });
+
   it('renders chord-change context when harmony edits push undo boundaries through the store', () => {
     useProjectStore.setState({
       project: makeProject(),
@@ -506,6 +531,31 @@ describe('StatusBar', () => {
     expect(history?.title).toBe(
       'Undo is ready to restore the arrangement captured before Resize section: Verse (8 bars -> 12 bars). ' +
       'Use Undo to restore the arrangement captured before Resize section: Verse (8 bars -> 12 bars).'
+    );
+  });
+
+  it('renders section override context when the history boundary comes from a section override edit', () => {
+    useProjectStore.setState({
+      project: makeProject(),
+      stems: [makeStem()],
+      sections: [makeSection({ name: 'Verse', grooveOverride: null })],
+      blocks: [],
+      chords: [],
+    });
+
+    useProjectStore.getState().updateSection('section-1', { grooveOverride: 82 });
+
+    const container = renderStatusBar('saved');
+    const history = container.querySelector(
+      '[data-testid="status-bar-history"]'
+    ) as HTMLSpanElement | null;
+
+    expect(history?.textContent).toBe(
+      'Undo: Change section groove override: Verse (inherit -> 82)'
+    );
+    expect(history?.title).toBe(
+      'Undo is ready to restore the arrangement captured before Change section groove override: Verse (inherit -> 82). ' +
+      'Use Undo to restore the arrangement captured before Change section groove override: Verse (inherit -> 82).'
     );
   });
 

@@ -1154,6 +1154,21 @@ describe('undo push coverage', () => {
     );
   });
 
+  it('names block override changes in undo entries with before-and-after values', () => {
+    useProjectStore.getState().setArrangement({
+      stems: [makeStem({ instrument: 'piano' })],
+      sections: [makeSection({ name: 'Verse', barCount: 4 })],
+      blocks: [makeBlock({ startBar: 1, endBar: 4, energyOverride: null })],
+      chords: [],
+    });
+
+    useProjectStore.getState().updateBlock('b1', { energyOverride: 95 });
+
+    expect(useUndoStore.getState().undoStack[0]?.description).toBe(
+      'Change piano block energy override in Verse (bars 1-4): inherit -> 95'
+    );
+  });
+
   it('duplicateBlock pushes undo entry with unified snapshot format', () => {
     useProjectStore.getState().setArrangement({
       stems: [makeStem()], sections: [makeSection()],
@@ -1215,6 +1230,21 @@ describe('undo push coverage', () => {
 
     expect(useUndoStore.getState().undoStack[0]?.description).toBe(
       'Resize section: Verse (8 bars -> 12 bars)'
+    );
+  });
+
+  it('names section override changes in undo entries with before-and-after values', () => {
+    useProjectStore.getState().setArrangement({
+      stems: [makeStem()],
+      sections: [makeSection({ name: 'Verse', grooveOverride: null })],
+      blocks: [],
+      chords: [],
+    });
+
+    useProjectStore.getState().updateSection('s1', { grooveOverride: 82 });
+
+    expect(useUndoStore.getState().undoStack[0]?.description).toBe(
+      'Change section groove override: Verse (inherit -> 82)'
     );
   });
 

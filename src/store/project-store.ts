@@ -177,6 +177,22 @@ const SECTION_STYLE_OVERRIDE_FIELDS = [
   'swingPctOverride',
 ] as const;
 
+type SectionOverrideField = (typeof SECTION_STYLE_OVERRIDE_FIELDS)[number];
+type BlockOverrideField = 'energyOverride' | 'dynamicsOverride';
+
+const SECTION_OVERRIDE_LABELS: Record<SectionOverrideField, string> = {
+  energyOverride: 'energy',
+  dynamicsOverride: 'dynamics',
+  grooveOverride: 'groove',
+  feelOverride: 'feel',
+  swingPctOverride: 'swing',
+};
+
+const BLOCK_OVERRIDE_LABELS: Record<BlockOverrideField, string> = {
+  energyOverride: 'energy',
+  dynamicsOverride: 'dynamics',
+};
+
 function updatesSectionStyleOverrides(partial: Partial<Section>): boolean {
   return SECTION_STYLE_OVERRIDE_FIELDS.some((field) =>
     Object.prototype.hasOwnProperty.call(partial, field)
@@ -195,6 +211,34 @@ function describeSectionUndoTarget(action: string, section: Section | undefined)
 
 function formatSectionBarCountLabel(barCount: number): string {
   return `${barCount} bar${barCount === 1 ? '' : 's'}`;
+}
+
+function formatOverrideValue(
+  field: SectionOverrideField | BlockOverrideField,
+  value: number | null | undefined
+): string {
+  if (value == null) {
+    return 'inherit';
+  }
+
+  return field === 'swingPctOverride' ? `${value}%` : `${value}`;
+}
+
+function getSingleSectionOverrideChange(
+  section: Section | undefined,
+  partial: Partial<Section>
+): SectionOverrideField | null {
+  if (!section) {
+    return null;
+  }
+
+  const changedFields = SECTION_STYLE_OVERRIDE_FIELDS.filter(
+    (field) =>
+      Object.prototype.hasOwnProperty.call(partial, field) &&
+      section[field] !== partial[field]
+  );
+
+  return changedFields.length === 1 ? changedFields[0] : null;
 }
 
 function describeSectionUpdateUndoTarget(
@@ -222,6 +266,17 @@ function describeSectionUpdateUndoTarget(
     return (
       `Resize section${sectionTarget} ` +
       `(${formatSectionBarCountLabel(currentBarCount)} -> ${formatSectionBarCountLabel(nextBarCount)})`
+    );
+  }
+
+  const overrideField = getSingleSectionOverrideChange(section, partial);
+  if (overrideField) {
+    const sectionTarget = currentName ? `: ${currentName}` : '';
+
+    return (
+      `Change section ${SECTION_OVERRIDE_LABELS[overrideField]} override${sectionTarget} ` +
+      `(${formatOverrideValue(overrideField, section?.[overrideField])} -> ` +
+      `${formatOverrideValue(overrideField, partial[overrideField] as number | null | undefined)})`
     );
   }
 
@@ -282,6 +337,20 @@ function getStyleLabel(styleId: string, instrument: InstrumentType | null): stri
     .join(' ');
 }
 
+function getSingleBlockOverrideChange(
+  currentBlock: Block | undefined,
+  nextBlock: Block | undefined
+): BlockOverrideField | null {
+  if (!currentBlock || !nextBlock) {
+    return null;
+  }
+
+  const fields: BlockOverrideField[] = ['energyOverride', 'dynamicsOverride'];
+  const changedFields = fields.filter((field) => currentBlock[field] !== nextBlock[field]);
+
+  return changedFields.length === 1 ? changedFields[0] : null;
+}
+
 function describeBlockUpdateUndoTarget(
   currentBlock: Block | undefined,
   nextBlock: Block | undefined,
@@ -301,6 +370,24 @@ function describeBlockUpdateUndoTarget(
       `Change ${blockLabel} pattern${sectionTarget} ` +
       `(bars ${nextBlock.startBar}-${nextBlock.endBar}): ` +
       `${getStyleLabel(currentBlock.style, instrument)} -> ${getStyleLabel(nextBlock.style, instrument)}`
+    );
+  }
+
+  const overrideField = getSingleBlockOverrideChange(currentBlock, nextBlock);
+  if (currentBlock && nextBlock && overrideField) {
+    const sectionName = getSectionDisplayName(
+      sections.find((section) => section.id === nextBlock.sectionId)
+    );
+    const instrument =
+      stems.find((stem) => stem.id === nextBlock.stemId)?.instrument ?? null;
+    const blockLabel = instrument ? `${instrument} block` : 'block';
+    const sectionTarget = sectionName ? ` in ${sectionName}` : '';
+
+    return (
+      `Change ${blockLabel} ${BLOCK_OVERRIDE_LABELS[overrideField]} override${sectionTarget} ` +
+      `(bars ${nextBlock.startBar}-${nextBlock.endBar}): ` +
+      `${formatOverrideValue(overrideField, currentBlock[overrideField])} -> ` +
+      `${formatOverrideValue(overrideField, nextBlock[overrideField])}`
     );
   }
 
