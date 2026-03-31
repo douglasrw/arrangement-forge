@@ -372,6 +372,77 @@ describe('EditorPage route loading gate', () => {
   });
 
   it('shows an explicit no-project-selected state for the /project fallback route', async () => {
+    useProjectStore.setState({
+      project: {
+        ...makeProject('project-a'),
+        name: 'Night Train',
+        chordChartRaw: '[Verse]\nCmaj7 | Fmaj7',
+        generationHints: 'Keep the groove moving',
+      },
+      stems: [
+        {
+          id: 'stem-1',
+          projectId: 'project-a',
+          instrument: 'piano',
+          sortOrder: 0,
+          volume: 0.8,
+          pan: 0,
+          isMuted: false,
+          isSolo: false,
+          createdAt: '2026-03-28T00:00:00Z',
+        },
+      ],
+      sections: [
+        {
+          id: 'section-1',
+          projectId: 'project-a',
+          name: 'Verse',
+          sortOrder: 0,
+          barCount: 4,
+          startBar: 1,
+          energyOverride: null,
+          grooveOverride: null,
+          feelOverride: null,
+          swingPctOverride: null,
+          dynamicsOverride: null,
+          createdAt: '2026-03-28T00:00:00Z',
+        },
+      ],
+      blocks: [
+        {
+          id: 'block-1',
+          stemId: 'stem-1',
+          sectionId: 'section-1',
+          startBar: 1,
+          endBar: 4,
+          chordDegree: 'I',
+          chordQuality: 'maj7',
+          chordBassDegree: null,
+          style: 'jazz_comp',
+          energyOverride: null,
+          dynamicsOverride: null,
+          midiData: [],
+          createdAt: '2026-03-28T00:00:00Z',
+        },
+      ],
+      chords: [
+        {
+          id: 'chord-1',
+          projectId: 'project-a',
+          barNumber: 1,
+          degree: 'I',
+          quality: 'maj7',
+          bassDegree: null,
+        },
+      ],
+    });
+    useSelectionStore.setState({
+      level: 'block',
+      sectionId: 'section-1',
+      blockId: 'block-1',
+      stemId: 'stem-1',
+    });
+
     const mounted = renderEditor(undefined, 'project-selection');
     mountedRoot = mounted.root;
     mountedContainer = mounted.container;
@@ -390,6 +461,24 @@ describe('EditorPage route loading gate', () => {
       'Next step: Return to the library, then open an existing project or create a new one to finish this editor route.'
     );
     expect(queryBackToLibraryLink()).not.toBeNull();
+    expect(mounted.container.textContent).not.toContain('Night Train');
+    expect(
+      mounted.container.querySelector('[data-testid="topbar-export-button"]')?.textContent
+    ).toBe('Nothing to export');
+    expect(useProjectStore.getState()).toMatchObject({
+      project: null,
+      stems: [],
+      sections: [],
+      blocks: [],
+      chords: [],
+      chatMessages: [],
+    });
+    expect(useSelectionStore.getState()).toMatchObject({
+      level: 'song',
+      sectionId: null,
+      blockId: null,
+      stemId: null,
+    });
   });
 
   it('keeps export wired into the editor shell alongside project, tempo, and selection surfaces', async () => {

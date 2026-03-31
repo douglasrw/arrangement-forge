@@ -103,6 +103,7 @@ export default function EditorPage({
 
   useEffect(() => {
     if (!id) {
+      useProjectStore.getState().clearProjectSession();
       setRouteState({
         status: routeMode === 'project-selection' ? 'no-project-selected' : 'error',
         message:
