@@ -2,8 +2,8 @@
 
 Status date: 2026-03-31
 
-Status: landed on `main`; reverified on 2026-03-31 at product head `b018e302`
-after the latest evidence refresh follow-up landed, and no remaining product
+Status: landed on `main`; reverified on 2026-03-31 at product head `58283c48`
+after the latest explicit-truth follow-up landed, and no remaining product
 delta is visible in this family beyond this evidence refresh
 
 Purpose: preserve the current chord parser failure contract and its landing
@@ -42,8 +42,12 @@ from `src/lib/chord-chart-parser.ts`, `src/components/left-panel/InputSection.ts
 `src/components/left-panel/InputSection.tsx` owns the input-surface truth:
 
 - the parse banner names when the chart needs attention
-- the summary counts unresolved bars, invalid chord bars, first-bar repeat
-  markers, and repeat markers after unresolved bars
+- the input readiness banner now reuses parser `truth.title` and
+  `truth.currentState`, so blocked bars stay explicit in the first status
+  surface instead of being compressed into generic readiness copy
+- the summary line counts unresolved bars, invalid chord bars, first-bar repeat
+  markers, and repeat markers after unresolved bars without collapsing the
+  blocked-state sentence into the same field
 - the next-step copy stays explicit about whether the operator needs to replace
   flagged repeat bars or fix flagged chord bars before generation
 - the surfaced warning snippets keep the first blocked bars visible in the same
@@ -65,7 +69,7 @@ Current focused proofs for this slice:
 - `pnpm exec vitest run src/lib/chord-chart-parser.test.ts src/components/left-panel/InputSection.test.tsx`
 - `pnpm exec vitest run src/hooks/useGenerate.test.tsx`
 - `pnpm run type-check`
-- verification head: `b018e30205d4a54522dc09ae12ab7e23cc8b6a25`
+- verification head: `58283c488a53e10e64933a3f8475e14885aeca9c`
 
 ## Tracked Landing
 
@@ -85,10 +89,12 @@ Current focused proofs for this slice:
   `commitpath_c40ed88d Refresh chord parser failure truth evidence`
 - `b018e30205d4a54522dc09ae12ab7e23cc8b6a25`:
   `commitpath_c40ed88d Refresh chord parser failure truth evidence`
-- The current product head at `b018e302` still preserves the chord parser
-  failure truth contract, and the focused parser/input/generation proofs passed
-  again on 2026-03-31 before this follow-up doc-only evidence refresh updated
-  the repo-local artifact.
+- `58283c488a53e10e64933a3f8475e14885aeca9c`:
+  `commitpath_c40ed88d: make chord parse truth explicit`
+- The current product head at `58283c48` still preserves the chord parser
+  failure truth contract, and the focused parser/input/generation/type-check
+  proofs passed again on 2026-03-31 before this follow-up doc-only evidence
+  refresh updated the repo-local artifact.
 - Commit `9150d7d0` introduced explicit issue tracking and input-surface copy
   for invalid bars, first-bar repeat markers, and repeat markers that follow
   unresolved bars.
@@ -110,6 +116,10 @@ Current focused proofs for this slice:
 - Commit `b018e302` repeated that same doc-only evidence refresh after one more
   clean recheck, so the repo-local artifact now points at the latest verified
   `main` head instead of stopping one evidence refresh behind.
+- Commit `58283c48` split parser truth into separate `currentState` and
+  `summary` fields, then reused the explicit blocked-state copy in the input
+  readiness banner so the first surfaced message keeps the blocked bars visible
+  without overloading the summary sentence.
 - After the 2026-03-31 recheck, this family appears exhausted until a new
   chord-parse behavior changes the contract or the proof surface.
 
