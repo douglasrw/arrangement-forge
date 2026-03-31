@@ -3,10 +3,10 @@
 Status date: 2026-03-31
 
 Status: landed on `main`; reverified on 2026-03-31 after product head
-`13ea108e`, then refreshed in same-day evidence commits so the repo-local
-truth artifact still points at the latest verified state after the chord-chart
-field hint kept the same blocked-bar, highlight, and overflow truth local to
-the text editor itself
+`ac957eae`, then refreshed in same-day evidence commits so the repo-local
+truth artifact still points at the latest verified state after uploaded
+bar-delimited rows with invalid chord tokens stayed in the chord chart instead
+of being silently dropped before the parser could surface blocked-state truth
 
 Purpose: preserve the current chord parser failure contract and its landing
 proof in one repo-local place so future work does not have to reconstruct it
@@ -66,6 +66,9 @@ from `src/lib/chord-chart-parser.ts`, `src/components/left-panel/InputSection.ts
 - the text-editor hint also keeps flagged-bar snippets and hidden overflow count
   explicit on its own, so the raw chord-chart field stays self-contained even
   when the blocked banner scrolls out of view
+- plain-text imports now keep bar-delimited rows in the chord chart even when
+  one or more bars are invalid, so uploaded parser failures stay visible in the
+  same blocked-state surface instead of being dropped during import
 - the surfaced warning snippets keep the first blocked bars visible in the same
   panel instead of forcing the operator to infer which bars failed
 - when more than three bars are blocked, the panel now says how many additional
@@ -87,10 +90,18 @@ Current focused proofs for this slice:
 
 - `pnpm test -- --run src/lib/chord-chart-parser.test.ts src/components/left-panel/InputSection.test.tsx src/hooks/useGenerate.test.tsx`
 - `pnpm type-check`
-- verification head: working tree changes verified on top of `cb527b72ec4fe308ca8e8e601c455812c4ecded2` before this artifact refresh
+- verification head: working tree changes verified on top of `ac957eaeb7047a5579a9716c8909960925ab0c71` before this artifact refresh
 
 ## Tracked Landing
 
+- `ac957eaeb7047a5579a9716c8909960925ab0c71`:
+  `commitpath_c40ed88d Keep uploaded parser failures visible`
+- `85ea925d264dd75c792c91ef3463b0edb8f3f772`:
+  `commitpath_c40ed88d Stabilize chord parser truth status`
+- `003ef8e97c535414c5b06c823c997785254f5ecc`:
+  `commitpath_c40ed88d Fix chord parser truth head pointer`
+- `f41f317a72b93a62db6b298f35d24d41577ac7d6`:
+  `commitpath_c40ed88d Refresh chord parser failure truth evidence`
 - `cb527b72ec4fe308ca8e8e601c455812c4ecded2`:
   `commitpath_c40ed88d Accept plain section labels in chord parser`
 - `13ea108ebf09f79dcf430a4b2a0942bcb16930b1`:
@@ -194,6 +205,10 @@ Current focused proofs for this slice:
   editor field hint, so the operator now sees the current blocked state and
   the next action directly beside the raw chord chart input instead of having
   to rely on the status card above it.
+- Commit `ac957eae` kept uploaded invalid chord bars in the imported chart
+  instead of silently dropping them during import, so the same parse-failure
+  truth now stays visible after a broken text-file upload as well as direct
+  text entry.
 - Commit `5dee0b98` refreshed the same repo-local evidence after another clean
   focused recheck, so the artifact kept tracking the latest verified `main`
   head instead of stopping at the prior product pointer.
@@ -207,7 +222,7 @@ Current focused proofs for this slice:
   making the raw chord-chart field hint carry the same flagged-bar and overflow
   truth as the blocked banner, so the repair guidance remains local even when
   the banner is not the operator's current focal surface.
-- After the 2026-03-31 product recheck at head `13ea108e` and the same-day
+- After the 2026-03-31 product recheck at head `ac957eae` and the same-day
   evidence refresh commits that preserved the verified truth artifact, this
   family again appears exhausted unless a new chord-parse behavior changes the
   contract or the proof surface.
@@ -223,6 +238,8 @@ The tests cover:
 - visible warning snippets for invalid bars and unresolved repeat markers
 - self-contained text-editor hint copy when only the first blocked-bar
   highlights are surfaced
+- uploaded chord-chart rows with invalid bars staying in place so parser
+  failures remain visible after import
 
 ## Deep Home
 
