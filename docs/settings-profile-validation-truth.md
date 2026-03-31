@@ -1,9 +1,9 @@
 # Settings Profile Validation Truth
 
-Status date: 2026-03-31
+Status date: 2026-04-01
 
-Status: landed on `main`; reverified on 2026-03-31 against current product
-head `fa703707` with no remaining bounded product delta visible in this family
+Status: landed on `main`; reverified on 2026-04-01 against current product
+head `ad175f94` with no remaining bounded product delta visible in this family
 
 Purpose: preserve the current settings and persisted profile validation
 contract in one repo-local place so future work does not have to reconstruct it
@@ -120,16 +120,16 @@ Current focused proofs for this slice:
 - The landing made saved, pending, unavailable, blocked-save, invalid, and
   failed-save states explicit on the settings surface instead of relying on
   hidden surrounding context.
-- The latest product head at `fa703707` still preserves that contract and
+- The latest product head at `ad175f94` still preserves that contract and
   keeps malformed chord-mode persistence explicit instead of letting parser
   failures blur saved-profile truth.
-- The focused settings proofs passed again on 2026-03-31 against product head
-  `fa703707`, so this repo-local artifact remains aligned with the live
+- The focused settings proofs passed again on 2026-04-01 against product head
+  `ad175f94`, so this repo-local artifact remains aligned with the live
   product surface instead of a stale earlier evidence point.
-- The bounded product files in this family still match the earlier landing
-  head `9150d7d0`, so this refresh updates canonical evidence instead of
+- The bounded product files in this family still match `origin/main`, so this
+  refresh updates canonical evidence instead of
   claiming a new product delta where none exists.
-- After the 2026-03-31 recheck, this family appears exhausted until a new
+- After the 2026-04-01 recheck, this family appears exhausted until a new
   settings or persisted-profile behavior changes the contract or the proof
   surface.
 
