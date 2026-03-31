@@ -4,6 +4,9 @@ import { GENRES } from '@/lib/genre-config';
 const VALID_CHORD_DISPLAY_MODES = new Set<Profile['chordDisplayMode']>(['letter', 'roman']);
 const VALID_GENRES = new Set(GENRES);
 export const SUPPORTED_CHORD_DISPLAY_MODES = ['letter', 'roman'] as const;
+const CHORD_DISPLAY_MODE_VALIDATION_TRUTH = SUPPORTED_CHORD_DISPLAY_MODES.map(
+  (mode) => `${mode} (${formatChordDisplayModeLabel(mode)})`
+);
 
 export function formatChordDisplayModeLabel(mode: Profile['chordDisplayMode']): string {
   return mode === 'roman' ? 'Roman numerals' : 'Letter names';
@@ -28,7 +31,7 @@ export function describeSupportedProfileSettingsTruth(): {
 } {
   return {
     displayName: 'Display names may be left blank and save exactly as entered.',
-    chordDisplayModes: formatSupportedValues(SUPPORTED_CHORD_DISPLAY_MODES),
+    chordDisplayModes: formatSupportedValues(CHORD_DISPLAY_MODE_VALIDATION_TRUTH),
     defaultGenres: formatSupportedValues(GENRES),
   };
 }
@@ -55,7 +58,7 @@ function parseChordDisplayMode(value: unknown): Profile['chordDisplayMode'] {
   }
 
   throw new Error(
-    `Invalid profile chord display mode: ${String(value)}. Supported modes: ${formatSupportedValues(SUPPORTED_CHORD_DISPLAY_MODES)}.`
+    `Invalid profile chord display mode: ${String(value)}. Supported modes: ${formatSupportedValues(CHORD_DISPLAY_MODE_VALIDATION_TRUTH)}.`
   );
 }
 

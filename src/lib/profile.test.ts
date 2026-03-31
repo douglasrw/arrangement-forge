@@ -14,7 +14,7 @@ describe('rowToProfile', () => {
   it('describes the current saved profile settings truth for each editable field', () => {
     expect(describeSupportedProfileSettingsTruth()).toEqual({
       displayName: 'Display names may be left blank and save exactly as entered.',
-      chordDisplayModes: 'letter or roman',
+      chordDisplayModes: 'letter (Letter names) or roman (Roman numerals)',
       defaultGenres: 'Jazz, Blues, Rock, Funk, Country, Gospel, R&B, Latin, or Pop',
     });
   });
@@ -89,7 +89,9 @@ describe('rowToProfile', () => {
         created_at: '2026-03-28T00:00:00Z',
         updated_at: '2026-03-28T01:00:00Z',
       })
-    ).toThrow('Invalid profile chord display mode: solfege. Supported modes: letter or roman.');
+    ).toThrow(
+      'Invalid profile chord display mode: solfege. Supported modes: letter (Letter names) or roman (Roman numerals).'
+    );
   });
 
   it('rejects unsupported default genres instead of treating them as saved truth', () => {

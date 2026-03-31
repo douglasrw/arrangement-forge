@@ -336,7 +336,7 @@ describe('SettingsPage truth surface', () => {
       'Saved profile truth for this field stays simple: Display names may be left blank and save exactly as entered.'
     );
     expect(mounted.container.textContent).toContain(
-      'Saved profile validation only accepts chord modes letter or roman and default genres from the supported list below.'
+      'Saved profile validation only accepts chord modes letter (Letter names) or roman (Roman numerals) and default genres from the supported list below.'
     );
     expect(mounted.container.textContent).toContain(
       'Saved now as "Doug". Edit this field to change the saved display name.'
@@ -472,7 +472,7 @@ describe('SettingsPage truth surface', () => {
     });
 
     expect(mounted.container.textContent).toContain(
-      'Invalid profile chord display mode: solfege. Supported modes: letter or roman.'
+      'Invalid profile chord display mode: solfege. Supported modes: letter (Letter names) or roman (Roman numerals).'
     );
     expect(useAuthStore.getState().profile?.displayName).toBe('Doug');
     expect(saveButton?.disabled).toBe(false);
