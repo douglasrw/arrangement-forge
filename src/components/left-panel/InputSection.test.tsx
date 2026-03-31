@@ -194,10 +194,39 @@ describe('InputSection upload tab', () => {
     ) as HTMLDivElement | null;
 
     expect(parseTruth?.getAttribute('data-chord-chart-parse-state')).toBe('attention');
-    expect(mounted.container.textContent).toContain('Chord chart needs attention');
-    expect(mounted.container.textContent).toContain('1 bar could not be parsed and will be treated as N.C. during generation.');
+    expect(mounted.container.textContent).toContain('Chord chart has parse issues');
+    expect(mounted.container.textContent).toContain('2 bars become N.C. during generation.');
+    expect(mounted.container.textContent).toContain('1 bar has an unrecognized chord token.');
+    expect(mounted.container.textContent).toContain('1 repeat marker follows an unresolved bar.');
+    expect(mounted.container.textContent).toContain(
+      'Replace the flagged repeat bars with explicit chords or fix the bar before them.'
+    );
     expect(mounted.container.textContent).toContain('Bar 2: could not parse "xyz??"');
+    expect(mounted.container.textContent).toContain(
+      'Bar 3: repeat marker "%" follows a bar that could not be resolved'
+    );
     expect(getGenerateButton(mounted.container).disabled).toBe(false);
+  });
+
+  it('surfaces the next step when a repeat marker starts before any chord', () => {
+    useProjectStore.setState({
+      project: makeProject({
+        chordChartRaw: '% | Cmaj7 | Fmaj7',
+      }),
+    });
+
+    const mounted = renderSection();
+    mountedRoot = mounted.root;
+    mountedContainer = mounted.container;
+
+    expect(mounted.container.textContent).toContain('1 bar becomes N.C. during generation.');
+    expect(mounted.container.textContent).toContain('1 repeat marker starts before any chord.');
+    expect(mounted.container.textContent).toContain(
+      'Replace the flagged repeat bars with explicit chords or fix the bar before them.'
+    );
+    expect(mounted.container.textContent).toContain(
+      'Bar 1: repeat marker "%" with no previous chord'
+    );
   });
 
   it('shows waiting readiness truth and blocks uploads while generation is running', () => {

@@ -91,6 +91,25 @@ describe('parseChordChart', () => {
     ]);
   });
 
+  it('captures repeat markers that follow an unresolved bar', () => {
+    const { chords, issues, warnings } = parseChordChart('xyz?? | % | C', 'C');
+    expect(chords[0].degree).toBeNull();
+    expect(chords[1].degree).toBeNull();
+    expect(issues).toEqual([
+      expect.objectContaining({
+        barNumber: 1,
+        token: 'xyz??',
+        reason: 'invalid_token',
+      }),
+      expect.objectContaining({
+        barNumber: 2,
+        token: '%',
+        reason: 'repeat_without_resolved_chord',
+      }),
+    ]);
+    expect(warnings[1]).toContain('follows a bar that could not be resolved');
+  });
+
   it('handles slash chords', () => {
     const { chords } = parseChordChart('G7/B', 'C');
     expect(chords[0].degree).toBe('V');

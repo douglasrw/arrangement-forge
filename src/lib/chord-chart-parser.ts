@@ -7,7 +7,7 @@ import type { ChordEntry } from '@/types';
 export interface ChordChartParseIssue {
   barNumber: number;
   token: string;
-  reason: 'repeat_without_previous' | 'invalid_token';
+  reason: 'repeat_without_previous' | 'repeat_without_resolved_chord' | 'invalid_token';
   message: string;
 }
 
@@ -19,6 +19,7 @@ export interface ChordChartParseResult {
 
 const REPEAT_MARKERS = new Set(['%', '/']);
 const NC_TOKENS = new Set(['n.c.', 'nc', '-']);
+type ParsedBarState = 'chord' | 'no_chord' | 'issue';
 
 /**
  * Parse a raw chord chart string into a sequence of ChordEntry objects.
@@ -41,6 +42,7 @@ export function parseChordChart(raw: string, key: string): ChordChartParseResult
 
   let barNumber = 0;
   let prevChord: ChordEntry | null = null;
+  let prevBarState: ParsedBarState | null = null;
 
   for (const line of lines) {
     // Skip section header lines like [Verse 1], [Chorus], [Bridge], etc.
@@ -57,9 +59,18 @@ export function parseChordChart(raw: string, key: string): ChordChartParseResult
 
       for (const token of tokens) {
         barNumber++;
-        const entry = parseBarToken(token, key, prevChord, barNumber, warnings, issues);
+        const { entry, state } = parseBarToken(
+          token,
+          key,
+          prevChord,
+          prevBarState,
+          barNumber,
+          warnings,
+          issues
+        );
         chords.push(entry);
         prevChord = entry;
+        prevBarState = state;
       }
     }
   }
@@ -71,17 +82,37 @@ function parseBarToken(
   token: string,
   key: string,
   prevChord: ChordEntry | null,
+  prevBarState: ParsedBarState | null,
   barNumber: number,
   warnings: string[],
   issues: ChordChartParseIssue[]
-): ChordEntry {
+): { entry: ChordEntry; state: ParsedBarState } {
   const lower = token.toLowerCase().trim();
 
   // Repeat marker
   if (REPEAT_MARKERS.has(lower)) {
-    if (prevChord) {
-      return { ...prevChord, bar_number: barNumber };
+    if (prevChord && prevBarState !== 'issue') {
+      return {
+        entry: { ...prevChord, bar_number: barNumber },
+        state: prevBarState ?? 'no_chord',
+      };
     }
+
+    if (prevChord && prevBarState === 'issue') {
+      const message = `Bar ${barNumber}: repeat marker "${token}" follows a bar that could not be resolved, treated as N.C.`;
+      warnings.push(message);
+      issues.push({
+        barNumber,
+        token,
+        reason: 'repeat_without_resolved_chord',
+        message,
+      });
+      return {
+        entry: { bar_number: barNumber, degree: null, quality: null, bass_degree: null },
+        state: 'issue',
+      };
+    }
+
     const message = `Bar ${barNumber}: repeat marker "${token}" with no previous chord, treated as N.C.`;
     warnings.push(message);
     issues.push({
@@ -90,22 +121,31 @@ function parseBarToken(
       reason: 'repeat_without_previous',
       message,
     });
-    return { bar_number: barNumber, degree: null, quality: null, bass_degree: null };
+    return {
+      entry: { bar_number: barNumber, degree: null, quality: null, bass_degree: null },
+      state: 'issue',
+    };
   }
 
   // No chord
   if (NC_TOKENS.has(lower)) {
-    return { bar_number: barNumber, degree: null, quality: null, bass_degree: null };
+    return {
+      entry: { bar_number: barNumber, degree: null, quality: null, bass_degree: null },
+      state: 'no_chord',
+    };
   }
 
   // Attempt to parse as chord
   const result = parseChordInput(token, key);
   if (result) {
     return {
-      bar_number: barNumber,
-      degree: result.degree,
-      quality: result.quality,
-      bass_degree: result.bassDegree,
+      entry: {
+        bar_number: barNumber,
+        degree: result.degree,
+        quality: result.quality,
+        bass_degree: result.bassDegree,
+      },
+      state: 'chord',
     };
   }
 
@@ -117,5 +157,8 @@ function parseBarToken(
     reason: 'invalid_token',
     message,
   });
-  return { bar_number: barNumber, degree: null, quality: null, bass_degree: null };
+  return {
+    entry: { bar_number: barNumber, degree: null, quality: null, bass_degree: null },
+    state: 'issue',
+  };
 }
