@@ -4,8 +4,8 @@ Status date: 2026-03-31
 
 Status: landed on `main`; reverified again on 2026-03-31 with the focused
 parser, input-surface, generation, and type-check proofs passing at the
-current `main` head, and no remaining bounded product delta is visible in this
-family
+current `main` head `88923362`, and no remaining bounded product delta is
+visible in this family
 
 Purpose: preserve the current chord parser failure contract and its landing
 proof in one repo-local place so future work does not have to reconstruct it
@@ -36,6 +36,10 @@ and scattered tests.
   not drift away from what the operator sees in the editor.
 - The input surface summarizes both the current blocked state and the next
   repair step without requiring archaeology outside the chord chart panel.
+- Blocked parse states now report how many bars are already ready alongside the
+  flagged blocked bars, so the operator can see both current progress and the
+  exact repair target in one sentence instead of inferring the still-usable bar
+  count separately.
 - Generation now fails with an explicit parse-block repair message instead of
   crashing through a missing-truth assumption when unresolved bars are still
   present.
@@ -69,6 +73,10 @@ and scattered tests.
 - the input readiness banner now reuses parser `truth.title` and
   `truth.currentState`, so blocked bars stay explicit in the first status
   surface instead of being compressed into generic readiness copy
+- the same readiness banner now also carries parser `truth.summary`,
+  `truth.nextStep`, flagged chart locations, and hidden overflow count, so the
+  first blocked status surface stays aligned with the full parser truth instead
+  of stopping at only the blocked-state sentence
 - the blocked-state sentence now says Generate stays blocked until the chart is
   fixed, so the first surfaced message carries both the parser state and the
   action gate without requiring separate inference
@@ -144,10 +152,14 @@ Current focused proofs for this slice:
 - `pnpm type-check`
 - the current proof set still matches the same bounded parser, input-surface,
   and generation contract after the 2026-03-31 recheck at verified repo head
-  `f7fe60ee`
+  `88923362`
 
 ## Tracked Landing
 
+- `889233623b9b0eba1d3b86afdcf4c56fcb1f1bf4`:
+  `commitpath_c40ed88d: propagate chord parse blocker truth into readiness`
+- `3f1cffb247dafb619a01ff36faa5ff705215c9bf`:
+  `Make chord parser blockers report ready bar counts`
 - `ae87f616fe49f048530276896d3909dfe7331960`:
   `commitpath_c40ed88d Surface upload blocked title truth`
 - `95816f20ffca96034f6c73e04ef44c11fefacf2b`:
