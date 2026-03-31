@@ -151,6 +151,42 @@ describe('parseChordChart', () => {
     });
   });
 
+  it('keeps all-invalid charts in the parse-issue path instead of collapsing them into missing-bar truth', () => {
+    const { chords, warnings, issues, truth } = parseChordChart('xyz?? | %', 'C');
+
+    expect(chords).toHaveLength(2);
+    expect(chords.every((chord) => chord.degree === null)).toBe(true);
+    expect(warnings).toHaveLength(2);
+    expect(issues).toEqual([
+      expect.objectContaining({
+        lineNumber: 1,
+        barNumber: 1,
+        token: 'xyz??',
+        reason: 'invalid_token',
+      }),
+      expect.objectContaining({
+        lineNumber: 1,
+        barNumber: 2,
+        token: '%',
+        reason: 'repeat_without_resolved_chord',
+      }),
+    ]);
+    expect(truth).toMatchObject({
+      state: 'blocked',
+      title: 'Chord chart has parse issues',
+      currentState:
+        'Bars 1 and 2 currently parse as N.C., so Generate stays blocked until the chart is fixed.',
+      summary: '1 bar has an unrecognized chord token. 1 repeat marker follows an unresolved bar.',
+      nextStep: 'Replace the flagged repeat bars with explicit chords or fix the bar before them.',
+      blockedBars: [1, 2],
+      issueHighlights: [
+        'Line 1, bar 1: could not parse "xyz??"',
+        'Line 1, bar 2: repeat marker "%" follows a bar that could not be resolved',
+      ],
+      remainingIssueCount: 0,
+    });
+  });
+
   it('captures repeat markers that do not have a previous chord', () => {
     const { chords, issues } = parseChordChart('% | C', 'C');
     expect(chords[0].degree).toBeNull();

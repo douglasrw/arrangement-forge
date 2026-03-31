@@ -126,7 +126,7 @@ function buildParseTruth(
   hasChartContent: boolean,
   hasPlayableBars: boolean
 ): ChordChartParseTruth {
-  if (hasChartContent && !hasPlayableBars) {
+  if (hasChartContent && !hasPlayableBars && issues.length === 0) {
     return {
       state: 'blocked',
       title: 'Chord chart needs chord bars',

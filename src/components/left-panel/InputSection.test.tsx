@@ -357,6 +357,50 @@ describe('InputSection upload tab', () => {
     expect(getGenerateButton(mounted.container).disabled).toBe(true);
   });
 
+  it('keeps all-invalid charts visibly blocked with parse failure truth instead of generic missing-bar copy', () => {
+    useProjectStore.setState({
+      project: makeProject({
+        chordChartRaw: 'xyz?? | %',
+      }),
+    });
+
+    const mounted = renderSection();
+    mountedRoot = mounted.root;
+    mountedContainer = mounted.container;
+    openTextTab(mounted.container);
+
+    const parseTruth = mounted.container.querySelector(
+      '[data-chord-chart-parse-state]'
+    ) as HTMLDivElement | null;
+    const readiness = mounted.container.querySelector('[data-input-readiness]') as HTMLDivElement | null;
+    const chordChartHint = mounted.container.querySelector(
+      '[data-chord-chart-editor-state]'
+    ) as HTMLParagraphElement | null;
+
+    expect(parseTruth?.getAttribute('data-chord-chart-parse-state')).toBe('blocked');
+    expect(readiness?.getAttribute('data-input-readiness')).toBe('blocked');
+    expect(mounted.container.textContent).toContain('Chord chart has parse issues');
+    expect(mounted.container.textContent).toContain(
+      'Bars 1 and 2 currently parse as N.C., so Generate stays blocked until the chart is fixed.'
+    );
+    expect(mounted.container.textContent).toContain('1 bar has an unrecognized chord token.');
+    expect(mounted.container.textContent).toContain('1 repeat marker follows an unresolved bar.');
+    expect(mounted.container.textContent).toContain(
+      'Next step: Replace the flagged repeat bars with explicit chords or fix the bar before them.'
+    );
+    expect(mounted.container.textContent).toContain(
+      'Flagged chart locations: Line 1, bar 1: could not parse "xyz??"'
+    );
+    expect(chordChartHint?.textContent).toContain(
+      'Bars 1 and 2 currently parse as N.C., so Generate stays blocked until the chart is fixed.'
+    );
+    expect(chordChartHint?.textContent).toContain(
+      'Line 1, bar 2: repeat marker "%" follows a bar that could not be resolved'
+    );
+    expect(mounted.container.textContent).not.toContain('Chord chart needs chord bars');
+    expect(getGenerateButton(mounted.container).disabled).toBe(true);
+  });
+
   it('surfaces the next step when a repeat marker starts before any chord', () => {
     useProjectStore.setState({
       project: makeProject({
