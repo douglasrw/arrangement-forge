@@ -316,16 +316,24 @@ describe('StatusBar', () => {
 
   it('renders route-level project loading as a distinct shell status', () => {
     const container = renderStatusBar('loading-project');
+    const label = container.querySelector('span[title]') as HTMLSpanElement | null;
 
     expect(container.textContent).toContain('Loading project');
     expect(container.textContent).not.toContain('Saved');
+    expect(label?.title).toBe(
+      'Arrangement Forge is still loading the requested project route before the editor becomes interactive.'
+    );
   });
 
   it('renders no-project-selected as a distinct editor fallback status', () => {
     const container = renderStatusBar('no-project-selected');
+    const label = container.querySelector('span[title]') as HTMLSpanElement | null;
 
     expect(container.textContent).toContain('No project selected');
     expect(container.textContent).not.toContain('Saved');
+    expect(label?.title).toBe(
+      'The /project editor fallback route is open with no active project in this workspace. Open a project from the library to continue.'
+    );
   });
 
   it('renders sample loading as a distinct visible status', () => {

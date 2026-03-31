@@ -91,6 +91,40 @@ const STATUS_CONFIG: Record<
   },
 };
 
+function getStatusBarLabelTitle({
+  status,
+  errorMessage,
+  savePlanTooltip,
+  savedTruthTooltip,
+}: {
+  status: AppStatus;
+  errorMessage: string | null;
+  savePlanTooltip: string;
+  savedTruthTooltip: string;
+}): string {
+  if (status === 'error') {
+    return errorMessage ?? 'Project save or system error';
+  }
+
+  if (status === 'saving' || status === 'unsaved') {
+    return savePlanTooltip;
+  }
+
+  if (status === 'saved') {
+    return savedTruthTooltip;
+  }
+
+  if (status === 'loading-project') {
+    return 'Arrangement Forge is still loading the requested project route before the editor becomes interactive.';
+  }
+
+  if (status === 'no-project-selected') {
+    return 'The /project editor fallback route is open with no active project in this workspace. Open a project from the library to continue.';
+  }
+
+  return STATUS_CONFIG[status].label;
+}
+
 interface StatusBarProps {
   status?: AppStatus;
   className?: string;
@@ -127,14 +161,12 @@ export function StatusBar({ status = 'saved', className }: StatusBarProps) {
       : status === 'unsaved'
       ? savePlan.statusLabel
       : cfg.label;
-  const labelTitle =
-    status === 'error' && errorMessage
-      ? errorMessage
-      : status === 'saving' || status === 'unsaved'
-      ? savePlanTooltip
-      : status === 'saved'
-      ? savedTruthTooltip
-      : label;
+  const labelTitle = getStatusBarLabelTitle({
+    status,
+    errorMessage,
+    savePlanTooltip,
+    savedTruthTooltip,
+  });
 
   return (
     <div
