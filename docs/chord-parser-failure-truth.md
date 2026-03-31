@@ -3,8 +3,8 @@
 Status date: 2026-03-31
 
 Status: landed on local `main`; reverified again on 2026-03-31 with the
-focused parser, input-surface, and type-check proofs passing at pre-refresh
-repo head `99cfa86d`, no remaining bounded product delta visible in this
+focused parser, input-surface, and type-check proofs passing at verified local
+`main` head `e75b500d`, no remaining bounded product delta visible in this
 family, and no upstream push proof captured from this worktree
 
 Purpose: preserve the current chord parser failure contract and its landing
@@ -159,12 +159,14 @@ Current focused proofs for this slice:
 - `pnpm exec tsc --noEmit`
 - the current proof set still matches the same bounded parser, input-surface,
   and generation-block contract after the 2026-03-31 recheck at verified
-  pre-refresh repo head `99cfa86d`
+  local `main` head `e75b500d`
 - this artifact only proves the current local `main` worktree state; it does
   not claim that `origin/main` received a fresh promotion during this refresh
 
 ## Tracked Landing
 
+- `e75b500db7d8d8656378b3409e1d53ba34e5d634`:
+  `commitpath_c40ed88d Clarify chord parser truth proof boundary`
 - `b0507a1d003b3d0b3653b34126cb208fcdb035a2`:
   `commitpath_c40ed88d Refresh chord parser failure truth evidence`
 - `808ce22e2c1cb91568b584dca34b67fbc4b85323`:
