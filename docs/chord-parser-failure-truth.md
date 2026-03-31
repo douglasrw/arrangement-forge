@@ -2,7 +2,7 @@
 
 Status date: 2026-03-31
 
-Status: landed on `main`; reverified on 2026-03-31 at proof head `2d3ca1b6`
+Status: landed on `main`; reverified on 2026-03-31 at proof head `a830c529`
 with upload blocked-title truth preserved, and no remaining bounded product
 delta is visible in this family
 
@@ -134,7 +134,7 @@ Current focused proofs for this slice:
 
 - `pnpm test -- --run src/lib/chord-chart-parser.test.ts src/components/left-panel/InputSection.test.tsx src/hooks/useGenerate.test.tsx`
 - `pnpm type-check`
-- verification head for this recheck: `2d3ca1b60357f31d413e62066a79d54d8008a6c9`
+- verification head for this recheck: `a830c529f235c22c7adf45eabb1e358f34d6091e`
 
 ## Tracked Landing
 
