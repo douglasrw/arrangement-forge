@@ -2,7 +2,7 @@
 
 Status date: 2026-03-31
 
-Status: landed on `main`; reverified on 2026-03-31 at head `dbc5b968a288`
+Status: landed on `main`; reverified on 2026-03-31 at head `be18e010438e`
 after the promoted settings-profile validation truth copy landed beside the
 earlier blocked-save truth, persisted profile validation, save-failure truth,
 supported-values copy, default-genre regression coverage, and explicit saved
@@ -66,7 +66,7 @@ Current focused proofs for this slice:
 
 - `pnpm test -- --run src/pages/SettingsPage.test.tsx`
 - `pnpm run type-check`
-- verification head: `dbc5b968a2884c82c50d02654fdad3866e44dca2`
+- verification head: `be18e010438ee11e3b1a03cff666f9ed154c6adb`
 
 ## Tracked Landing
 
@@ -103,7 +103,7 @@ Current focused proofs for this slice:
 - The landing made saved, pending, unavailable, blocked-save, invalid, and
   failed-save states explicit on the settings surface instead of relying on
   hidden surrounding context.
-- The current `main` head at `dbc5b968a288` preserves that contract, now with
+- The current `main` head at `be18e010438e` preserves that contract, now with
   explicit saved display-name truth in the Profile card, and the focused
   settings proofs passed again on 2026-03-31 before this doc-only evidence
   refresh updated the repo-local artifact.
