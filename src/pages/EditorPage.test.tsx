@@ -12,7 +12,7 @@ import EditorPage from './EditorPage';
 
 const loadProjectMock = vi.fn<(projectId: string) => Promise<LoadProjectResult>>();
 const signOutMock = vi.hoisted(() => vi.fn());
-let routeProjectId = 'project-a';
+let routeProjectId: string | undefined = 'project-a';
 const reactActEnv = globalThis as typeof globalThis & {
   IS_REACT_ACT_ENVIRONMENT?: boolean;
 };
@@ -98,7 +98,7 @@ function makeProject(id: string): Project {
   };
 }
 
-function renderEditor(projectId: string) {
+function renderEditor(projectId: string | undefined) {
   routeProjectId = projectId;
   const container = document.createElement('div');
   document.body.appendChild(container);
@@ -350,6 +350,27 @@ describe('EditorPage route loading gate', () => {
     expect(querySelectionSurface()).toBeNull();
     expect(document.body.textContent).toContain(
       'Project project-a could not be loaded for this editor route. Backend unavailable'
+    );
+    expect(document.body.textContent).toContain(
+      'Next step: Return to the library, then retry this project after the load failure is resolved.'
+    );
+    expect(queryBackToLibraryLink()).not.toBeNull();
+  });
+
+  it('shows an explicit next step when the editor route is missing a project id', async () => {
+    const mounted = renderEditor(undefined);
+    mountedRoot = mounted.root;
+    mountedContainer = mounted.container;
+
+    await act(async () => {
+      await Promise.resolve();
+    });
+
+    expect(loadProjectMock).not.toHaveBeenCalled();
+    expect(queryErrorState()).not.toBeNull();
+    expect(querySelectionSurface()).toBeNull();
+    expect(document.body.textContent).toContain(
+      'The requested project route is missing an id.'
     );
     expect(document.body.textContent).toContain(
       'Next step: Return to the library, then retry this project after the load failure is resolved.'

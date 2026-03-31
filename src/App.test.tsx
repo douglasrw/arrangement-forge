@@ -3,8 +3,8 @@
 import { act } from 'react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { createRoot, type Root } from 'react-dom/client';
-import { MemoryRouter, Route, Routes, useLocation } from 'react-router-dom';
-import { AuthGuard } from './App';
+import { createMemoryRouter, MemoryRouter, Route, RouterProvider, Routes, useLocation } from 'react-router-dom';
+import { AuthGuard, createAppRoutes } from './App';
 import { useAuthStore } from '@/store/auth-store';
 
 vi.mock('@/pages/LoginPage', () => ({
@@ -209,6 +209,36 @@ describe('App protected route recovery truth', () => {
     expect(mounted.container.querySelector('[data-testid="location-path"]')?.textContent).toBe('/project/project-1');
     expect(mounted.container.querySelector('[data-testid="editor-page"]')).not.toBeNull();
     expect(mounted.container.querySelector('[data-testid="login-page"]')).toBeNull();
+  });
+
+  it('routes /project through the guarded editor surface instead of leaving the fallback unreachable', async () => {
+    setAuthStoreFixture({
+      user: { id: 'user-1', email: 'ash@example.com' },
+      profile: makeProfile(),
+      authStatus: 'authenticated',
+      signedOutReason: null,
+    });
+
+    const container = document.createElement('div');
+    document.body.appendChild(container);
+    const root = createRoot(container);
+    const router = createMemoryRouter(createAppRoutes(), {
+      initialEntries: ['/project'],
+    });
+
+    mountedRoot = root;
+    mountedContainer = container;
+
+    act(() => {
+      root.render(<RouterProvider router={router} />);
+    });
+
+    await act(async () => {
+      await Promise.resolve();
+    });
+
+    expect(router.state.location.pathname).toBe('/project');
+    expect(container.querySelector('[data-testid="editor-page"]')).not.toBeNull();
   });
 
   it('removes protected content immediately after auth state is cleared', async () => {

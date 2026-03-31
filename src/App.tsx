@@ -95,6 +95,14 @@ export function createAppRoutes() {
       ),
     },
     {
+      path: '/project',
+      element: (
+        <AuthGuard>
+          <EditorPage />
+        </AuthGuard>
+      ),
+    },
+    {
       path: '/project/:id',
       element: (
         <AuthGuard>
