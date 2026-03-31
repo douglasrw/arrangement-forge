@@ -2,7 +2,7 @@
 
 Status date: 2026-03-31
 
-Status: landed on `main`; reverified on 2026-03-31 at proof head `c60dbed1`,
+Status: landed on `main`; reverified on 2026-03-31 at proof head `f433c4ed`,
 with the same parser, input surface, and generation block contract still
 holding at the current repo head without a new product delta
 
@@ -88,10 +88,12 @@ Current focused proofs for this slice:
 
 - `pnpm test -- --run src/lib/chord-chart-parser.test.ts src/components/left-panel/InputSection.test.tsx src/hooks/useGenerate.test.tsx`
 - `pnpm type-check`
-- verification head: `c60dbed13e48ea66881d37b7bad8d1456ee63447`
+- verification head: `f433c4ed012a35b196555b3f3e94ae02d70cf39e`
 
 ## Tracked Landing
 
+- `f433c4ed012a35b196555b3f3e94ae02d70cf39e`:
+  `commitpath_c40ed88d Refresh chord parser failure truth evidence`
 - `c60dbed13e48ea66881d37b7bad8d1456ee63447`:
   `commitpath_c40ed88d Clarify first saved settings profile truth`
 - `3aa4743cb13d3762e704fe99f859a11b02c7c2ee`:
