@@ -2,7 +2,7 @@
 
 Status date: 2026-03-31
 
-Status: landed on `main`; reverified from current `main` head `17736a73` on 2026-03-31 with focused route proofs and no remaining product delta in this family beyond this evidence refresh
+Status: landed on `main`; reverified from current `main` head `942d6b08` on 2026-03-31 with focused route proofs and no remaining product delta in this family beyond this evidence refresh
 
 Purpose: preserve the current editor route contract and its landing proof in
 one repo-local place so future work does not have to reconstruct it from
@@ -30,6 +30,9 @@ one repo-local place so future work does not have to reconstruct it from
   recovery.
 - Auth bootstrap readiness and route-truth copy keep exact reserved route paths
   visible instead of collapsing them into generic protected-route labels.
+- Auth bootstrap also names the protected route mode directly so the operator
+  can tell whether Arrangement Forge is holding an editor fallback route or a
+  requested project route before the guard opens.
 
 `src/pages/EditorPage.tsx` owns route readiness truth after the guard opens:
 
@@ -38,6 +41,9 @@ one repo-local place so future work does not have to reconstruct it from
 - `project-id` keeps the current route explicit while a project is loading.
 - `project-id` preserves any active query or hash on the current route while
   readiness is still resolving and after the route is ready.
+- Route shells and the ready banner name route mode directly so requested
+  project routes, the editor fallback route, and the active project route do
+  not have to be inferred from surrounding copy.
 - Missing, malformed, and load-failure states explain why the route cannot
   open and point back to the library.
 - Ready state keeps the active route explicit and reminds the operator that
@@ -88,14 +94,17 @@ Current focused proofs for this slice:
   `commitpath_c40ed88d: clarify editor route next steps`
 - `53d36f581b623aab85dddc67ecf14cee43d56e4f`:
   `commitpath_c40ed88d Refresh editor route readiness truth evidence`
+- `1b7ce2d35a6a4882f85e9e7c15743cb578aa23d8`:
+  `Make editor route mode explicit`
 - The landing made current route, fallback route, and route readiness explicit
   across auth bootstrap, route loading, malformed-route handling, missing or
   unavailable project states, and ready-state recovery.
-- The current `main` head at `17736a73` still preserves that contract. The
-  only later route-family change after `23080b02` was the doc-only evidence
-  refresh at `53d36f58`, and the focused route proofs passed again on
-  2026-03-31 after the ready banner split current-state truth from next-step
-  truth on separate lines.
+- The current `main` head at `942d6b08` still preserves that contract. After
+  the last doc-only evidence refresh at `53d36f58`, commit `1b7ce2d3` added
+  explicit route-mode copy across the auth bootstrap loading gate, editor route
+  shells, and ready banner without changing the fallback route contract.
+- The focused route proofs passed again on 2026-03-31 from `942d6b08` after
+  that explicit route-mode refinement.
 - After the 2026-03-31 recheck, this family appears exhausted until a new
   editor-route behavior changes the contract or the proof surface.
 
