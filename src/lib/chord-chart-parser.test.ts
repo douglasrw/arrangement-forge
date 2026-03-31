@@ -144,7 +144,7 @@ describe('parseChordChart', () => {
       currentState:
         'Bar 2 currently parses as N.C., so Generate stays blocked until the chart is fixed.',
       summary: '1 bar has an unrecognized chord token.',
-      nextStep: 'Fix or replace the flagged chord bars before generating.',
+      nextStep: 'Fix or replace bar 2 before generating.',
       blockedBars: [2],
       issueHighlights: ['Line 1, bar 2: could not parse "xyz??"'],
       remainingIssueCount: 0,
@@ -177,7 +177,7 @@ describe('parseChordChart', () => {
       currentState:
         'Bars 1 and 2 currently parse as N.C., so Generate stays blocked until the chart is fixed.',
       summary: '1 bar has an unrecognized chord token. 1 repeat marker follows an unresolved bar.',
-      nextStep: 'Replace the flagged repeat bars with explicit chords or fix the bar before them.',
+      nextStep: 'Replace bars 1 and 2 with explicit chords or fix the bar before them.',
       blockedBars: [1, 2],
       issueHighlights: [
         'Line 1, bar 1: could not parse "xyz??"',
@@ -225,7 +225,7 @@ describe('parseChordChart', () => {
       currentState:
         'Bars 1 and 2 currently parse as N.C., so Generate stays blocked until the chart is fixed.',
       summary: '1 bar has an unrecognized chord token. 1 repeat marker follows an unresolved bar.',
-      nextStep: 'Replace the flagged repeat bars with explicit chords or fix the bar before them.',
+      nextStep: 'Replace bars 1 and 2 with explicit chords or fix the bar before them.',
       blockedBars: [1, 2],
       issueHighlights: [
         'Line 1, bar 1: could not parse "xyz??"',

@@ -193,8 +193,8 @@ function buildParseTruth(
     summary: summaryParts.join(' '),
     nextStep:
       repeatWithoutPreviousCount > 0 || repeatWithoutResolvedChordCount > 0
-        ? 'Replace the flagged repeat bars with explicit chords or fix the bar before them.'
-        : 'Fix or replace the flagged chord bars before generating.',
+        ? `Replace ${formatBlockedBarReference(blockedBars, 'the flagged repeat bars')} with explicit chords or fix the bar before ${blockedBars.length === 1 ? 'it' : 'them'}.`
+        : `Fix or replace ${formatBlockedBarReference(blockedBars, 'the flagged chord bars')} before generating.`,
     blockedBars,
     issueHighlights,
     remainingIssueCount: Math.max(issues.length - issueHighlights.length, 0),
@@ -211,6 +211,22 @@ function formatBarList(barNumbers: number[]) {
   }
 
   return `Bars ${barNumbers.slice(0, -1).join(', ')}, and ${barNumbers.at(-1)}`;
+}
+
+function formatBlockedBarReference(barNumbers: number[], fallback: string) {
+  if (barNumbers.length === 0) {
+    return fallback;
+  }
+
+  if (barNumbers.length === 1) {
+    return `bar ${barNumbers[0]}`;
+  }
+
+  if (barNumbers.length === 2) {
+    return `bars ${barNumbers[0]} and ${barNumbers[1]}`;
+  }
+
+  return `bars ${barNumbers.slice(0, -1).join(', ')}, and ${barNumbers.at(-1)}`;
 }
 
 function parseBarToken(

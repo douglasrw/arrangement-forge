@@ -332,7 +332,7 @@ describe('InputSection upload tab', () => {
     expect(mounted.container.textContent).toContain('1 bar has an unrecognized chord token.');
     expect(mounted.container.textContent).toContain('1 repeat marker follows an unresolved bar.');
     expect(mounted.container.textContent).toContain(
-      'Next step: Replace the flagged repeat bars with explicit chords or fix the bar before them.'
+      'Next step: Replace bars 2 and 3 with explicit chords or fix the bar before them.'
     );
     expect(mounted.container.textContent).toContain('Blocked');
     expect(mounted.container.textContent).toContain(
@@ -346,7 +346,7 @@ describe('InputSection upload tab', () => {
       'Bars 2 and 3 currently parse as N.C., so Generate stays blocked until the chart is fixed.'
     );
     expect(chordChartHint?.textContent).toContain(
-      'Next step: Replace the flagged repeat bars with explicit chords or fix the bar before them.'
+      'Next step: Replace bars 2 and 3 with explicit chords or fix the bar before them.'
     );
     expect(chordChartHint?.textContent).toContain(
       'Flagged chart locations: Line 1, bar 2: could not parse "xyz??"'
@@ -386,7 +386,7 @@ describe('InputSection upload tab', () => {
     expect(mounted.container.textContent).toContain('1 bar has an unrecognized chord token.');
     expect(mounted.container.textContent).toContain('1 repeat marker follows an unresolved bar.');
     expect(mounted.container.textContent).toContain(
-      'Next step: Replace the flagged repeat bars with explicit chords or fix the bar before them.'
+      'Next step: Replace bars 1 and 2 with explicit chords or fix the bar before them.'
     );
     expect(mounted.container.textContent).toContain(
       'Flagged chart locations: Line 1, bar 1: could not parse "xyz??"'
@@ -417,7 +417,7 @@ describe('InputSection upload tab', () => {
     );
     expect(mounted.container.textContent).toContain('1 repeat marker starts before any chord.');
     expect(mounted.container.textContent).toContain(
-      'Replace the flagged repeat bars with explicit chords or fix the bar before them.'
+      'Replace bar 1 with explicit chords or fix the bar before it.'
     );
     expect(mounted.container.textContent).toContain(
       'Line 1, bar 1: repeat marker "%" with no previous chord'
@@ -719,7 +719,7 @@ describe('InputSection upload tab', () => {
       'Why it is blocked: 1 bar has an unrecognized chord token. 1 repeat marker follows an unresolved bar.'
     );
     expect(mounted.container.textContent).toContain(
-      'Next step: Replace the flagged repeat bars with explicit chords or fix the bar before them.'
+      'Next step: Replace bars 2 and 3 with explicit chords or fix the bar before them.'
     );
     expect(mounted.container.textContent).toContain(
       'Flagged chart locations: Line 2, bar 2: could not parse "xyz??"'
@@ -765,7 +765,7 @@ describe('InputSection upload tab', () => {
       'Chart is blocked: Bars 2 and 3 currently parse as N.C., so Generate stays blocked until the chart is fixed.'
     );
     expect(mounted.container.textContent).toContain(
-      'Next step: Replace the flagged repeat bars with explicit chords or fix the bar before them.'
+      'Next step: Replace bars 2 and 3 with explicit chords or fix the bar before them.'
     );
     expect(mounted.container.textContent).toContain(
       'Flagged chart locations: Line 2, bar 2: could not parse "xyz??"'
