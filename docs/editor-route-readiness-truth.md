@@ -2,7 +2,7 @@
 
 Status date: 2026-03-31
 
-Status: landed on `main`; reverified from `873b0939` on 2026-03-31 with focused route proofs and no remaining product delta in this family beyond this evidence refresh
+Status: landed on `main`; reverified from `123977ac` on 2026-03-31 with focused route proofs and no remaining product delta in this family beyond this evidence refresh
 
 Purpose: preserve the current editor route contract and its landing proof in
 one repo-local place so future work does not have to reconstruct it from
@@ -78,10 +78,12 @@ Current focused proofs for this slice:
   `commitpath_c40ed88d Refresh editor route readiness truth evidence`
 - `873b0939c6c7963e30d9fe4ac13696f98c42a6c1`:
   `commitpath_c40ed88d Tighten auth route readiness truth`
+- `123977acdce6a135ed90bf55c233c9be417ec998`:
+  `commitpath_c40ed88d Refresh editor route readiness truth evidence`
 - The landing made current route, fallback route, and route readiness explicit
   across auth bootstrap, route loading, malformed-route handling, missing or
   unavailable project states, and ready-state recovery.
-- The current `main` head at `873b0939` still preserves that contract, and the
+- The current `main` head at `123977ac` still preserves that contract, and the
   focused route proofs passed again on 2026-03-31 without additional product
   changes to the route surface.
 - After the 2026-03-31 recheck, this family appears exhausted until a new
