@@ -2,9 +2,9 @@
 
 Status date: 2026-03-31
 
-Status: landed on `main`; reverified on 2026-03-31 at head `0844ec40`
-after explicit per-field saved-versus-next-save truth landed, and no
-remaining product delta is visible in this family beyond this evidence refresh
+Status: landed on `main`; reverified on 2026-03-31 against product head
+`0844ec40` and refreshed in docs at `73cf5459`, with no remaining product
+delta visible in this family beyond this evidence refresh
 
 Purpose: preserve the current settings and persisted profile validation
 contract in one repo-local place so future work does not have to reconstruct it
@@ -92,6 +92,8 @@ Current focused proofs for this slice:
   `commitpath_c40ed88d Refresh settings profile validation truth evidence`
 - `0844ec4083a7c06e4e9ed9a3985c4343e0db520d`:
   `commitpath_c40ed88d Refresh settings profile validation truth evidence`
+- `73cf5459ecf71d09b0c2ee3207322d434342ad9e`:
+  `commitpath_c40ed88d Refresh settings profile validation truth evidence`
 - `e7ef800e0ea3bbe42d5844cbd2c5d8436a65d325`:
   `commitpath_c40ed88d Surface blocked settings save truth`
 - `8fb339322576bc7a785e1169a0ee338c0f48128b`:
@@ -117,7 +119,7 @@ Current focused proofs for this slice:
 - The landing made saved, pending, unavailable, blocked-save, invalid, and
   failed-save states explicit on the settings surface instead of relying on
   hidden surrounding context.
-- The current `main` head at `0844ec40` still preserves that contract and now
+- The verified product head at `0844ec40` still preserves that contract and now
   makes the saved-versus-next-save truth explicit for display name, chord
   display mode, and default genre on the settings surface.
 - The focused settings proofs passed again on 2026-03-31 before this doc-only
