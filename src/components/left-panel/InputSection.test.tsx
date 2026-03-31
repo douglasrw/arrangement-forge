@@ -194,7 +194,7 @@ describe('InputSection upload tab', () => {
     ) as HTMLDivElement | null;
     const readiness = mounted.container.querySelector('[data-input-readiness]') as HTMLDivElement | null;
 
-    expect(parseTruth?.getAttribute('data-chord-chart-parse-state')).toBe('attention');
+    expect(parseTruth?.getAttribute('data-chord-chart-parse-state')).toBe('blocked');
     expect(readiness?.getAttribute('data-input-readiness')).toBe('blocked');
     expect(mounted.container.textContent).toContain('Chord chart has parse issues');
     expect(mounted.container.textContent).toContain(
@@ -205,6 +205,7 @@ describe('InputSection upload tab', () => {
     expect(mounted.container.textContent).toContain(
       'Next step: Replace the flagged repeat bars with explicit chords or fix the bar before them.'
     );
+    expect(mounted.container.textContent).toContain('Blocked');
     expect(mounted.container.textContent).toContain('Flagged bars: Bar 2: could not parse "xyz??"');
     expect(mounted.container.textContent).toContain('Bar 2: could not parse "xyz??"');
     expect(mounted.container.textContent).toContain(

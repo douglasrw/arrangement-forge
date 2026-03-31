@@ -215,9 +215,6 @@ export function InputSection() {
       : isImporting
         ? "Importing chord chart..."
         : uploadFeedback.message
-  const parseFeedbackTitle = parseIssueCount === 1
-    ? "Chord chart needs attention"
-    : "Chord chart has parse issues"
   const parseTruth = parseResult?.truth ?? null
   const inputReadinessTitle = hasParseIssues
     ? parseTruth?.title ?? inputReadiness.title
@@ -341,17 +338,20 @@ export function InputSection() {
 
       {hasParseIssues && (
         <div
-          data-chord-chart-parse-state="attention"
+          data-chord-chart-parse-state="blocked"
           role="status"
           aria-live="polite"
-          className="rounded-md border border-amber-500/30 bg-amber-500/10 px-3 py-2 text-xs leading-relaxed text-foreground"
+          className="rounded-md border border-destructive/30 bg-destructive/10 px-3 py-2 text-xs leading-relaxed text-foreground"
         >
           <div className="flex items-center gap-2">
-            <span className="rounded-full bg-amber-500/10 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.18em] text-amber-300">
-              Attention
+            <span className="rounded-full bg-destructive/10 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.18em] text-destructive">
+              Blocked
             </span>
-            <span className="font-medium text-foreground">{parseTruth?.title ?? parseFeedbackTitle}</span>
+            <span className="font-medium text-foreground">{parseTruth?.title ?? inputReadiness.title}</span>
           </div>
+          {parseTruth?.currentState && (
+            <p className="mt-1 text-muted-foreground">{parseTruth.currentState}</p>
+          )}
           {parseTruth?.summary && (
             <p className="mt-1 text-muted-foreground">{parseTruth.summary}</p>
           )}
