@@ -454,6 +454,47 @@ describe('SettingsPage truth surface', () => {
     expect(saveButton?.textContent).toBe('Save Pending Changes');
   });
 
+  it('shows the supported genres when the saved profile row comes back with an invalid default genre', async () => {
+    const mounted = renderSettingsPage();
+    mountedRoot = mounted.root;
+    mountedContainer = mounted.container;
+
+    const displayNameInput = mounted.container.querySelector(
+      '#settings-display-name'
+    ) as HTMLInputElement | null;
+    const form = mounted.container.querySelector('form') as HTMLFormElement | null;
+
+    act(() => {
+      if (!displayNameInput) {
+        throw new Error('Expected display name input');
+      }
+
+      setInputValue(displayNameInput, 'Ashlyn');
+    });
+
+    saveResponse = {
+      data: {
+        id: 'user-1',
+        display_name: 'Ashlyn',
+        chord_display_mode: 'letter',
+        default_genre: 'Trap Metal',
+        created_at: '2026-03-27T00:00:00Z',
+        updated_at: '2026-03-30T00:00:00Z',
+      },
+      error: null,
+    };
+
+    await act(async () => {
+      form?.dispatchEvent(new Event('submit', { bubbles: true, cancelable: true }));
+      await flushAsyncWork();
+    });
+
+    expect(mounted.container.textContent).toContain(
+      'Invalid profile default genre: Trap Metal. Supported genres: Jazz, Blues, Rock, Funk, Country, Gospel, R&B, Latin, or Pop.'
+    );
+    expect(useAuthStore.getState().profile?.displayName).toBe('Doug');
+  });
+
   it('shows an explicit error when the saved profile row is missing required profile fields', async () => {
     const mounted = renderSettingsPage();
     mountedRoot = mounted.root;
