@@ -252,6 +252,11 @@ describe('useGenerate assistant prompt flow', () => {
           message: 'Bar 2: could not parse "xyz??", treated as N.C.',
         },
       ],
+      truth: {
+        currentState:
+          'Bar 2 will become N.C. during generation, so Generate stays blocked until the chart is fixed.',
+        nextStep: 'Fix or replace the flagged chord bars before generating.',
+      },
     });
 
     const mounted = renderHarness();
@@ -268,14 +273,16 @@ describe('useGenerate assistant prompt flow', () => {
     expect(useUiStore.getState()).toMatchObject({
       generationState: 'idle',
       systemStatus: 'error',
-      errorMessage: 'Fix the flagged chord bar before generating.',
+      errorMessage:
+        'Bar 2 will become N.C. during generation, so Generate stays blocked until the chart is fixed. Next step: Fix or replace the flagged chord bars before generating.',
     });
     expect(saveProjectMock).toHaveBeenCalledTimes(1);
     expect(useProjectStore.getState().chatMessages).toHaveLength(1);
     expect(useProjectStore.getState().chatMessages[0]).toMatchObject({
       role: 'assistant',
       scope: 'setup',
-      content: 'Generation failed: Fix the flagged chord bar before generating.',
+      content:
+        'Generation failed: Bar 2 will become N.C. during generation, so Generate stays blocked until the chart is fixed. Next step: Fix or replace the flagged chord bars before generating.',
     });
   });
 

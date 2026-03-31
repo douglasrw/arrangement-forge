@@ -31,6 +31,7 @@ type RunGenerationOptions = {
 type ChordParseFailureLike = {
   issues?: Array<{ reason?: string }>;
   truth?: {
+    currentState?: string | null;
     nextStep?: string | null;
     summary?: string | null;
   };
@@ -108,7 +109,16 @@ function describeGenerationUndoBoundary(assistantPrompt: string | null): string 
 }
 
 function describeChordParseBlocker(parseResult: ChordParseFailureLike): string {
+  const currentState = parseResult.truth?.currentState?.trim();
   const nextStep = parseResult.truth?.nextStep?.trim();
+  if (currentState && nextStep) {
+    return `${currentState} Next step: ${nextStep}`;
+  }
+
+  if (currentState) {
+    return currentState;
+  }
+
   if (nextStep) {
     return nextStep;
   }
