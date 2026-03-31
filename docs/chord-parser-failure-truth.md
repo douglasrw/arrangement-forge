@@ -2,8 +2,8 @@
 
 Status date: 2026-03-31
 
-Status: landed on `main`; reverified on 2026-03-31 at head `5a101df7` after
-the generation-block truth follow-up landed, and no remaining product delta is
+Status: landed on `main`; reverified on 2026-03-31 at product head `f25a1957`
+after the docs refresh follow-up landed, and no remaining product delta is
 visible in this family beyond this evidence refresh
 
 Purpose: preserve the current chord parser failure contract and its landing
@@ -64,7 +64,7 @@ Current focused proofs for this slice:
 
 - `pnpm test -- --run src/lib/chord-chart-parser.test.ts src/components/left-panel/InputSection.test.tsx src/hooks/useGenerate.test.tsx`
 - `pnpm run type-check`
-- verification head: `5a101df79d7d2f0e3d6a655ca0c1cde29ce5310e`
+- verification head: `f25a195792e2ff7438c5ae23866e8343843ea392`
 
 ## Tracked Landing
 
@@ -76,10 +76,12 @@ Current focused proofs for this slice:
   `Block generation on chord parse issues`
 - `5a101df77260409c7729d0b5746f97d5a84cc15e`:
   `commitpath_c40ed88d Harden chord parse block truth in generation`
-- The current `main` head at `5a101df7` still preserves the chord parser
+- `f25a195792e2ff7438c5ae23866e8343843ea392`:
+  `commitpath_c40ed88d Refresh chord parser failure truth docs`
+- The current product head at `f25a1957` still preserves the chord parser
   failure truth contract, and the focused parser/input/generation proofs passed
-  again on 2026-03-31 before this doc-only evidence refresh updated the
-  repo-local artifact.
+  again on 2026-03-31 before this follow-up doc-only evidence refresh updated
+  the repo-local artifact.
 - Commit `9150d7d0` introduced explicit issue tracking and input-surface copy
   for invalid bars, first-bar repeat markers, and repeat markers that follow
   unresolved bars.
@@ -90,6 +92,9 @@ Current focused proofs for this slice:
   proceeding with blocked input.
 - Commit `5a101df7` hardened that same generation-block path so it still emits
   the intended repair instruction even when the parser result is partial.
+- Commit `f25a1957` refreshed the repo-local evidence artifact so future review
+  does not have to reconstruct the current proof boundary from commit
+  archaeology.
 - After the 2026-03-31 recheck, this family appears exhausted until a new
   chord-parse behavior changes the contract or the proof surface.
 
