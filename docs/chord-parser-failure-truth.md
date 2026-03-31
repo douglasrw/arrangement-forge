@@ -3,12 +3,12 @@
 Status date: 2026-03-31
 
 Status: landed on `main`; reverified on 2026-03-31 against repo head
-`3aa4743c`, after `efc2e1e2` first promoted the family, `e9a0db10` kept
+`105261ac`, after `efc2e1e2` first promoted the family, `e9a0db10` kept
 invalid uploaded chord rows visible, `6ef4d8f1`, `b039c28d`, `91846681`,
-`ab75242f`, and `3aa4743c` refreshed the same evidence, and `b5ced43a`
-re-promoted the family without changing the parser, input surface, or
-generation block contract, so this repo-local truth artifact now points at the
-latest verified state without inventing a new product delta
+`ab75242f`, and `3aa4743c` refreshed the same evidence, and `105261ac`
+corrected the same truth artifact so it points at the latest verified state
+without inventing a new product delta or changing the parser, input surface,
+or generation block contract
 
 Purpose: preserve the current chord parser failure contract and its landing
 proof in one repo-local place so future work does not have to reconstruct it
@@ -92,10 +92,12 @@ Current focused proofs for this slice:
 
 - `pnpm test -- --run src/lib/chord-chart-parser.test.ts src/components/left-panel/InputSection.test.tsx src/hooks/useGenerate.test.tsx`
 - `pnpm type-check`
-- verification head: `3aa4743cb13d3762e704fe99f859a11b02c7c2ee`
+- verification head: `105261ac62b635b7c2db3cf8ca710bc7c53357b0`
 
 ## Tracked Landing
 
+- `105261ac62b635b7c2db3cf8ca710bc7c53357b0`:
+  `commitpath_c40ed88d Fix chord parser truth head pointer again`
 - `3aa4743cb13d3762e704fe99f859a11b02c7c2ee`:
   `commitpath_c40ed88d Refresh chord parser failure truth evidence`
 - `b5ced43a4740996caccdc29f3e2701d4624a19af`:
@@ -274,10 +276,13 @@ Current focused proofs for this slice:
   more clean focused recheck at current repo head, so the artifact now points
   at the latest verified state instead of stopping at the previous promoted
   head.
-- After the 2026-03-31 recheck at repo head `3aa4743c`, this family again
+- Commit `105261ac` corrected the repo-local truth artifact again after that
+  landing so the verification pointer and tracked landing now match the latest
+  verified repo head instead of stopping one docs commit behind.
+- After the 2026-03-31 recheck at repo head `105261ac`, this family again
   appeared exhausted unless a new chord-parse behavior changed the contract or
   the proof surface.
-- The 2026-03-31 recheck at verified repo head `3aa4743c` produced the same
+- The 2026-03-31 recheck at verified repo head `105261ac` produced the same
   focused proof results with no product-file delta in this family since that
   earlier verification, so the honest next move here was a repo-local evidence
   refresh rather than another parser or input-surface patch.
