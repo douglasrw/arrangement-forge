@@ -373,7 +373,7 @@ describe('StatusBar', () => {
       '[data-testid="status-bar-history-next-step"]'
     ) as HTMLSpanElement | null;
 
-    expect(history?.textContent).toBe('Undo: Split block');
+    expect(history?.textContent).toBe('Undo ready: Split block');
     expect(nextStep?.textContent).toBe(
       'Use Undo to restore the arrangement captured before Split block.'
     );
@@ -399,7 +399,7 @@ describe('StatusBar', () => {
     ) as HTMLSpanElement | null;
 
     expect(history?.textContent).toBe(
-      'Undo: Change piano block pattern in Verse (bars 1-4): Jazz Comping -> Arpeggiated'
+      'Undo ready: Change piano block pattern in Verse (bars 1-4): Jazz Comping -> Arpeggiated'
     );
     expect(history?.title).toBe(
       'Undo is ready to restore the arrangement captured before Change piano block pattern in Verse (bars 1-4): Jazz Comping -> Arpeggiated. ' +
@@ -424,7 +424,7 @@ describe('StatusBar', () => {
     ) as HTMLSpanElement | null;
 
     expect(history?.textContent).toBe(
-      'Undo: Change piano block energy override in Verse (bars 1-4): inherit -> 95'
+      'Undo ready: Change piano block energy override in Verse (bars 1-4): inherit -> 95'
     );
     expect(history?.title).toBe(
       'Undo is ready to restore the arrangement captured before Change piano block energy override in Verse (bars 1-4): inherit -> 95. ' +
@@ -449,7 +449,7 @@ describe('StatusBar', () => {
     ) as HTMLSpanElement | null;
 
     expect(history?.textContent).toBe(
-      'Undo: Change piano block dynamics override in Verse (bars 1-4): inherit -> 18'
+      'Undo ready: Change piano block dynamics override in Verse (bars 1-4): inherit -> 18'
     );
     expect(history?.title).toBe(
       'Undo is ready to restore the arrangement captured before Change piano block dynamics override in Verse (bars 1-4): inherit -> 18. ' +
@@ -473,7 +473,7 @@ describe('StatusBar', () => {
       '[data-testid="status-bar-history"]'
     ) as HTMLSpanElement | null;
 
-    expect(history?.textContent).toBe('Undo: Update chord at bar 1: Imaj7 -> V7');
+    expect(history?.textContent).toBe('Undo ready: Update chord at bar 1: Imaj7 -> V7');
     expect(history?.title).toBe(
       'Undo is ready to restore the arrangement captured before Update chord at bar 1: Imaj7 -> V7. ' +
       'Use Undo to restore the arrangement captured before Update chord at bar 1: Imaj7 -> V7.'
@@ -496,7 +496,7 @@ describe('StatusBar', () => {
       '[data-testid="status-bar-history"]'
     ) as HTMLSpanElement | null;
 
-    expect(history?.textContent).toBe('Undo: Split piano block in Verse at bar 5 (bars 1-8)');
+    expect(history?.textContent).toBe('Undo ready: Split piano block in Verse at bar 5 (bars 1-8)');
     expect(history?.title).toBe(
       'Undo is ready to restore the arrangement captured before Split piano block in Verse at bar 5 (bars 1-8). ' +
       'Use Undo to restore the arrangement captured before Split piano block in Verse at bar 5 (bars 1-8).'
@@ -522,7 +522,7 @@ describe('StatusBar', () => {
       '[data-testid="status-bar-history"]'
     ) as HTMLSpanElement | null;
 
-    expect(history?.textContent).toBe('Undo: Merge piano blocks in Verse (bars 1-4 and 5-8)');
+    expect(history?.textContent).toBe('Undo ready: Merge piano blocks in Verse (bars 1-4 and 5-8)');
     expect(history?.title).toBe(
       'Undo is ready to restore the arrangement captured before Merge piano blocks in Verse (bars 1-4 and 5-8). ' +
       'Use Undo to restore the arrangement captured before Merge piano blocks in Verse (bars 1-4 and 5-8).'
@@ -548,7 +548,7 @@ describe('StatusBar', () => {
       '[data-testid="status-bar-history"]'
     ) as HTMLSpanElement | null;
 
-    expect(history?.textContent).toBe('Undo: Reorder sections: Chorus -> Verse');
+    expect(history?.textContent).toBe('Undo ready: Reorder sections: Chorus -> Verse');
     expect(history?.title).toBe(
       'Undo is ready to restore the arrangement captured before Reorder sections: Chorus -> Verse. ' +
       'Use Undo to restore the arrangement captured before Reorder sections: Chorus -> Verse.'
@@ -571,7 +571,7 @@ describe('StatusBar', () => {
       '[data-testid="status-bar-history"]'
     ) as HTMLSpanElement | null;
 
-    expect(history?.textContent).toBe('Undo: Resize section: Verse (8 bars -> 12 bars)');
+    expect(history?.textContent).toBe('Undo ready: Resize section: Verse (8 bars -> 12 bars)');
     expect(history?.title).toBe(
       'Undo is ready to restore the arrangement captured before Resize section: Verse (8 bars -> 12 bars). ' +
       'Use Undo to restore the arrangement captured before Resize section: Verse (8 bars -> 12 bars).'
@@ -595,7 +595,7 @@ describe('StatusBar', () => {
     ) as HTMLSpanElement | null;
 
     expect(history?.textContent).toBe(
-      'Undo: Change section groove override: Verse (inherit -> 82)'
+      'Undo ready: Change section groove override: Verse (inherit -> 82)'
     );
     expect(history?.title).toBe(
       'Undo is ready to restore the arrangement captured before Change section groove override: Verse (inherit -> 82). ' +
@@ -607,22 +607,22 @@ describe('StatusBar', () => {
     {
       caseLabel: 'energy',
       partial: { energyOverride: 64 },
-      expectedText: 'Undo: Change section energy override: Verse (inherit -> 64)',
+      expectedText: 'Undo ready: Change section energy override: Verse (inherit -> 64)',
     },
     {
       caseLabel: 'feel',
       partial: { feelOverride: 58 },
-      expectedText: 'Undo: Change section feel override: Verse (inherit -> 58)',
+      expectedText: 'Undo ready: Change section feel override: Verse (inherit -> 58)',
     },
     {
       caseLabel: 'swing',
       partial: { swingPctOverride: 71 },
-      expectedText: 'Undo: Change section swing override: Verse (inherit -> 71%)',
+      expectedText: 'Undo ready: Change section swing override: Verse (inherit -> 71%)',
     },
     {
       caseLabel: 'dynamics',
       partial: { dynamicsOverride: 42 },
-      expectedText: 'Undo: Change section dynamics override: Verse (inherit -> 42)',
+      expectedText: 'Undo ready: Change section dynamics override: Verse (inherit -> 42)',
     },
   ])(
     'renders section $caseLabel override context when the history boundary comes from that edit path',
@@ -644,8 +644,8 @@ describe('StatusBar', () => {
 
       expect(history?.textContent).toBe(expectedText);
       expect(history?.title).toBe(
-        `Undo is ready to restore the arrangement captured before ${expectedText.slice('Undo: '.length)}. ` +
-        `Use Undo to restore the arrangement captured before ${expectedText.slice('Undo: '.length)}.`
+        `Undo is ready to restore the arrangement captured before ${expectedText.slice('Undo ready: '.length)}. ` +
+        `Use Undo to restore the arrangement captured before ${expectedText.slice('Undo ready: '.length)}.`
       );
     }
   );
@@ -679,7 +679,7 @@ describe('StatusBar', () => {
       '[data-testid="status-bar-history"]'
     ) as HTMLSpanElement | null;
 
-    expect(history?.textContent).toBe('Redo: Split block');
+    expect(history?.textContent).toBe('Redo ready: Split block');
     expect(history?.title).toBe(
       'Redo is ready to restore the arrangement captured after Split block. Use Redo to restore the arrangement captured after Split block.'
     );
@@ -704,7 +704,7 @@ describe('StatusBar', () => {
       '[data-testid="status-bar-history-next-step"]'
     ) as HTMLSpanElement | null;
 
-    expect(history?.textContent).toBe('Undo: Split block · Redo: Merge blocks');
+    expect(history?.textContent).toBe('Undo ready: Split block · Redo ready: Merge blocks');
     expect(nextStep?.textContent).toBe(
       'Use Undo to restore the arrangement captured before Split block.'
     );
@@ -732,7 +732,7 @@ describe('StatusBar', () => {
       '[data-testid="status-bar-history"]'
     ) as HTMLSpanElement | null;
 
-    expect(history?.textContent).toBe('Undo: Split block · Redo blocked: Broken redo');
+    expect(history?.textContent).toBe('Undo ready: Split block · Redo blocked: Broken redo');
     expect(history?.title).toBe(
       'Undo is ready to restore the arrangement captured before Split block. ' +
       'The latest redo boundary is still on the stack, but the arrangement captured after Broken redo cannot be read. ' +

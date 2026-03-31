@@ -150,7 +150,7 @@ describe('createUndoBoundaryTruth', () => {
 
     expect(truth.status).toBe('available');
     expect(truth.actionLabel).toBe('Undo: Split block');
-    expect(truth.statusLabel).toBe('Undo: Split block');
+    expect(truth.statusLabel).toBe('Undo ready: Split block');
     expect(truth.currentState).toBe(
       'Undo is ready to restore the arrangement captured before Split block.'
     );
@@ -279,7 +279,7 @@ describe('createUndoHistoryTruth', () => {
       boundary: 'redo',
       activeBoundaryTruth: redoBoundary,
       companionBoundaryTruth: null,
-      label: 'Redo: Split block',
+      label: 'Redo ready: Split block',
       currentState: 'Redo is ready to restore the arrangement captured after Split block.',
       nextStep: 'Use Redo to restore the arrangement captured after Split block.',
       tooltip:
@@ -334,7 +334,7 @@ describe('createUndoHistoryTruth', () => {
       boundary: 'undo',
       activeBoundaryTruth: undoBoundary,
       companionBoundaryTruth: redoBoundary,
-      label: 'Undo: Split block · Redo: Merge blocks',
+      label: 'Undo ready: Split block · Redo ready: Merge blocks',
       currentState:
         'Undo is ready to restore the arrangement captured before Split block. ' +
         'Redo is ready to restore the arrangement captured after Merge blocks.',
@@ -391,7 +391,7 @@ describe('createUndoHistoryTruth', () => {
       boundary: 'undo',
       activeBoundaryTruth: undoBoundary,
       companionBoundaryTruth: redoBoundary,
-      label: 'Undo: Split block · Redo blocked: Broken redo',
+      label: 'Undo ready: Split block · Redo blocked: Broken redo',
       currentState:
         'Undo is ready to restore the arrangement captured before Split block. ' +
         'The latest redo boundary is still on the stack, but the arrangement captured after Broken redo cannot be read.',

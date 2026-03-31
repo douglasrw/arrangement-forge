@@ -123,7 +123,7 @@ describe('undoStore', () => {
       boundary: 'undo',
       status: 'available',
       actionLabel: 'Undo: Split block',
-      statusLabel: 'Undo: Split block',
+      statusLabel: 'Undo ready: Split block',
       currentState: 'Undo is ready to restore the arrangement captured before Split block.',
       nextStep: 'Use Undo to restore the arrangement captured before Split block.',
     });
@@ -214,7 +214,7 @@ describe('undoStore', () => {
     expect(useUndoStore.getState().getHistoryTruth()).toMatchObject({
       status: 'available',
       boundary: 'redo',
-      label: 'Redo: Split block',
+      label: 'Redo ready: Split block',
       currentState: 'Redo is ready to restore the arrangement captured after Split block.',
       nextStep: 'Use Redo to restore the arrangement captured after Split block.',
     });
@@ -237,14 +237,14 @@ describe('undoStore', () => {
       activeBoundaryTruth: {
         boundary: 'undo',
         status: 'available',
-        statusLabel: 'Undo: Split block',
+        statusLabel: 'Undo ready: Split block',
       },
       companionBoundaryTruth: {
         boundary: 'redo',
         status: 'available',
-        statusLabel: 'Redo: Merge blocks',
+        statusLabel: 'Redo ready: Merge blocks',
       },
-      label: 'Undo: Split block · Redo: Merge blocks',
+      label: 'Undo ready: Split block · Redo ready: Merge blocks',
       currentState:
         'Undo is ready to restore the arrangement captured before Split block. ' +
         'Redo is ready to restore the arrangement captured after Merge blocks.',
@@ -271,14 +271,14 @@ describe('undoStore', () => {
       activeBoundaryTruth: {
         boundary: 'undo',
         status: 'available',
-        statusLabel: 'Undo: Split block',
+        statusLabel: 'Undo ready: Split block',
       },
       companionBoundaryTruth: {
         boundary: 'redo',
         status: 'blocked',
         statusLabel: 'Redo blocked: Broken redo',
       },
-      label: 'Undo: Split block · Redo blocked: Broken redo',
+      label: 'Undo ready: Split block · Redo blocked: Broken redo',
       currentState:
         'Undo is ready to restore the arrangement captured before Split block. ' +
         'The latest redo boundary is still on the stack, but the arrangement captured after Broken redo cannot be read.',

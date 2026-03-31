@@ -113,6 +113,13 @@ function formatUndoBoundaryStatusLabel(
   return description ? `${action} ${status}: ${description}` : `${action} ${status}`;
 }
 
+function formatReadyUndoBoundaryStatusLabel(
+  action: 'Undo' | 'Redo',
+  description: string | null
+): string {
+  return description ? `${action} ready: ${description}` : `${action} ready`;
+}
+
 function getUndoBoundaryActionTarget(description: string | null): string {
   return description?.trim() || 'the last arrangement change';
 }
@@ -245,7 +252,7 @@ export function createUndoBoundaryTruth(
     status: 'available',
     description: normalizedDescription,
     actionLabel,
-    statusLabel: actionLabel,
+    statusLabel: formatReadyUndoBoundaryStatusLabel(action, normalizedDescription),
     currentState:
       boundary === 'undo'
         ? `Undo is ready to restore the arrangement captured before ${actionTarget}.`
