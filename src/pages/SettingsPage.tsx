@@ -179,10 +179,18 @@ export default function SettingsPage() {
     } else if (!data) {
       setError('Profile save succeeded but no persisted profile row was returned.');
     } else {
-      const savedProfile = rowToProfile(data as Record<string, unknown>);
-      setProfile(savedProfile);
-      setChordDisplayMode(savedProfile.chordDisplayMode);
-      setDraft((currentDraft) => applySavedProfile(currentDraft, savedProfile));
+      try {
+        const savedProfile = rowToProfile(data as Record<string, unknown>);
+        setProfile(savedProfile);
+        setChordDisplayMode(savedProfile.chordDisplayMode);
+        setDraft((currentDraft) => applySavedProfile(currentDraft, savedProfile));
+      } catch (profileError) {
+        setError(
+          profileError instanceof Error
+            ? profileError.message
+            : 'The saved profile row was invalid.'
+        );
+      }
     }
   }
 

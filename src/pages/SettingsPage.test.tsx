@@ -407,4 +407,50 @@ describe('SettingsPage truth surface', () => {
     expect(saveButton?.textContent).toBe('All Changes Saved');
     expect(saveCaption?.textContent).toBe('This page already matches your saved profile settings.');
   });
+
+  it('shows an explicit error when the saved profile row comes back with invalid settings truth', async () => {
+    const mounted = renderSettingsPage();
+    mountedRoot = mounted.root;
+    mountedContainer = mounted.container;
+
+    const displayNameInput = mounted.container.querySelector(
+      '#settings-display-name'
+    ) as HTMLInputElement | null;
+    const saveButton = mounted.container.querySelector(
+      'button[type="submit"]'
+    ) as HTMLButtonElement | null;
+    const form = mounted.container.querySelector('form') as HTMLFormElement | null;
+
+    act(() => {
+      if (!displayNameInput) {
+        throw new Error('Expected display name input');
+      }
+
+      setInputValue(displayNameInput, 'Ashlyn');
+    });
+
+    saveResponse = {
+      data: {
+        id: 'user-1',
+        display_name: 'Ashlyn',
+        chord_display_mode: 'solfege',
+        default_genre: 'Jazz',
+        created_at: '2026-03-27T00:00:00Z',
+        updated_at: '2026-03-30T00:00:00Z',
+      },
+      error: null,
+    };
+
+    await act(async () => {
+      form?.dispatchEvent(new Event('submit', { bubbles: true, cancelable: true }));
+      await flushAsyncWork();
+    });
+
+    expect(mounted.container.textContent).toContain(
+      'Invalid profile chord display mode: solfege'
+    );
+    expect(useAuthStore.getState().profile?.displayName).toBe('Doug');
+    expect(saveButton?.disabled).toBe(false);
+    expect(saveButton?.textContent).toBe('Save Pending Changes');
+  });
 });
