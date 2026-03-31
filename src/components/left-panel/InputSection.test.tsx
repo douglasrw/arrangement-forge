@@ -718,6 +718,12 @@ describe('InputSection upload tab', () => {
     expect(mounted.container.textContent).toContain(
       'Next step: Replace the flagged repeat bars with explicit chords or fix the bar before them.'
     );
+    expect(mounted.container.textContent).toContain(
+      'Flagged chart locations: Line 2, bar 2: could not parse "xyz??"'
+    );
+    expect(mounted.container.textContent).toContain(
+      'Line 2, bar 3: repeat marker "%" follows a bar that could not be resolved'
+    );
     expect(mounted.container.textContent).toContain('Chord chart has parse issues');
     expect(mounted.container.textContent).toContain(
       'Bars 2 and 3 currently parse as N.C., so Generate stays blocked until the chart is fixed.'
@@ -758,11 +764,51 @@ describe('InputSection upload tab', () => {
     expect(mounted.container.textContent).toContain(
       'Next step: Replace the flagged repeat bars with explicit chords or fix the bar before them.'
     );
+    expect(mounted.container.textContent).toContain(
+      'Flagged chart locations: Line 2, bar 2: could not parse "xyz??"'
+    );
+    expect(mounted.container.textContent).toContain(
+      'Line 2, bar 3: repeat marker "%" follows a bar that could not be resolved'
+    );
     expect(mounted.container.textContent).toContain('Chord chart has parse issues');
     expect(mounted.container.textContent).toContain(
       'Bars 2 and 3 currently parse as N.C., so Generate stays blocked until the chart is fixed.'
     );
     expect(getGenerateButton(mounted.container).disabled).toBe(true);
+  });
+
+  it('keeps blocked upload overflow truth explicit when only the first parser highlights fit in the feedback', async () => {
+    useProjectStore.setState({
+      project: makeProject({
+        chordChartRaw: 'Cmaj7 | Fmaj7 | G7 | Cmaj7',
+        generationHints: 'Keep the brushes light',
+      }),
+    });
+
+    const mounted = renderSection();
+    mountedRoot = mounted.root;
+    mountedContainer = mounted.container;
+
+    openUploadTab(mounted.container);
+    const fileInput = getUploadFileInput(mounted.container);
+
+    const file = new File(['placeholder'], 'broken-overflow.txt', { type: 'text/plain' });
+    vi.spyOn(file, 'text').mockResolvedValue('[Verse]\nxyz?? | % | / | % | Cmaj7');
+
+    await importFile(fileInput, file);
+
+    expect(mounted.container.textContent).toContain(
+      'Flagged chart locations: Line 2, bar 1: could not parse "xyz??"'
+    );
+    expect(mounted.container.textContent).toContain(
+      'Line 2, bar 2: repeat marker "%" follows a bar that could not be resolved'
+    );
+    expect(mounted.container.textContent).toContain(
+      'Line 2, bar 3: repeat marker "/" follows a bar that could not be resolved'
+    );
+    expect(mounted.container.textContent).toContain(
+      '1 more flagged bar needs review in the chord chart before generation.'
+    );
   });
 
   it('surfaces blocked upload feedback when an imported chart has no playable bars yet', async () => {

@@ -252,6 +252,12 @@ function formatImportedChordChartFeedback(
     baseMessage,
     `Chart is blocked: ${parseTruth.currentState}`,
     parseTruth.nextStep ? `Next step: ${parseTruth.nextStep}` : null,
+    parseTruth.issueHighlights.length
+      ? `Flagged chart locations: ${parseTruth.issueHighlights.join(" ")}`
+      : null,
+    parseTruth.remainingIssueCount > 0
+      ? `${parseTruth.remainingIssueCount} more flagged ${parseTruth.remainingIssueCount === 1 ? "bar needs" : "bars need"} review in the chord chart before generation.`
+      : null,
   ].filter(Boolean).join(" ")
 }
 
