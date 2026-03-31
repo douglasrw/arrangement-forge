@@ -3,7 +3,8 @@
 Status date: 2026-03-31
 
 Status: landed on `main`; reverified on 2026-03-31 with upload blocked-title
-truth preserved and no remaining bounded product delta visible in this family
+truth preserved at current `HEAD`, and no remaining bounded product delta is
+visible in this family
 
 Purpose: preserve the current chord parser failure contract and its landing
 proof in one repo-local place so future work does not have to reconstruct it
@@ -131,12 +132,16 @@ truth:
 
 Current focused proofs for this slice:
 
-- `pnpm test -- --run src/lib/chord-chart-parser.test.ts src/components/left-panel/InputSection.test.tsx src/components/left-panel/AiAssistantSection.test.tsx src/components/left-panel/LeftPanel.test.tsx src/hooks/useGenerate.test.tsx`
-- `pnpm run type-check`
+- `pnpm test -- --run src/lib/chord-chart-parser.test.ts src/components/left-panel/InputSection.test.tsx src/hooks/useGenerate.test.tsx`
+- `pnpm type-check`
 - verification head: current repo `HEAD` at verification time
 
 ## Tracked Landing
 
+- `ae87f616fe49f048530276896d3909dfe7331960`:
+  `commitpath_c40ed88d Surface upload blocked title truth`
+- `95816f20ffca96034f6c73e04ef44c11fefacf2b`:
+  `commitpath_c40ed88d Refresh chord parser failure truth evidence`
 - `f280d7d7db09ee3018bf429163f22d195d5e5998`:
   `commitpath_c40ed88d Refresh chord parser failure truth evidence`
 - `fffb1c64ceb02eebe9f6769780da2b07c04fa462`:
@@ -358,6 +363,12 @@ Current focused proofs for this slice:
   more clean focused recheck at the latest verified product head, so the
   artifact kept tracking the checked state instead of stopping at the prior
   evidence refresh.
+- Commit `95816f20` repeated that same repo-local evidence refresh after
+  another clean focused recheck, keeping the artifact aligned with the latest
+  verified product head instead of the prior evidence pointer.
+- Commit `ae87f616` kept blocked upload feedback locked to the parser
+  `truth.title`, so imported parse failures now surface the same named blocked
+  state as the main chord-chart banner instead of drifting back to older copy.
 - Commit `ab75242f` repeated that same repo-local evidence refresh after the
   family was already live on `main`, keeping the repo-local artifact aligned
   with the latest verified proof boundary instead of the previous evidence
