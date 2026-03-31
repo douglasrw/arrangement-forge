@@ -3,8 +3,8 @@
 Status date: 2026-03-31
 
 Status: landed on `main`; reverified on 2026-03-31 at current head so blocked
-bars and overflow still stay explicit in the input panel instead of being
-inferred from truncated warning copy
+bars, overflow, and generation-stop repair copy still stay explicit in the
+input panel instead of being inferred from truncated warning copy
 
 Purpose: preserve the current chord parser failure contract and its landing
 proof in one repo-local place so future work does not have to reconstruct it
@@ -74,7 +74,7 @@ Current focused proofs for this slice:
 
 - `npm run test -- --run src/lib/chord-chart-parser.test.ts src/components/left-panel/InputSection.test.tsx src/hooks/useGenerate.test.tsx`
 - `npm run type-check`
-- verification head: working tree changes verified on top of `dca1b46e77fe13278146c4d43a3b3419ed034444` before this artifact refresh
+- verification head: working tree changes verified on top of `d9be6cb233c4f6c9980d518c1734477f1da0ba3f` before this artifact refresh
 
 ## Tracked Landing
 
@@ -109,6 +109,8 @@ Current focused proofs for this slice:
 - `b3c81a91ce6f2bdda0c57cb9ea01b438f50963bb`:
   `commitpath_c40ed88d Refresh chord parser failure truth evidence`
 - `dca1b46e77fe13278146c4d43a3b3419ed034444`:
+  `commitpath_c40ed88d Refresh chord parser failure truth evidence`
+- `d9be6cb233c4f6c9980d518c1734477f1da0ba3f`:
   `commitpath_c40ed88d Refresh chord parser failure truth evidence`
 - Commit `9150d7d0` introduced explicit issue tracking and input-surface copy
   for invalid bars, first-bar repeat markers, and repeat markers that follow
@@ -157,7 +159,10 @@ Current focused proofs for this slice:
 - Commit `dca1b46e` repeated that repo-local evidence refresh so the artifact
   kept pace with the current verified `main` head instead of stopping one
   checked proof behind.
-- After the 2026-03-31 recheck at current head `dca1b46e`, this family appears
+- Commit `d9be6cb2` repeated that same repo-local evidence refresh after
+  another clean focused recheck, keeping the artifact aligned with the latest
+  verified `main` head instead of the prior evidence pointer.
+- After the 2026-03-31 recheck at current head `d9be6cb2`, this family appears
   exhausted again until a new chord-parse behavior changes the contract or the
   proof surface.
 
