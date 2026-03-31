@@ -1079,6 +1079,21 @@ describe('undo push coverage', () => {
     expect(hasSnapshotKeys(stack[0].redoSnapshot)).toBe(true);
   });
 
+  it('names deleted blocks in undo entries with section and bar context', () => {
+    useProjectStore.getState().setArrangement({
+      stems: [makeStem({ instrument: 'piano' })],
+      sections: [makeSection({ name: 'Verse' })],
+      blocks: [makeBlock({ startBar: 1, endBar: 8 })],
+      chords: [],
+    });
+
+    useProjectStore.getState().deleteBlock('b1');
+
+    expect(useUndoStore.getState().undoStack[0]?.description).toBe(
+      'Delete piano block in Verse (bars 1-8)'
+    );
+  });
+
   it('updateBlock pushes undo entry with unified snapshot format', () => {
     useProjectStore.getState().setArrangement({
       stems: [makeStem()], sections: [makeSection()],
@@ -1123,6 +1138,21 @@ describe('undo push coverage', () => {
     expect(stack).toHaveLength(1);
     expect(hasSnapshotKeys(stack[0].undoSnapshot)).toBe(true);
     expect(hasSnapshotKeys(stack[0].redoSnapshot)).toBe(true);
+  });
+
+  it('names renamed sections in undo entries instead of using a generic update label', () => {
+    useProjectStore.getState().setArrangement({
+      stems: [makeStem()],
+      sections: [makeSection({ name: 'Verse' })],
+      blocks: [],
+      chords: [],
+    });
+
+    useProjectStore.getState().updateSection('s1', { name: 'Chorus' });
+
+    expect(useUndoStore.getState().undoStack[0]?.description).toBe(
+      'Rename section: Verse -> Chorus'
+    );
   });
 
   it('removeSection pushes undo entry with unified snapshot format', () => {

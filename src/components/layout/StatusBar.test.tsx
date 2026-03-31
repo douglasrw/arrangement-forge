@@ -363,6 +363,29 @@ describe('StatusBar', () => {
     );
   });
 
+  it('renders named block context when project edits push undo boundaries through the store', () => {
+    useProjectStore.setState({
+      project: makeProject(),
+      stems: [makeStem({ instrument: 'piano' })],
+      sections: [makeSection({ name: 'Verse' })],
+      blocks: [makeBlock({ startBar: 1, endBar: 4 })],
+      chords: [],
+    });
+
+    useProjectStore.getState().updateBlock('block-1', { style: 'arpeggiated' });
+
+    const container = renderStatusBar('saved');
+    const history = container.querySelector(
+      '[data-testid="status-bar-history"]'
+    ) as HTMLSpanElement | null;
+
+    expect(history?.textContent).toBe('Undo: Update piano block in Verse (bars 1-4)');
+    expect(history?.title).toBe(
+      'Undo is ready to restore the arrangement captured before Update piano block in Verse (bars 1-4). ' +
+      'Use Undo to restore the arrangement captured before Update piano block in Verse (bars 1-4).'
+    );
+  });
+
   it('renders blocked undo boundary truth instead of implying history is simply idle', () => {
     useUndoStore.getState().pushUndo('Broken action', {
       undo: 'not json',

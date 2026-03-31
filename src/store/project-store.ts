@@ -173,6 +173,50 @@ function updatesSectionStyleOverrides(partial: Partial<Section>): boolean {
   );
 }
 
+function getSectionDisplayName(section: Section | undefined): string | null {
+  const name = section?.name?.trim();
+  return name ? name : null;
+}
+
+function describeSectionUndoTarget(action: string, section: Section | undefined): string {
+  const sectionName = getSectionDisplayName(section);
+  return sectionName ? `${action} section: ${sectionName}` : `${action} section`;
+}
+
+function describeSectionUpdateUndoTarget(
+  section: Section | undefined,
+  partial: Partial<Section>
+): string {
+  const currentName = getSectionDisplayName(section);
+  const nextName = partial.name?.trim() || null;
+
+  if (currentName && nextName && nextName !== currentName) {
+    return `Rename section: ${currentName} -> ${nextName}`;
+  }
+
+  return describeSectionUndoTarget('Update', section);
+}
+
+function describeBlockUndoTarget(
+  action: string,
+  block: Block | undefined,
+  sections: Section[],
+  stems: Stem[]
+): string {
+  if (!block) {
+    return `${action} block`;
+  }
+
+  const sectionName = getSectionDisplayName(
+    sections.find((section) => section.id === block.sectionId)
+  );
+  const stemInstrument = stems.find((stem) => stem.id === block.stemId)?.instrument?.trim() || null;
+  const blockLabel = stemInstrument ? `${stemInstrument} block` : 'block';
+  const sectionTarget = sectionName ? ` in ${sectionName}` : '';
+
+  return `${action} ${blockLabel}${sectionTarget} (bars ${block.startBar}-${block.endBar})`;
+}
+
 function regenerateBlockWithProjectState(state: {
   project: Project | null;
   stems: Stem[];
@@ -737,6 +781,7 @@ export const useProjectStore = create<ProjectStore>()((set, get) => ({
   },
 
   updateSection: (sectionId, partial) => {
+    const currentSection = get().sections.find((section) => section.id === sectionId);
     const before = snapshotArrangement(get());
     set((state) => {
       const nextArrangement = applySectionUpdate(state, sectionId, partial);
@@ -770,11 +815,15 @@ export const useProjectStore = create<ProjectStore>()((set, get) => ({
     });
     reconcileSelectionWithArrangement(get());
     const after = snapshotArrangement(get());
-    useUndoStore.getState().pushUndo('Update section', { undo: before, redo: after });
+    useUndoStore.getState().pushUndo(
+      describeSectionUpdateUndoTarget(currentSection, partial),
+      { undo: before, redo: after }
+    );
     useUiStore.getState().markDirty();
   },
 
   removeSection: (sectionId) => {
+    const currentSection = get().sections.find((section) => section.id === sectionId);
     const before = snapshotArrangement(get());
     set((state) => ({
       sections: state.sections.filter((s) => s.id !== sectionId),
@@ -782,7 +831,10 @@ export const useProjectStore = create<ProjectStore>()((set, get) => ({
     }));
     reconcileSelectionWithArrangement(get());
     const after = snapshotArrangement(get());
-    useUndoStore.getState().pushUndo('Remove section', { undo: before, redo: after });
+    useUndoStore.getState().pushUndo(
+      describeSectionUndoTarget('Remove', currentSection),
+      { undo: before, redo: after }
+    );
     useUiStore.getState().markDirty();
   },
 
@@ -802,6 +854,9 @@ export const useProjectStore = create<ProjectStore>()((set, get) => ({
   },
 
   updateBlock: (blockId, partial) => {
+    const state = get();
+    const currentBlock = state.blocks.find((block) => block.id === blockId);
+    const nextBlock = currentBlock ? { ...currentBlock, ...partial } : undefined;
     const before = snapshotArrangement(get());
     set((state) => ({
       blocks: state.blocks.map((block) => {
@@ -814,7 +869,10 @@ export const useProjectStore = create<ProjectStore>()((set, get) => ({
       }),
     }));
     const after = snapshotArrangement(get());
-    useUndoStore.getState().pushUndo('Update block', { undo: before, redo: after });
+    useUndoStore.getState().pushUndo(
+      describeBlockUndoTarget('Update', nextBlock, state.sections, state.stems),
+      { undo: before, redo: after }
+    );
     useUiStore.getState().markDirty();
   },
 
@@ -853,24 +911,33 @@ export const useProjectStore = create<ProjectStore>()((set, get) => ({
   },
 
   deleteBlock: (blockId) => {
+    const state = get();
+    const currentBlock = state.blocks.find((block) => block.id === blockId);
     const before = snapshotArrangement(get());
-    const newBlocks = get().blocks.filter((b) => b.id !== blockId);
+    const newBlocks = state.blocks.filter((block) => block.id !== blockId);
     set({ blocks: newBlocks });
     reconcileSelectionWithArrangement(get());
     const after = snapshotArrangement(get());
-    useUndoStore.getState().pushUndo('Delete block', { undo: before, redo: after });
+    useUndoStore.getState().pushUndo(
+      describeBlockUndoTarget('Delete', currentBlock, state.sections, state.stems),
+      { undo: before, redo: after }
+    );
     useUiStore.getState().markDirty();
   },
 
   duplicateBlock: (blockId) => {
-    const { blocks } = get();
+    const state = get();
+    const { blocks, sections, stems } = state;
     const original = blocks.find((b) => b.id === blockId);
     if (!original) return;
     const before = snapshotArrangement(get());
     const copy: Block = { ...original, id: genId() };
     set({ blocks: [...blocks, copy] });
     const after = snapshotArrangement(get());
-    useUndoStore.getState().pushUndo('Duplicate block', { undo: before, redo: after });
+    useUndoStore.getState().pushUndo(
+      describeBlockUndoTarget('Duplicate', original, sections, stems),
+      { undo: before, redo: after }
+    );
     useUiStore.getState().markDirty();
   },
 
