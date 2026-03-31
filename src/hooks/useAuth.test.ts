@@ -4,8 +4,8 @@ import { act, createElement } from 'react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { createRoot, type Root } from 'react-dom/client';
 import { useAuth } from './useAuth';
-import { getAuthTruth } from '@/store/auth-store';
 import { getAuthGateTruth } from '@/store/auth-store';
+import { getAuthTruth } from '@/store/auth-store';
 import { useAuthStore } from '@/store/auth-store';
 import { useUiStore } from '@/store/ui-store';
 
@@ -108,6 +108,7 @@ function setAuthStoreFixture(
 ) {
   useAuthStore.setState({
     ...state,
+    authTruth: getAuthTruth(state),
     authGate: getAuthGateTruth(state),
   });
 }
@@ -345,6 +346,12 @@ describe('useAuth auth action failures', () => {
         signedOutReason: 'missing-profile',
         isLoading: false,
         isAuthenticated: false,
+        authTruth: {
+          status: 'authenticated',
+          access: 'granted',
+          nextStep: 'open-app',
+          signedOutReason: null,
+        },
         authGate: {
           access: 'granted',
           nextStep: 'open-app',
@@ -380,6 +387,12 @@ describe('useAuth auth action failures', () => {
         signedOutReason: 'session-lookup-failed',
         isLoading: false,
         isAuthenticated: false,
+        authTruth: {
+          status: 'authenticated',
+          access: 'granted',
+          nextStep: 'open-app',
+          signedOutReason: null,
+        },
         authGate: {
           access: 'granted',
           nextStep: 'open-app',

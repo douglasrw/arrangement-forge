@@ -1,7 +1,7 @@
 import { useState, useEffect, FormEvent } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
-import type { AuthGateTruth, SignedOutReason } from '@/store/auth-store';
+import type { AuthTruth, SignedOutReason } from '@/store/auth-store';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -43,10 +43,10 @@ function describeRecoveryDestination(path: string) {
 }
 
 function AuthLoadingScreen({
-  authGate,
+  authTruth,
   recoveryPath,
 }: {
-  authGate: AuthGateTruth;
+  authTruth: AuthTruth;
   recoveryPath: string;
 }) {
   const recoveryDestination = describeRecoveryDestination(recoveryPath);
@@ -62,7 +62,7 @@ function AuthLoadingScreen({
           <div className="space-y-1">
             <h1 className="text-base font-semibold text-foreground">Waiting on authentication</h1>
             <p className="text-sm text-muted-foreground">
-              {authGate.nextStep === 'open-app'
+              {authTruth.nextStep === 'open-app'
                 ? `Your session is ready. Returning you to ${recoveryDestination}.`
                 : `Checking for an existing session before showing the form. If one is found, you will continue to ${recoveryDestination}.`}
             </p>
@@ -178,7 +178,7 @@ function AuthStatusNotice({
 export default function LoginPage() {
   const navigate = useNavigate();
   const location = useLocation();
-  const { authGate, signIn, signUp, signInWithGoogle } = useAuth();
+  const { authTruth, signIn, signUp, signInWithGoogle } = useAuth();
 
   const [mode, setMode] = useState<'signin' | 'signup'>('signin');
   const [email, setEmail] = useState('');
@@ -192,8 +192,8 @@ export default function LoginPage() {
   } | null>(null);
   const recoveryPath = resolveRecoveryPath(location.state);
   const isSubmitting = activeSubmissionPath !== null;
-  const isCheckingSession = authGate.access === 'pending';
-  const hasAuthenticatedSession = authGate.access === 'granted';
+  const isCheckingSession = authTruth.access === 'pending';
+  const hasAuthenticatedSession = authTruth.access === 'granted';
 
   useEffect(() => {
     if (hasAuthenticatedSession) {
@@ -246,7 +246,7 @@ export default function LoginPage() {
   }
 
   if (isCheckingSession || hasAuthenticatedSession) {
-    return <AuthLoadingScreen authGate={authGate} recoveryPath={recoveryPath} />;
+    return <AuthLoadingScreen authTruth={authTruth} recoveryPath={recoveryPath} />;
   }
 
   return (
@@ -263,7 +263,7 @@ export default function LoginPage() {
             activeSubmissionPath={activeSubmissionPath}
             error={error}
             recoveryPath={recoveryPath}
-            signedOutReason={authGate.signedOutReason}
+            signedOutReason={authTruth.signedOutReason}
           />
 
           {/* Mode toggle */}

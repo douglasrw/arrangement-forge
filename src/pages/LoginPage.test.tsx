@@ -9,9 +9,10 @@ import type { SignUpResult } from '@/hooks/useAuth';
 const authApi = vi.hoisted(() => ({
   authStatus: 'signed-out',
   signedOutReason: 'no-session',
-  get authGate() {
+  get authTruth() {
     if (this.authStatus === 'checking-session') {
       return {
+        status: 'checking-session',
         access: 'pending',
         nextStep: 'wait-for-session',
         signedOutReason: null,
@@ -20,6 +21,7 @@ const authApi = vi.hoisted(() => ({
 
     if (this.authStatus === 'authenticated') {
       return {
+        status: 'authenticated',
         access: 'granted',
         nextStep: 'open-app',
         signedOutReason: null,
@@ -27,6 +29,7 @@ const authApi = vi.hoisted(() => ({
     }
 
     return {
+      status: 'signed-out',
       access: 'blocked',
       nextStep:
         this.signedOutReason === 'email-confirmation-required'
@@ -40,6 +43,10 @@ const authApi = vi.hoisted(() => ({
                 : 'sign-in',
       signedOutReason: this.signedOutReason,
     };
+  },
+  get authGate() {
+    const { status: _status, ...authGate } = this.authTruth;
+    return authGate;
   },
   signIn: vi.fn<(email: string, password: string) => Promise<void>>(),
   signUp: vi.fn<(email: string, password: string) => Promise<SignUpResult>>(),

@@ -19,8 +19,8 @@ type HydrationResult =
 
 export function useAuth() {
   const authStore = useAuthStore();
-  const authGate = useAuthStore(selectAuthGateTruth);
   const authTruth = useAuthStore(selectAuthTruth);
+  const authGate = useAuthStore(selectAuthGateTruth);
   const authTransitionIdRef = useRef(0);
 
   const beginSessionCheck = useCallback(() => {

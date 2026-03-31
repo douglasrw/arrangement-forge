@@ -6,6 +6,7 @@ import type { User } from '@supabase/supabase-js';
 import { MemoryRouter } from 'react-router-dom';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { getAuthGateTruth } from '@/store/auth-store';
+import { getAuthTruth } from '@/store/auth-store';
 import { useAuthStore } from '@/store/auth-store';
 import { useUiStore } from '@/store/ui-store';
 import type { Profile } from '@/types';
@@ -82,6 +83,7 @@ function setAuthStoreFixture(state: Partial<ReturnType<typeof useAuthStore.getSt
 
   useAuthStore.setState({
     ...state,
+    authTruth: getAuthTruth(nextState),
     authGate: getAuthGateTruth(nextState),
   });
 }

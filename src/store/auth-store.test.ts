@@ -12,12 +12,24 @@ describe('auth-store gate truth', () => {
       nextStep: 'wait-for-session',
       signedOutReason: null,
     });
+    expect(useAuthStore.getState().authTruth).toEqual({
+      status: 'checking-session',
+      access: 'pending',
+      nextStep: 'wait-for-session',
+      signedOutReason: null,
+    });
   });
 
   it('stores the blocked recovery step when authentication is cleared', () => {
     useAuthStore.getState().setSignedOut('missing-profile');
 
     expect(useAuthStore.getState().authGate).toEqual({
+      access: 'blocked',
+      nextStep: 'complete-profile',
+      signedOutReason: 'missing-profile',
+    });
+    expect(useAuthStore.getState().authTruth).toEqual({
+      status: 'signed-out',
       access: 'blocked',
       nextStep: 'complete-profile',
       signedOutReason: 'missing-profile',

@@ -1,7 +1,7 @@
 import { useEffect } from 'react';
 import { createBrowserRouter, RouterProvider, Navigate, useLocation } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
-import { selectAuthGateTruth } from '@/store/auth-store';
+import { selectAuthTruth } from '@/store/auth-store';
 import { useAuthStore } from '@/store/auth-store';
 import EditorPage from '@/pages/EditorPage';
 import LoginPage from '@/pages/LoginPage';
@@ -20,11 +20,11 @@ function LoadingScreen() {
 }
 
 export function AuthGuard({ children }: { children: React.ReactNode }) {
-  const authGate = useAuthStore(selectAuthGateTruth);
+  const authTruth = useAuthStore(selectAuthTruth);
   const location = useLocation();
 
-  if (authGate.access === 'pending') return <LoadingScreen />;
-  if (authGate.access !== 'granted') {
+  if (authTruth.access === 'pending') return <LoadingScreen />;
+  if (authTruth.access !== 'granted') {
     return (
       <Navigate
         to="/login"
