@@ -3,9 +3,9 @@
 Status date: 2026-03-31
 
 Status: landed on `main`; reverified on 2026-03-31 at current head
-`56ab735c` before this artifact refresh, so blocked bars, overflow, and
-generation-stop repair copy still stay explicit in the input panel instead of
-being inferred from truncated warning copy
+`69736cb8` before this artifact refresh, so blocked bars, overflow, editor
+repair guidance, and generation-stop repair copy still stay explicit in the
+input panel instead of being inferred from truncated warning copy
 
 Purpose: preserve the current chord parser failure contract and its landing
 proof in one repo-local place so future work does not have to reconstruct it
@@ -54,6 +54,9 @@ from `src/lib/chord-chart-parser.ts`, `src/components/left-panel/InputSection.ts
   blocked-state sentence into the same field
 - the next-step copy stays explicit about whether the operator needs to replace
   flagged repeat bars or fix flagged chord bars before generation
+- the text-editor hint now reuses the same blocked-state and next-step truth as
+  the status banner, so the operator does not need to switch back to the
+  summary card to understand what must be repaired
 - the surfaced warning snippets keep the first blocked bars visible in the same
   panel instead of forcing the operator to infer which bars failed
 - when more than three bars are blocked, the panel now says how many additional
@@ -75,10 +78,12 @@ Current focused proofs for this slice:
 
 - `pnpm test -- --run src/lib/chord-chart-parser.test.ts src/components/left-panel/InputSection.test.tsx src/hooks/useGenerate.test.tsx`
 - `pnpm type-check`
-- verification head: working tree changes verified on top of `56ab735ca110a7d8a48d2d723ba3bffc4e71b9b8` before this artifact refresh
+- verification head: working tree changes verified on top of `69736cb8e7202b3924aabf10f74178238ee8f71d` before this artifact refresh
 
 ## Tracked Landing
 
+- `69736cb8e7202b3924aabf10f74178238ee8f71d`:
+  `commitpath_c40ed88d Surface chord parse repair step in editor`
 - `56ab735ca110a7d8a48d2d723ba3bffc4e71b9b8`:
   `commitpath_c40ed88d Refresh chord parser failure truth evidence`
 - `9150d7d071c7c28c4f6d8e85817e5154ce5d9720`:
@@ -168,7 +173,11 @@ Current focused proofs for this slice:
 - Commit `56ab735c` repeated that same repo-local evidence refresh after
   another clean focused recheck, keeping the artifact aligned with the latest
   verified `main` head instead of stopping at the prior evidence pointer.
-- After the 2026-03-31 recheck at current head `56ab735c`, this family still
+- Commit `69736cb8` carried the same blocked-state repair step into the text
+  editor field hint, so the operator now sees the current blocked state and
+  the next action directly beside the raw chord chart input instead of having
+  to rely on the status card above it.
+- After the 2026-03-31 recheck at current head `69736cb8`, this family still
   appears exhausted until a new chord-parse behavior changes the contract or
   the proof surface.
 
