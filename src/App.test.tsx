@@ -332,6 +332,39 @@ describe('App protected route recovery truth', () => {
     );
   });
 
+  it('routes /project/:id through the guarded editor surface as the requested project route', async () => {
+    setAuthStoreFixture({
+      user: { id: 'user-1', email: 'ash@example.com' },
+      profile: makeProfile(),
+      authStatus: 'authenticated',
+      signedOutReason: null,
+    });
+
+    const container = document.createElement('div');
+    document.body.appendChild(container);
+    const root = createRoot(container);
+    const router = createMemoryRouter(createAppRoutes(), {
+      initialEntries: ['/project/project-42'],
+    });
+
+    mountedRoot = root;
+    mountedContainer = container;
+
+    act(() => {
+      root.render(<RouterProvider router={router} />);
+    });
+
+    await act(async () => {
+      await Promise.resolve();
+    });
+
+    expect(router.state.location.pathname).toBe('/project/project-42');
+    expect(container.querySelector('[data-testid="editor-page"]')).not.toBeNull();
+    expect(container.querySelector('[data-testid="editor-page"]')?.getAttribute('data-route-mode')).toBe(
+      'project-id'
+    );
+  });
+
   it('removes protected content immediately after auth state is cleared', async () => {
     setAuthStoreFixture({
       user: { id: 'user-1', email: 'ash@example.com' },
