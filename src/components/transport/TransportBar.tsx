@@ -5,12 +5,16 @@ import {
   Play,
   Pause,
   Repeat,
+  Redo2,
   SkipBack,
   SkipForward,
+  Undo2,
 } from "lucide-react"
 import { useAudio } from "@/hooks/useAudio"
 import { Scrubber, type ScrubberState } from "@/components/transport/Scrubber"
 import { getProjectArrangementTruth, useProjectStore } from "@/store/project-store"
+import { useUiStore } from "@/store/ui-store"
+import { useUndoStore } from "@/store/undo-store"
 
 /* ------------------------------------------------------------------ */
 /*  Metronome icon (not available in lucide)                           */
@@ -90,6 +94,29 @@ function buildPlayheadTruth({
   }
 }
 
+function getHistoryBoundaryTooltip(boundaryTruth: {
+  currentState: string
+  nextStep: string
+}) {
+  return `${boundaryTruth.currentState} ${boundaryTruth.nextStep}`.trim()
+}
+
+function getHistoryButtonClassName(status: "empty" | "available" | "blocked" | "paused") {
+  if (status === "available") {
+    return "bg-secondary text-zinc-200 hover:bg-border"
+  }
+
+  if (status === "blocked") {
+    return "cursor-not-allowed text-rose-300/80"
+  }
+
+  if (status === "paused") {
+    return "cursor-not-allowed text-amber-300/80"
+  }
+
+  return "cursor-not-allowed text-zinc-700"
+}
+
 /* ------------------------------------------------------------------ */
 /*  Transport Bar                                                      */
 /* ------------------------------------------------------------------ */
@@ -107,7 +134,10 @@ export function TransportBar() {
     setMetronomeEnabled,
     setLoopEnabled,
   } = useAudio()
-  const { project, stems, sections, blocks, chords, updateProject } = useProjectStore()
+  const generationState = useUiStore((state) => state.generationState)
+  const undoStore = useUndoStore()
+  const { project, stems, sections, blocks, chords, updateProject, setArrangement } =
+    useProjectStore()
 
   const isPlaying = transportState.playbackState === "playing"
   const currentBar = transportState.currentBar
@@ -120,6 +150,8 @@ export function TransportBar() {
   const loopActive = audioConfig.loopEnabled
   const metronomeActive = audioConfig.metronomeEnabled
   const totalBars = sections.reduce((sum, section) => sum + section.barCount, 0)
+  const undoBoundaryTruth = undoStore.getUndoBoundaryTruth(generationState)
+  const redoBoundaryTruth = undoStore.getRedoBoundaryTruth(generationState)
   const arrangementTruth = getProjectArrangementTruth({
     project,
     stems,
@@ -139,6 +171,12 @@ export function TransportBar() {
   const playbackActive = transportReady && isPlaying
   const loopPressed = transportReady && loopActive
   const metronomePressed = transportReady && metronomeActive
+  const undoButtonDisabled = undoBoundaryTruth.status !== "available"
+  const redoButtonDisabled = redoBoundaryTruth.status !== "available"
+  const undoButtonTitle = getHistoryBoundaryTooltip(undoBoundaryTruth)
+  const redoButtonTitle = getHistoryBoundaryTooltip(redoBoundaryTruth)
+  const undoButtonLabel = undoBoundaryTruth.actionLabel ?? undoBoundaryTruth.statusLabel
+  const redoButtonLabel = redoBoundaryTruth.actionLabel ?? redoBoundaryTruth.statusLabel
   const noTimelineGuidance = arrangementTruth.status === "persisted-only"
     ? "A saved arrangement snapshot exists, but its rows are not loaded in this session. Use Reload saved snapshot in the top bar to enable playback and transport controls."
     : "Generate or import an arrangement to enable playback and transport controls."
@@ -200,6 +238,22 @@ export function TransportBar() {
   function handlePlayPause() {
     if (isPlaying) pause()
     else void play()
+  }
+
+  function handleUndo() {
+    const transition = undoStore.undo(generationState)
+
+    if (transition?.restoreSnapshot) {
+      setArrangement(transition.restoreSnapshot)
+    }
+  }
+
+  function handleRedo() {
+    const transition = undoStore.redo(generationState)
+
+    if (transition?.restoreSnapshot) {
+      setArrangement(transition.restoreSnapshot)
+    }
   }
 
   function commitBpm() {
@@ -331,7 +385,37 @@ export function TransportBar() {
       </div>
 
       {/* ---- RIGHT: Tempo + toggles ---- */}
-      <div className="flex h-12 min-w-[220px] items-center justify-center gap-3 rounded-xl border border-border bg-background px-4 py-2">
+      <div className="flex h-12 min-w-[280px] items-center justify-center gap-2 rounded-xl border border-border bg-background px-3 py-2">
+        <div className="flex items-center gap-1 rounded-lg bg-background">
+          <button
+            type="button"
+            disabled={undoButtonDisabled}
+            title={undoButtonTitle}
+            onClick={handleUndo}
+            className={cn(
+              "flex size-7 items-center justify-center rounded-md transition-colors",
+              getHistoryButtonClassName(undoBoundaryTruth.status)
+            )}
+            aria-label={undoButtonLabel}
+          >
+            <Undo2 className="size-3.5" />
+          </button>
+
+          <button
+            type="button"
+            disabled={redoButtonDisabled}
+            title={redoButtonTitle}
+            onClick={handleRedo}
+            className={cn(
+              "flex size-7 items-center justify-center rounded-md transition-colors",
+              getHistoryButtonClassName(redoBoundaryTruth.status)
+            )}
+            aria-label={redoButtonLabel}
+          >
+            <Redo2 className="size-3.5" />
+          </button>
+        </div>
+
         <div className="flex items-center gap-1.5">
           <span className="text-xs text-zinc-500" aria-hidden="true">
             {"♩"}

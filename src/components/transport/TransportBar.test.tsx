@@ -5,12 +5,17 @@ import { createRoot, type Root } from 'react-dom/client';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { TransportBar } from './TransportBar';
 import { useProjectStore } from '@/store/project-store';
+import { useUiStore } from '@/store/ui-store';
+import { useUndoStore } from '@/store/undo-store';
 import type {
   AudioEngineConfig,
+  Block,
+  Chord,
   PlaybackTruth,
   PlaybackReadiness,
   Project,
   Section,
+  Stem,
   TransportState,
 } from '@/types';
 
@@ -114,6 +119,79 @@ function makeSections(): Section[] {
   ];
 }
 
+function makeStem(partial: Partial<Stem> = {}): Stem {
+  return {
+    id: 'st-1',
+    projectId: 'p1',
+    instrument: 'piano',
+    sortOrder: 0,
+    volume: 0.8,
+    pan: 0,
+    isMuted: false,
+    isSolo: false,
+    createdAt: '2026-03-31T00:00:00Z',
+    ...partial,
+  };
+}
+
+function makeSection(partial: Partial<Section> = {}): Section {
+  return {
+    id: 'sec-1',
+    projectId: 'p1',
+    name: 'Verse',
+    sortOrder: 0,
+    barCount: 4,
+    startBar: 1,
+    energyOverride: null,
+    grooveOverride: null,
+    feelOverride: null,
+    swingPctOverride: null,
+    dynamicsOverride: null,
+    createdAt: '2026-03-31T00:00:00Z',
+    ...partial,
+  };
+}
+
+function makeBlock(partial: Partial<Block> = {}): Block {
+  return {
+    id: 'blk-1',
+    stemId: 'st-1',
+    sectionId: 'sec-1',
+    startBar: 1,
+    endBar: 4,
+    chordDegree: 'I',
+    chordQuality: 'maj7',
+    chordBassDegree: null,
+    style: 'block_chords',
+    energyOverride: null,
+    dynamicsOverride: null,
+    midiData: [],
+    createdAt: '2026-03-31T00:00:00Z',
+    ...partial,
+  };
+}
+
+function makeChord(partial: Partial<Chord> = {}): Chord {
+  return {
+    id: 'ch-1',
+    projectId: 'p1',
+    barNumber: 1,
+    degree: 'I',
+    quality: 'maj7',
+    bassDegree: null,
+    ...partial,
+  };
+}
+
+function makeArrangement(label: string) {
+  return {
+    stems: [makeStem({ id: `st-${label}` })],
+    sections: [makeSection({ id: `sec-${label}` })],
+    blocks: [makeBlock({ id: `blk-${label}`, stemId: `st-${label}`, sectionId: `sec-${label}` })],
+    chords: [makeChord({ id: `ch-${label}` })],
+  };
+}
+
 function renderTransportBar() {
   const container = document.createElement('div');
   document.body.appendChild(container);
@@ -165,6 +243,19 @@ beforeEach(() => {
     detail: 'Arrangement audio is loaded into the engine.',
     nextStep: 'Play, scrub, or adjust the transport.',
   };
+
+  useUiStore.setState({
+    generationState: 'idle',
+    systemStatus: 'ready',
+    errorMessage: null,
+    unsavedChanges: false,
+    lastSavedAt: null,
+  });
+
+  useUndoStore.setState({
+    undoStack: [],
+    redoStack: [],
+  });
 
   useProjectStore.setState({
     project: makeProject(),
@@ -280,6 +371,133 @@ describe('TransportBar transport controls', () => {
     expect(mounted.container.textContent).toContain('Bar 2 Beat 4');
     expect(scrubber?.getAttribute('aria-valuetext')).toContain(
       'Playing at bar 2 beat 4, 0:16 of 1:04'
+    );
+  });
+
+  it('applies available undo history directly from the transport surface', () => {
+    const before = makeArrangement('before');
+    const after = makeArrangement('after');
+
+    useProjectStore.getState().setArrangement(after);
+    useUndoStore.getState().pushUndo('Split block', {
+      undo: JSON.stringify(before),
+      redo: JSON.stringify(after),
+    });
+
+    const mounted = renderTransportBar();
+    mountedRoot = mounted.root;
+    mountedContainer = mounted.container;
+
+    const undoButton = mounted.container.querySelector(
+      'button[aria-label="Undo: Split block"]'
+    ) as HTMLButtonElement | null;
+
+    expect(undoButton?.disabled).toBe(false);
+    expect(undoButton?.title).toBe(
+      'Undo is ready to restore the arrangement captured before Split block. ' +
+      'Use Undo to restore the arrangement captured before Split block.'
+    );
+
+    act(() => {
+      undoButton?.click();
+    });
+
+    expect(useProjectStore.getState().blocks).toMatchObject([
+      { id: 'blk-before', stemId: 'st-before', sectionId: 'sec-before' },
+    ]);
+    expect(useUndoStore.getState().undoStack).toHaveLength(0);
+    expect(useUndoStore.getState().redoStack).toHaveLength(1);
+  });
+
+  it('applies available redo history directly from the transport surface', () => {
+    const before = makeArrangement('before');
+    const after = makeArrangement('after');
+
+    useProjectStore.getState().setArrangement(after);
+    useUndoStore.getState().pushUndo('Split block', {
+      undo: JSON.stringify(before),
+      redo: JSON.stringify(after),
+    });
+
+    const undoTransition = useUndoStore.getState().undo();
+    expect(undoTransition?.restoreSnapshot).toMatchObject(before);
+    useProjectStore.getState().setArrangement(before);
+
+    const mounted = renderTransportBar();
+    mountedRoot = mounted.root;
+    mountedContainer = mounted.container;
+
+    const redoButton = mounted.container.querySelector(
+      'button[aria-label="Redo: Split block"]'
+    ) as HTMLButtonElement | null;
+
+    expect(redoButton?.disabled).toBe(false);
+    expect(redoButton?.title).toBe(
+      'Redo is ready to restore the arrangement captured after Split block. ' +
+      'Use Redo to restore the arrangement captured after Split block.'
+    );
+
+    act(() => {
+      redoButton?.click();
+    });
+
+    expect(useProjectStore.getState().blocks).toMatchObject([
+      { id: 'blk-after', stemId: 'st-after', sectionId: 'sec-after' },
+    ]);
+    expect(useUndoStore.getState().undoStack).toHaveLength(1);
+    expect(useUndoStore.getState().redoStack).toHaveLength(0);
+  });
+
+  it('keeps blocked undo history visible but disabled on the transport surface', () => {
+    useUndoStore.getState().pushUndo('Broken action', {
+      undo: 'not json',
+      redo: JSON.stringify(makeArrangement('after')),
+    });
+
+    const mounted = renderTransportBar();
+    mountedRoot = mounted.root;
+    mountedContainer = mounted.container;
+
+    const undoButton = mounted.container.querySelector(
+      'button[aria-label="Undo blocked: Broken action"]'
+    ) as HTMLButtonElement | null;
+
+    expect(undoButton?.disabled).toBe(true);
+    expect(undoButton?.title).toBe(
+      'The latest undo boundary is still on the stack, but the arrangement captured before Broken action cannot be read. ' +
+      'Do not offer Undo for the arrangement captured before Broken action until a valid restore snapshot is stored.'
+    );
+  });
+
+  it('keeps paused redo history visible but disabled while generation is running', () => {
+    const before = makeArrangement('before');
+    const after = makeArrangement('after');
+
+    useProjectStore.getState().setArrangement(after);
+    useUndoStore.getState().pushUndo('Split block', {
+      undo: JSON.stringify(before),
+      redo: JSON.stringify(after),
+    });
+
+    const undoTransition = useUndoStore.getState().undo();
+    expect(undoTransition?.restoreSnapshot).toMatchObject(before);
+    useProjectStore.getState().setArrangement(before);
+    useUiStore.setState({
+      generationState: 'generating',
+    });
+
+    const mounted = renderTransportBar();
+    mountedRoot = mounted.root;
+    mountedContainer = mounted.container;
+
+    const redoButton = mounted.container.querySelector(
+      'button[aria-label="Redo paused: Split block"]'
+    ) as HTMLButtonElement | null;
+
+    expect(redoButton?.disabled).toBe(true);
+    expect(redoButton?.title).toBe(
+      'Generation is still running, so Redo is temporarily paused even though the arrangement captured after Split block is still preserved on the stack. ' +
+      'Wait for generation to finish, then use Redo to restore the arrangement captured after Split block.'
     );
   });
 
