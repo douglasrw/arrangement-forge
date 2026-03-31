@@ -314,6 +314,9 @@ export function InputSection() {
   const parseFeedbackHighlights = hasParseBlockers && parseTruth?.issueHighlights.length
     ? `Flagged chart locations: ${parseTruth.issueHighlights.join(" ")}`
     : null
+  const parseFeedbackBlockedTokens = hasParseBlockers && parseTruth?.blockedTokenLabels.length
+    ? `Blocked tokens: ${parseTruth.blockedTokenLabels.join("; ")}.`
+    : null
   const parseFeedbackOverflow = hasParseBlockers && (parseTruth?.remainingIssueCount ?? 0) > 0
     ? `${parseTruth?.remainingIssueCount} more flagged ${parseTruth?.remainingIssueCount === 1 ? "bar needs" : "bars need"} review in the chord chart before generation.`
     : null
@@ -322,6 +325,7 @@ export function InputSection() {
       parseTruth.currentState,
       parseTruth.summary,
       parseTruth.nextStep ? `Next step: ${parseTruth.nextStep}` : "Fix the flagged chord bars before generating.",
+      parseFeedbackBlockedTokens,
       parseFeedbackHighlights,
       parseFeedbackOverflow,
     ].filter(Boolean).join(" ")
@@ -457,6 +461,9 @@ export function InputSection() {
           )}
           {parseTruth?.nextStep && (
             <p className="mt-1 text-muted-foreground">Next step: {parseTruth.nextStep}</p>
+          )}
+          {parseFeedbackBlockedTokens && (
+            <p className="mt-1 text-muted-foreground">{parseFeedbackBlockedTokens}</p>
           )}
           {parseFeedbackHighlights && (
             <p className="mt-1 text-muted-foreground">{parseFeedbackHighlights}</p>

@@ -13,6 +13,7 @@ describe('parseChordChart', () => {
       summary: 'Generation can use the current chord chart as written.',
       nextStep: null,
       blockedBars: [],
+      blockedTokenLabels: [],
       issueHighlights: [],
       remainingIssueCount: 0,
     });
@@ -72,6 +73,7 @@ describe('parseChordChart', () => {
       summary: 'Section labels and blank lines do not create playable bars on their own.',
       nextStep: 'Add at least one chord bar such as Cmaj7 | Fmaj7 | G7 | Cmaj7.',
       blockedBars: [],
+      blockedTokenLabels: [],
       issueHighlights: [],
       remainingIssueCount: 0,
     });
@@ -92,6 +94,7 @@ describe('parseChordChart', () => {
       nextStep:
         'Replace at least one N.C. or rest bar with a chord such as Cmaj7 | Fmaj7 | G7 | Cmaj7.',
       blockedBars: [],
+      blockedTokenLabels: [],
       issueHighlights: [],
       remainingIssueCount: 0,
     });
@@ -147,6 +150,7 @@ describe('parseChordChart', () => {
       summary: '1 bar has an unrecognized chord token.',
       nextStep: 'Fix or replace bar 2 before generating.',
       blockedBars: [2],
+      blockedTokenLabels: ['bar 2 "xyz??"'],
       issueHighlights: ['Line 1, bar 2: could not parse "xyz??"'],
       remainingIssueCount: 0,
     });
@@ -180,6 +184,7 @@ describe('parseChordChart', () => {
       summary: '1 bar has an unrecognized chord token. 1 repeat marker follows an unresolved bar.',
       nextStep: 'Replace bars 1 and 2 with explicit chords or fix the bar before them.',
       blockedBars: [1, 2],
+      blockedTokenLabels: ['bar 1 "xyz??"', 'bar 2 "%"'],
       issueHighlights: [
         'Line 1, bar 1: could not parse "xyz??"',
         'Line 1, bar 2: repeat marker "%" follows a bar that could not be resolved',
@@ -232,6 +237,7 @@ describe('parseChordChart', () => {
       summary: '1 bar has an unrecognized chord token. 1 repeat marker follows an unresolved bar.',
       nextStep: 'Replace bars 1 and 2 with explicit chords or fix the bar before them.',
       blockedBars: [1, 2],
+      blockedTokenLabels: ['bar 1 "xyz??"', 'bar 2 "%"'],
       issueHighlights: [
         'Line 1, bar 1: could not parse "xyz??"',
         'Line 1, bar 2: repeat marker "%" follows a bar that could not be resolved',
@@ -245,6 +251,7 @@ describe('parseChordChart', () => {
 
     expect(truth).toMatchObject({
       blockedBars: [1, 2, 3, 4],
+      blockedTokenLabels: ['bar 1 "xyz??"', 'bar 2 "%"', 'bar 3 "/"'],
       issueHighlights: [
         'Line 1, bar 1: could not parse "xyz??"',
         'Line 1, bar 2: repeat marker "%" follows a bar that could not be resolved',

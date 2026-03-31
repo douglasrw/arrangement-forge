@@ -59,6 +59,7 @@ function describeBlockedChordChart(parseTruth?: ChordChartParseTruth | null) {
   const currentState = parseTruth?.currentState?.trim()
   const summary = parseTruth?.summary?.trim()
   const nextStep = parseTruth?.nextStep?.trim()
+  const blockedTokenLabels = parseTruth?.blockedTokenLabels?.filter(Boolean) ?? []
   const issueHighlights = parseTruth?.issueHighlights?.filter(Boolean) ?? []
   const remainingIssueCount = parseTruth?.remainingIssueCount ?? 0
 
@@ -66,6 +67,7 @@ function describeBlockedChordChart(parseTruth?: ChordChartParseTruth | null) {
     currentState,
     summary,
     nextStep ? `Next step: ${nextStep}` : null,
+    blockedTokenLabels.length ? `Blocked tokens: ${blockedTokenLabels.join("; ")}.` : null,
     issueHighlights.length ? `Flagged chart locations: ${issueHighlights.join(" ")}` : null,
     remainingIssueCount > 0
       ? `${remainingIssueCount} more flagged ${remainingIssueCount === 1 ? "bar needs" : "bars need"} review in the chord chart before generation.`

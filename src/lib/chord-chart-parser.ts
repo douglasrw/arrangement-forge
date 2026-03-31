@@ -26,6 +26,7 @@ export interface ChordChartParseTruth {
   summary: string;
   nextStep: string | null;
   blockedBars: number[];
+  blockedTokenLabels: string[];
   issueHighlights: string[];
   remainingIssueCount: number;
 }
@@ -138,6 +139,7 @@ function buildParseTruth(
         nextStep:
           'Replace at least one N.C. or rest bar with a chord such as Cmaj7 | Fmaj7 | G7 | Cmaj7.',
         blockedBars: [],
+        blockedTokenLabels: [],
         issueHighlights: [],
         remainingIssueCount: 0,
       };
@@ -151,6 +153,7 @@ function buildParseTruth(
       summary: 'Section labels and blank lines do not create playable bars on their own.',
       nextStep: 'Add at least one chord bar such as Cmaj7 | Fmaj7 | G7 | Cmaj7.',
       blockedBars: [],
+      blockedTokenLabels: [],
       issueHighlights: [],
       remainingIssueCount: 0,
     };
@@ -164,6 +167,7 @@ function buildParseTruth(
       summary: 'Generation can use the current chord chart as written.',
       nextStep: null,
       blockedBars: [],
+      blockedTokenLabels: [],
       issueHighlights: [],
       remainingIssueCount: 0,
     };
@@ -177,6 +181,7 @@ function buildParseTruth(
     (issue) => issue.reason === 'repeat_without_resolved_chord'
   ).length;
   const blockedBars = issues.map((issue) => issue.barNumber);
+  const blockedTokenLabels = issues.slice(0, 3).map((issue) => `bar ${issue.barNumber} "${issue.token}"`);
   const barLabel = formatBarList(blockedBars);
   const readyBarCount = Math.max(parsedBarCount - blockedBars.length, 0);
   const summaryParts: string[] = [];
@@ -215,6 +220,7 @@ function buildParseTruth(
         ? `Replace ${formatBlockedBarReference(blockedBars, 'the flagged repeat bars')} with explicit chords or fix the bar before ${blockedBars.length === 1 ? 'it' : 'them'}.`
         : `Fix or replace ${formatBlockedBarReference(blockedBars, 'the flagged chord bars')} before generating.`,
     blockedBars,
+    blockedTokenLabels,
     issueHighlights,
     remainingIssueCount: Math.max(issues.length - issueHighlights.length, 0),
   };
