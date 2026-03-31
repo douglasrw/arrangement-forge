@@ -1,7 +1,7 @@
 import { useState, useEffect, FormEvent } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/lib/supabase';
-import { rowToProfile } from '@/lib/profile';
+import { describeSupportedProfileSettingsTruth, rowToProfile } from '@/lib/profile';
 import { cn } from '@/lib/utils';
 import { getAuthTruth, useAuthStore } from '@/store/auth-store';
 import { useUiStore } from '@/store/ui-store';
@@ -279,6 +279,7 @@ export default function SettingsPage() {
     pendingFields,
     saving,
   });
+  const supportedProfileSettingsTruth = describeSupportedProfileSettingsTruth();
   const hasPendingChanges = pendingFields.length > 0;
   const savedSettingsCount = profile ? EDITABLE_SETTINGS.length - pendingFields.length : 0;
   const pendingSettingsLabel = formatSettingsFieldList(pendingFields);
@@ -450,7 +451,16 @@ export default function SettingsPage() {
           {/* Editor Preferences card */}
           <Card className={settingsCardClasses}>
             <CardHeader className={settingsCardHeaderClasses}>
-              <h2 className={sectionHeadingClasses}>Editor Preferences</h2>
+              <div className="flex flex-col gap-1.5">
+                <h2 className={sectionHeadingClasses}>Editor Preferences</h2>
+                <p className="text-sm text-muted-foreground">
+                  Saved profile validation only accepts chord modes
+                  {' '}
+                  {supportedProfileSettingsTruth.chordDisplayModes}
+                  {' '}
+                  and default genres from the supported list below.
+                </p>
+              </div>
             </CardHeader>
             <CardContent className={settingsCardContentClasses}>
               <div className="flex flex-col gap-4">
@@ -509,7 +519,12 @@ export default function SettingsPage() {
                   <Label htmlFor="settings-genre">
                     Default Genre
                   </Label>
-                  <span className="text-xs text-muted-foreground">Pre-selected when creating a new project</span>
+                  <span className="text-xs text-muted-foreground">
+                    Pre-selected when creating a new project. Saved profile truth accepts
+                    {' '}
+                    {supportedProfileSettingsTruth.defaultGenres}
+                    .
+                  </span>
                   <select
                     id="settings-genre"
                     className={selectClasses}

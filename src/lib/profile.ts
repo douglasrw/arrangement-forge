@@ -3,7 +3,7 @@ import { GENRES } from '@/lib/genre-config';
 
 const VALID_CHORD_DISPLAY_MODES = new Set<Profile['chordDisplayMode']>(['letter', 'roman']);
 const VALID_GENRES = new Set(GENRES);
-const SUPPORTED_CHORD_DISPLAY_MODES = ['letter', 'roman'] as const;
+export const SUPPORTED_CHORD_DISPLAY_MODES = ['letter', 'roman'] as const;
 
 function formatSupportedValues(values: readonly string[]): string {
   if (values.length <= 1) {
@@ -15,6 +15,16 @@ function formatSupportedValues(values: readonly string[]): string {
   }
 
   return `${values.slice(0, -1).join(', ')}, or ${values[values.length - 1]}`;
+}
+
+export function describeSupportedProfileSettingsTruth(): {
+  chordDisplayModes: string;
+  defaultGenres: string;
+} {
+  return {
+    chordDisplayModes: formatSupportedValues(SUPPORTED_CHORD_DISPLAY_MODES),
+    defaultGenres: formatSupportedValues(GENRES),
+  };
 }
 
 function parseRequiredString(

@@ -327,6 +327,19 @@ describe('SettingsPage truth surface', () => {
     expect(mounted.container.querySelector('#settings-theme')).toBeNull();
   });
 
+  it('shows profile validation truth before save so supported settings are explicit on the page', () => {
+    const mounted = renderSettingsPage();
+    mountedRoot = mounted.root;
+    mountedContainer = mounted.container;
+
+    expect(mounted.container.textContent).toContain(
+      'Saved profile validation only accepts chord modes letter or roman and default genres from the supported list below.'
+    );
+    expect(mounted.container.textContent).toContain(
+      'Pre-selected when creating a new project. Saved profile truth accepts Jazz, Blues, Rock, Funk, Country, Gospel, R&B, Latin, or Pop.'
+    );
+  });
+
   it('distinguishes saved, pending, and unavailable settings while a draft moves into the saved profile', async () => {
     const mounted = renderSettingsPage();
     mountedRoot = mounted.root;
