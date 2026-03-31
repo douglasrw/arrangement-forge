@@ -716,6 +716,9 @@ describe('InputSection upload tab', () => {
       'Chart is blocked: Bars 2 and 3 currently parse as N.C., so Generate stays blocked until the chart is fixed.'
     );
     expect(mounted.container.textContent).toContain(
+      'Why it is blocked: 1 bar has an unrecognized chord token. 1 repeat marker follows an unresolved bar.'
+    );
+    expect(mounted.container.textContent).toContain(
       'Next step: Replace the flagged repeat bars with explicit chords or fix the bar before them.'
     );
     expect(mounted.container.textContent).toContain(
@@ -840,6 +843,9 @@ describe('InputSection upload tab', () => {
     );
     expect(mounted.container.textContent).toContain(
       'Chart is blocked: No playable chord bars are present yet, so Generate stays blocked until the chart includes at least one chord bar.'
+    );
+    expect(mounted.container.textContent).toContain(
+      'Why it is blocked: Section labels and blank lines do not create playable bars on their own.'
     );
     expect(mounted.container.textContent).toContain(
       'Next step: Add at least one chord bar such as Cmaj7 | Fmaj7 | G7 | Cmaj7.'

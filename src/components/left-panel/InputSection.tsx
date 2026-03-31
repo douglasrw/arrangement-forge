@@ -251,6 +251,7 @@ function formatImportedChordChartFeedback(
   return [
     baseMessage,
     `Chart is blocked: ${parseTruth.currentState}`,
+    parseTruth.summary ? `Why it is blocked: ${parseTruth.summary}` : null,
     parseTruth.nextStep ? `Next step: ${parseTruth.nextStep}` : null,
     parseTruth.issueHighlights.length
       ? `Flagged chart locations: ${parseTruth.issueHighlights.join(" ")}`
