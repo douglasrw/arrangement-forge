@@ -2,11 +2,12 @@
 
 Status date: 2026-03-31
 
-Status: landed on `main`; reverified on 2026-03-31 with focused route proofs from the current route surfaces, and no remaining product delta is visible in this family beyond this evidence refresh
+Status: landed on `main`; reverified on 2026-03-31 after the shared route-truth helper landed, and no remaining product delta is visible in this family beyond this evidence refresh
 
 Purpose: preserve the current editor route contract and its landing proof in
 one repo-local place so future work does not have to reconstruct it from
-`App.tsx`, `EditorPage.tsx`, and scattered tests.
+`src/lib/editor-route-truth.ts`, `App.tsx`, `EditorPage.tsx`, and scattered
+tests.
 
 ## Route Contract
 
@@ -22,7 +23,20 @@ one repo-local place so future work does not have to reconstruct it from
 
 ## Operator-Facing Truth
 
-`src/App.tsx` owns protected-route recovery truth:
+`src/lib/editor-route-truth.ts` now owns the shared route-truth copy and
+labels used by both auth bootstrap and editor-route shells:
+
+- `getProtectedRouteTruth` keeps `/project`, `/project/:id`, `/library`, and
+  `/settings` recovery copy explicit, including exact route preservation for
+  query strings and hash fragments.
+- `getEditorRouteTruth` keeps the editor fallback route, requested project
+  route, malformed route, missing-project route, load-failure route, and ready
+  route on one shared truth surface.
+- The helper keeps route mode labels aligned across auth bootstrap, parked
+  fallback, loading, blocked, and ready states so future copy changes do not
+  drift between `App.tsx` and `EditorPage.tsx`.
+
+`src/App.tsx` owns protected-route recovery rendering and routing:
 
 - `/project` stays reserved as the fallback editor route during auth bootstrap.
 - `/project/:id` stays reserved during auth bootstrap, with `/project` kept as
@@ -34,7 +48,8 @@ one repo-local place so future work does not have to reconstruct it from
   can tell whether Arrangement Forge is holding an editor fallback route or a
   requested project route before the guard opens.
 
-`src/pages/EditorPage.tsx` owns route readiness truth after the guard opens:
+`src/pages/EditorPage.tsx` owns route readiness rendering after the guard
+opens:
 
 - `project-selection` keeps `/project` parked with no active project and points
   the operator back to the library.
@@ -57,7 +72,7 @@ one repo-local place so future work does not have to reconstruct it from
 
 Current focused proofs for this slice:
 
-- `pnpm exec vitest run src/App.test.tsx src/pages/EditorPage.test.tsx`
+- `pnpm exec vitest run src/lib/editor-route-truth.test.ts src/App.test.tsx src/pages/EditorPage.test.tsx`
 - `pnpm run type-check`
 
 ## Tracked Landing
@@ -72,6 +87,10 @@ Current focused proofs for this slice:
   `commitpath_c40ed88d Reverify editor route readiness truth docs`
 - `577493b594a29bf0424880078a3432c5516e514b`:
   `commitpath_c40ed88d Refresh editor route readiness truth evidence`
+- `275075180accbe898a99ac65a1e6b364344e7a01`:
+  `Unify editor route readiness truth`
+- `8f6113464380dcb39d7a3e5e2631f95fa1a99d0d`:
+  `commitpath_c40ed88d Keep login recovery route truth specific`
 - `20a911b91876cb49628cdbdfbce6ee8952895777`:
   `commitpath_c40ed88d Refresh editor route readiness truth evidence`
 - `dc4eecfa34890ff951f7e0964746f82ddb1cf31e`:
@@ -112,16 +131,20 @@ Current focused proofs for this slice:
 - Commit `f35da822` tightened the guarded router proof so `/project/:id`
   remains wired into the editor surface as the requested project route instead
   of regressing toward a detached or mislabeled path.
-- Commit `83815871` refreshed this repo-local truth artifact so the latest
-  requested-route wiring proof and the current `main` evidence chain stay
-  aligned in one place.
+- Commit `27507518` moved route-truth copy into `src/lib/editor-route-truth.ts`
+  so `App.tsx` and `EditorPage.tsx` share one explicit route-truth source
+  instead of drifting independently.
+- Commit `8f611346` kept login recovery copy specific while preserving the same
+  protected-route truth helper contract.
 - The focused route proofs passed again on 2026-03-31 from pre-refresh head
-  `a5d62f7b` before this doc-only evidence refresh updated the local artifact.
+  `8f611346` before this doc-only evidence refresh updated the local artifact.
 - After the 2026-03-31 recheck, this family appears exhausted until a new
   editor-route behavior changes the contract or the proof surface.
 
 The tests cover:
 
+- shared route-truth helper behavior for auth recovery, parked fallback routes,
+  and malformed project-id routes
 - auth bootstrap reservation for `/project` and `/project/:id`
 - guarded routing of `/project` into the editor surface
 - loading, missing-project, malformed-route, fallback, and ready-state truth in
@@ -131,5 +154,7 @@ The tests cover:
 
 - `src/App.tsx`
 - `src/pages/EditorPage.tsx`
+- `src/lib/editor-route-truth.ts`
 - `src/App.test.tsx`
 - `src/pages/EditorPage.test.tsx`
+- `src/lib/editor-route-truth.test.ts`
