@@ -231,7 +231,7 @@ export default function EditorPage({
             testId="editor-shell-no-project-state"
             actionHref="/library"
             actionLabel="Go to library"
-            routeStatus="error"
+            routeStatus="no-project-selected"
           />
         }
       />

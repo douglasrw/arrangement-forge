@@ -482,6 +482,7 @@ describe('EditorPage route loading gate', () => {
       'Next step: Return to the library, then open an existing project or create a new one to finish this editor route.'
     );
     expect(queryBackToLibraryLink()).not.toBeNull();
+    expect(queryNoProjectState()?.getAttribute('data-editor-route-state')).toBe('no-project-selected');
     expect(mounted.container.textContent).not.toContain('Night Train');
     expect(
       mounted.container.querySelector('[data-testid="topbar-export-button"]')?.textContent
