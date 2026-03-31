@@ -497,4 +497,84 @@ describe('SettingsPage truth surface', () => {
     expect(saveButton?.disabled).toBe(false);
     expect(saveButton?.textContent).toBe('Save Pending Changes');
   });
+
+  it('keeps the save failure explicit when the profile update request is rejected', async () => {
+    const mounted = renderSettingsPage();
+    mountedRoot = mounted.root;
+    mountedContainer = mounted.container;
+
+    const displayNameInput = mounted.container.querySelector(
+      '#settings-display-name'
+    ) as HTMLInputElement | null;
+    const saveButton = mounted.container.querySelector(
+      'button[type="submit"]'
+    ) as HTMLButtonElement | null;
+    const form = mounted.container.querySelector('form') as HTMLFormElement | null;
+
+    act(() => {
+      if (!displayNameInput) {
+        throw new Error('Expected display name input');
+      }
+
+      setInputValue(displayNameInput, 'Ashlyn');
+    });
+
+    saveResponse = {
+      data: null,
+      error: {
+        message: 'new row violates row-level security policy for table "profiles"',
+      },
+    };
+
+    await act(async () => {
+      form?.dispatchEvent(new Event('submit', { bubbles: true, cancelable: true }));
+      await flushAsyncWork();
+    });
+
+    expect(mounted.container.textContent).toContain(
+      'new row violates row-level security policy for table "profiles"'
+    );
+    expect(useAuthStore.getState().profile?.displayName).toBe('Doug');
+    expect(saveButton?.disabled).toBe(false);
+    expect(saveButton?.textContent).toBe('Save Pending Changes');
+  });
+
+  it('states when the save succeeded but no persisted profile row came back to validate', async () => {
+    const mounted = renderSettingsPage();
+    mountedRoot = mounted.root;
+    mountedContainer = mounted.container;
+
+    const displayNameInput = mounted.container.querySelector(
+      '#settings-display-name'
+    ) as HTMLInputElement | null;
+    const saveButton = mounted.container.querySelector(
+      'button[type="submit"]'
+    ) as HTMLButtonElement | null;
+    const form = mounted.container.querySelector('form') as HTMLFormElement | null;
+
+    act(() => {
+      if (!displayNameInput) {
+        throw new Error('Expected display name input');
+      }
+
+      setInputValue(displayNameInput, 'Ashlyn');
+    });
+
+    saveResponse = {
+      data: null,
+      error: null,
+    };
+
+    await act(async () => {
+      form?.dispatchEvent(new Event('submit', { bubbles: true, cancelable: true }));
+      await flushAsyncWork();
+    });
+
+    expect(mounted.container.textContent).toContain(
+      'Profile save succeeded but no persisted profile row was returned.'
+    );
+    expect(useAuthStore.getState().profile?.displayName).toBe('Doug');
+    expect(saveButton?.disabled).toBe(false);
+    expect(saveButton?.textContent).toBe('Save Pending Changes');
+  });
 });
