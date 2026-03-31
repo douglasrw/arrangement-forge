@@ -331,6 +331,35 @@ describe('useAuth auth action failures', () => {
     expect(useUiStore.getState().chordDisplayMode).toBe('letter');
   });
 
+  it('derives the auth gate from raw auth state even when a stale gate snapshot is present', async () => {
+    const mounted = renderHarness();
+    mountedRoot = mounted.root;
+    mountedContainer = mounted.container;
+
+    await act(async () => {
+      useAuthStore.setState({
+        user: null,
+        profile: null,
+        authStatus: 'signed-out',
+        signedOutReason: 'missing-profile',
+        isLoading: false,
+        isAuthenticated: false,
+        authGate: {
+          access: 'granted',
+          nextStep: 'open-app',
+          signedOutReason: null,
+        },
+      });
+      await Promise.resolve();
+    });
+
+    expect(hookValue!.authGate).toEqual({
+      access: 'blocked',
+      nextStep: 'complete-profile',
+      signedOutReason: 'missing-profile',
+    });
+  });
+
   it('preserves Google auth failures from Supabase', async () => {
     const failure = new Error('Google popup blocked');
     supabaseMock.auth.signInWithOAuth.mockResolvedValue({ error: failure });

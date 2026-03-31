@@ -30,6 +30,57 @@ export interface AuthGateTruth {
   signedOutReason: SignedOutReason | null;
 }
 
+const CHECKING_SESSION_AUTH_GATE: AuthGateTruth = {
+  access: 'pending',
+  nextStep: 'wait-for-session',
+  signedOutReason: null,
+};
+
+const AUTHENTICATED_AUTH_GATE: AuthGateTruth = {
+  access: 'granted',
+  nextStep: 'open-app',
+  signedOutReason: null,
+};
+
+const SIGNED_OUT_AUTH_GATES: Record<SignedOutReason, AuthGateTruth> = {
+  'no-session': {
+    access: 'blocked',
+    nextStep: 'sign-in',
+    signedOutReason: 'no-session',
+  },
+  'signed-out': {
+    access: 'blocked',
+    nextStep: 'sign-in',
+    signedOutReason: 'signed-out',
+  },
+  'email-confirmation-required': {
+    access: 'blocked',
+    nextStep: 'confirm-email',
+    signedOutReason: 'email-confirmation-required',
+  },
+  'missing-profile': {
+    access: 'blocked',
+    nextStep: 'complete-profile',
+    signedOutReason: 'missing-profile',
+  },
+  'profile-load-failed': {
+    access: 'blocked',
+    nextStep: 'retry-profile-load',
+    signedOutReason: 'profile-load-failed',
+  },
+  'session-lookup-failed': {
+    access: 'blocked',
+    nextStep: 'retry-session',
+    signedOutReason: 'session-lookup-failed',
+  },
+};
+
+const SIGNED_OUT_WITHOUT_REASON_AUTH_GATE: AuthGateTruth = {
+  access: 'blocked',
+  nextStep: 'sign-in',
+  signedOutReason: null,
+};
+
 type AuthStoreState = {
   user: User | null;
   profile: Profile | null;
@@ -62,45 +113,20 @@ export function getAuthGateTruth({
 }: Pick<AuthStoreState, 'authStatus' | 'signedOutReason'>): AuthGateTruth {
   switch (authStatus) {
     case 'checking-session':
-      return {
-        access: 'pending',
-        nextStep: 'wait-for-session',
-        signedOutReason: null,
-      };
+      return CHECKING_SESSION_AUTH_GATE;
     case 'authenticated':
-      return {
-        access: 'granted',
-        nextStep: 'open-app',
-        signedOutReason: null,
-      };
+      return AUTHENTICATED_AUTH_GATE;
     default:
-      return {
-        access: 'blocked',
-        nextStep: resolveSignedOutNextStep(signedOutReason),
-        signedOutReason,
-      };
+      return signedOutReason
+        ? SIGNED_OUT_AUTH_GATES[signedOutReason]
+        : SIGNED_OUT_WITHOUT_REASON_AUTH_GATE;
   }
 }
 
 export function selectAuthGateTruth(
-  state: Pick<AuthStoreState, 'authGate'>
+  state: Pick<AuthStoreState, 'authStatus' | 'signedOutReason'>
 ): AuthGateTruth {
-  return state.authGate;
-}
-
-function resolveSignedOutNextStep(reason: SignedOutReason | null): AuthGateNextStep {
-  switch (reason) {
-    case 'email-confirmation-required':
-      return 'confirm-email';
-    case 'missing-profile':
-      return 'complete-profile';
-    case 'profile-load-failed':
-      return 'retry-profile-load';
-    case 'session-lookup-failed':
-      return 'retry-session';
-    default:
-      return 'sign-in';
-  }
+  return getAuthGateTruth(state);
 }
 
 function createAuthStoreState(
