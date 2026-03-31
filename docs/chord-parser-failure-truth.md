@@ -3,7 +3,7 @@
 Status date: 2026-03-31
 
 Status: landed on `main`; reverified on 2026-03-31 against product head
-`007d0012` with no remaining bounded product delta visible in this family
+`1df2c047` with no remaining bounded product delta visible in this family
 
 Purpose: preserve the current chord parser failure contract and its landing
 proof in one repo-local place so future work does not have to reconstruct it
@@ -82,6 +82,9 @@ from `src/lib/chord-chart-parser.ts`, `src/components/left-panel/InputSection.ts
 - plain-text imports now keep bar-delimited rows in the chord chart even when
   one or more bars are invalid, so uploaded parser failures stay visible in the
   same blocked-state surface instead of being dropped during import
+- blocked upload feedback now reuses the same parser `truth.currentState` and
+  `truth.nextStep`, so file-import failures stay explicit on the upload surface
+  instead of collapsing back into generic success or generic blocked copy
 - the surfaced warning snippets keep the first blocked bars visible in the same
   panel instead of forcing the operator to infer which bars failed
 - when more than three bars are blocked, the panel now says how many additional
@@ -102,11 +105,13 @@ from `src/lib/chord-chart-parser.ts`, `src/components/left-panel/InputSection.ts
 Current focused proofs for this slice:
 
 - `pnpm test -- --run src/lib/chord-chart-parser.test.ts src/components/left-panel/InputSection.test.tsx src/hooks/useGenerate.test.tsx`
-- `pnpm type-check`
-- verification head: `007d0012babec55c445d097fd511a5df8708eb87`
+- `pnpm run type-check`
+- verification head: `1df2c047463e996ee0602661fd247519598728ed`
 
 ## Tracked Landing
 
+- `1df2c047463e996ee0602661fd247519598728ed`:
+  `commitpath_c40ed88d Surface blocked upload truth`
 - `007d0012babec55c445d097fd511a5df8708eb87`:
   `Preserve parse issue truth for all-invalid charts`
 - `a50e4cf67e3f5cab9b187febade991c55692d567`:
@@ -335,10 +340,14 @@ Current focused proofs for this slice:
   keeping no-chord-only charts blocked, and preserving parse-issue truth for
   all-invalid charts instead of collapsing them into the generic missing-bar
   path.
-- The latest 2026-03-31 recheck at verified product head `007d0012` produced
+- The later 2026-03-31 product head `1df2c047` kept the same family honest by
+  surfacing blocked upload truth with the same explicit parser state and next
+  step on the import surface instead of falling back to more generic upload
+  copy.
+- The latest 2026-03-31 recheck at verified product head `1df2c047` produced
   the focused proof results above with no remaining bounded product-file delta
   in this family, so this family is exhausted again for now and the honest
-  move was a repo-local evidence refresh instead of another speculative parser
+  move was another repo-local evidence refresh instead of a speculative parser
   or input-surface edit.
 
 The tests cover:
