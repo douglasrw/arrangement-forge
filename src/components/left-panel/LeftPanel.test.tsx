@@ -215,6 +215,28 @@ describe('LeftPanel inspector truth regression', () => {
     );
   });
 
+  it('keeps the panel-level coordination truth blocked when parse issues remain', () => {
+    useProjectStore.setState({
+      project: makeProject({
+        chordChartRaw: 'Cmaj7 | xyz?? | %',
+      }),
+    });
+
+    const mounted = renderLeftPanel({ mode: 'default' });
+    mountedRoot = mounted.root;
+    mountedContainer = mounted.container;
+
+    expect(mounted.container.querySelector('[data-left-panel-coordination="blocked"]')).not.toBeNull();
+    expect(mounted.container.textContent).toContain('Chord chart fixes are blocking generation');
+    expect(mounted.container.textContent).toContain(
+      'Fix the flagged bars in Input before asking the assistant to generate or revise the arrangement.'
+    );
+    expect(mounted.container.textContent).toContain('Chord chart needs fixes');
+    expect(mounted.container.textContent).toContain(
+      'Flagged bars would resolve to N.C. during generation. Fix the chart before generating.'
+    );
+  });
+
   it('keeps the operator-visible inspector honest across section and block contexts', () => {
     const mounted = renderLeftPanel({
       mode: 'section',

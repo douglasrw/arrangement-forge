@@ -3,6 +3,7 @@ import { useEffect, useRef, useState } from "react"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { useGenerate } from "@/hooks/useGenerate"
 import { getGenerationFailureDetail, isGenerationFailureContent } from "@/lib/assistant-chat"
+import { parseChordChart } from "@/lib/chord-chart-parser"
 import { useProjectStore } from "@/store/project-store"
 import { useUiStore } from "@/store/ui-store"
 import { cn } from "@/lib/utils"
@@ -48,11 +49,15 @@ export function AiAssistantSection() {
 
   const trimmedInput = input.trim()
   const hasChordChart = Boolean(project?.chordChartRaw.trim())
+  const hasParseIssues = Boolean(
+    project && hasChordChart && parseChordChart(project.chordChartRaw, project.key).issues.length > 0
+  )
   const isGenerating = generationState === "generating"
-  const canSend = Boolean(project && hasChordChart && trimmedInput && !isGenerating)
+  const canSend = Boolean(project && hasChordChart && !hasParseIssues && trimmedInput && !isGenerating)
   const assistantReadiness = getAiAssistantReadinessTruth({
     hasProject: Boolean(project),
     hasChordChart,
+    hasParseIssues,
     generationState,
   })
   const composerStatus = assistantReadiness.status === "ready"
@@ -73,6 +78,8 @@ export function AiAssistantSection() {
     ? "Load a project to use the assistant."
     : !hasChordChart
       ? "Add a chord chart before asking the assistant to generate or revise the arrangement."
+      : hasParseIssues
+        ? "Fix the flagged chord bars in Input before asking the assistant to generate or revise the arrangement."
       : isGenerating
         ? "Generating from your latest request..."
         : "Assistant history is empty. Ask for a generation or revision and the result will be tracked here."
@@ -183,6 +190,8 @@ export function AiAssistantSection() {
                   ? "Load a project to use the assistant..."
                   : !hasChordChart
                     ? "Add a chord chart first..."
+                    : hasParseIssues
+                      ? "Fix blocked chord bars first..."
                     : isGenerating
                       ? "Generating..."
                       : "Describe the arrangement change you want..."

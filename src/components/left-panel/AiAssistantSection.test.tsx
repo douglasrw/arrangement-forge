@@ -196,6 +196,33 @@ describe('AiAssistantSection', () => {
     expect(input?.disabled).toBe(true);
   });
 
+  it('keeps the blocked parse-failure reason visible before the assistant can send', () => {
+    useProjectStore.setState({
+      project: makeProject({ chordChartRaw: 'Cmaj7 | xyz?? | %' }),
+      chatMessages: [],
+    });
+
+    const mounted = renderSection();
+    mountedRoot = mounted.root;
+    mountedContainer = mounted.container;
+
+    const composerState = mounted.container.querySelector(
+      '[data-testid="ai-assistant-composer-state"]'
+    );
+    const sendButton = mounted.container.querySelector(
+      '[data-testid="ai-assistant-send"]'
+    ) as HTMLButtonElement | null;
+
+    expect(composerState?.textContent).toContain('Chord chart needs fixes');
+    expect(composerState?.textContent).toContain(
+      'Fix the flagged bars in Input before asking the assistant to generate or revise the arrangement.'
+    );
+    expect(mounted.container.textContent).toContain(
+      'Fix the flagged chord bars in Input before asking the assistant to generate or revise the arrangement.'
+    );
+    expect(sendButton?.disabled).toBe(true);
+  });
+
   it('renders failed assistant generations with a distinct failure bubble', () => {
     useProjectStore.setState({
       chatMessages: [makeMessage({ content: 'Generation failed: Generator offline' })],

@@ -17,6 +17,7 @@ import {
 } from "./left-panel-readiness"
 import { useProjectStore } from "@/store/project-store"
 import { useUiStore } from "@/store/ui-store"
+import { parseChordChart } from "@/lib/chord-chart-parser"
 import type { Instrument } from "@/components/sequencer-block"
 
 type AccordionSection = "input" | "style" | "ai" | null
@@ -155,9 +156,14 @@ export function LeftPanel({
   const project = useProjectStore((s) => s.project)
   const isInspector = context.mode !== "default"
   const generationState = useUiStore((s) => s.generationState)
+  const hasChordChart = Boolean(project?.chordChartRaw.trim())
+  const hasParseIssues = Boolean(
+    project && hasChordChart && parseChordChart(project.chordChartRaw, project.key).issues.length > 0
+  )
   const coordinationTruth = getLeftPanelCoordinationTruth({
     hasProject: Boolean(project),
-    hasChordChart: Boolean(project?.chordChartRaw.trim()),
+    hasChordChart,
+    hasParseIssues,
     generationState,
   })
   const defaultSection: AccordionSection =

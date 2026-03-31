@@ -116,6 +116,7 @@ export function getInputReadinessTruth({
 export function getAiAssistantReadinessTruth({
   hasProject,
   hasChordChart,
+  hasParseIssues = false,
   generationState,
 }: LeftPanelReadinessInputs): AiAssistantReadinessTruth {
   if (!hasProject) {
@@ -134,6 +135,16 @@ export function getAiAssistantReadinessTruth({
       badge: "Blocked",
       title: "Chord chart required",
       detail: "Add a chord chart in Input before asking the assistant to generate or revise the arrangement.",
+      tone: "attention",
+    }
+  }
+
+  if (hasParseIssues) {
+    return {
+      status: "blocked",
+      badge: "Blocked",
+      title: "Chord chart needs fixes",
+      detail: "Fix the flagged bars in Input before asking the assistant to generate or revise the arrangement.",
       tone: "attention",
     }
   }
@@ -243,6 +254,20 @@ export function getLeftPanelCoordinationTruth(
       title: "The chord chart unlocks the rest of the panel",
       detail: "Start in Input. A chord chart enables generation and assistant requests, while style defaults are already available for the next pass.",
       tone: "neutral",
+      sections: {
+        input: toInputSectionTruth(inputTruth),
+        style: styleTruth,
+        ai: aiTruth,
+      },
+    }
+  }
+
+  if (inputs.hasParseIssues) {
+    return {
+      badge: "Blocked",
+      title: "Chord chart fixes are blocking generation",
+      detail: "Fix the flagged bars in Input before asking the assistant to generate or revise the arrangement.",
+      tone: "attention",
       sections: {
         input: toInputSectionTruth(inputTruth),
         style: styleTruth,
