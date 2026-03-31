@@ -2,14 +2,14 @@
 
 Status date: 2026-03-31
 
-Status: landed on `main`; reverified on 2026-03-31 at head `8d593e03` after
-the chord parser failure truth slice landed, and no remaining product delta is
+Status: landed on `main`; reverified on 2026-03-31 at head `5a101df7` after
+the generation-block truth follow-up landed, and no remaining product delta is
 visible in this family beyond this evidence refresh
 
 Purpose: preserve the current chord parser failure contract and its landing
 proof in one repo-local place so future work does not have to reconstruct it
 from `src/lib/chord-chart-parser.ts`, `src/components/left-panel/InputSection.tsx`,
-and scattered tests.
+`src/hooks/useGenerate.ts`, and scattered tests.
 
 ## Parser Contract
 
@@ -23,6 +23,9 @@ and scattered tests.
   preserves why each bar was blocked.
 - The input surface summarizes both the current blocked state and the next
   repair step without requiring archaeology outside the chord chart panel.
+- Generation now fails with an explicit parse-block repair message instead of
+  crashing through a missing-truth assumption when unresolved bars are still
+  present.
 
 ## Operator-Facing Truth
 
@@ -46,13 +49,22 @@ and scattered tests.
 - the surfaced warning snippets keep the first blocked bars visible in the same
   panel instead of forcing the operator to infer which bars failed
 
+`src/hooks/useGenerate.ts` owns the generation-block truth:
+
+- generation stops before calling the generator when parser issues are present
+- the failure path prefers parser `truth.nextStep`, then parser `truth.summary`,
+  then a stable fallback derived from the issue reasons themselves
+- the operator sees a repair instruction like `Fix the flagged chord bar before
+  generating.` instead of a runtime exception string when the parser result is
+  partial or mocked
+
 ## Proof
 
 Current focused proofs for this slice:
 
-- `pnpm test -- --run src/lib/chord-chart-parser.test.ts src/components/left-panel/InputSection.test.tsx`
+- `pnpm test -- --run src/lib/chord-chart-parser.test.ts src/components/left-panel/InputSection.test.tsx src/hooks/useGenerate.test.tsx`
 - `pnpm run type-check`
-- verification head: `8d593e034064f8c38cca4f7ffdf5f9d0c69d6bc9`
+- verification head: `5a101df79d7d2f0e3d6a655ca0c1cde29ce5310e`
 
 ## Tracked Landing
 
@@ -60,16 +72,24 @@ Current focused proofs for this slice:
   `commitpath_c40ed88d Surface chord parser failure truth`
 - `fa7037078126d1837bf87c5554576cab0bfa5679`:
   `commitpath_c40ed88d Surface chord parser failure truth`
-- The current `main` head at `8d593e03` still preserves the chord parser
-  failure truth contract, and the focused parser/input proofs passed again on
-  2026-03-31 before this doc-only evidence refresh updated the repo-local
-  artifact.
+- `f2349877baf58f5d902cce598755c60387ce0bfe`:
+  `Block generation on chord parse issues`
+- `5a101df77260409c7729d0b5746f97d5a84cc15e`:
+  `commitpath_c40ed88d Harden chord parse block truth in generation`
+- The current `main` head at `5a101df7` still preserves the chord parser
+  failure truth contract, and the focused parser/input/generation proofs passed
+  again on 2026-03-31 before this doc-only evidence refresh updated the
+  repo-local artifact.
 - Commit `9150d7d0` introduced explicit issue tracking and input-surface copy
   for invalid bars, first-bar repeat markers, and repeat markers that follow
   unresolved bars.
 - Commit `fa703707` tightened the same family so repeated unresolved `%` bars
   stay visible as explicit parser failures instead of silently inheriting an
   already-bad bar state.
+- Commit `f2349877` made generation stop when parse issues remain instead of
+  proceeding with blocked input.
+- Commit `5a101df7` hardened that same generation-block path so it still emits
+  the intended repair instruction even when the parser result is partial.
 - After the 2026-03-31 recheck, this family appears exhausted until a new
   chord-parse behavior changes the contract or the proof surface.
 
@@ -79,11 +99,14 @@ The tests cover:
 - repeat markers without a previous chord
 - repeat markers that follow unresolved bars
 - input-surface summary and next-step copy for blocked bars
+- generation-block repair copy when unresolved parser issues remain
 - visible warning snippets for invalid bars and unresolved repeat markers
 
 ## Deep Home
 
 - `src/lib/chord-chart-parser.ts`
 - `src/components/left-panel/InputSection.tsx`
+- `src/hooks/useGenerate.ts`
 - `src/lib/chord-chart-parser.test.ts`
 - `src/components/left-panel/InputSection.test.tsx`
+- `src/hooks/useGenerate.test.tsx`
