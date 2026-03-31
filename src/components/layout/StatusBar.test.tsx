@@ -706,7 +706,8 @@ describe('StatusBar', () => {
 
     expect(history?.textContent).toBe('Undo ready: Split block · Redo ready: Merge blocks');
     expect(nextStep?.textContent).toBe(
-      'Use Undo to restore the arrangement captured before Split block.'
+      'Use Undo to restore the arrangement captured before Split block. ' +
+      'Use Redo to restore the arrangement captured after Merge blocks.'
     );
     expect(history?.title).toBe(
       'Undo is ready to restore the arrangement captured before Split block. ' +
@@ -731,8 +732,15 @@ describe('StatusBar', () => {
     const history = container.querySelector(
       '[data-testid="status-bar-history"]'
     ) as HTMLSpanElement | null;
+    const nextStep = container.querySelector(
+      '[data-testid="status-bar-history-next-step"]'
+    ) as HTMLSpanElement | null;
 
     expect(history?.textContent).toBe('Undo ready: Split block · Redo blocked: Broken redo');
+    expect(nextStep?.textContent).toBe(
+      'Use Undo to restore the arrangement captured before Split block. ' +
+      'Do not offer Redo for the arrangement captured after Broken redo until a valid restore snapshot is stored.'
+    );
     expect(history?.title).toBe(
       'Undo is ready to restore the arrangement captured before Split block. ' +
       'The latest redo boundary is still on the stack, but the arrangement captured after Broken redo cannot be read. ' +
