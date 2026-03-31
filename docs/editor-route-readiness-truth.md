@@ -2,9 +2,11 @@
 
 Status date: 2026-03-31
 
-Purpose: preserve the current editor route contract in one repo-local place so
-future work does not have to reconstruct it from `App.tsx`, `EditorPage.tsx`,
-and scattered tests.
+Status: landed on `main` in `c2b9ba11`
+
+Purpose: preserve the current editor route contract and its landing proof in
+one repo-local place so future work does not have to reconstruct it from
+`App.tsx`, `EditorPage.tsx`, and scattered tests.
 
 ## Route Contract
 
@@ -45,6 +47,14 @@ Current focused proofs for this slice:
 
 - `pnpm exec vitest run src/App.test.tsx src/pages/EditorPage.test.tsx`
 - `pnpm exec tsc --noEmit`
+
+## Tracked Landing
+
+- `c2b9ba11ac89eea868e1f75f569dd44b9162aa4f`:
+  `commitpath_c40ed88d: promote editor route readiness truth slice`
+- The landing made current route, fallback route, and route readiness explicit
+  across auth bootstrap, route loading, malformed-route handling, missing or
+  unavailable project states, and ready-state recovery.
 
 The tests cover:
 
