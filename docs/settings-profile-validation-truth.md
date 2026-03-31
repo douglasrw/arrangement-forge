@@ -2,7 +2,7 @@
 
 Status date: 2026-03-31
 
-Status: landed on `main`; reverified on 2026-03-31 at head `099b6052` after
+Status: landed on `main`; reverified on 2026-03-31 at head `ef91b504` after
 persisted profile validation, save-failure truth, supported-values copy, and
 default-genre regression coverage landed, and no remaining product delta is
 visible in this family beyond this evidence refresh
@@ -57,10 +57,12 @@ Current focused proofs for this slice:
 
 - `pnpm exec vitest run src/lib/profile.test.ts src/pages/SettingsPage.test.tsx`
 - `pnpm run type-check`
-- verification head: `099b6052709f9f750367b4c34c2feac66f21ed31`
+- verification head: `ef91b504f7e15c5b1a31fc35a62d03684640279f`
 
 ## Tracked Landing
 
+- `ef91b504f7e15c5b1a31fc35a62d03684640279f`:
+  `commitpath_c40ed88d Refresh settings profile validation truth evidence`
 - `099b6052709f9f750367b4c34c2feac66f21ed31`:
   `commitpath_c40ed88d Add invalid default genre settings regression`
 - `b33cb608c838c8dc85184e63b458477363ae83b5`:
@@ -78,7 +80,7 @@ Current focused proofs for this slice:
 - The landing made saved, pending, unavailable, invalid, and failed-save
   states explicit on the settings surface instead of relying on hidden
   surrounding context.
-- The current `main` head at `099b6052` still preserves that contract, and the
+- The current `main` head at `ef91b504` still preserves that contract, and the
   focused settings proofs passed again on 2026-03-31 before this doc-only
   evidence refresh updated the repo-local artifact.
 - After the 2026-03-31 recheck, this family appears exhausted until a new
