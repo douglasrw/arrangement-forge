@@ -3,7 +3,7 @@
 Status date: 2026-03-31
 
 Status: landed on `main`; reverified on 2026-03-31 at current product head
-`bb0ef690` with no remaining bounded product delta visible in this family
+`8b025e3c` with no remaining bounded product delta visible in this family
 
 Purpose: preserve the current chord parser failure contract and its landing
 proof in one repo-local place so future work does not have to reconstruct it
@@ -22,6 +22,9 @@ from `src/lib/chord-chart-parser.ts`, `src/components/left-panel/InputSection.ts
   section headers instead of being miscounted as invalid chord bars.
 - Unresolved bars still fall back to `N.C.` for generation, but the parser
   preserves why each bar was blocked.
+- Parser issue line numbers stay aligned with the original chart text even when
+  blank lines appear before a broken bar, so the surfaced repair target does
+  not drift away from what the operator sees in the editor.
 - The input surface summarizes both the current blocked state and the next
   repair step without requiring archaeology outside the chord chart panel.
 - Generation now fails with an explicit parse-block repair message instead of
@@ -42,6 +45,9 @@ from `src/lib/chord-chart-parser.ts`, `src/components/left-panel/InputSection.ts
 - Unbracketed section headers now follow the same acceptance path as imported
   chord charts, so direct text entry does not shift bar numbers or surface a
   false parse blocker just because the label was written as `Verse:`.
+- Blank lines no longer compress parser issue locations onto earlier line
+  numbers, so highlighted repairs still point at the exact line the operator
+  needs to fix in the raw chart.
 
 `src/components/left-panel/InputSection.tsx` owns the input-surface truth:
 
@@ -87,10 +93,14 @@ Current focused proofs for this slice:
 
 - `pnpm test -- --run src/lib/chord-chart-parser.test.ts src/components/left-panel/InputSection.test.tsx src/hooks/useGenerate.test.tsx`
 - `pnpm type-check`
-- verification head: `bb0ef6907c1668f001efbc94e35a1f332d4e9cf3`
+- verification head: `8b025e3c3827dd8ee97bf2f8494ba610ac6a527f`
 
 ## Tracked Landing
 
+- `8b025e3c3827dd8ee97bf2f8494ba610ac6a527f`:
+  `Fix chord parser issue line numbers`
+- `8e7cfcb5b5a86906d1d9fdbf8f2eb0a5cfcedfe7`:
+  `commitpath_c40ed88d Refresh chord parser failure truth evidence`
 - `bb0ef6907c1668f001efbc94e35a1f332d4e9cf3`:
   `Clarify chord parser blocked-state truth`
 - `f433c4ed012a35b196555b3f3e94ae02d70cf39e`:
@@ -202,6 +212,10 @@ Current focused proofs for this slice:
   `summary` fields, then reused the explicit blocked-state copy in the input
   readiness banner so the first surfaced message keeps the blocked bars visible
   without overloading the summary sentence.
+- Commit `8b025e3c` kept the same family honest at the next `main` head by
+  preserving parser issue line numbers from the original raw chart even when
+  blank lines appear before the broken bars, so the surfaced repair target does
+  not drift away from the visible editor line.
 - Commit `05e8c7c9` refreshed the same repo-local evidence after another clean
   focused recheck, keeping the artifact aligned with the latest verified
   `main` head instead of the prior product-only proof pointer.
