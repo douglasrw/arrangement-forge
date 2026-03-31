@@ -2,7 +2,7 @@
 
 Status date: 2026-03-31
 
-Status: landed on `main`; reverified on 2026-03-31 at head `7c18ba9ce471`
+Status: landed on `main`; reverified on 2026-03-31 at head `7c7511db6e87`
 after the promoted settings-profile validation truth copy landed beside the
 earlier blocked-save truth, persisted profile validation, save-failure truth,
 supported-values copy, and default-genre regression coverage, and no remaining
@@ -62,12 +62,14 @@ Current focused proofs for this slice:
 
 - `pnpm test -- --run src/pages/SettingsPage.test.tsx`
 - `pnpm run type-check`
-- verification head: `7c18ba9ce471bf3bf350583a75170ded2905ac50`
+- verification head: `7c7511db6e87769d0394b534169c8d4595dd4053`
 
 ## Tracked Landing
 
 - `7c18ba9ce471bf3bf350583a75170ded2905ac50`:
   `Promote settings profile validation truth`
+- `7c7511db6e87769d0394b534169c8d4595dd4053`:
+  `commitpath_c40ed88d Refresh settings profile validation truth evidence`
 - `169548e6644aa2f46aeb6d2576dabddf2f3ba0a7`:
   `commitpath_c40ed88d Refresh settings profile validation truth evidence`
 - `e7ef800e0ea3bbe42d5844cbd2c5d8436a65d325`:
@@ -95,7 +97,7 @@ Current focused proofs for this slice:
 - The landing made saved, pending, unavailable, blocked-save, invalid, and
   failed-save states explicit on the settings surface instead of relying on
   hidden surrounding context.
-- The current `main` head at `7c18ba9ce471` preserves that contract, and the
+- The current `main` head at `7c7511db6e87` preserves that contract, and the
   focused settings proofs passed again on 2026-03-31 before this doc-only
   evidence refresh updated the repo-local artifact.
 - After the 2026-03-31 recheck, this family appears exhausted until a new
