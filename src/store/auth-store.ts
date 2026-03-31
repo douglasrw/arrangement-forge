@@ -286,6 +286,20 @@ export function selectAuthTruth(
   return getAuthTruth(state);
 }
 
+export function shouldPreserveSignedOutTruthOnTrailingSignOut(
+  state: AuthTruthState
+): boolean {
+  const authTruth = getAuthTruth(state);
+
+  return (
+    authTruth.status === 'signed-out'
+    && authTruth.signedOutReason !== null
+    && authTruth.signedOutReason !== 'signed-out'
+    && !state.user
+    && !state.profile
+  );
+}
+
 export function getAuthStoreTruthSlice(
   state: AuthStoreTruthSliceState
 ): AuthStoreTruthSlice {

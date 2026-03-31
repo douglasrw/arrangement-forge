@@ -4,6 +4,7 @@ import {
   getAuthStoreTruthSlice,
   getAuthTruth,
   selectAuthStoreTruthSlice,
+  shouldPreserveSignedOutTruthOnTrailingSignOut,
   useAuthStore,
 } from './auth-store';
 
@@ -140,6 +141,28 @@ describe('auth-store gate truth', () => {
     useAuthStore.getState().setSignedOut('profile-load-failed');
 
     expect(getAuthTruth(useAuthStore.getState())).toMatchObject(getAuthGateTruth(useAuthStore.getState()));
+  });
+
+  it('names when a trailing sign-out must preserve the bootstrap truth instead of flattening it', () => {
+    useAuthStore.getState().setSignedOut('missing-profile');
+
+    expect(shouldPreserveSignedOutTruthOnTrailingSignOut(useAuthStore.getState())).toBe(true);
+    expect(
+      shouldPreserveSignedOutTruthOnTrailingSignOut({
+        user: null,
+        profile: null,
+        authStatus: 'signed-out',
+        signedOutReason: 'signed-out',
+      })
+    ).toBe(false);
+    expect(
+      shouldPreserveSignedOutTruthOnTrailingSignOut({
+        user: { id: 'user-1' } as const,
+        profile: null,
+        authStatus: 'signed-out',
+        signedOutReason: 'missing-profile',
+      })
+    ).toBe(false);
   });
 
   it('exposes one named auth slice with user, current state, and next step', () => {
