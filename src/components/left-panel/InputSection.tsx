@@ -260,18 +260,17 @@ export function InputSection() {
   const parseResult = hasProject && hasChordChart
     ? parseChordChart(chordChartRaw, projectKey)
     : null
-  const hasParseIssues = Boolean(parseResult && parseResult.issues.length > 0)
-  const parseIssueCount = parseResult?.issues.length ?? 0
+  const hasParseBlockers = parseResult?.truth.state === "blocked"
   const isGenerating = generationState === "generating"
   const inputReadiness = getInputReadinessTruth({
     hasProject,
     hasChordChart,
-    hasParseIssues,
+    hasParseIssues: hasParseBlockers,
     generationState,
     isImporting,
   })
   const uploadBlocked = !hasProject || isGenerating || isImporting
-  const canGenerate = hasProject && hasChordChart && !hasParseIssues && !isGenerating && !isImporting
+  const canGenerate = hasProject && hasChordChart && !hasParseBlockers && !isGenerating && !isImporting
   const uploadStatusMessage = !hasProject
     ? "Load a project to enable chord chart imports."
     : isGenerating
@@ -281,22 +280,22 @@ export function InputSection() {
         : uploadFeedback.message
   const parseTruth = parseResult?.truth ?? null
   const chordChartFieldHintId = "chord-chart-raw-input-hint"
-  const inputReadinessTitle = hasParseIssues
+  const inputReadinessTitle = hasParseBlockers
     ? parseTruth?.title ?? inputReadiness.title
     : inputReadiness.title
-  const inputReadinessDetail = hasParseIssues
+  const inputReadinessDetail = hasParseBlockers
     ? [
       parseTruth?.currentState,
       parseTruth?.nextStep ? `Next step: ${parseTruth.nextStep}` : null,
     ].filter(Boolean).join(" ")
     : inputReadiness.detail
-  const parseFeedbackHighlights = hasParseIssues && parseTruth?.issueHighlights.length
+  const parseFeedbackHighlights = hasParseBlockers && parseTruth?.issueHighlights.length
     ? `Flagged chart locations: ${parseTruth.issueHighlights.join(" ")}`
     : null
-  const parseFeedbackOverflow = hasParseIssues && (parseTruth?.remainingIssueCount ?? 0) > 0
+  const parseFeedbackOverflow = hasParseBlockers && (parseTruth?.remainingIssueCount ?? 0) > 0
     ? `${parseTruth?.remainingIssueCount} more flagged ${parseTruth?.remainingIssueCount === 1 ? "bar needs" : "bars need"} review in the chord chart before generation.`
     : null
-  const chordChartEditorHint = hasParseIssues && parseTruth
+  const chordChartEditorHint = hasParseBlockers && parseTruth
     ? [
       parseTruth.currentState,
       parseTruth.nextStep ? `Next step: ${parseTruth.nextStep}` : "Fix the flagged chord bars before generating.",
@@ -412,7 +411,7 @@ export function InputSection() {
         </div>
       </div>
 
-      {hasParseIssues && (
+      {hasParseBlockers && (
         <div
           data-chord-chart-parse-state="blocked"
           role="status"
@@ -489,22 +488,22 @@ export function InputSection() {
               onChange={(e) => updateProject({ chordChartRaw: e.target.value })}
               rows={4}
               placeholder={"[Verse]\nCmaj7 | Dm7 | G7 | Cmaj7\n\n[Chorus]\nF | G | Am | C"}
-              aria-invalid={hasParseIssues}
+              aria-invalid={hasParseBlockers}
               aria-describedby={chordChartFieldHintId}
               className={cn(
                 "w-full resize-none rounded-md bg-secondary px-3 py-2",
                 "font-mono text-xs leading-relaxed text-foreground",
                 "placeholder:text-muted-foreground",
-                hasParseIssues ? "border border-destructive/60" : "border border-border",
+                hasParseBlockers ? "border border-destructive/60" : "border border-border",
                 "focus:border-ring focus:outline-none focus:ring-1 focus:ring-ring/50"
               )}
             />
             <p
               id={chordChartFieldHintId}
-              data-chord-chart-editor-state={hasParseIssues ? "blocked" : "ready"}
+              data-chord-chart-editor-state={hasParseBlockers ? "blocked" : "ready"}
               className={cn(
                 "text-xs leading-relaxed",
-                hasParseIssues ? "text-destructive" : "text-muted-foreground"
+                hasParseBlockers ? "text-destructive" : "text-muted-foreground"
               )}
             >
               {chordChartEditorHint}

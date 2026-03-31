@@ -31,6 +31,7 @@ type RunGenerationOptions = {
 type ChordParseFailureLike = {
   issues?: Array<{ reason?: string }>;
   truth?: {
+    state?: 'ready' | 'blocked';
     currentState?: string | null;
     nextStep?: string | null;
     summary?: string | null;
@@ -202,7 +203,7 @@ export function useGenerate() {
       const parseResult = parseChordChart(project.chordChartRaw, project.key);
       const parseIssues = parseResult.issues ?? [];
 
-      if (parseIssues.length > 0) {
+      if (parseResult.truth?.state === 'blocked' || parseIssues.length > 0) {
         throw new Error(describeChordParseBlocker(parseResult));
       }
 

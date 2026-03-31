@@ -55,7 +55,7 @@ export function parseChordChart(raw: string, key: string): ChordChartParseResult
       chords: [],
       warnings: [],
       issues: [],
-      truth: buildParseTruth([], []),
+      truth: buildParseTruth([], [], false, false),
     };
   }
 
@@ -108,13 +108,34 @@ export function parseChordChart(raw: string, key: string): ChordChartParseResult
     }
   }
 
-  return { chords, warnings, issues, truth: buildParseTruth(issues, warnings) };
+  return {
+    chords,
+    warnings,
+    issues,
+    truth: buildParseTruth(issues, warnings, true, chords.length > 0),
+  };
 }
 
 function buildParseTruth(
   issues: ChordChartParseIssue[],
-  warnings: string[]
+  warnings: string[],
+  hasChartContent: boolean,
+  hasPlayableBars: boolean
 ): ChordChartParseTruth {
+  if (hasChartContent && !hasPlayableBars) {
+    return {
+      state: 'blocked',
+      title: 'Chord chart needs chord bars',
+      currentState:
+        'No playable chord bars are present yet, so Generate stays blocked until the chart includes at least one chord bar.',
+      summary: 'Section labels and blank lines do not create playable bars on their own.',
+      nextStep: 'Add at least one chord bar such as Cmaj7 | Fmaj7 | G7 | Cmaj7.',
+      blockedBars: [],
+      issueHighlights: [],
+      remainingIssueCount: 0,
+    };
+  }
+
   if (issues.length === 0) {
     return {
       state: 'ready',

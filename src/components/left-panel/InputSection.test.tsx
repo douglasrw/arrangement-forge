@@ -219,6 +219,46 @@ describe('InputSection upload tab', () => {
     expect(getGenerateButton(mounted.container).disabled).toBe(false);
   });
 
+  it('keeps header-only charts visibly blocked until a playable bar is entered', () => {
+    useProjectStore.setState({
+      project: makeProject({
+        chordChartRaw: '[Verse]\n\nChorus:',
+      }),
+    });
+
+    const mounted = renderSection();
+    mountedRoot = mounted.root;
+    mountedContainer = mounted.container;
+    openTextTab(mounted.container);
+
+    const parseTruth = mounted.container.querySelector(
+      '[data-chord-chart-parse-state]'
+    ) as HTMLDivElement | null;
+    const readiness = mounted.container.querySelector('[data-input-readiness]') as HTMLDivElement | null;
+    const chordChartInput = mounted.container.querySelector('#chord-chart-raw-input') as HTMLTextAreaElement | null;
+    const chordChartHint = mounted.container.querySelector(
+      '[data-chord-chart-editor-state]'
+    ) as HTMLParagraphElement | null;
+
+    expect(parseTruth?.getAttribute('data-chord-chart-parse-state')).toBe('blocked');
+    expect(readiness?.getAttribute('data-input-readiness')).toBe('blocked');
+    expect(chordChartInput?.getAttribute('aria-invalid')).toBe('true');
+    expect(mounted.container.textContent).toContain('Chord chart needs chord bars');
+    expect(mounted.container.textContent).toContain(
+      'No playable chord bars are present yet, so Generate stays blocked until the chart includes at least one chord bar.'
+    );
+    expect(mounted.container.textContent).toContain(
+      'Section labels and blank lines do not create playable bars on their own.'
+    );
+    expect(mounted.container.textContent).toContain(
+      'Next step: Add at least one chord bar such as Cmaj7 | Fmaj7 | G7 | Cmaj7.'
+    );
+    expect(chordChartHint?.textContent).toContain(
+      'No playable chord bars are present yet, so Generate stays blocked until the chart includes at least one chord bar.'
+    );
+    expect(getGenerateButton(mounted.container).disabled).toBe(true);
+  });
+
   it('surfaces parse failure truth when the current chord chart has invalid bars', () => {
     useProjectStore.setState({
       project: makeProject({

@@ -158,7 +158,9 @@ export function LeftPanel({
   const generationState = useUiStore((s) => s.generationState)
   const hasChordChart = Boolean(project?.chordChartRaw.trim())
   const hasParseIssues = Boolean(
-    project && hasChordChart && parseChordChart(project.chordChartRaw, project.key).issues.length > 0
+    project &&
+    hasChordChart &&
+    parseChordChart(project.chordChartRaw, project.key).truth.state === "blocked"
   )
   const coordinationTruth = getLeftPanelCoordinationTruth({
     hasProject: Boolean(project),
