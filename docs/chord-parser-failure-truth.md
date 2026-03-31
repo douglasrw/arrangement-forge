@@ -2,9 +2,10 @@
 
 Status date: 2026-03-31
 
-Status: landed on `main`; reverified on 2026-03-31 at current head so blocked
-bars, overflow, and generation-stop repair copy still stay explicit in the
-input panel instead of being inferred from truncated warning copy
+Status: landed on `main`; reverified on 2026-03-31 at current head
+`2d3393f2` before this artifact refresh, so blocked bars, overflow, and
+generation-stop repair copy still stay explicit in the input panel instead of
+being inferred from truncated warning copy
 
 Purpose: preserve the current chord parser failure contract and its landing
 proof in one repo-local place so future work does not have to reconstruct it
@@ -74,7 +75,7 @@ Current focused proofs for this slice:
 
 - `npm run test -- --run src/lib/chord-chart-parser.test.ts src/components/left-panel/InputSection.test.tsx src/hooks/useGenerate.test.tsx`
 - `npm run type-check`
-- verification head: working tree changes verified on top of `d9be6cb233c4f6c9980d518c1734477f1da0ba3f` before this artifact refresh
+- verification head: working tree changes verified on top of `2d3393f2d95f63ca94c1e42ed1dcfda0f695fd70` before this artifact refresh
 
 ## Tracked Landing
 
@@ -162,9 +163,9 @@ Current focused proofs for this slice:
 - Commit `d9be6cb2` repeated that same repo-local evidence refresh after
   another clean focused recheck, keeping the artifact aligned with the latest
   verified `main` head instead of the prior evidence pointer.
-- After the 2026-03-31 recheck at current head `d9be6cb2`, this family appears
-  exhausted again until a new chord-parse behavior changes the contract or the
-  proof surface.
+- After the 2026-03-31 recheck at current head `2d3393f2`, this family still
+  appears exhausted until a new chord-parse behavior changes the contract or
+  the proof surface.
 
 The tests cover:
 
