@@ -14,7 +14,9 @@ const authApi = vi.hoisted(() => ({
       return {
         status: 'checking-session',
         access: 'pending',
+        currentState: 'Checking for an existing session.',
         nextStep: 'wait-for-session',
+        nextStepDetail: 'Wait for session bootstrap to finish.',
         signedOutReason: null,
       };
     }
@@ -23,7 +25,9 @@ const authApi = vi.hoisted(() => ({
       return {
         status: 'authenticated',
         access: 'granted',
+        currentState: 'An authenticated session is ready.',
         nextStep: 'open-app',
+        nextStepDetail: 'Open the app.',
         signedOutReason: null,
       };
     }
@@ -31,6 +35,18 @@ const authApi = vi.hoisted(() => ({
     return {
       status: 'signed-out',
       access: 'blocked',
+      currentState:
+        this.signedOutReason === 'email-confirmation-required'
+          ? 'Email confirmation is still required before a session can start.'
+          : this.signedOutReason === 'missing-profile'
+            ? 'The saved profile is missing, so the session cannot reopen yet.'
+            : this.signedOutReason === 'profile-load-failed'
+              ? 'The saved profile could not be loaded.'
+              : this.signedOutReason === 'session-lookup-failed'
+                ? 'The previous session could not be restored.'
+                : this.signedOutReason === 'signed-out'
+                  ? 'The previous session has been signed out.'
+                  : 'No saved session was found.',
       nextStep:
         this.signedOutReason === 'email-confirmation-required'
           ? 'confirm-email'
@@ -41,6 +57,18 @@ const authApi = vi.hoisted(() => ({
               : this.signedOutReason === 'session-lookup-failed'
                 ? 'retry-session'
                 : 'sign-in',
+      nextStepDetail:
+        this.signedOutReason === 'email-confirmation-required'
+          ? 'Open the confirmation email, then sign in again.'
+          : this.signedOutReason === 'missing-profile'
+            ? 'Restore or complete the profile, then sign in again.'
+            : this.signedOutReason === 'profile-load-failed'
+              ? 'Retry the profile load by signing in again.'
+              : this.signedOutReason === 'session-lookup-failed'
+                ? 'Retry session restoration by signing in again.'
+                : this.signedOutReason === 'signed-out'
+                  ? 'Sign in again to continue.'
+                  : 'Sign in to reopen the app.',
       signedOutReason: this.signedOutReason,
     };
   },
@@ -246,8 +274,13 @@ describe('LoginPage failure truth', () => {
     mountedRoot = mounted.root;
     mountedContainer = mounted.container;
 
-    expect(mounted.container.textContent).toContain('Profile setup is incomplete');
-    expect(mounted.container.textContent).toContain('no saved profile was found');
+    expect(mounted.container.textContent).toContain('Authentication blocked');
+    expect(mounted.container.textContent).toContain(
+      'The saved profile is missing, so the session cannot reopen yet.'
+    );
+    expect(mounted.container.textContent).toContain(
+      'Restore or complete the profile, then sign in again.'
+    );
     expect(mounted.container.textContent).toContain('return you to settings');
   });
 
@@ -408,7 +441,13 @@ describe('LoginPage failure truth', () => {
 
     expect(authApi.signUp).toHaveBeenCalledWith('ash@example.com', 'secret-1');
     expect(navigateMock).not.toHaveBeenCalled();
-    expect(mounted.container.textContent).toContain('Check your email to finish signing up');
+    expect(mounted.container.textContent).toContain('Authentication blocked');
+    expect(mounted.container.textContent).toContain(
+      'Email confirmation is still required before a session can start.'
+    );
+    expect(mounted.container.textContent).toContain(
+      'Open the confirmation email, then sign in again.'
+    );
     expect(mounted.container.textContent).toContain('return you to settings');
     expect(mounted.container.querySelector('form')).not.toBeNull();
   });
@@ -466,6 +505,7 @@ describe('LoginPage failure truth', () => {
 
     expect(mounted.container.querySelector('[data-testid="auth-loading-screen"]')).not.toBeNull();
     expect(mounted.container.textContent).toContain('Waiting on authentication');
+    expect(mounted.container.textContent).toContain('Checking for an existing session.');
     expect(mounted.container.textContent).toContain('continue to settings');
     expect(mounted.container.querySelector('form')).toBeNull();
   });
@@ -482,6 +522,7 @@ describe('LoginPage failure truth', () => {
 
     expect(mounted.container.querySelector('[data-testid="auth-loading-screen"]')).not.toBeNull();
     expect(mounted.container.textContent).toContain('Waiting on authentication');
+    expect(mounted.container.textContent).toContain('An authenticated session is ready.');
     expect(mounted.container.textContent).toContain('Returning you to settings');
     expect(mounted.container.querySelector('form')).toBeNull();
 

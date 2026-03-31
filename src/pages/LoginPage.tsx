@@ -1,7 +1,7 @@
 import { useState, useEffect, FormEvent } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
-import type { AuthTruth, SignedOutReason } from '@/store/auth-store';
+import type { AuthTruth } from '@/store/auth-store';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -63,8 +63,8 @@ function AuthLoadingScreen({
             <h1 className="text-base font-semibold text-foreground">Waiting on authentication</h1>
             <p className="text-sm text-muted-foreground">
               {authTruth.nextStep === 'open-app'
-                ? `Your session is ready. Returning you to ${recoveryDestination}.`
-                : `Checking for an existing session before showing the form. If one is found, you will continue to ${recoveryDestination}.`}
+                ? `${authTruth.currentState} Returning you to ${recoveryDestination}.`
+                : `${authTruth.currentState} ${authTruth.nextStepDetail} If one is found, you will continue to ${recoveryDestination}.`}
             </p>
           </div>
         </div>
@@ -84,51 +84,16 @@ function getFailureTitle(path: 'signin' | 'signup' | 'google') {
   }
 }
 
-function getSignedOutNotice(reason: SignedOutReason | null, recoveryDestination: string) {
-  switch (reason) {
-    case 'signed-out':
-      return {
-        title: 'You have been signed out',
-        description: `Sign in again to return to ${recoveryDestination}.`,
-      };
-    case 'email-confirmation-required':
-      return {
-        title: 'Check your email to finish signing up',
-        description: `Arrangement Forge created your account but did not receive an active session yet. Open the confirmation email, then sign in again and it will return you to ${recoveryDestination}.`,
-      };
-    case 'missing-profile':
-      return {
-        title: 'Profile setup is incomplete',
-        description: `Arrangement Forge could not reopen the session because no saved profile was found. Sign in again after your profile is ready, and it will return you to ${recoveryDestination}.`,
-      };
-    case 'profile-load-failed':
-      return {
-        title: 'Profile could not be restored',
-        description: `Arrangement Forge could not load your saved profile. Sign in again to retry, and it will return you to ${recoveryDestination}.`,
-      };
-    case 'session-lookup-failed':
-      return {
-        title: 'Session could not be restored',
-        description: `Arrangement Forge could not confirm your previous session. Sign in again to continue to ${recoveryDestination}.`,
-      };
-    default:
-      return {
-        title: 'Authentication blocked',
-        description: `Sign in with email, create an account, or continue with Google to unblock access. After authentication, Arrangement Forge will return you to ${recoveryDestination}.`,
-      };
-  }
-}
-
 function AuthStatusNotice({
   activeSubmissionPath,
+  authTruth,
   error,
   recoveryPath,
-  signedOutReason,
 }: {
   activeSubmissionPath: 'signin' | 'signup' | 'google' | null;
+  authTruth: AuthTruth;
   error: { path: 'signin' | 'signup' | 'google'; message: string } | null;
   recoveryPath: string;
-  signedOutReason: SignedOutReason | null;
 }) {
   const recoveryDestination = describeRecoveryDestination(recoveryPath);
 
@@ -165,12 +130,16 @@ function AuthStatusNotice({
     );
   }
 
-  const signedOutNotice = getSignedOutNotice(signedOutReason, recoveryDestination);
-
   return (
     <Alert data-testid="auth-status-notice">
-      <AlertTitle>{signedOutNotice.title}</AlertTitle>
-      <AlertDescription>{signedOutNotice.description}</AlertDescription>
+      <AlertTitle>Authentication blocked</AlertTitle>
+      <AlertDescription>
+        <p>{authTruth.currentState}</p>
+        <p>
+          {authTruth.nextStepDetail} After authentication, Arrangement Forge will return you to{' '}
+          {recoveryDestination}.
+        </p>
+      </AlertDescription>
     </Alert>
   );
 }
@@ -261,9 +230,9 @@ export default function LoginPage() {
 
           <AuthStatusNotice
             activeSubmissionPath={activeSubmissionPath}
+            authTruth={authTruth}
             error={error}
             recoveryPath={recoveryPath}
-            signedOutReason={authTruth.signedOutReason}
           />
 
           {/* Mode toggle */}

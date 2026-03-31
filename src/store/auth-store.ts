@@ -26,7 +26,9 @@ export type AuthGateNextStep =
 
 export interface AuthGateTruth {
   access: AuthGateAccess;
+  currentState: string;
   nextStep: AuthGateNextStep;
+  nextStepDetail: string;
   signedOutReason: SignedOutReason | null;
 }
 
@@ -43,52 +45,70 @@ export interface AuthStoreTruthSlice {
 
 const CHECKING_SESSION_AUTH_GATE: AuthGateTruth = {
   access: 'pending',
+  currentState: 'Checking for an existing session.',
   nextStep: 'wait-for-session',
+  nextStepDetail: 'Wait for session bootstrap to finish.',
   signedOutReason: null,
 };
 
 const AUTHENTICATED_AUTH_GATE: AuthGateTruth = {
   access: 'granted',
+  currentState: 'An authenticated session is ready.',
   nextStep: 'open-app',
+  nextStepDetail: 'Open the app.',
   signedOutReason: null,
 };
 
 const SIGNED_OUT_AUTH_GATES: Record<SignedOutReason, AuthGateTruth> = {
   'no-session': {
     access: 'blocked',
+    currentState: 'No saved session was found.',
     nextStep: 'sign-in',
+    nextStepDetail: 'Sign in to reopen the app.',
     signedOutReason: 'no-session',
   },
   'signed-out': {
     access: 'blocked',
+    currentState: 'The previous session has been signed out.',
     nextStep: 'sign-in',
+    nextStepDetail: 'Sign in again to continue.',
     signedOutReason: 'signed-out',
   },
   'email-confirmation-required': {
     access: 'blocked',
+    currentState: 'Email confirmation is still required before a session can start.',
     nextStep: 'confirm-email',
+    nextStepDetail: 'Open the confirmation email, then sign in again.',
     signedOutReason: 'email-confirmation-required',
   },
   'missing-profile': {
     access: 'blocked',
+    currentState: 'The saved profile is missing, so the session cannot reopen yet.',
     nextStep: 'complete-profile',
+    nextStepDetail: 'Restore or complete the profile, then sign in again.',
     signedOutReason: 'missing-profile',
   },
   'profile-load-failed': {
     access: 'blocked',
+    currentState: 'The saved profile could not be loaded.',
     nextStep: 'retry-profile-load',
+    nextStepDetail: 'Retry the profile load by signing in again.',
     signedOutReason: 'profile-load-failed',
   },
   'session-lookup-failed': {
     access: 'blocked',
+    currentState: 'The previous session could not be restored.',
     nextStep: 'retry-session',
+    nextStepDetail: 'Retry session restoration by signing in again.',
     signedOutReason: 'session-lookup-failed',
   },
 };
 
 const SIGNED_OUT_WITHOUT_REASON_AUTH_GATE: AuthGateTruth = {
   access: 'blocked',
+  currentState: 'Authentication is blocked until a new session starts.',
   nextStep: 'sign-in',
+  nextStepDetail: 'Sign in to continue.',
   signedOutReason: null,
 };
 

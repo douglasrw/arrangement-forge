@@ -252,24 +252,32 @@ describe('useAuth auth action failures', () => {
         authTruth: {
           status: 'signed-out',
           access: 'blocked',
+          currentState: 'No saved session was found.',
           nextStep: 'sign-in',
+          nextStepDetail: 'Sign in to reopen the app.',
           signedOutReason: 'no-session',
         },
         authGate: {
           access: 'blocked',
+          currentState: 'No saved session was found.',
           nextStep: 'sign-in',
+          nextStepDetail: 'Sign in to reopen the app.',
           signedOutReason: 'no-session',
         },
       },
       authTruth: {
         status: 'signed-out',
         access: 'blocked',
+        currentState: 'No saved session was found.',
         nextStep: 'sign-in',
+        nextStepDetail: 'Sign in to reopen the app.',
         signedOutReason: 'no-session',
       },
       authGate: {
         access: 'blocked',
+        currentState: 'No saved session was found.',
         nextStep: 'sign-in',
+        nextStepDetail: 'Sign in to reopen the app.',
         signedOutReason: 'no-session',
       },
     });
@@ -296,7 +304,9 @@ describe('useAuth auth action failures', () => {
     });
     expect(hookValue!.authGate).toEqual({
       access: 'pending',
+      currentState: 'Checking for an existing session.',
       nextStep: 'wait-for-session',
+      nextStepDetail: 'Wait for session bootstrap to finish.',
       signedOutReason: null,
     });
   });
@@ -363,7 +373,9 @@ describe('useAuth auth action failures', () => {
     });
     expect(hookValue!.authGate).toEqual({
       access: 'blocked',
+      currentState: 'Email confirmation is still required before a session can start.',
       nextStep: 'confirm-email',
+      nextStepDetail: 'Open the confirmation email, then sign in again.',
       signedOutReason: 'email-confirmation-required',
     });
     expect(useUiStore.getState().chordDisplayMode).toBe('letter');
@@ -388,13 +400,17 @@ describe('useAuth auth action failures', () => {
 
     expect(hookValue!.authGate).toEqual({
       access: 'blocked',
+      currentState: 'The saved profile is missing, so the session cannot reopen yet.',
       nextStep: 'complete-profile',
+      nextStepDetail: 'Restore or complete the profile, then sign in again.',
       signedOutReason: 'missing-profile',
     });
     expect(hookValue!.authTruth).toEqual({
       status: 'signed-out',
       access: 'blocked',
+      currentState: 'The saved profile is missing, so the session cannot reopen yet.',
       nextStep: 'complete-profile',
+      nextStepDetail: 'Restore or complete the profile, then sign in again.',
       signedOutReason: 'missing-profile',
     });
   });
@@ -461,12 +477,16 @@ describe('useAuth auth action failures', () => {
       authTruth: {
         status: 'authenticated',
         access: 'granted',
+        currentState: 'An authenticated session is ready.',
         nextStep: 'open-app',
+        nextStepDetail: 'Open the app.',
         signedOutReason: null,
       },
       authGate: {
         access: 'granted',
+        currentState: 'An authenticated session is ready.',
         nextStep: 'open-app',
+        nextStepDetail: 'Open the app.',
         signedOutReason: null,
       },
     });
@@ -600,7 +620,9 @@ describe('useAuth session bootstrap truth', () => {
 
     expect(hookValue!.authGate).toEqual({
       access: 'blocked',
+      currentState: 'The saved profile is missing, so the session cannot reopen yet.',
       nextStep: 'complete-profile',
+      nextStepDetail: 'Restore or complete the profile, then sign in again.',
       signedOutReason: 'missing-profile',
     });
   });

@@ -9,13 +9,17 @@ describe('auth-store gate truth', () => {
   it('stores the pending next step while session bootstrap is in progress', () => {
     expect(getAuthGateTruth(useAuthStore.getState())).toEqual({
       access: 'pending',
+      currentState: 'Checking for an existing session.',
       nextStep: 'wait-for-session',
+      nextStepDetail: 'Wait for session bootstrap to finish.',
       signedOutReason: null,
     });
     expect(getAuthTruth(useAuthStore.getState())).toEqual({
       status: 'checking-session',
       access: 'pending',
+      currentState: 'Checking for an existing session.',
       nextStep: 'wait-for-session',
+      nextStepDetail: 'Wait for session bootstrap to finish.',
       signedOutReason: null,
     });
   });
@@ -25,13 +29,17 @@ describe('auth-store gate truth', () => {
 
     expect(getAuthGateTruth(useAuthStore.getState())).toEqual({
       access: 'blocked',
+      currentState: 'The saved profile is missing, so the session cannot reopen yet.',
       nextStep: 'complete-profile',
+      nextStepDetail: 'Restore or complete the profile, then sign in again.',
       signedOutReason: 'missing-profile',
     });
     expect(getAuthTruth(useAuthStore.getState())).toEqual({
       status: 'signed-out',
       access: 'blocked',
+      currentState: 'The saved profile is missing, so the session cannot reopen yet.',
       nextStep: 'complete-profile',
+      nextStepDetail: 'Restore or complete the profile, then sign in again.',
       signedOutReason: 'missing-profile',
     });
   });
@@ -47,7 +55,9 @@ describe('auth-store gate truth', () => {
     ).toEqual({
       status: 'signed-out',
       access: 'blocked',
+      currentState: 'The saved profile is missing, so the session cannot reopen yet.',
       nextStep: 'complete-profile',
+      nextStepDetail: 'Restore or complete the profile, then sign in again.',
       signedOutReason: 'missing-profile',
     });
   });
@@ -60,7 +70,9 @@ describe('auth-store gate truth', () => {
     expect(getAuthTruth(state)).toEqual({
       status: 'checking-session',
       access: 'pending',
+      currentState: 'Checking for an existing session.',
       nextStep: 'wait-for-session',
+      nextStepDetail: 'Wait for session bootstrap to finish.',
       signedOutReason: null,
     });
   });
@@ -84,12 +96,16 @@ describe('auth-store gate truth', () => {
       authTruth: {
         status: 'authenticated',
         access: 'granted',
+        currentState: 'An authenticated session is ready.',
         nextStep: 'open-app',
+        nextStepDetail: 'Open the app.',
         signedOutReason: null,
       },
       authGate: {
         access: 'granted',
+        currentState: 'An authenticated session is ready.',
         nextStep: 'open-app',
+        nextStepDetail: 'Open the app.',
         signedOutReason: null,
       },
     });
