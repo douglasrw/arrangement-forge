@@ -2,9 +2,9 @@
 
 Status date: 2026-03-31
 
-Status: landed on `main`; reverified on 2026-03-31 with upload blocked-title
-truth preserved at current `HEAD`, and no remaining bounded product delta is
-visible in this family
+Status: landed on `main`; reverified on 2026-03-31 at proof head `2d3ca1b6`
+with upload blocked-title truth preserved, and no remaining bounded product
+delta is visible in this family
 
 Purpose: preserve the current chord parser failure contract and its landing
 proof in one repo-local place so future work does not have to reconstruct it
@@ -134,7 +134,7 @@ Current focused proofs for this slice:
 
 - `pnpm test -- --run src/lib/chord-chart-parser.test.ts src/components/left-panel/InputSection.test.tsx src/hooks/useGenerate.test.tsx`
 - `pnpm type-check`
-- verification head: current repo `HEAD` at verification time
+- verification head for this recheck: `2d3ca1b60357f31d413e62066a79d54d8008a6c9`
 
 ## Tracked Landing
 
@@ -427,6 +427,11 @@ Current focused proofs for this slice:
   same focused proof results again with no remaining bounded product-file
   delta in this family, so the honest move remains to stop here unless a new
   parser-truth behavior changes the contract or proof surface.
+- The latest 2026-03-31 recheck at verified repo head `2d3ca1b6` produced the
+  same focused proof results again with no remaining bounded product-file
+  delta in this family, so the honest move remained another repo-local
+  evidence refresh instead of reopening the parser or input surfaces without a
+  fresh product truth gap.
 
 The tests cover:
 
