@@ -49,15 +49,17 @@ export function AiAssistantSection() {
 
   const trimmedInput = input.trim()
   const hasChordChart = Boolean(project?.chordChartRaw.trim())
-  const hasParseIssues = Boolean(
-    project && hasChordChart && parseChordChart(project.chordChartRaw, project.key).issues.length > 0
-  )
+  const parseTruth = project && hasChordChart
+    ? parseChordChart(project.chordChartRaw, project.key).truth
+    : null
+  const hasParseIssues = parseTruth?.state === "blocked"
   const isGenerating = generationState === "generating"
   const canSend = Boolean(project && hasChordChart && !hasParseIssues && trimmedInput && !isGenerating)
   const assistantReadiness = getAiAssistantReadinessTruth({
     hasProject: Boolean(project),
     hasChordChart,
     hasParseIssues,
+    parseTruth,
     generationState,
   })
   const composerStatus = assistantReadiness.status === "ready"

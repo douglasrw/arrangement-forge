@@ -285,6 +285,7 @@ export function InputSection() {
     hasProject,
     hasChordChart,
     hasParseIssues: hasParseBlockers,
+    parseTruth: parseResult?.truth ?? null,
     generationState,
     isImporting,
   })

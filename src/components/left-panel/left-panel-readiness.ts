@@ -1,3 +1,4 @@
+import type { ChordChartParseTruth } from "@/lib/chord-chart-parser"
 import type { GenerationState } from "@/types"
 
 export type LeftPanelTruthTone = "ready" | "attention" | "neutral"
@@ -6,6 +7,7 @@ type LeftPanelReadinessInputs = {
   hasProject: boolean
   hasChordChart: boolean
   hasParseIssues?: boolean
+  parseTruth?: ChordChartParseTruth | null
   generationState: GenerationState
   isImporting?: boolean
 }
@@ -53,10 +55,30 @@ export type LeftPanelCoordinationTruth = {
   }
 }
 
+function describeBlockedChordChart(parseTruth?: ChordChartParseTruth | null) {
+  const currentState = parseTruth?.currentState?.trim()
+  const nextStep = parseTruth?.nextStep?.trim()
+
+  if (currentState && nextStep) {
+    return `${currentState} Next step: ${nextStep}`
+  }
+
+  if (currentState) {
+    return currentState
+  }
+
+  if (nextStep) {
+    return `Next step: ${nextStep}`
+  }
+
+  return "Fix the chord chart in Input before generating."
+}
+
 export function getInputReadinessTruth({
   hasProject,
   hasChordChart,
   hasParseIssues = false,
+  parseTruth,
   generationState,
   isImporting = false,
 }: LeftPanelReadinessInputs): InputReadinessTruth {
@@ -101,7 +123,7 @@ export function getInputReadinessTruth({
       state: "blocked",
       badge: "Blocked",
       title: "Chord chart needs fixes",
-      detail: "Flagged bars would resolve to N.C. during generation. Fix the chart before generating.",
+      detail: describeBlockedChordChart(parseTruth),
     }
   }
 
@@ -117,6 +139,7 @@ export function getAiAssistantReadinessTruth({
   hasProject,
   hasChordChart,
   hasParseIssues = false,
+  parseTruth,
   generationState,
 }: LeftPanelReadinessInputs): AiAssistantReadinessTruth {
   if (!hasProject) {
@@ -144,7 +167,7 @@ export function getAiAssistantReadinessTruth({
       status: "blocked",
       badge: "Blocked",
       title: "Chord chart needs fixes",
-      detail: "Fix the flagged bars in Input before asking the assistant to generate or revise the arrangement.",
+      detail: `${describeBlockedChordChart(parseTruth)} Fix the chord chart in Input before asking the assistant to generate or revise the arrangement.`,
       tone: "attention",
     }
   }

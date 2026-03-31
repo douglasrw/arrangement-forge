@@ -229,11 +229,11 @@ describe('LeftPanel inspector truth regression', () => {
     expect(mounted.container.querySelector('[data-left-panel-coordination="blocked"]')).not.toBeNull();
     expect(mounted.container.textContent).toContain('Chord chart fixes are blocking generation');
     expect(mounted.container.textContent).toContain(
-      'Fix the flagged bars in Input before asking the assistant to generate or revise the arrangement.'
+      'Bars 2 and 3 currently parse as N.C., so Generate stays blocked until the chart is fixed.'
     );
     expect(mounted.container.textContent).toContain('Chord chart needs fixes');
     expect(mounted.container.textContent).toContain(
-      'Flagged bars would resolve to N.C. during generation. Fix the chart before generating.'
+      'Bars 2 and 3 currently parse as N.C., so Generate stays blocked until the chart is fixed. Next step: Replace the flagged repeat bars with explicit chords or fix the bar before them.'
     );
   });
 
@@ -251,8 +251,9 @@ describe('LeftPanel inspector truth regression', () => {
     expect(mounted.container.querySelector('[data-left-panel-coordination="blocked"]')).not.toBeNull();
     expect(mounted.container.textContent).toContain('Chord chart fixes are blocking generation');
     expect(mounted.container.textContent).toContain(
-      'Flagged bars would resolve to N.C. during generation. Fix the chart before generating.'
+      'No playable chord bars are present yet, so Generate stays blocked until the chart includes at least one chord bar. Next step: Add at least one chord bar such as Cmaj7 | Fmaj7 | G7 | Cmaj7.'
     );
+    expect(mounted.container.textContent).not.toContain('Flagged bars would resolve to N.C.');
   });
 
   it('keeps the operator-visible inspector honest across section and block contexts', () => {

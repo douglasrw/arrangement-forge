@@ -215,12 +215,45 @@ describe('AiAssistantSection', () => {
 
     expect(composerState?.textContent).toContain('Chord chart needs fixes');
     expect(composerState?.textContent).toContain(
-      'Fix the flagged bars in Input before asking the assistant to generate or revise the arrangement.'
+      'Bars 2 and 3 currently parse as N.C., so Generate stays blocked until the chart is fixed.'
+    );
+    expect(composerState?.textContent).toContain(
+      'Next step: Replace the flagged repeat bars with explicit chords or fix the bar before them.'
+    );
+    expect(composerState?.textContent).toContain(
+      'Fix the chord chart in Input before asking the assistant to generate or revise the arrangement.'
     );
     expect(mounted.container.textContent).toContain(
       'Fix the flagged chord bars in Input before asking the assistant to generate or revise the arrangement.'
     );
     expect(sendButton?.disabled).toBe(true);
+  });
+
+  it('keeps no-playable-bar truth visible before the assistant can send', () => {
+    useProjectStore.setState({
+      project: makeProject({ chordChartRaw: '[Verse]\n\nChorus:' }),
+      chatMessages: [],
+    });
+
+    const mounted = renderSection();
+    mountedRoot = mounted.root;
+    mountedContainer = mounted.container;
+
+    const composerState = mounted.container.querySelector(
+      '[data-testid="ai-assistant-composer-state"]'
+    );
+
+    expect(composerState?.textContent).toContain('Chord chart needs fixes');
+    expect(composerState?.textContent).toContain(
+      'No playable chord bars are present yet, so Generate stays blocked until the chart includes at least one chord bar.'
+    );
+    expect(composerState?.textContent).toContain(
+      'Next step: Add at least one chord bar such as Cmaj7 | Fmaj7 | G7 | Cmaj7.'
+    );
+    expect(composerState?.textContent).toContain(
+      'Fix the chord chart in Input before asking the assistant to generate or revise the arrangement.'
+    );
+    expect(composerState?.textContent).not.toContain('flagged bars');
   });
 
   it('renders failed assistant generations with a distinct failure bubble', () => {
