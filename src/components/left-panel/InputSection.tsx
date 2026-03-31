@@ -262,6 +262,40 @@ function formatImportedChordChartFeedback(
   ].filter(Boolean).join(" ")
 }
 
+function getGenerateGateMessage(args: {
+  hasProject: boolean
+  hasChordChart: boolean
+  isImporting: boolean
+  isGenerating: boolean
+  parseTruth: ReturnType<typeof parseChordChart>["truth"] | null
+}) {
+  const { hasProject, hasChordChart, isImporting, isGenerating, parseTruth } = args
+
+  if (!hasProject) {
+    return "Generate stays unavailable until a project is loaded."
+  }
+
+  if (isImporting) {
+    return "Generate unlocks after the current chord-chart import finishes."
+  }
+
+  if (isGenerating) {
+    return "Generate is already running for the current arrangement."
+  }
+
+  if (!hasChordChart) {
+    return "Generate unlocks after the chord chart includes at least one bar."
+  }
+
+  if (parseTruth?.state === "blocked") {
+    return parseTruth.nextStep
+      ? `Generate is blocked. Next step: ${parseTruth.nextStep}`
+      : `Generate is blocked. ${parseTruth.currentState}`
+  }
+
+  return null
+}
+
 export function InputSection() {
   const [activeTab, setActiveTab] = useState<InputTab>("Chord")
   const [isImporting, setIsImporting] = useState(false)
@@ -332,6 +366,15 @@ export function InputSection() {
       parseFeedbackOverflow,
     ].filter(Boolean).join(" ")
     : "Use one bar per token or pipe-separated bar, and bracket section labels like [Verse] when needed."
+  const generateGateMessage = !canGenerate
+    ? getGenerateGateMessage({
+      hasProject,
+      hasChordChart,
+      isImporting,
+      isGenerating,
+      parseTruth,
+    })
+    : null
 
   useEffect(() => {
     if (!shouldFocusChordChartEditor || activeTab !== "Text") {
@@ -660,6 +703,18 @@ export function InputSection() {
       >
         {isImporting ? "Importing..." : isGenerating ? "Generating..." : "Generate"}
       </button>
+
+      {generateGateMessage && (
+        <p
+          data-generate-gate-state={hasParseBlockers ? "blocked" : "waiting"}
+          className={cn(
+            "text-xs leading-relaxed",
+            hasParseBlockers ? "text-destructive" : "text-muted-foreground"
+          )}
+        >
+          {generateGateMessage}
+        </p>
+      )}
     </div>
   )
 }

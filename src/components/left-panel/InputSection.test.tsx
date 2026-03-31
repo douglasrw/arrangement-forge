@@ -166,9 +166,14 @@ describe('InputSection upload tab', () => {
     mountedContainer = mounted.container;
 
     const readiness = mounted.container.querySelector('[data-input-readiness]') as HTMLDivElement | null;
+    const generateGate = mounted.container.querySelector('[data-generate-gate-state]') as HTMLParagraphElement | null;
 
     expect(readiness?.getAttribute('data-input-readiness')).toBe('empty');
     expect(mounted.container.textContent).toContain('Chord chart needed');
+    expect(generateGate?.getAttribute('data-generate-gate-state')).toBe('waiting');
+    expect(generateGate?.textContent).toBe(
+      'Generate unlocks after the chord chart includes at least one bar.'
+    );
     expect(getGenerateButton(mounted.container).disabled).toBe(true);
   });
 
@@ -328,6 +333,7 @@ describe('InputSection upload tab', () => {
     const chordChartHint = mounted.container.querySelector(
       '[data-chord-chart-editor-state]'
     ) as HTMLParagraphElement | null;
+    const generateGate = mounted.container.querySelector('[data-generate-gate-state]') as HTMLParagraphElement | null;
 
     expect(parseTruth?.getAttribute('data-chord-chart-parse-state')).toBe('blocked');
     expect(readiness?.getAttribute('data-input-readiness')).toBe('blocked');
@@ -386,6 +392,10 @@ describe('InputSection upload tab', () => {
     );
     expect(chordChartHint?.textContent).toContain(
       'Line 1, bar 3: repeat marker "%" follows a bar that could not be resolved'
+    );
+    expect(generateGate?.getAttribute('data-generate-gate-state')).toBe('blocked');
+    expect(generateGate?.textContent).toBe(
+      'Generate is blocked. Next step: Replace bars 2 and 3 with explicit chords or fix the bar before them.'
     );
     expect(getGenerateButton(mounted.container).disabled).toBe(true);
   });
