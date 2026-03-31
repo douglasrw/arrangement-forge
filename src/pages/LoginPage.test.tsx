@@ -16,6 +16,7 @@ const authApi = vi.hoisted(() => ({
         access: 'pending',
         currentState: 'Checking for an existing session.',
         nextStep: 'wait-for-session',
+        nextStepLabel: 'Wait for session bootstrap',
         nextStepDetail: 'Wait for session bootstrap to finish.',
         signedOutReason: null,
       };
@@ -27,6 +28,7 @@ const authApi = vi.hoisted(() => ({
         access: 'granted',
         currentState: 'An authenticated session is ready.',
         nextStep: 'open-app',
+        nextStepLabel: 'Open the app',
         nextStepDetail: 'Open the app.',
         signedOutReason: null,
       };
@@ -57,6 +59,18 @@ const authApi = vi.hoisted(() => ({
               : this.signedOutReason === 'session-lookup-failed'
                 ? 'retry-session'
                 : 'sign-in',
+      nextStepLabel:
+        this.signedOutReason === 'email-confirmation-required'
+          ? 'Confirm your email'
+          : this.signedOutReason === 'missing-profile'
+            ? 'Complete the profile'
+            : this.signedOutReason === 'profile-load-failed'
+              ? 'Retry the profile load'
+              : this.signedOutReason === 'session-lookup-failed'
+                ? 'Retry session restore'
+                : this.signedOutReason === 'signed-out'
+                  ? 'Sign in again'
+                  : 'Sign in',
       nextStepDetail:
         this.signedOutReason === 'email-confirmation-required'
           ? 'Open the confirmation email, then sign in again.'
@@ -281,6 +295,7 @@ describe('LoginPage failure truth', () => {
     expect(mounted.container.textContent).toContain(
       'Restore or complete the profile, then sign in again.'
     );
+    expect(mounted.container.textContent).toContain('Next step: Complete the profile.');
     expect(mounted.container.textContent).toContain('return you to settings');
   });
 
@@ -448,6 +463,7 @@ describe('LoginPage failure truth', () => {
     expect(mounted.container.textContent).toContain(
       'Open the confirmation email, then sign in again.'
     );
+    expect(mounted.container.textContent).toContain('Next step: Confirm your email.');
     expect(mounted.container.textContent).toContain('return you to settings');
     expect(mounted.container.querySelector('form')).not.toBeNull();
   });
@@ -506,6 +522,7 @@ describe('LoginPage failure truth', () => {
     expect(mounted.container.querySelector('[data-testid="auth-loading-screen"]')).not.toBeNull();
     expect(mounted.container.textContent).toContain('Waiting on authentication');
     expect(mounted.container.textContent).toContain('Checking for an existing session.');
+    expect(mounted.container.textContent).toContain('Next step: Wait for session bootstrap.');
     expect(mounted.container.textContent).toContain('continue to settings');
     expect(mounted.container.querySelector('form')).toBeNull();
   });

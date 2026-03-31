@@ -11,6 +11,7 @@ describe('auth-store gate truth', () => {
       access: 'pending',
       currentState: 'Checking for an existing session.',
       nextStep: 'wait-for-session',
+      nextStepLabel: 'Wait for session bootstrap',
       nextStepDetail: 'Wait for session bootstrap to finish.',
       signedOutReason: null,
     });
@@ -19,6 +20,7 @@ describe('auth-store gate truth', () => {
       access: 'pending',
       currentState: 'Checking for an existing session.',
       nextStep: 'wait-for-session',
+      nextStepLabel: 'Wait for session bootstrap',
       nextStepDetail: 'Wait for session bootstrap to finish.',
       signedOutReason: null,
     });
@@ -31,6 +33,7 @@ describe('auth-store gate truth', () => {
       access: 'blocked',
       currentState: 'The saved profile is missing, so the session cannot reopen yet.',
       nextStep: 'complete-profile',
+      nextStepLabel: 'Complete the profile',
       nextStepDetail: 'Restore or complete the profile, then sign in again.',
       signedOutReason: 'missing-profile',
     });
@@ -39,6 +42,7 @@ describe('auth-store gate truth', () => {
       access: 'blocked',
       currentState: 'The saved profile is missing, so the session cannot reopen yet.',
       nextStep: 'complete-profile',
+      nextStepLabel: 'Complete the profile',
       nextStepDetail: 'Restore or complete the profile, then sign in again.',
       signedOutReason: 'missing-profile',
     });
@@ -57,6 +61,7 @@ describe('auth-store gate truth', () => {
       access: 'blocked',
       currentState: 'The saved profile is missing, so the session cannot reopen yet.',
       nextStep: 'complete-profile',
+      nextStepLabel: 'Complete the profile',
       nextStepDetail: 'Restore or complete the profile, then sign in again.',
       signedOutReason: 'missing-profile',
     });
@@ -72,8 +77,19 @@ describe('auth-store gate truth', () => {
       access: 'pending',
       currentState: 'Checking for an existing session.',
       nextStep: 'wait-for-session',
+      nextStepLabel: 'Wait for session bootstrap',
       nextStepDetail: 'Wait for session bootstrap to finish.',
       signedOutReason: null,
+    });
+  });
+
+  it('names the immediate recovery action so auth consumers do not have to infer it from prose', () => {
+    useAuthStore.getState().setSignedOut('session-lookup-failed');
+
+    expect(getAuthTruth(useAuthStore.getState())).toMatchObject({
+      nextStep: 'retry-session',
+      nextStepLabel: 'Retry session restore',
+      nextStepDetail: 'Retry session restoration by signing in again.',
     });
   });
 
@@ -98,6 +114,7 @@ describe('auth-store gate truth', () => {
         access: 'granted',
         currentState: 'An authenticated session is ready.',
         nextStep: 'open-app',
+        nextStepLabel: 'Open the app',
         nextStepDetail: 'Open the app.',
         signedOutReason: null,
       },
@@ -105,6 +122,7 @@ describe('auth-store gate truth', () => {
         access: 'granted',
         currentState: 'An authenticated session is ready.',
         nextStep: 'open-app',
+        nextStepLabel: 'Open the app',
         nextStepDetail: 'Open the app.',
         signedOutReason: null,
       },

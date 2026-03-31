@@ -64,7 +64,7 @@ function AuthLoadingScreen({
             <p className="text-sm text-muted-foreground">
               {authTruth.nextStep === 'open-app'
                 ? `${authTruth.currentState} Returning you to ${recoveryDestination}.`
-                : `${authTruth.currentState} ${authTruth.nextStepDetail} If one is found, you will continue to ${recoveryDestination}.`}
+                : `${authTruth.currentState} Next step: ${authTruth.nextStepLabel}. ${authTruth.nextStepDetail} If one is found, you will continue to ${recoveryDestination}.`}
             </p>
           </div>
         </div>
@@ -136,8 +136,8 @@ function AuthStatusNotice({
       <AlertDescription>
         <p>{authTruth.currentState}</p>
         <p>
-          {authTruth.nextStepDetail} After authentication, Arrangement Forge will return you to{' '}
-          {recoveryDestination}.
+          Next step: {authTruth.nextStepLabel}. {authTruth.nextStepDetail} After authentication,
+          Arrangement Forge will return you to {recoveryDestination}.
         </p>
       </AlertDescription>
     </Alert>
