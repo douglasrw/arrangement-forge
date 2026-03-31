@@ -1,5 +1,11 @@
 import { beforeEach, describe, expect, it } from 'vitest';
-import { getAuthGateTruth, getAuthStoreTruthSlice, getAuthTruth, useAuthStore } from './auth-store';
+import {
+  getAuthGateTruth,
+  getAuthStoreTruthSlice,
+  getAuthTruth,
+  selectAuthStoreTruthSlice,
+  useAuthStore,
+} from './auth-store';
 
 describe('auth-store gate truth', () => {
   beforeEach(() => {
@@ -147,6 +153,50 @@ describe('auth-store gate truth', () => {
         nextStepLabel: 'Open the app',
         nextStepDetail: 'Open the app.',
         signedOutReason: null,
+      },
+    });
+  });
+
+  it('returns a stable auth truth slice reference until the underlying auth truth changes', () => {
+    const initialState = useAuthStore.getState();
+
+    const firstSlice = getAuthStoreTruthSlice(initialState);
+    const secondSlice = selectAuthStoreTruthSlice(initialState);
+    const repeatedSlice = selectAuthStoreTruthSlice({
+      user: initialState.user,
+      profile: initialState.profile,
+      authStatus: initialState.authStatus,
+      signedOutReason: initialState.signedOutReason,
+    });
+
+    expect(secondSlice).toBe(repeatedSlice);
+    expect(secondSlice).toEqual(firstSlice);
+
+    useAuthStore.getState().setSignedOut('profile-load-failed');
+
+    const updatedState = useAuthStore.getState();
+    const updatedSlice = selectAuthStoreTruthSlice(updatedState);
+
+    expect(updatedSlice).not.toBe(secondSlice);
+    expect(updatedSlice).toEqual({
+      user: null,
+      profile: null,
+      authTruth: {
+        status: 'signed-out',
+        access: 'blocked',
+        currentState: 'The saved profile could not be loaded.',
+        nextStep: 'retry-profile-load',
+        nextStepLabel: 'Retry the profile load',
+        nextStepDetail: 'Retry the profile load by signing in again.',
+        signedOutReason: 'profile-load-failed',
+      },
+      authGate: {
+        access: 'blocked',
+        currentState: 'The saved profile could not be loaded.',
+        nextStep: 'retry-profile-load',
+        nextStepLabel: 'Retry the profile load',
+        nextStepDetail: 'Retry the profile load by signing in again.',
+        signedOutReason: 'profile-load-failed',
       },
     });
   });
