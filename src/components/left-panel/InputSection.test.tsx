@@ -256,6 +256,9 @@ describe('InputSection upload tab', () => {
     expect(chordChartHint?.textContent).toContain(
       'No playable chord bars are present yet, so Generate stays blocked until the chart includes at least one chord bar.'
     );
+    expect(chordChartHint?.textContent).toContain(
+      'Section labels and blank lines do not create playable bars on their own.'
+    );
     expect(getGenerateButton(mounted.container).disabled).toBe(true);
   });
 
@@ -346,6 +349,12 @@ describe('InputSection upload tab', () => {
       'Bars 2 and 3 currently parse as N.C., so Generate stays blocked until the chart is fixed.'
     );
     expect(chordChartHint?.textContent).toContain(
+      '1 bar has an unrecognized chord token.'
+    );
+    expect(chordChartHint?.textContent).toContain(
+      '1 repeat marker follows an unresolved bar.'
+    );
+    expect(chordChartHint?.textContent).toContain(
       'Next step: Replace bars 2 and 3 with explicit chords or fix the bar before them.'
     );
     expect(chordChartHint?.textContent).toContain(
@@ -393,6 +402,12 @@ describe('InputSection upload tab', () => {
     );
     expect(chordChartHint?.textContent).toContain(
       'Bars 1 and 2 currently parse as N.C., so Generate stays blocked until the chart is fixed.'
+    );
+    expect(chordChartHint?.textContent).toContain(
+      '1 bar has an unrecognized chord token.'
+    );
+    expect(chordChartHint?.textContent).toContain(
+      '1 repeat marker follows an unresolved bar.'
     );
     expect(chordChartHint?.textContent).toContain(
       'Line 1, bar 2: repeat marker "%" follows a bar that could not be resolved'

@@ -325,6 +325,7 @@ export function InputSection() {
   const chordChartEditorHint = hasParseBlockers && parseTruth
     ? [
       parseTruth.currentState,
+      parseTruth.summary,
       parseTruth.nextStep ? `Next step: ${parseTruth.nextStep}` : "Fix the flagged chord bars before generating.",
       parseFeedbackHighlights,
       parseFeedbackOverflow,
