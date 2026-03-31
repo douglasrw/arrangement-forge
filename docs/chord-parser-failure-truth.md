@@ -2,7 +2,7 @@
 
 Status date: 2026-03-31
 
-Status: landed on `main`; reverified on 2026-03-31 at proof head `9ab1222d`
+Status: landed on `main`; reverified on 2026-03-31 at proof head `1f643de7`
 with generation parse-blocker detail truth preserved, and no remaining bounded
 product delta is visible in this family
 
@@ -138,7 +138,7 @@ Current focused proofs for this slice:
 
 - `pnpm test -- --run src/lib/chord-chart-parser.test.ts src/components/left-panel/InputSection.test.tsx src/hooks/useGenerate.test.tsx`
 - `pnpm type-check`
-- verification head for this recheck: `9ab1222d863736be05344934184fe5729737c129`
+- verification head for this recheck: `1f643de75a985bd95f0a008a2d907e8128d40ebb`
 
 ## Tracked Landing
 
@@ -450,6 +450,11 @@ Current focused proofs for this slice:
   refresh instead of reopening the parser or input surfaces without a fresh
   product truth gap.
 - The latest 2026-03-31 recheck at verified repo head `9ab1222d` produced the
+  same focused proof results again with no remaining bounded product-file
+  delta in this family, so the honest move remains another repo-local
+  evidence refresh instead of reopening the parser or input surfaces without a
+  fresh product truth gap.
+- The latest 2026-03-31 recheck at verified repo head `1f643de7` produced the
   same focused proof results again with no remaining bounded product-file
   delta in this family, so the honest move remains another repo-local
   evidence refresh instead of reopening the parser or input surfaces without a
