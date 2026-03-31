@@ -487,6 +487,75 @@ describe('useAuth session bootstrap truth', () => {
     });
   });
 
+  it('keeps a stale profile hydrate from reopening the auth gate after sign-out', async () => {
+    const profileRequest = createDeferred<ProfileQueryResult>();
+    profileQueryResult = profileRequest.promise;
+    supabaseMock.auth.getSession.mockResolvedValue({
+      data: {
+        session: {
+          user: { id: 'user-1', email: 'ash@example.com' },
+        },
+      },
+    });
+
+    const mounted = renderHarness();
+    mountedRoot = mounted.root;
+    mountedContainer = mounted.container;
+
+    act(() => {
+      hookValue!.initAuth();
+    });
+
+    await act(async () => {
+      await Promise.resolve();
+    });
+
+    expect(useAuthStore.getState()).toMatchObject({
+      authStatus: 'checking-session',
+      signedOutReason: null,
+      isLoading: true,
+      isAuthenticated: false,
+    });
+
+    act(() => {
+      authStateChangeHandler?.('SIGNED_OUT', null);
+    });
+
+    expect(useAuthStore.getState()).toMatchObject({
+      user: null,
+      profile: null,
+      authStatus: 'signed-out',
+      signedOutReason: 'signed-out',
+      isLoading: false,
+      isAuthenticated: false,
+    });
+
+    await act(async () => {
+      profileRequest.resolve?.({
+        data: {
+          id: 'user-1',
+          display_name: 'Ashlyn',
+          chord_display_mode: 'roman',
+          default_genre: 'Pop',
+          created_at: '2026-03-29T00:00:00Z',
+          updated_at: '2026-03-29T01:00:00Z',
+        },
+        error: null,
+      });
+      await flushAsyncWork();
+    });
+
+    expect(useAuthStore.getState()).toMatchObject({
+      user: null,
+      profile: null,
+      authStatus: 'signed-out',
+      signedOutReason: 'signed-out',
+      isLoading: false,
+      isAuthenticated: false,
+    });
+    expect(useUiStore.getState().chordDisplayMode).toBe('letter');
+  });
+
   it('clears auth state and loading when Supabase emits a sign-out event', async () => {
     profileRow = {
       id: 'user-1',

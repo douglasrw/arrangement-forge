@@ -1,6 +1,6 @@
 // useAuth.ts — Auth initialization and actions, connecting Supabase Auth to Zustand.
 
-import { useCallback } from 'react';
+import { useCallback, useRef } from 'react';
 import type { User } from '@supabase/supabase-js';
 import { supabase } from '@/lib/supabase';
 import { rowToProfile } from '@/lib/profile';
@@ -12,10 +12,23 @@ export type SignUpResult =
   | { status: 'session-pending' }
   | { status: 'confirmation-required' };
 
+type HydrationResult =
+  | { status: 'authenticated' }
+  | { status: 'signed-out'; reason: SignedOutReason }
+  | { status: 'stale' };
+
 export function useAuth() {
   const authStore = useAuthStore();
+  const authTransitionIdRef = useRef(0);
+
+  const beginSessionCheck = useCallback(() => {
+    authTransitionIdRef.current += 1;
+    useAuthStore.getState().beginSessionCheck();
+    return authTransitionIdRef.current;
+  }, []);
 
   const clearSessionState = useCallback((reason: SignedOutReason) => {
+    authTransitionIdRef.current += 1;
     useAuthStore.getState().setSignedOut(reason);
     useUiStore.getState().setChordDisplayMode('letter');
   }, []);
@@ -45,13 +58,22 @@ export function useAuth() {
     return profile;
   }, []);
 
-  const hydrateSession = useCallback(async (user: User) => {
+  const hydrateSession = useCallback(async (
+    user: User,
+    transitionId: number
+  ): Promise<HydrationResult> => {
     try {
       const profile = await loadProfile(user.id);
 
+      if (transitionId !== authTransitionIdRef.current) {
+        return {
+          status: 'stale',
+        };
+      }
+
       if (!profile) {
         return {
-          ok: false as const,
+          status: 'signed-out' as const,
           reason: 'missing-profile' as const,
         };
       }
@@ -60,27 +82,33 @@ export function useAuth() {
       useUiStore.getState().setChordDisplayMode(profile.chordDisplayMode);
 
       return {
-        ok: true as const,
+        status: 'authenticated',
       };
     } catch {
+      if (transitionId !== authTransitionIdRef.current) {
+        return {
+          status: 'stale',
+        };
+      }
+
       return {
-        ok: false as const,
+        status: 'signed-out' as const,
         reason: 'profile-load-failed' as const,
       };
     }
   }, [loadProfile]);
 
   const initAuth = useCallback(() => {
-    useAuthStore.getState().beginSessionCheck();
+    const initialTransitionId = beginSessionCheck();
     let isActive = true;
 
     void supabase.auth.getSession()
       .then(async ({ data: { session } }) => {
-        if (!isActive) return;
+        if (!isActive || initialTransitionId !== authTransitionIdRef.current) return;
 
         if (session?.user) {
-          const hydrationResult = await hydrateSession(session.user);
-          if (isActive && !hydrationResult.ok) {
+          const hydrationResult = await hydrateSession(session.user, initialTransitionId);
+          if (isActive && hydrationResult.status === 'signed-out') {
             clearSessionState(hydrationResult.reason);
           }
         } else {
@@ -88,7 +116,7 @@ export function useAuth() {
         }
       })
       .catch(() => {
-        if (isActive) {
+        if (isActive && initialTransitionId === authTransitionIdRef.current) {
           clearSessionState('session-lookup-failed');
         }
       });
@@ -97,9 +125,9 @@ export function useAuth() {
       data: { subscription },
     } = supabase.auth.onAuthStateChange((event, session) => {
       if (event === 'SIGNED_IN' && session?.user) {
-        useAuthStore.getState().beginSessionCheck();
-        void hydrateSession(session.user).then((hydrationResult) => {
-          if (!hydrationResult.ok) {
+        const transitionId = beginSessionCheck();
+        void hydrateSession(session.user, transitionId).then((hydrationResult) => {
+          if (hydrationResult.status === 'signed-out') {
             clearSessionState(hydrationResult.reason);
           }
         });
@@ -112,21 +140,21 @@ export function useAuth() {
       isActive = false;
       subscription.unsubscribe();
     };
-  }, [clearSessionState, hydrateSession, loadProfile]);
+  }, [beginSessionCheck, clearSessionState, hydrateSession]);
 
   const signIn = useCallback(async (email: string, password: string) => {
     const { data, error } = await supabase.auth.signInWithPassword({ email, password });
     if (error) throw error;
     if (data.session?.user) {
-      useAuthStore.getState().beginSessionCheck();
+      beginSessionCheck();
     }
-  }, []);
+  }, [beginSessionCheck]);
 
   const signUp = useCallback(async (email: string, password: string): Promise<SignUpResult> => {
     const { data, error } = await supabase.auth.signUp({ email, password });
     if (error) throw error;
     if (data.session?.user) {
-      useAuthStore.getState().beginSessionCheck();
+      beginSessionCheck();
       return {
         status: 'session-pending',
       };
@@ -135,7 +163,7 @@ export function useAuth() {
     return {
       status: 'confirmation-required',
     };
-  }, [clearSessionState]);
+  }, [beginSessionCheck, clearSessionState]);
 
   const signInWithGoogle = useCallback(async () => {
     const { error } = await supabase.auth.signInWithOAuth({ provider: 'google' });
