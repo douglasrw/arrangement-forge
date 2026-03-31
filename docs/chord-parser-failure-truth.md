@@ -4,7 +4,7 @@ Status date: 2026-04-01
 
 Status: landed on local `main`; reverified again on 2026-04-01 with the
 focused parser, input-surface, generation-block, and type-check proofs passing
-against the then-current verified local `main` head `2db22da3`, no remaining
+against the then-current verified local `main` head `c1588453`, no remaining
 bounded product delta visible in this family beyond keeping this repo-local
 truth artifact aligned with the latest verified state, and this refresh still
 does not claim any fresh product promotion beyond the already-verified local
@@ -163,12 +163,14 @@ Current focused proofs for this slice:
 - `pnpm exec tsc --noEmit`
 - the current proof set still matches the same bounded parser, input-surface,
   and generation-block contract after the 2026-04-01 recheck against the
-  then-current verified local `main` head `2db22da3`
+  then-current verified local `main` head `c1588453`
 - this artifact proves the verified local `main` worktree state at that head;
   it does not claim any fresh product promotion happened during this refresh
 
 ## Tracked Landing
 
+- `c1588453d13ec20d4bc98bc95926f760f32f1a2f`:
+  `commitpath_c40ed88d Refresh chord parser truth evidence`
 - `e922baaac5415d1b99895a0ae3389f510c244383`:
   `Promote to main: Arrangement Forge chord parser failure truth slice`
 - `7f4b396d94f408e78458cd4524f84ab332d7479e`:
