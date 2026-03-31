@@ -2,8 +2,8 @@
 
 Status date: 2026-03-31
 
-Status: landed on `main`; reverified on 2026-03-31 against current head
-`942820f3` with no remaining product delta visible in this family
+Status: landed on `main`; reverified on 2026-03-31 against current product
+head `9150d7d0` with no remaining bounded product delta visible in this family
 
 Purpose: preserve the current settings and persisted profile validation
 contract in one repo-local place so future work does not have to reconstruct it
@@ -115,15 +115,17 @@ Current focused proofs for this slice:
   `commitpath_c40ed88d Validate persisted settings profile truth`
 - `4d1e0342d92ba2597f0fc0eecae0e3b0bdd16391`:
   `Add settings truth regression coverage`
+- `9150d7d0b2debad01b2a450c45bfbbee29f5edda`:
+  `commitpath_c40ed88d Surface chord parser failure truth`
 - The landing made saved, pending, unavailable, blocked-save, invalid, and
   failed-save states explicit on the settings surface instead of relying on
   hidden surrounding context.
-- The verified current head at `942820f3` still preserves that contract and
-  makes the saved-versus-next-save truth explicit for display name, chord
-  display mode, and default genre on the settings surface.
-- The focused settings proofs passed again on 2026-03-31 against current
-  `main`, so this repo-local artifact remains aligned with the live product
-  surface instead of a stale earlier evidence point.
+- The latest product head at `9150d7d0` still preserves that contract and
+  keeps malformed chord-mode persistence explicit instead of letting parser
+  failures blur saved-profile truth.
+- The focused settings proofs passed again on 2026-03-31 against product head
+  `9150d7d0`, so this repo-local artifact remains aligned with the live
+  product surface instead of a stale earlier evidence point.
 - After the 2026-03-31 recheck, this family appears exhausted until a new
   settings or persisted-profile behavior changes the contract or the proof
   surface.
