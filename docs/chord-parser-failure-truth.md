@@ -2,10 +2,11 @@
 
 Status date: 2026-03-31
 
-Status: landed on `main`; reverified on 2026-03-31 at product head
-`e9a0db10`, after `efc2e1e2` promoted the family and `e9a0db10` kept invalid
-uploaded chord rows visible without changing the blocked-state proof surface,
-so this repo-local truth artifact now points at the latest verified state
+Status: landed on `main`; reverified on 2026-03-31 at current head
+`606e1bdd`, after `efc2e1e2` promoted the family, `e9a0db10` kept invalid
+uploaded chord rows visible, and `606e1bdd` refreshed the same evidence
+without changing the blocked-state proof surface, so this repo-local truth
+artifact now points at the latest verified state
 
 Purpose: preserve the current chord parser failure contract and its landing
 proof in one repo-local place so future work does not have to reconstruct it
@@ -89,10 +90,12 @@ Current focused proofs for this slice:
 
 - `pnpm test -- --run src/lib/chord-chart-parser.test.ts src/components/left-panel/InputSection.test.tsx src/hooks/useGenerate.test.tsx`
 - `pnpm type-check`
-- verification head: working tree changes verified on top of `e9a0db101579c9f5442213c58792c42d4a526974` before this artifact refresh
+- verification head: `606e1bdda046da7cf90fa8927c1eaf51fe42ea34`
 
 ## Tracked Landing
 
+- `606e1bdda046da7cf90fa8927c1eaf51fe42ea34`:
+  `commitpath_c40ed88d Refresh chord parser failure truth evidence`
 - `e9a0db101579c9f5442213c58792c42d4a526974`:
   `Keep invalid uploaded chord rows visible`
 - `efc2e1e20e7408573d0f7bd050977b09556f0858`:
@@ -230,9 +233,9 @@ Current focused proofs for this slice:
 - Commit `e9a0db10` kept invalid uploaded chord rows visible in the current
   product head, and the same focused proofs still passed without exposing a
   new parser-truth gap.
-- After the 2026-03-31 product recheck at head `e9a0db10`, this family again
-  appears exhausted unless a new chord-parse behavior changes the contract or
-  the proof surface.
+- After the 2026-03-31 recheck at head `606e1bdd`, this family again appears
+  exhausted unless a new chord-parse behavior changes the contract or the
+  proof surface.
 
 The tests cover:
 
