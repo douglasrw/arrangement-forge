@@ -216,6 +216,7 @@ export function InputSection() {
         ? "Importing chord chart..."
         : uploadFeedback.message
   const parseTruth = parseResult?.truth ?? null
+  const chordChartFieldHintId = "chord-chart-raw-input-hint"
   const inputReadinessTitle = hasParseIssues
     ? parseTruth?.title ?? inputReadiness.title
     : inputReadiness.title
@@ -416,13 +417,28 @@ export function InputSection() {
               onChange={(e) => updateProject({ chordChartRaw: e.target.value })}
               rows={4}
               placeholder={"[Verse]\nCmaj7 | Dm7 | G7 | Cmaj7\n\n[Chorus]\nF | G | Am | C"}
+              aria-invalid={hasParseIssues}
+              aria-describedby={chordChartFieldHintId}
               className={cn(
-                "w-full resize-none rounded-md border border-border bg-secondary px-3 py-2",
+                "w-full resize-none rounded-md bg-secondary px-3 py-2",
                 "font-mono text-xs leading-relaxed text-foreground",
                 "placeholder:text-muted-foreground",
+                hasParseIssues ? "border border-destructive/60" : "border border-border",
                 "focus:border-ring focus:outline-none focus:ring-1 focus:ring-ring/50"
               )}
             />
+            <p
+              id={chordChartFieldHintId}
+              data-chord-chart-editor-state={hasParseIssues ? "blocked" : "ready"}
+              className={cn(
+                "text-xs leading-relaxed",
+                hasParseIssues ? "text-destructive" : "text-muted-foreground"
+              )}
+            >
+              {hasParseIssues && parseTruth
+                ? `${parseTruth.currentState} Next step: ${parseTruth.nextStep ?? "Fix the flagged chord bars before generating."}`
+                : "Use one bar per token or pipe-separated bar, and bracket section labels like [Verse] when needed."}
+            </p>
           </div>
 
           <div className="flex flex-col gap-1.5">

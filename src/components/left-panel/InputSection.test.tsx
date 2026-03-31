@@ -74,6 +74,18 @@ function openUploadTab(container: HTMLDivElement) {
   });
 }
 
+function openTextTab(container: HTMLDivElement) {
+  const textTabButton = Array.from(container.querySelectorAll('button')).find(
+    (button) => button.textContent === 'Text'
+  ) as HTMLButtonElement | undefined;
+
+  expect(textTabButton).not.toBeUndefined();
+
+  act(() => {
+    textTabButton?.dispatchEvent(new MouseEvent('click', { bubbles: true }));
+  });
+}
+
 function getUploadFileInput(container: HTMLDivElement) {
   const fileInput = container.querySelector('#upload-chord-chart-input') as HTMLInputElement | null;
 
@@ -188,14 +200,22 @@ describe('InputSection upload tab', () => {
     const mounted = renderSection();
     mountedRoot = mounted.root;
     mountedContainer = mounted.container;
+    openTextTab(mounted.container);
 
     const parseTruth = mounted.container.querySelector(
       '[data-chord-chart-parse-state]'
     ) as HTMLDivElement | null;
     const readiness = mounted.container.querySelector('[data-input-readiness]') as HTMLDivElement | null;
+    const chordChartInput = mounted.container.querySelector('#chord-chart-raw-input') as HTMLTextAreaElement | null;
+    const chordChartHint = mounted.container.querySelector(
+      '[data-chord-chart-editor-state]'
+    ) as HTMLParagraphElement | null;
 
     expect(parseTruth?.getAttribute('data-chord-chart-parse-state')).toBe('blocked');
     expect(readiness?.getAttribute('data-input-readiness')).toBe('blocked');
+    expect(chordChartInput?.getAttribute('aria-invalid')).toBe('true');
+    expect(chordChartInput?.getAttribute('aria-describedby')).toBe('chord-chart-raw-input-hint');
+    expect(chordChartHint?.getAttribute('data-chord-chart-editor-state')).toBe('blocked');
     expect(mounted.container.textContent).toContain('Chord chart has parse issues');
     expect(mounted.container.textContent).toContain(
       'Bars 2 and 3 will become N.C. during generation, so Generate stays blocked until the chart is fixed.'
@@ -210,6 +230,12 @@ describe('InputSection upload tab', () => {
     expect(mounted.container.textContent).toContain('Bar 2: could not parse "xyz??"');
     expect(mounted.container.textContent).toContain(
       'Bar 3: repeat marker "%" follows a bar that could not be resolved'
+    );
+    expect(chordChartHint?.textContent).toContain(
+      'Bars 2 and 3 will become N.C. during generation, so Generate stays blocked until the chart is fixed.'
+    );
+    expect(chordChartHint?.textContent).toContain(
+      'Next step: Replace the flagged repeat bars with explicit chords or fix the bar before them.'
     );
     expect(getGenerateButton(mounted.container).disabled).toBe(true);
   });
