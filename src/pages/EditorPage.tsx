@@ -283,8 +283,13 @@ function EditorRouteReadyBanner({
     >
       <p className="text-xs font-medium text-foreground">Editor route ready for project {projectId}.</p>
       <p className="text-[11px] text-muted-foreground">
-        Current state: the requested project is loaded in this workspace. Next step: edit this
-        arrangement or return to the library to open a different project.
+        The requested project route is open and the editor workspace is ready.
+      </p>
+      <p className="text-[11px] text-foreground/80">
+        Current state: the requested project is loaded in this workspace.
+      </p>
+      <p className="text-[11px] text-foreground/80">
+        Next step: edit this arrangement or return to the library to open a different project.
       </p>
       <p className="text-[11px] text-foreground/80">Route readiness: {routeReadiness}</p>
       <p className="text-[11px] text-foreground/80">Current route: {currentRoute}</p>

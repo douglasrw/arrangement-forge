@@ -114,9 +114,11 @@ function LoadingScreen({
           <div className="space-y-1">
             <h1 className="text-base font-semibold text-foreground">Waiting on authentication</h1>
             <p className="text-sm text-muted-foreground">
-              Current state: {authTruth.currentState} Next step: {authTruth.nextStepLabel}.{' '}
-              {authTruth.nextStepDetail} If a session is restored, Arrangement Forge will continue
-              to {recoveryDestination}.
+              If a session is restored, Arrangement Forge will continue to {recoveryDestination}.
+            </p>
+            <p className="text-xs text-foreground/80">Current state: {authTruth.currentState}</p>
+            <p className="text-xs text-foreground/80">
+              Next step: {authTruth.nextStepLabel}. {authTruth.nextStepDetail}
             </p>
             <p className="text-xs text-foreground/80">Route readiness: {routeReadiness}</p>
             <p className="text-xs text-foreground/80">Current route: {currentRoute}</p>
