@@ -5,6 +5,7 @@ import { createRoot, type Root } from 'react-dom/client';
 import type { Block, Chord, Project, Section, Stem } from '@/types';
 import { useProjectStore } from '@/store/project-store';
 import { useUiStore } from '@/store/ui-store';
+import { useUndoStore } from '@/store/undo-store';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { deriveStatusBarStatus, StatusBar, type AppStatus } from './StatusBar';
 
@@ -105,6 +106,15 @@ function makeChord(partial: Partial<Chord> = {}): Chord {
   };
 }
 
+function makeSnapshot(label: string) {
+  return JSON.stringify({
+    stems: [{ id: `st-${label}` }],
+    sections: [],
+    blocks: [],
+    chords: [],
+  });
+}
+
 function renderStatusBar(status: AppStatus) {
   const container = document.createElement('div');
   document.body.appendChild(container);
@@ -130,6 +140,10 @@ beforeEach(() => {
   });
   useUiStore.setState({
     errorMessage: null,
+  });
+  useUndoStore.setState({
+    undoStack: [],
+    redoStack: [],
   });
 });
 
@@ -326,5 +340,39 @@ describe('StatusBar', () => {
 
     expect(container.textContent).toContain('Error: Generator offline');
     expect(container.textContent).not.toContain('Loading samples');
+  });
+
+  it('renders the next undo boundary as explicit status-bar history truth', () => {
+    useUndoStore.getState().pushUndo('Split block', {
+      undo: makeSnapshot('before'),
+      redo: makeSnapshot('after'),
+    });
+
+    const container = renderStatusBar('saved');
+    const history = container.querySelector(
+      '[data-testid="status-bar-history"]'
+    ) as HTMLSpanElement | null;
+
+    expect(history?.textContent).toBe('Undo: Split block');
+    expect(history?.title).toBe(
+      'Undo is ready to restore the arrangement captured before Split block. Use Undo to restore the arrangement captured before Split block.'
+    );
+  });
+
+  it('renders blocked undo boundary truth instead of implying history is simply idle', () => {
+    useUndoStore.getState().pushUndo('Broken action', {
+      undo: 'not json',
+      redo: makeSnapshot('after'),
+    });
+
+    const container = renderStatusBar('saved');
+    const history = container.querySelector(
+      '[data-testid="status-bar-history"]'
+    ) as HTMLSpanElement | null;
+
+    expect(history?.textContent).toBe('Undo blocked');
+    expect(history?.title).toBe(
+      'The latest undo boundary is still on the stack, but its restore snapshot cannot be read. Do not offer Undo for this boundary until a valid restore snapshot is stored.'
+    );
   });
 });

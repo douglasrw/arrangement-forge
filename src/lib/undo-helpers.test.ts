@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import {
+  createUndoBoundaryTruth,
   createUndoBoundaryTransition,
   parseRedoSnapshot,
   parseSnapshot,
@@ -108,6 +109,82 @@ describe('createUndoBoundaryTransition', () => {
     expect(transition.restoreSnapshot).toMatchObject({
       stems: [{ id: 'undo-stem' }],
     });
+  });
+});
+
+describe('createUndoBoundaryTruth', () => {
+  it('describes an empty undo boundary without exposing an action label', () => {
+    expect(createUndoBoundaryTruth(null, 'undo')).toEqual({
+      boundary: 'undo',
+      status: 'empty',
+      description: null,
+      actionLabel: null,
+      statusLabel: 'Nothing to undo',
+      currentState: 'No undo boundary is available right now.',
+      nextStep: 'Edit the arrangement to create the next undo boundary.',
+      transition: null,
+    });
+  });
+
+  it('describes an available undo boundary with its action label and restore target', () => {
+    const truth = createUndoBoundaryTruth(
+      {
+        undoSnapshot: JSON.stringify({
+          stems: [{ id: 'undo-stem' }],
+          sections: [],
+          blocks: [],
+          chords: [],
+        }),
+        redoSnapshot: JSON.stringify({
+          stems: [{ id: 'redo-stem' }],
+          sections: [],
+          blocks: [],
+          chords: [],
+        }),
+      },
+      'undo',
+      'Split block'
+    );
+
+    expect(truth.status).toBe('available');
+    expect(truth.actionLabel).toBe('Undo: Split block');
+    expect(truth.statusLabel).toBe('Undo: Split block');
+    expect(truth.currentState).toBe(
+      'Undo is ready to restore the arrangement captured before Split block.'
+    );
+    expect(truth.nextStep).toBe(
+      'Use Undo to restore the arrangement captured before Split block.'
+    );
+    expect(truth.transition?.restoreSnapshot).toMatchObject({
+      stems: [{ id: 'undo-stem' }],
+    });
+  });
+
+  it('describes a blocked redo boundary when the restore snapshot cannot be read', () => {
+    const truth = createUndoBoundaryTruth(
+      {
+        undoSnapshot: JSON.stringify({
+          stems: [{ id: 'undo-stem' }],
+          sections: [],
+          blocks: [],
+          chords: [],
+        }),
+        redoSnapshot: 'not json',
+      },
+      'redo',
+      'Split block'
+    );
+
+    expect(truth.status).toBe('blocked');
+    expect(truth.actionLabel).toBeNull();
+    expect(truth.statusLabel).toBe('Redo blocked');
+    expect(truth.currentState).toBe(
+      'The latest redo boundary is still on the stack, but its restore snapshot cannot be read.'
+    );
+    expect(truth.nextStep).toBe(
+      'Do not offer Redo for this boundary until a valid restore snapshot is stored.'
+    );
+    expect(truth.transition?.restoreSnapshot).toBeNull();
   });
 });
 

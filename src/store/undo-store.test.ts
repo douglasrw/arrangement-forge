@@ -113,6 +113,22 @@ describe('undoStore', () => {
     expect(useUndoStore.getState().canRedo()).toBe(true);
   });
 
+  it('describes the current undo boundary with explicit status, state, and next step', () => {
+    useUndoStore.getState().pushUndo('Split block', {
+      undo: makeSnapshot('before'),
+      redo: makeSnapshot('after'),
+    });
+
+    expect(useUndoStore.getState().getUndoBoundaryTruth()).toMatchObject({
+      boundary: 'undo',
+      status: 'available',
+      actionLabel: 'Undo: Split block',
+      statusLabel: 'Undo: Split block',
+      currentState: 'Undo is ready to restore the arrangement captured before Split block.',
+      nextStep: 'Use Undo to restore the arrangement captured before Split block.',
+    });
+  });
+
   it('does not advertise undo when the top undo boundary is not restorable', () => {
     useUndoStore.getState().pushUndo('Broken action', {
       undo: 'not json',
@@ -132,6 +148,24 @@ describe('undoStore', () => {
     expect(useUndoStore.getState().undo()).not.toBeNull();
     expect(useUndoStore.getState().canRedo()).toBe(false);
     expect(useUndoStore.getState().getRedoDescription()).toBeNull();
+  });
+
+  it('describes a blocked redo boundary when the latest redo snapshot cannot be restored', () => {
+    useUndoStore.getState().pushUndo('Broken redo', {
+      undo: makeSnapshot('before'),
+      redo: 'not json',
+    });
+
+    expect(useUndoStore.getState().undo()).not.toBeNull();
+    expect(useUndoStore.getState().getRedoBoundaryTruth()).toMatchObject({
+      boundary: 'redo',
+      status: 'blocked',
+      actionLabel: null,
+      statusLabel: 'Redo blocked',
+      currentState:
+        'The latest redo boundary is still on the stack, but its restore snapshot cannot be read.',
+      nextStep: 'Do not offer Redo for this boundary until a valid restore snapshot is stored.',
+    });
   });
 
   it('getUndoDescription returns null when empty', () => {

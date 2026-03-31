@@ -1,9 +1,8 @@
 import { create } from 'zustand';
 import {
+  createUndoBoundaryTruth,
   createUndoBoundaryEntry,
-  createUndoBoundaryTransition,
-  parseRedoSnapshot,
-  parseUndoSnapshot,
+  type UndoBoundaryTruth,
   type UndoBoundaryEntry,
   type UndoBoundarySnapshots,
   type UndoBoundaryTransition,
@@ -23,10 +22,20 @@ interface UndoStore {
   pushUndo: (description: string, snapshots: UndoBoundarySnapshots) => void;
   undo: () => UndoTransition | null;
   redo: () => UndoTransition | null;
+  getUndoBoundaryTruth: () => UndoBoundaryTruth;
+  getRedoBoundaryTruth: () => UndoBoundaryTruth;
   canUndo: () => boolean;
   canRedo: () => boolean;
   getUndoDescription: () => string | null;
   getRedoDescription: () => string | null;
+}
+
+function getUndoBoundaryTruthForEntry(entry: UndoEntry | undefined): UndoBoundaryTruth {
+  return createUndoBoundaryTruth(entry ?? null, 'undo', entry?.description ?? null);
+}
+
+function getRedoBoundaryTruthForEntry(entry: UndoEntry | undefined): UndoBoundaryTruth {
+  return createUndoBoundaryTruth(entry ?? null, 'redo', entry?.description ?? null);
 }
 
 export const useUndoStore = create<UndoStore>()((set, get) => ({
@@ -49,50 +58,46 @@ export const useUndoStore = create<UndoStore>()((set, get) => ({
 
   undo: () => {
     const { undoStack, redoStack } = get();
-    if (undoStack.length === 0) return null;
     const entry = undoStack[undoStack.length - 1];
-    const transition = createUndoBoundaryTransition(entry, 'undo');
-    if (!transition.restoreSnapshot) return null;
+    const truth = getUndoBoundaryTruthForEntry(entry);
+    if (!entry || truth.status !== 'available' || !truth.transition) return null;
     set({ undoStack: undoStack.slice(0, -1), redoStack: [...redoStack, entry] });
     return {
       description: entry.description,
-      ...transition,
+      ...truth.transition,
     };
   },
 
   redo: () => {
     const { undoStack, redoStack } = get();
-    if (redoStack.length === 0) return null;
     const entry = redoStack[redoStack.length - 1];
-    const transition = createUndoBoundaryTransition(entry, 'redo');
-    if (!transition.restoreSnapshot) return null;
+    const truth = getRedoBoundaryTruthForEntry(entry);
+    if (!entry || truth.status !== 'available' || !truth.transition) return null;
     set({ redoStack: redoStack.slice(0, -1), undoStack: [...undoStack, entry] });
     return {
       description: entry.description,
-      ...transition,
+      ...truth.transition,
     };
   },
 
-  canUndo: () => {
+  getUndoBoundaryTruth: () => {
     const stack = get().undoStack;
-    const entry = stack[stack.length - 1];
-    return entry ? parseUndoSnapshot(entry) !== null : false;
+    return getUndoBoundaryTruthForEntry(stack[stack.length - 1]);
+  },
+
+  getRedoBoundaryTruth: () => {
+    const stack = get().redoStack;
+    return getRedoBoundaryTruthForEntry(stack[stack.length - 1]);
+  },
+
+  canUndo: () => {
+    return get().getUndoBoundaryTruth().status === 'available';
   },
   canRedo: () => {
-    const stack = get().redoStack;
-    const entry = stack[stack.length - 1];
-    return entry ? parseRedoSnapshot(entry) !== null : false;
+    return get().getRedoBoundaryTruth().status === 'available';
   },
 
-  getUndoDescription: () => {
-    const stack = get().undoStack;
-    const entry = stack[stack.length - 1];
-    return entry && parseUndoSnapshot(entry) !== null ? `Undo: ${entry.description}` : null;
-  },
+  getUndoDescription: () => get().getUndoBoundaryTruth().actionLabel,
 
-  getRedoDescription: () => {
-    const stack = get().redoStack;
-    const entry = stack[stack.length - 1];
-    return entry && parseRedoSnapshot(entry) !== null ? `Redo: ${entry.description}` : null;
-  },
+  getRedoDescription: () => get().getRedoBoundaryTruth().actionLabel,
 }));

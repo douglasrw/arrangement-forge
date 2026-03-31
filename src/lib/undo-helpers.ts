@@ -26,6 +26,19 @@ export interface UndoBoundaryTransition extends UndoBoundaryEntry {
   restoreSnapshot: ArrangementSnapshot | null;
 }
 
+export type UndoBoundaryStatus = 'empty' | 'available' | 'blocked';
+
+export interface UndoBoundaryTruth {
+  boundary: UndoBoundary;
+  status: UndoBoundaryStatus;
+  description: string | null;
+  actionLabel: string | null;
+  statusLabel: string;
+  currentState: string;
+  nextStep: string;
+  transition: UndoBoundaryTransition | null;
+}
+
 export function snapshotArrangement(state: {
   stems: Stem[];
   sections: Section[];
@@ -74,6 +87,73 @@ export function createUndoBoundaryTransition(
     ...entry,
     boundary,
     restoreSnapshot: parseUndoBoundarySnapshot(entry, boundary),
+  };
+}
+
+function getUndoBoundaryActionLabel(boundary: UndoBoundary): 'Undo' | 'Redo' {
+  return boundary === 'undo' ? 'Undo' : 'Redo';
+}
+
+function getUndoBoundaryActionTarget(description: string | null): string {
+  return description?.trim() || 'the last arrangement change';
+}
+
+export function createUndoBoundaryTruth(
+  entry: UndoBoundaryEntry | null | undefined,
+  boundary: UndoBoundary,
+  description: string | null = null
+): UndoBoundaryTruth {
+  const action = getUndoBoundaryActionLabel(boundary);
+  const normalizedDescription = description?.trim() || null;
+
+  if (!entry) {
+    return {
+      boundary,
+      status: 'empty',
+      description: normalizedDescription,
+      actionLabel: null,
+      statusLabel: boundary === 'undo' ? 'Nothing to undo' : 'Nothing to redo',
+      currentState: `No ${boundary} boundary is available right now.`,
+      nextStep:
+        boundary === 'undo'
+          ? 'Edit the arrangement to create the next undo boundary.'
+          : 'Undo a change to create the next redo boundary.',
+      transition: null,
+    };
+  }
+
+  const transition = createUndoBoundaryTransition(entry, boundary);
+  if (!transition.restoreSnapshot) {
+    return {
+      boundary,
+      status: 'blocked',
+      description: normalizedDescription,
+      actionLabel: null,
+      statusLabel: `${action} blocked`,
+      currentState: `The latest ${boundary} boundary is still on the stack, but its restore snapshot cannot be read.`,
+      nextStep: `Do not offer ${action} for this boundary until a valid restore snapshot is stored.`,
+      transition,
+    };
+  }
+
+  const actionTarget = getUndoBoundaryActionTarget(normalizedDescription);
+  const actionLabel = normalizedDescription ? `${action}: ${normalizedDescription}` : action;
+
+  return {
+    boundary,
+    status: 'available',
+    description: normalizedDescription,
+    actionLabel,
+    statusLabel: actionLabel,
+    currentState:
+      boundary === 'undo'
+        ? `Undo is ready to restore the arrangement captured before ${actionTarget}.`
+        : `Redo is ready to restore the arrangement captured after ${actionTarget}.`,
+    nextStep:
+      boundary === 'undo'
+        ? `Use Undo to restore the arrangement captured before ${actionTarget}.`
+        : `Use Redo to restore the arrangement captured after ${actionTarget}.`,
+    transition,
   };
 }
 
