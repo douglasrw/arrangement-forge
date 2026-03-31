@@ -1188,6 +1188,21 @@ describe('undo push coverage', () => {
     );
   });
 
+  it('names resized sections in undo entries with before-and-after bar counts', () => {
+    useProjectStore.getState().setArrangement({
+      stems: [makeStem()],
+      sections: [makeSection({ name: 'Verse', barCount: 8 })],
+      blocks: [],
+      chords: [],
+    });
+
+    useProjectStore.getState().updateSection('s1', { barCount: 12 });
+
+    expect(useUndoStore.getState().undoStack[0]?.description).toBe(
+      'Resize section: Verse (8 bars -> 12 bars)'
+    );
+  });
+
   it('removeSection pushes undo entry with unified snapshot format', () => {
     useProjectStore.getState().setArrangement({
       stems: [makeStem()], sections: [makeSection()],

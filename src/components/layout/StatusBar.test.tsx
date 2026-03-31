@@ -484,6 +484,29 @@ describe('StatusBar', () => {
     );
   });
 
+  it('renders section-resize context when the history boundary comes from a section length change', () => {
+    useProjectStore.setState({
+      project: makeProject(),
+      stems: [makeStem()],
+      sections: [makeSection({ name: 'Verse', barCount: 8 })],
+      blocks: [],
+      chords: [],
+    });
+
+    useProjectStore.getState().updateSection('section-1', { barCount: 12 });
+
+    const container = renderStatusBar('saved');
+    const history = container.querySelector(
+      '[data-testid="status-bar-history"]'
+    ) as HTMLSpanElement | null;
+
+    expect(history?.textContent).toBe('Undo: Resize section: Verse (8 bars -> 12 bars)');
+    expect(history?.title).toBe(
+      'Undo is ready to restore the arrangement captured before Resize section: Verse (8 bars -> 12 bars). ' +
+      'Use Undo to restore the arrangement captured before Resize section: Verse (8 bars -> 12 bars).'
+    );
+  });
+
   it('renders blocked undo boundary truth instead of implying history is simply idle', () => {
     useUndoStore.getState().pushUndo('Broken action', {
       undo: 'not json',

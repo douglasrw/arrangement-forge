@@ -184,6 +184,10 @@ function describeSectionUndoTarget(action: string, section: Section | undefined)
   return sectionName ? `${action} section: ${sectionName}` : `${action} section`;
 }
 
+function formatSectionBarCountLabel(barCount: number): string {
+  return `${barCount} bar${barCount === 1 ? '' : 's'}`;
+}
+
 function describeSectionUpdateUndoTarget(
   section: Section | undefined,
   partial: Partial<Section>
@@ -193,6 +197,23 @@ function describeSectionUpdateUndoTarget(
 
   if (currentName && nextName && nextName !== currentName) {
     return `Rename section: ${currentName} -> ${nextName}`;
+  }
+
+  const currentBarCount = section?.barCount;
+  const nextBarCount =
+    partial.barCount === undefined ? currentBarCount : Math.max(1, partial.barCount);
+
+  if (
+    currentBarCount !== undefined &&
+    nextBarCount !== undefined &&
+    currentBarCount !== nextBarCount
+  ) {
+    const sectionTarget = currentName ? `: ${currentName}` : '';
+
+    return (
+      `Resize section${sectionTarget} ` +
+      `(${formatSectionBarCountLabel(currentBarCount)} -> ${formatSectionBarCountLabel(nextBarCount)})`
+    );
   }
 
   return describeSectionUndoTarget('Update', section);
