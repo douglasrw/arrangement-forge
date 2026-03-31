@@ -35,6 +35,7 @@ type ChordParseFailureLike = {
     currentState?: string | null;
     nextStep?: string | null;
     summary?: string | null;
+    blockedTokenLabels?: string[];
     issueHighlights?: string[];
     remainingIssueCount?: number;
   };
@@ -115,12 +116,14 @@ function describeChordParseBlocker(parseResult: ChordParseFailureLike): string {
   const currentState = parseResult.truth?.currentState?.trim();
   const summary = parseResult.truth?.summary?.trim();
   const nextStep = parseResult.truth?.nextStep?.trim();
+  const blockedTokenLabels = parseResult.truth?.blockedTokenLabels?.filter(Boolean) ?? [];
   const issueHighlights = parseResult.truth?.issueHighlights?.filter(Boolean) ?? [];
   const remainingIssueCount = parseResult.truth?.remainingIssueCount ?? 0;
   const truthDetails = [
     currentState,
     summary,
     nextStep ? `Next step: ${nextStep}` : null,
+    blockedTokenLabels.length ? `Blocked tokens: ${blockedTokenLabels.join('; ')}.` : null,
     issueHighlights.length ? `Flagged chart locations: ${issueHighlights.join(' ')}` : null,
     remainingIssueCount > 0
       ? `${remainingIssueCount} more flagged ${
