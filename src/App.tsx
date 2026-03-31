@@ -12,6 +12,10 @@ import SettingsPage from '@/pages/SettingsPage';
 function describeProtectedDestination(path: string) {
   const routePath = path.split(/[?#]/, 1)[0] ?? path;
 
+  if (routePath === '/project') {
+    return 'project selection in the editor';
+  }
+
   if (routePath.startsWith('/project/')) {
     const [, , projectId] = routePath.split('/');
     return projectId ? `project ${projectId} in the editor` : 'the requested project in the editor';

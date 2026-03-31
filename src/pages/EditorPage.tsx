@@ -91,7 +91,7 @@ export default function EditorPage({
         status: routeMode === 'project-selection' ? 'no-project-selected' : 'error',
         message:
           routeMode === 'project-selection'
-            ? 'The editor route is open, but no project has been selected yet.'
+            ? 'The /project editor route is open, but no project has been selected yet.'
             : 'The requested project route is missing an id.',
       });
       return;
@@ -141,7 +141,7 @@ export default function EditorPage({
           <EditorShellState
             title="Choose a project to open the editor"
             message={routeState.message}
-            nextStep="Return to the library, then open an existing project or create a new one."
+            nextStep="Return to the library, then open an existing project or create a new one to finish this editor route."
             testId="editor-shell-no-project-state"
             actionHref="/library"
             actionLabel="Go to library"

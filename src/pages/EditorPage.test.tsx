@@ -375,10 +375,10 @@ describe('EditorPage route loading gate', () => {
     expect(queryNoProjectState()).not.toBeNull();
     expect(querySelectionSurface()).toBeNull();
     expect(document.body.textContent).toContain(
-      'The editor route is open, but no project has been selected yet.'
+      'The /project editor route is open, but no project has been selected yet.'
     );
     expect(document.body.textContent).toContain(
-      'Next step: Return to the library, then open an existing project or create a new one.'
+      'Next step: Return to the library, then open an existing project or create a new one to finish this editor route.'
     );
     expect(queryBackToLibraryLink()).not.toBeNull();
   });

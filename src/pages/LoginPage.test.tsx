@@ -310,6 +310,20 @@ describe('LoginPage failure truth', () => {
     expect(mounted.container.querySelector('form')).not.toBeNull();
   });
 
+  it('names the editor fallback route before authentication begins', () => {
+    locationMock.state = {
+      redirectTo: '/project',
+    };
+
+    const mounted = renderLoginPage();
+    mountedRoot = mounted.root;
+    mountedContainer = mounted.container;
+
+    expect(mounted.container.textContent).toContain('Authentication blocked');
+    expect(mounted.container.textContent).toContain('return you to project selection in the editor');
+    expect(mounted.container.querySelector('form')).not.toBeNull();
+  });
+
   it('shows why the login form is blocked when the prior session lost its saved profile', () => {
     authApi.signedOutReason = 'missing-profile';
     locationMock.state = {
@@ -559,6 +573,21 @@ describe('LoginPage failure truth', () => {
     expect(mounted.container.querySelector('form')).toBeNull();
   });
 
+  it('keeps editor fallback recovery explicit while session bootstrap is still running', () => {
+    authApi.authStatus = 'checking-session';
+    locationMock.state = {
+      redirectTo: '/project',
+    };
+
+    const mounted = renderLoginPage();
+    mountedRoot = mounted.root;
+    mountedContainer = mounted.container;
+
+    expect(mounted.container.querySelector('[data-testid="auth-loading-screen"]')).not.toBeNull();
+    expect(mounted.container.textContent).toContain('continue to project selection in the editor');
+    expect(mounted.container.querySelector('form')).toBeNull();
+  });
+
   it('holds authenticated sessions off the login form and recovers them forward', async () => {
     authApi.authStatus = 'authenticated';
     locationMock.state = {
@@ -580,5 +609,26 @@ describe('LoginPage failure truth', () => {
     });
 
     expect(navigateMock).toHaveBeenCalledWith('/settings', { replace: true });
+  });
+
+  it('holds authenticated sessions off the login form and returns them to the editor fallback route', async () => {
+    authApi.authStatus = 'authenticated';
+    locationMock.state = {
+      redirectTo: '/project',
+    };
+
+    const mounted = renderLoginPage();
+    mountedRoot = mounted.root;
+    mountedContainer = mounted.container;
+
+    expect(mounted.container.querySelector('[data-testid="auth-loading-screen"]')).not.toBeNull();
+    expect(mounted.container.textContent).toContain('Returning you to project selection in the editor');
+    expect(mounted.container.querySelector('form')).toBeNull();
+
+    await act(async () => {
+      await Promise.resolve();
+    });
+
+    expect(navigateMock).toHaveBeenCalledWith('/project', { replace: true });
   });
 });

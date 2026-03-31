@@ -81,6 +81,14 @@ function renderRoute(initialEntry: string) {
             }
           />
           <Route
+            path="/project"
+            element={
+              <AuthGuard>
+                <div data-testid="editor-page">Editor page</div>
+              </AuthGuard>
+            }
+          />
+          <Route
             path="/project/:id"
             element={
               <AuthGuard>
@@ -190,6 +198,24 @@ describe('App protected route recovery truth', () => {
 
     expect(mounted.container.querySelector('[data-testid="auth-loading-screen"]')).not.toBeNull();
     expect(mounted.container.textContent).toContain('continue to project project-1 in the editor');
+    expect(mounted.container.querySelector('[data-testid="login-page"]')).toBeNull();
+    expect(mounted.container.querySelector('[data-testid="editor-page"]')).toBeNull();
+  });
+
+  it('keeps the editor fallback route explicit during auth bootstrap', () => {
+    setAuthStoreFixture({
+      authStatus: 'checking-session',
+      signedOutReason: null,
+      user: null,
+      profile: null,
+    });
+
+    const mounted = renderRoute('/project');
+    mountedRoot = mounted.root;
+    mountedContainer = mounted.container;
+
+    expect(mounted.container.querySelector('[data-testid="auth-loading-screen"]')).not.toBeNull();
+    expect(mounted.container.textContent).toContain('continue to project selection in the editor');
     expect(mounted.container.querySelector('[data-testid="login-page"]')).toBeNull();
     expect(mounted.container.querySelector('[data-testid="editor-page"]')).toBeNull();
   });

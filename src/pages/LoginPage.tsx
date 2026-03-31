@@ -27,6 +27,10 @@ function resolveRecoveryPath(state: unknown) {
 }
 
 function describeRecoveryDestination(path: string) {
+  if (path === '/project') {
+    return 'project selection in the editor';
+  }
+
   if (path.startsWith('/project/')) {
     return 'your project';
   }
