@@ -4,11 +4,10 @@ Status date: 2026-04-01
 
 Status: landed on local `main`; reverified again on 2026-04-01 with the
 focused parser, input-surface, generation-block, and type-check proofs passing
-against the pre-refresh local `main` head `426a91c1bbcc`, no remaining bounded
-product delta visible in this family beyond keeping this repo-local truth
-artifact aligned with the latest verified state, and this refresh still does
-not claim any fresh product promotion beyond the already-verified local
-`main` state
+against the current local `main` head `28e1d53e`, no remaining bounded product
+delta visible in this family beyond keeping this repo-local truth artifact
+aligned with the latest verified state, and this refresh still does not claim
+any fresh product promotion beyond the already-verified local `main` state
 
 Purpose: preserve the current chord parser failure contract and its landing
 proof in one repo-local place so future work does not have to reconstruct it
@@ -159,10 +158,11 @@ Current focused proofs for this slice:
 - `pnpm exec vitest run src/lib/chord-chart-parser.test.ts`
 - `pnpm exec vitest run src/components/left-panel/InputSection.test.tsx`
 - `pnpm exec vitest run src/hooks/useGenerate.test.tsx`
+- `pnpm exec vitest run src/lib/chord-chart-parser.test.ts src/components/left-panel/InputSection.test.tsx src/hooks/useGenerate.test.tsx`
 - `pnpm exec tsc --noEmit`
 - the current proof set still matches the same bounded parser, input-surface,
   and generation-block contract after the 2026-04-01 recheck against the
-  pre-refresh local `main` head `426a91c1bbcc`
+  current local `main` head `28e1d53e`
 - this artifact proves the current local `main` worktree state at that head;
   it does not claim any fresh product promotion happened during this refresh
 
