@@ -162,6 +162,23 @@ describe('App protected route recovery truth', () => {
     expect(mounted.container.querySelector('[data-testid="library-page"]')).toBeNull();
   });
 
+  it('preserves the exact editor fallback route when unauthenticated users are sent to login', async () => {
+    const mounted = renderRoute('/project?tab=arrangement#new');
+    mountedRoot = mounted.root;
+    mountedContainer = mounted.container;
+
+    await act(async () => {
+      await Promise.resolve();
+    });
+
+    expect(mounted.container.querySelector('[data-testid="location-path"]')?.textContent).toBe('/login');
+    expect(mounted.container.querySelector('[data-testid="location-redirect"]')?.textContent).toBe(
+      '/project?tab=arrangement#new'
+    );
+    expect(mounted.container.querySelector('[data-testid="login-page"]')).not.toBeNull();
+    expect(mounted.container.querySelector('[data-testid="editor-page"]')).toBeNull();
+  });
+
   it('shows the loading gate without flashing login or protected content during bootstrap', () => {
     setAuthStoreFixture({
       authStatus: 'checking-session',
