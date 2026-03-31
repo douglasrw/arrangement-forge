@@ -875,6 +875,46 @@ describe('InputSection upload tab', () => {
     expect(getGenerateButton(mounted.container).disabled).toBe(true);
   });
 
+  it('surfaces blocked upload feedback when an imported chart only contains no-chord bars', async () => {
+    useProjectStore.setState({
+      project: makeProject({
+        chordChartRaw: 'Cmaj7 | Fmaj7 | G7 | Cmaj7',
+        generationHints: 'Keep the brushes light',
+      }),
+    });
+
+    const mounted = renderSection();
+    mountedRoot = mounted.root;
+    mountedContainer = mounted.container;
+
+    openUploadTab(mounted.container);
+    const fileInput = getUploadFileInput(mounted.container);
+
+    const file = new File(['placeholder'], 'rests-only.txt', { type: 'text/plain' });
+    vi.spyOn(file, 'text').mockResolvedValue('N.C. | - | nc');
+
+    await importFile(fileInput, file);
+
+    expect(useProjectStore.getState().project).toMatchObject({
+      chordChartRaw: 'N.C. | - | nc',
+      generationHints: 'Keep the brushes light',
+    });
+    expect(mounted.container.textContent).toContain(
+      'Imported rests-only.txt into the current chord chart. Existing Description was kept.'
+    );
+    expect(mounted.container.textContent).toContain(
+      'Chart is blocked: The current chart only contains N.C. or rest bars, so Generate stays blocked until at least one playable chord bar is entered.'
+    );
+    expect(mounted.container.textContent).toContain(
+      'Why it is blocked: Bars marked as N.C. or rest do not create playable harmony on their own.'
+    );
+    expect(mounted.container.textContent).toContain(
+      'Next step: Replace at least one N.C. or rest bar with a chord such as Cmaj7 | Fmaj7 | G7 | Cmaj7.'
+    );
+    expect(mounted.container.textContent).toContain('Chord chart needs chord bars');
+    expect(getGenerateButton(mounted.container).disabled).toBe(true);
+  });
+
   it('surfaces line-aware chart locations when invalid rows appear after a section header', () => {
     useProjectStore.setState({
       project: makeProject({
