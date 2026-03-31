@@ -2,7 +2,7 @@
 
 Status date: 2026-03-31
 
-Status: landed on `main`; reverified from `123977ac` on 2026-03-31 with focused route proofs and no remaining product delta in this family beyond this evidence refresh
+Status: landed on `main`; reverified from `23080b02` on 2026-03-31 with focused route proofs and no remaining product delta in this family beyond this evidence refresh
 
 Purpose: preserve the current editor route contract and its landing proof in
 one repo-local place so future work does not have to reconstruct it from
@@ -42,8 +42,10 @@ one repo-local place so future work does not have to reconstruct it from
   open and point back to the library.
 - Ready state keeps the active route explicit and reminds the operator that
   `/project` remains the fallback route if they leave the current project.
-- Ready state also names route readiness directly instead of forcing the
-  operator to infer that the current route is already open in this workspace.
+- Ready state names route readiness directly instead of forcing the operator to
+  infer that the current route is already open in this workspace.
+- Ready state also keeps the current state and next step on separate explicit
+  lines instead of collapsing them into one sentence.
 
 ## Proof
 
@@ -80,12 +82,16 @@ Current focused proofs for this slice:
   `commitpath_c40ed88d Tighten auth route readiness truth`
 - `123977acdce6a135ed90bf55c233c9be417ec998`:
   `commitpath_c40ed88d Refresh editor route readiness truth evidence`
+- `64f5e914b127376d1d6cbef4c9199f7efc6f958a`:
+  `commitpath_c40ed88d Refresh editor route readiness truth evidence`
+- `23080b02c37d771987e503b5aa1bd9a70ea06b3a`:
+  `commitpath_c40ed88d: clarify editor route next steps`
 - The landing made current route, fallback route, and route readiness explicit
   across auth bootstrap, route loading, malformed-route handling, missing or
   unavailable project states, and ready-state recovery.
-- The current `main` head at `123977ac` still preserves that contract, and the
-  focused route proofs passed again on 2026-03-31 without additional product
-  changes to the route surface.
+- The current `main` head at `23080b02` still preserves that contract, and the
+  focused route proofs passed again on 2026-03-31 after the ready banner split
+  current-state truth from next-step truth on separate lines.
 - After the 2026-03-31 recheck, this family appears exhausted until a new
   editor-route behavior changes the contract or the proof surface.
 
