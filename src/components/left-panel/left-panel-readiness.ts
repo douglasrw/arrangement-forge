@@ -289,7 +289,7 @@ export function getLeftPanelCoordinationTruth(
     return {
       badge: "Blocked",
       title: "Chord chart fixes are blocking generation",
-      detail: "Fix the flagged bars in Input before asking the assistant to generate or revise the arrangement.",
+      detail: aiTruth.detail,
       tone: "attention",
       sections: {
         input: toInputSectionTruth(inputTruth),
