@@ -3,12 +3,14 @@
 Status date: 2026-03-31
 
 Status: landed on `main`; reverified on 2026-03-31 against product head
-`1df2c047` with no remaining bounded product delta visible in this family
+`a43c46b8` with no remaining bounded product delta visible in this family
 
 Purpose: preserve the current chord parser failure contract and its landing
 proof in one repo-local place so future work does not have to reconstruct it
 from `src/lib/chord-chart-parser.ts`, `src/components/left-panel/InputSection.tsx`,
-`src/hooks/useGenerate.ts`, and scattered tests.
+`src/components/left-panel/AiAssistantSection.tsx`,
+`src/components/left-panel/left-panel-readiness.ts`, `src/hooks/useGenerate.ts`,
+and scattered tests.
 
 ## Parser Contract
 
@@ -91,6 +93,19 @@ from `src/lib/chord-chart-parser.ts`, `src/components/left-panel/InputSection.ts
   blocked bars still need review instead of hiding that overflow behind the
   truncated highlight list
 
+`src/components/left-panel/left-panel-readiness.ts` and
+`src/components/left-panel/AiAssistantSection.tsx` own the assistant-readiness
+truth:
+
+- assistant requests stay blocked when parser issues remain, even if a project
+  and chord chart are already present
+- the assistant composer state names the same blocked chord-fix requirement
+  before the operator can send a prompt, instead of leaving the disabled send
+  state to imply why assistant generation is unavailable
+- the empty-state and placeholder copy keep the same repair step visible in the
+  assistant surface, so the operator does not have to infer that chord parse
+  blockers also gate assistant-driven generation
+
 `src/hooks/useGenerate.ts` owns the generation-block truth:
 
 - generation stops before calling the generator when parser issues are present
@@ -104,9 +119,9 @@ from `src/lib/chord-chart-parser.ts`, `src/components/left-panel/InputSection.ts
 
 Current focused proofs for this slice:
 
-- `pnpm test -- --run src/lib/chord-chart-parser.test.ts src/components/left-panel/InputSection.test.tsx src/hooks/useGenerate.test.tsx`
+- `pnpm test -- --run src/lib/chord-chart-parser.test.ts src/components/left-panel/InputSection.test.tsx src/components/left-panel/AiAssistantSection.test.tsx src/components/left-panel/LeftPanel.test.tsx src/hooks/useGenerate.test.tsx`
 - `pnpm run type-check`
-- verification head: `1df2c047463e996ee0602661fd247519598728ed`
+- verification head: `a43c46b82d133b70061ce93dd67f75768cc9d2ff`
 
 ## Tracked Landing
 
@@ -127,7 +142,7 @@ Current focused proofs for this slice:
 - `bb0ef6907c1668f001efbc94e35a1f332d4e9cf3`:
   `Clarify chord parser blocked-state truth`
 - `f433c4ed012a35b196555b3f3e94ae02d70cf39e`:
-  `commitpath_c40ed88d Refresh chord parser failure truth evidence`
+  `commitpath_c40ed88d Block assistant readiness on chord parse issues`
 - `c60dbed13e48ea66881d37b7bad8d1456ee63447`:
   `commitpath_c40ed88d Clarify first saved settings profile truth`
 - `3aa4743cb13d3762e704fe99f859a11b02c7c2ee`:
@@ -258,6 +273,9 @@ Current focused proofs for this slice:
 - Commit `b3c81a91` refreshed the same repo-local evidence after another clean
   focused recheck so the artifact kept tracking the latest verified `main`
   head instead of stopping at the previous product-pointer refresh.
+- Commit `f433c4ed` extended the same family into assistant readiness, keeping
+  assistant generation blocked with explicit repair copy whenever chord parse
+  issues remain instead of letting the disabled composer hide that dependency.
 - Commit `dca1b46e` repeated that repo-local evidence refresh so the artifact
   kept pace with the current verified `main` head instead of stopping one
   checked proof behind.
