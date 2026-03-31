@@ -2,7 +2,7 @@
 
 Status date: 2026-03-31
 
-Status: landed on `main`; reverified on 2026-03-31 at proof head `a63700d1`,
+Status: landed on `main`; reverified on 2026-03-31 at proof head `c60dbed1`,
 with the same parser, input surface, and generation block contract still
 holding at the current repo head without a new product delta
 
@@ -88,10 +88,12 @@ Current focused proofs for this slice:
 
 - `pnpm test -- --run src/lib/chord-chart-parser.test.ts src/components/left-panel/InputSection.test.tsx src/hooks/useGenerate.test.tsx`
 - `pnpm type-check`
-- verification head: `a63700d1dd26ca18ee3230ef9a9a24f629aeed12`
+- verification head: `c60dbed13e48ea66881d37b7bad8d1456ee63447`
 
 ## Tracked Landing
 
+- `c60dbed13e48ea66881d37b7bad8d1456ee63447`:
+  `commitpath_c40ed88d Clarify first saved settings profile truth`
 - `3aa4743cb13d3762e704fe99f859a11b02c7c2ee`:
   `commitpath_c40ed88d Refresh chord parser failure truth evidence`
 - `105261ac62b635b7c2db3cf8ca710bc7c53357b0`:
@@ -285,6 +287,10 @@ Current focused proofs for this slice:
   focused proof results with no product-file delta in this family, so the
   honest move remained a repo-local evidence refresh rather than another
   parser or input-surface patch.
+- The later 2026-03-31 recheck at verified proof head `c60dbed1` produced the
+  same focused proof results again with no product-file delta in this family,
+  so the honest move remained another repo-local evidence refresh instead of a
+  speculative parser or input-surface edit.
 
 The tests cover:
 
