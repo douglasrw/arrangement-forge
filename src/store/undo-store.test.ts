@@ -129,6 +129,30 @@ describe('undoStore', () => {
     });
   });
 
+  it('marks an available undo boundary as paused while generation is running', () => {
+    useUndoStore.getState().pushUndo('Split block', {
+      undo: makeSnapshot('before'),
+      redo: makeSnapshot('after'),
+    });
+
+    expect(useUndoStore.getState().canUndo('generating')).toBe(false);
+    expect(useUndoStore.getState().getUndoBoundaryTruth('generating')).toMatchObject({
+      boundary: 'undo',
+      status: 'paused',
+      actionLabel: null,
+      statusLabel: 'Undo paused',
+      currentState:
+        'Generation is still running, so Undo is temporarily paused even though the arrangement captured before Split block is still preserved on the stack.',
+      nextStep:
+        'Wait for generation to finish, then use Undo to restore the arrangement captured before Split block.',
+    });
+    expect(useUndoStore.getState().getHistoryTruth('generating')).toMatchObject({
+      status: 'paused',
+      boundary: 'undo',
+      label: 'Undo paused',
+    });
+  });
+
   it('does not advertise undo when the top undo boundary is not restorable', () => {
     useUndoStore.getState().pushUndo('Broken action', {
       undo: 'not json',

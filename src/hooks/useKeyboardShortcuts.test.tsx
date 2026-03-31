@@ -281,4 +281,37 @@ describe('useKeyboardShortcuts undo boundary truth', () => {
     expect(useUndoStore.getState().undoStack).toHaveLength(1);
     expect(useUndoStore.getState().redoStack).toHaveLength(0);
   });
+
+  it('leaves the arrangement unchanged while generation keeps undo paused', () => {
+    const before = makeArrangement('before');
+    const after = makeArrangement('after');
+
+    useUiStore.setState({
+      generationState: 'generating',
+    });
+    useProjectStore.getState().setArrangement(after);
+    useUndoStore.getState().pushUndo(
+      'Boundary test',
+      {
+        undo: JSON.stringify(before),
+        redo: JSON.stringify(after),
+      }
+    );
+
+    const mounted = renderHarness();
+    mountedRoot = mounted.root;
+    mountedContainer = mounted.container;
+
+    dispatchShortcut('z');
+
+    expect(useProjectStore.getState().blocks).toMatchObject([
+      { id: 'blk-after', stemId: 'st-after', sectionId: 'sec-after' },
+    ]);
+    expect(useUndoStore.getState().getUndoBoundaryTruth('generating')).toMatchObject({
+      status: 'paused',
+      statusLabel: 'Undo paused',
+    });
+    expect(useUndoStore.getState().undoStack).toHaveLength(1);
+    expect(useUndoStore.getState().redoStack).toHaveLength(0);
+  });
 });

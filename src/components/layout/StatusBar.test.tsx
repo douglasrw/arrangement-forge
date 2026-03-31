@@ -139,7 +139,11 @@ beforeEach(() => {
     chords: [],
   });
   useUiStore.setState({
+    generationState: 'idle',
+    systemStatus: 'ready',
     errorMessage: null,
+    unsavedChanges: false,
+    lastSavedAt: null,
   });
   useUndoStore.setState({
     undoStack: [],
@@ -391,6 +395,26 @@ describe('StatusBar', () => {
     expect(history?.textContent).toBe('Redo: Split block');
     expect(history?.title).toBe(
       'Redo is ready to restore the arrangement captured after Split block. Use Redo to restore the arrangement captured after Split block.'
+    );
+  });
+
+  it('renders paused undo history while generation temporarily locks the stack', () => {
+    useUiStore.setState({
+      generationState: 'generating',
+    });
+    useUndoStore.getState().pushUndo('Split block', {
+      undo: makeSnapshot('before'),
+      redo: makeSnapshot('after'),
+    });
+
+    const container = renderStatusBar('generating');
+    const history = container.querySelector(
+      '[data-testid="status-bar-history"]'
+    ) as HTMLSpanElement | null;
+
+    expect(history?.textContent).toBe('Undo paused');
+    expect(history?.title).toBe(
+      'Generation is still running, so Undo is temporarily paused even though the arrangement captured before Split block is still preserved on the stack. Wait for generation to finish, then use Undo to restore the arrangement captured before Split block.'
     );
   });
 });

@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import {
   createUndoBoundaryTruth,
+  createUndoBoundaryExecutionTruth,
   createUndoBoundaryEntry,
   createUndoHistoryTruth,
   type UndoBoundaryTruth,
@@ -9,6 +10,7 @@ import {
   type UndoBoundarySnapshots,
   type UndoBoundaryTransition,
 } from '@/lib/undo-helpers';
+import type { GenerationState } from '@/types';
 
 export interface UndoEntry extends UndoBoundaryEntry {
   description: string;
@@ -24,30 +26,43 @@ interface UndoStore {
   pushUndo: (description: string, snapshots: UndoBoundarySnapshots) => void;
   undo: () => UndoTransition | null;
   redo: () => UndoTransition | null;
-  getUndoBoundaryTruth: () => UndoBoundaryTruth;
-  getRedoBoundaryTruth: () => UndoBoundaryTruth;
-  getHistoryTruth: () => UndoHistoryTruth;
-  canUndo: () => boolean;
-  canRedo: () => boolean;
-  getUndoDescription: () => string | null;
-  getRedoDescription: () => string | null;
+  getUndoBoundaryTruth: (generationState?: GenerationState) => UndoBoundaryTruth;
+  getRedoBoundaryTruth: (generationState?: GenerationState) => UndoBoundaryTruth;
+  getHistoryTruth: (generationState?: GenerationState) => UndoHistoryTruth;
+  canUndo: (generationState?: GenerationState) => boolean;
+  canRedo: (generationState?: GenerationState) => boolean;
+  getUndoDescription: (generationState?: GenerationState) => string | null;
+  getRedoDescription: (generationState?: GenerationState) => string | null;
 }
 
-function getUndoBoundaryTruthForEntry(entry: UndoEntry | undefined): UndoBoundaryTruth {
-  return createUndoBoundaryTruth(entry ?? null, 'undo', entry?.description ?? null);
+function getUndoBoundaryTruthForEntry(
+  entry: UndoEntry | undefined,
+  generationState?: GenerationState
+): UndoBoundaryTruth {
+  return createUndoBoundaryExecutionTruth(
+    createUndoBoundaryTruth(entry ?? null, 'undo', entry?.description ?? null),
+    generationState
+  );
 }
 
-function getRedoBoundaryTruthForEntry(entry: UndoEntry | undefined): UndoBoundaryTruth {
-  return createUndoBoundaryTruth(entry ?? null, 'redo', entry?.description ?? null);
+function getRedoBoundaryTruthForEntry(
+  entry: UndoEntry | undefined,
+  generationState?: GenerationState
+): UndoBoundaryTruth {
+  return createUndoBoundaryExecutionTruth(
+    createUndoBoundaryTruth(entry ?? null, 'redo', entry?.description ?? null),
+    generationState
+  );
 }
 
 function getHistoryTruthForEntries(
   undoEntry: UndoEntry | undefined,
-  redoEntry: UndoEntry | undefined
+  redoEntry: UndoEntry | undefined,
+  generationState?: GenerationState
 ): UndoHistoryTruth {
   return createUndoHistoryTruth(
-    getUndoBoundaryTruthForEntry(undoEntry),
-    getRedoBoundaryTruthForEntry(redoEntry)
+    getUndoBoundaryTruthForEntry(undoEntry, generationState),
+    getRedoBoundaryTruthForEntry(redoEntry, generationState)
   );
 }
 
@@ -93,32 +108,33 @@ export const useUndoStore = create<UndoStore>()((set, get) => ({
     };
   },
 
-  getUndoBoundaryTruth: () => {
+  getUndoBoundaryTruth: (generationState) => {
     const stack = get().undoStack;
-    return getUndoBoundaryTruthForEntry(stack[stack.length - 1]);
+    return getUndoBoundaryTruthForEntry(stack[stack.length - 1], generationState);
   },
 
-  getRedoBoundaryTruth: () => {
+  getRedoBoundaryTruth: (generationState) => {
     const stack = get().redoStack;
-    return getRedoBoundaryTruthForEntry(stack[stack.length - 1]);
+    return getRedoBoundaryTruthForEntry(stack[stack.length - 1], generationState);
   },
 
-  getHistoryTruth: () => {
+  getHistoryTruth: (generationState) => {
     const { undoStack, redoStack } = get();
     return getHistoryTruthForEntries(
       undoStack[undoStack.length - 1],
-      redoStack[redoStack.length - 1]
+      redoStack[redoStack.length - 1],
+      generationState
     );
   },
 
-  canUndo: () => {
-    return get().getUndoBoundaryTruth().status === 'available';
+  canUndo: (generationState) => {
+    return get().getUndoBoundaryTruth(generationState).status === 'available';
   },
-  canRedo: () => {
-    return get().getRedoBoundaryTruth().status === 'available';
+  canRedo: (generationState) => {
+    return get().getRedoBoundaryTruth(generationState).status === 'available';
   },
 
-  getUndoDescription: () => get().getUndoBoundaryTruth().actionLabel,
+  getUndoDescription: (generationState) => get().getUndoBoundaryTruth(generationState).actionLabel,
 
-  getRedoDescription: () => get().getRedoBoundaryTruth().actionLabel,
+  getRedoDescription: (generationState) => get().getRedoBoundaryTruth(generationState).actionLabel,
 }));

@@ -93,8 +93,9 @@ interface StatusBarProps {
 
 export function StatusBar({ status = 'saved', className }: StatusBarProps) {
   const errorMessage = useUiStore((state) => state.errorMessage);
+  const generationState = useUiStore((state) => state.generationState);
   const undoStore = useUndoStore();
-  const historyTruth = undoStore.getHistoryTruth();
+  const historyTruth = undoStore.getHistoryTruth(generationState);
   const { project, stems, sections, blocks, chords } = useProjectStore();
   const arrangementTruth = getProjectArrangementTruth({
     project,

@@ -1,6 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import {
   createUndoBoundaryTruth,
+  createUndoBoundaryExecutionTruth,
   createUndoBoundaryTransition,
   createUndoHistoryTruth,
   parseRedoSnapshot,
@@ -186,6 +187,43 @@ describe('createUndoBoundaryTruth', () => {
       'Do not offer Redo for this boundary until a valid restore snapshot is stored.'
     );
     expect(truth.transition?.restoreSnapshot).toBeNull();
+  });
+});
+
+describe('createUndoBoundaryExecutionTruth', () => {
+  it('describes an available undo boundary as paused while generation is running', () => {
+    const truth = createUndoBoundaryExecutionTruth(
+      createUndoBoundaryTruth(
+        {
+          undoSnapshot: JSON.stringify({
+            stems: [{ id: 'undo-stem' }],
+            sections: [],
+            blocks: [],
+            chords: [],
+          }),
+          redoSnapshot: JSON.stringify({
+            stems: [{ id: 'redo-stem' }],
+            sections: [],
+            blocks: [],
+            chords: [],
+          }),
+        },
+        'undo',
+        'Split block'
+      ),
+      'generating'
+    );
+
+    expect(truth).toMatchObject({
+      boundary: 'undo',
+      status: 'paused',
+      actionLabel: null,
+      statusLabel: 'Undo paused',
+      currentState:
+        'Generation is still running, so Undo is temporarily paused even though the arrangement captured before Split block is still preserved on the stack.',
+      nextStep:
+        'Wait for generation to finish, then use Undo to restore the arrangement captured before Split block.',
+    });
   });
 });
 

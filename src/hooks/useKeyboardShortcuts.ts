@@ -24,7 +24,7 @@ export function useKeyboardShortcuts() {
   const { clearSelection, selectNextBlock, selectPrevBlock, selectBlockAbove, selectBlockBelow } = useSelectionStore();
   const { blockId } = useSelectionStore();
   const { deleteBlock, duplicateBlock } = useProjectStore();
-  const { undo, redo, canUndo, canRedo } = useUndoStore();
+  const { undo, redo, getUndoBoundaryTruth, getRedoBoundaryTruth } = useUndoStore();
   const { saveProject } = useProject();
 
   useEffect(() => {
@@ -39,7 +39,7 @@ export function useKeyboardShortcuts() {
       // Cmd+Z — undo
       if (isMod(e) && !e.shiftKey && e.key === 'z') {
         e.preventDefault();
-        if (canUndo() && generationState !== 'generating') {
+        if (getUndoBoundaryTruth(generationState).status === 'available') {
           const transition = undo();
           if (transition?.restoreSnapshot) {
             useProjectStore.getState().setArrangement(transition.restoreSnapshot);
@@ -51,7 +51,7 @@ export function useKeyboardShortcuts() {
       // Cmd+Shift+Z — redo
       if (isMod(e) && e.shiftKey && e.key === 'z') {
         e.preventDefault();
-        if (canRedo() && generationState !== 'generating') {
+        if (getRedoBoundaryTruth(generationState).status === 'available') {
           const transition = redo();
           if (transition?.restoreSnapshot) {
             useProjectStore.getState().setArrangement(transition.restoreSnapshot);
@@ -128,7 +128,7 @@ export function useKeyboardShortcuts() {
   }, [
     setToolMode, toggleMixer, zoomIn, zoomOut, zoomFitAll,
     clearSelection, selectNextBlock, selectPrevBlock, selectBlockAbove, selectBlockBelow,
-    deleteBlock, duplicateBlock, blockId, undo, redo, canUndo, canRedo,
+    deleteBlock, duplicateBlock, blockId, undo, redo, getUndoBoundaryTruth, getRedoBoundaryTruth,
     saveProject, generationState,
   ]);
 }

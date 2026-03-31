@@ -1,6 +1,6 @@
 // undo-helpers.ts — Unified snapshot format and boundary helpers for undo/redo.
 
-import type { Stem, Section, Block, Chord } from '@/types';
+import type { Stem, Section, Block, Chord, GenerationState } from '@/types';
 
 export interface ArrangementSnapshot {
   stems: Stem[];
@@ -26,7 +26,7 @@ export interface UndoBoundaryTransition extends UndoBoundaryEntry {
   restoreSnapshot: ArrangementSnapshot | null;
 }
 
-export type UndoBoundaryStatus = 'empty' | 'available' | 'blocked';
+export type UndoBoundaryStatus = 'empty' | 'available' | 'blocked' | 'paused';
 
 export interface UndoBoundaryTruth {
   boundary: UndoBoundary;
@@ -40,7 +40,7 @@ export interface UndoBoundaryTruth {
 }
 
 export interface UndoHistoryTruth {
-  status: 'idle' | 'available' | 'blocked';
+  status: 'idle' | 'available' | 'blocked' | 'paused';
   boundary: UndoBoundary | null;
   label: string;
   currentState: string;
@@ -111,12 +111,54 @@ function formatUndoBoundaryTooltip(boundary: UndoBoundaryTruth): string {
   return `${boundary.currentState} ${boundary.nextStep}`.trim();
 }
 
+function getUndoBoundaryCaptureTarget(
+  boundary: UndoBoundary,
+  description: string | null
+): string {
+  const actionTarget = getUndoBoundaryActionTarget(description);
+
+  return boundary === 'undo' ? `before ${actionTarget}` : `after ${actionTarget}`;
+}
+
+function createPausedUndoBoundaryTruth(boundaryTruth: UndoBoundaryTruth): UndoBoundaryTruth {
+  const action = getUndoBoundaryActionLabel(boundaryTruth.boundary);
+  const captureTarget = getUndoBoundaryCaptureTarget(
+    boundaryTruth.boundary,
+    boundaryTruth.description
+  );
+
+  return {
+    ...boundaryTruth,
+    status: 'paused',
+    actionLabel: null,
+    statusLabel: `${action} paused`,
+    currentState:
+      `Generation is still running, so ${action} is temporarily paused ` +
+      `even though the arrangement captured ${captureTarget} is still preserved on the stack.`,
+    nextStep:
+      `Wait for generation to finish, then use ${action} to restore the arrangement captured ${captureTarget}.`,
+  };
+}
+
+export function createUndoBoundaryExecutionTruth(
+  boundaryTruth: UndoBoundaryTruth,
+  generationState: GenerationState | null | undefined
+): UndoBoundaryTruth {
+  if (generationState !== 'generating' || boundaryTruth.status !== 'available') {
+    return boundaryTruth;
+  }
+
+  return createPausedUndoBoundaryTruth(boundaryTruth);
+}
+
 function selectUndoHistoryBoundaryTruth(
   undoBoundary: UndoBoundaryTruth,
   redoBoundary: UndoBoundaryTruth
 ): UndoBoundaryTruth | null {
   if (undoBoundary.status === 'blocked') return undoBoundary;
   if (redoBoundary.status === 'blocked') return redoBoundary;
+  if (undoBoundary.status === 'paused') return undoBoundary;
+  if (redoBoundary.status === 'paused') return redoBoundary;
   if (undoBoundary.status === 'available') return undoBoundary;
   if (redoBoundary.status === 'available') return redoBoundary;
   return null;
