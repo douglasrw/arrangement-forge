@@ -6,7 +6,6 @@ import { useShallow } from 'zustand/react/shallow';
 import { supabase } from '@/lib/supabase';
 import { rowToProfile } from '@/lib/profile';
 import type {
-  AuthGateTruth,
   AuthStoreTruthSlice,
   AuthTruth,
   SignedOutReason,
@@ -20,9 +19,7 @@ export type UseAuthResult = {
   user: User | null;
   profile: ReturnType<typeof useAuthStore.getState>['profile'];
   authStoreTruth: AuthStoreTruthSlice;
-  authState: AuthStoreTruthSlice;
   authTruth: AuthTruth;
-  authGate: AuthGateTruth;
   initAuth: () => () => void;
   signIn: (email: string, password: string) => Promise<void>;
   signUp: (email: string, password: string) => Promise<SignUpResult>;
@@ -38,7 +35,7 @@ type HydrationResult =
 
 export function useAuth(): UseAuthResult {
   const authStoreTruth = useAuthStore(useShallow(selectAuthStoreTruthSlice));
-  const { user, profile, authTruth, authGate } = authStoreTruth;
+  const { user, profile, authTruth } = authStoreTruth;
   const authTransitionIdRef = useRef(0);
 
   const beginSessionCheck = useCallback(() => {
@@ -208,8 +205,6 @@ export function useAuth(): UseAuthResult {
     user,
     profile,
     authStoreTruth,
-    authState: authStoreTruth,
-    authGate,
     authTruth,
     initAuth,
     signIn,

@@ -146,14 +146,6 @@ describe('auth-store gate truth', () => {
         nextStepDetail: 'Open the app.',
         signedOutReason: null,
       },
-      authGate: {
-        access: 'granted',
-        currentState: 'An authenticated session is ready.',
-        nextStep: 'open-app',
-        nextStepLabel: 'Open the app',
-        nextStepDetail: 'Open the app.',
-        signedOutReason: null,
-      },
     });
   });
 
@@ -183,14 +175,6 @@ describe('auth-store gate truth', () => {
       profile: null,
       authTruth: {
         status: 'signed-out',
-        access: 'blocked',
-        currentState: 'The saved profile could not be loaded.',
-        nextStep: 'retry-profile-load',
-        nextStepLabel: 'Retry the profile load',
-        nextStepDetail: 'Retry the profile load by signing in again.',
-        signedOutReason: 'profile-load-failed',
-      },
-      authGate: {
         access: 'blocked',
         currentState: 'The saved profile could not be loaded.',
         nextStep: 'retry-profile-load',

@@ -41,7 +41,6 @@ export interface AuthStoreTruthSlice {
   user: User | null;
   profile: Profile | null;
   authTruth: AuthTruth;
-  authGate: AuthGateTruth;
 }
 
 type AuthStoreTruthSliceState = Pick<
@@ -270,7 +269,6 @@ export function getAuthStoreTruthSlice(
     user: state.user,
     profile: state.profile,
     authTruth: getAuthTruth(state),
-    authGate: getAuthGateTruth(state),
   };
 }
 
