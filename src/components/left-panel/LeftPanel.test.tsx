@@ -233,7 +233,7 @@ describe('LeftPanel inspector truth regression', () => {
     );
     expect(mounted.container.textContent).toContain('Chord chart needs fixes');
     expect(mounted.container.textContent).toContain(
-      'Bars 2 and 3 currently parse as N.C., so Generate stays blocked until the chart is fixed. Next step: Replace the flagged repeat bars with explicit chords or fix the bar before them.'
+      'Bars 2 and 3 currently parse as N.C., so Generate stays blocked until the chart is fixed. Next step: Replace bars 2 and 3 with explicit chords or fix the bar before them.'
     );
   });
 
