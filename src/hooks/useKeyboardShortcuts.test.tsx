@@ -309,7 +309,7 @@ describe('useKeyboardShortcuts undo boundary truth', () => {
     ]);
     expect(useUndoStore.getState().getUndoBoundaryTruth('generating')).toMatchObject({
       status: 'paused',
-      statusLabel: 'Undo paused',
+      statusLabel: 'Undo paused: Boundary test',
     });
     expect(useUndoStore.getState().undoStack).toHaveLength(1);
     expect(useUndoStore.getState().redoStack).toHaveLength(0);
@@ -352,7 +352,7 @@ describe('useKeyboardShortcuts undo boundary truth', () => {
     expect(useUndoStore.getState().redoStack).toHaveLength(1);
     expect(useUndoStore.getState().getRedoBoundaryTruth('generating')).toMatchObject({
       status: 'paused',
-      statusLabel: 'Redo paused',
+      statusLabel: 'Redo paused: Boundary test',
     });
   });
 });

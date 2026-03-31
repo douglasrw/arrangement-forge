@@ -103,6 +103,14 @@ function getUndoBoundaryActionLabel(boundary: UndoBoundary): 'Undo' | 'Redo' {
   return boundary === 'undo' ? 'Undo' : 'Redo';
 }
 
+function formatUndoBoundaryStatusLabel(
+  action: 'Undo' | 'Redo',
+  status: 'blocked' | 'paused',
+  description: string | null
+): string {
+  return description ? `${action} ${status}: ${description}` : `${action} ${status}`;
+}
+
 function getUndoBoundaryActionTarget(description: string | null): string {
   return description?.trim() || 'the last arrangement change';
 }
@@ -135,7 +143,11 @@ function createPausedUndoBoundaryTruth(boundaryTruth: UndoBoundaryTruth): UndoBo
     ...boundaryTruth,
     status: 'paused',
     actionLabel: null,
-    statusLabel: `${action} paused`,
+    statusLabel: formatUndoBoundaryStatusLabel(
+      action,
+      'paused',
+      boundaryTruth.description
+    ),
     currentState:
       `Generation is still running, so ${action} is temporarily paused ` +
       `even though the arrangement captured ${captureTarget} is still preserved on the stack.`,
@@ -205,14 +217,20 @@ export function createUndoBoundaryTruth(
 
   const transition = createUndoBoundaryTransition(entry, boundary);
   if (!transition.restoreSnapshot) {
+    const captureTarget = getUndoBoundaryCaptureTarget(boundary, normalizedDescription);
+
     return {
       boundary,
       status: 'blocked',
       description: normalizedDescription,
       actionLabel: null,
-      statusLabel: `${action} blocked`,
-      currentState: `The latest ${boundary} boundary is still on the stack, but its restore snapshot cannot be read.`,
-      nextStep: `Do not offer ${action} for this boundary until a valid restore snapshot is stored.`,
+      statusLabel: formatUndoBoundaryStatusLabel(action, 'blocked', normalizedDescription),
+      currentState:
+        `The latest ${boundary} boundary is still on the stack, but the arrangement captured ` +
+        `${captureTarget} cannot be read.`,
+      nextStep:
+        `Do not offer ${action} for the arrangement captured ${captureTarget} until a valid ` +
+        `restore snapshot is stored.`,
       transition,
     };
   }

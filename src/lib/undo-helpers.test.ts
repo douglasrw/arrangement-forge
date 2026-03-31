@@ -179,12 +179,12 @@ describe('createUndoBoundaryTruth', () => {
 
     expect(truth.status).toBe('blocked');
     expect(truth.actionLabel).toBeNull();
-    expect(truth.statusLabel).toBe('Redo blocked');
+    expect(truth.statusLabel).toBe('Redo blocked: Split block');
     expect(truth.currentState).toBe(
-      'The latest redo boundary is still on the stack, but its restore snapshot cannot be read.'
+      'The latest redo boundary is still on the stack, but the arrangement captured after Split block cannot be read.'
     );
     expect(truth.nextStep).toBe(
-      'Do not offer Redo for this boundary until a valid restore snapshot is stored.'
+      'Do not offer Redo for the arrangement captured after Split block until a valid restore snapshot is stored.'
     );
     expect(truth.transition?.restoreSnapshot).toBeNull();
   });
@@ -218,7 +218,7 @@ describe('createUndoBoundaryExecutionTruth', () => {
       boundary: 'undo',
       status: 'paused',
       actionLabel: null,
-      statusLabel: 'Undo paused',
+      statusLabel: 'Undo paused: Split block',
       currentState:
         'Generation is still running, so Undo is temporarily paused even though the arrangement captured before Split block is still preserved on the stack.',
       nextStep:
@@ -375,18 +375,18 @@ describe('createUndoHistoryTruth', () => {
     expect(historyTruth).toEqual({
       status: 'available',
       boundary: 'undo',
-      label: 'Undo: Split block · Redo blocked',
+      label: 'Undo: Split block · Redo blocked: Broken redo',
       currentState:
         'Undo is ready to restore the arrangement captured before Split block. ' +
-        'The latest redo boundary is still on the stack, but its restore snapshot cannot be read.',
+        'The latest redo boundary is still on the stack, but the arrangement captured after Broken redo cannot be read.',
       nextStep:
         'Use Undo to restore the arrangement captured before Split block. ' +
-        'Do not offer Redo for this boundary until a valid restore snapshot is stored.',
+        'Do not offer Redo for the arrangement captured after Broken redo until a valid restore snapshot is stored.',
       tooltip:
         'Undo is ready to restore the arrangement captured before Split block. ' +
-        'The latest redo boundary is still on the stack, but its restore snapshot cannot be read. ' +
+        'The latest redo boundary is still on the stack, but the arrangement captured after Broken redo cannot be read. ' +
         'Use Undo to restore the arrangement captured before Split block. ' +
-        'Do not offer Redo for this boundary until a valid restore snapshot is stored.',
+        'Do not offer Redo for the arrangement captured after Broken redo until a valid restore snapshot is stored.',
     });
   });
 
@@ -431,18 +431,18 @@ describe('createUndoHistoryTruth', () => {
     expect(historyTruth).toEqual({
       status: 'paused',
       boundary: 'undo',
-      label: 'Undo paused · Redo blocked',
+      label: 'Undo paused: Split block · Redo blocked: Broken redo',
       currentState:
         'Generation is still running, so Undo is temporarily paused even though the arrangement captured before Split block is still preserved on the stack. ' +
-        'The latest redo boundary is still on the stack, but its restore snapshot cannot be read.',
+        'The latest redo boundary is still on the stack, but the arrangement captured after Broken redo cannot be read.',
       nextStep:
         'Wait for generation to finish, then use Undo to restore the arrangement captured before Split block. ' +
-        'Do not offer Redo for this boundary until a valid restore snapshot is stored.',
+        'Do not offer Redo for the arrangement captured after Broken redo until a valid restore snapshot is stored.',
       tooltip:
         'Generation is still running, so Undo is temporarily paused even though the arrangement captured before Split block is still preserved on the stack. ' +
-        'The latest redo boundary is still on the stack, but its restore snapshot cannot be read. ' +
+        'The latest redo boundary is still on the stack, but the arrangement captured after Broken redo cannot be read. ' +
         'Wait for generation to finish, then use Undo to restore the arrangement captured before Split block. ' +
-        'Do not offer Redo for this boundary until a valid restore snapshot is stored.',
+        'Do not offer Redo for the arrangement captured after Broken redo until a valid restore snapshot is stored.',
     });
   });
 });

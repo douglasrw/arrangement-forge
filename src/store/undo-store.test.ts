@@ -140,7 +140,7 @@ describe('undoStore', () => {
       boundary: 'undo',
       status: 'paused',
       actionLabel: null,
-      statusLabel: 'Undo paused',
+      statusLabel: 'Undo paused: Split block',
       currentState:
         'Generation is still running, so Undo is temporarily paused even though the arrangement captured before Split block is still preserved on the stack.',
       nextStep:
@@ -149,7 +149,7 @@ describe('undoStore', () => {
     expect(useUndoStore.getState().getHistoryTruth('generating')).toMatchObject({
       status: 'paused',
       boundary: 'undo',
-      label: 'Undo paused',
+      label: 'Undo paused: Split block',
     });
   });
 
@@ -196,10 +196,11 @@ describe('undoStore', () => {
       boundary: 'redo',
       status: 'blocked',
       actionLabel: null,
-      statusLabel: 'Redo blocked',
+      statusLabel: 'Redo blocked: Broken redo',
       currentState:
-        'The latest redo boundary is still on the stack, but its restore snapshot cannot be read.',
-      nextStep: 'Do not offer Redo for this boundary until a valid restore snapshot is stored.',
+        'The latest redo boundary is still on the stack, but the arrangement captured after Broken redo cannot be read.',
+      nextStep:
+        'Do not offer Redo for the arrangement captured after Broken redo until a valid restore snapshot is stored.',
     });
   });
 
@@ -257,13 +258,13 @@ describe('undoStore', () => {
     expect(useUndoStore.getState().getHistoryTruth()).toMatchObject({
       status: 'available',
       boundary: 'undo',
-      label: 'Undo: Split block · Redo blocked',
+      label: 'Undo: Split block · Redo blocked: Broken redo',
       currentState:
         'Undo is ready to restore the arrangement captured before Split block. ' +
-        'The latest redo boundary is still on the stack, but its restore snapshot cannot be read.',
+        'The latest redo boundary is still on the stack, but the arrangement captured after Broken redo cannot be read.',
       nextStep:
         'Use Undo to restore the arrangement captured before Split block. ' +
-        'Do not offer Redo for this boundary until a valid restore snapshot is stored.',
+        'Do not offer Redo for the arrangement captured after Broken redo until a valid restore snapshot is stored.',
     });
   });
 
@@ -280,7 +281,7 @@ describe('undoStore', () => {
     expect(useUndoStore.getState().getRedoBoundaryTruth('generating')).toMatchObject({
       boundary: 'redo',
       status: 'paused',
-      statusLabel: 'Redo paused',
+      statusLabel: 'Redo paused: Split block',
     });
   });
 

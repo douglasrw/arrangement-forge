@@ -642,9 +642,9 @@ describe('StatusBar', () => {
       '[data-testid="status-bar-history"]'
     ) as HTMLSpanElement | null;
 
-    expect(history?.textContent).toBe('Undo blocked');
+    expect(history?.textContent).toBe('Undo blocked: Broken action');
     expect(history?.title).toBe(
-      'The latest undo boundary is still on the stack, but its restore snapshot cannot be read. Do not offer Undo for this boundary until a valid restore snapshot is stored.'
+      'The latest undo boundary is still on the stack, but the arrangement captured before Broken action cannot be read. Do not offer Undo for the arrangement captured before Broken action until a valid restore snapshot is stored.'
     );
   });
 
@@ -707,12 +707,12 @@ describe('StatusBar', () => {
       '[data-testid="status-bar-history"]'
     ) as HTMLSpanElement | null;
 
-    expect(history?.textContent).toBe('Undo: Split block · Redo blocked');
+    expect(history?.textContent).toBe('Undo: Split block · Redo blocked: Broken redo');
     expect(history?.title).toBe(
       'Undo is ready to restore the arrangement captured before Split block. ' +
-      'The latest redo boundary is still on the stack, but its restore snapshot cannot be read. ' +
+      'The latest redo boundary is still on the stack, but the arrangement captured after Broken redo cannot be read. ' +
       'Use Undo to restore the arrangement captured before Split block. ' +
-      'Do not offer Redo for this boundary until a valid restore snapshot is stored.'
+      'Do not offer Redo for the arrangement captured after Broken redo until a valid restore snapshot is stored.'
     );
   });
 
@@ -730,7 +730,7 @@ describe('StatusBar', () => {
       '[data-testid="status-bar-history"]'
     ) as HTMLSpanElement | null;
 
-    expect(history?.textContent).toBe('Undo paused');
+    expect(history?.textContent).toBe('Undo paused: Split block');
     expect(history?.title).toBe(
       'Generation is still running, so Undo is temporarily paused even though the arrangement captured before Split block is still preserved on the stack. Wait for generation to finish, then use Undo to restore the arrangement captured before Split block.'
     );
