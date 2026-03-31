@@ -16,6 +16,7 @@ import { useUiStore } from '@/store/ui-store';
 export interface AppShellProps {
   shellStatus?: AppStatus;
   shellBody?: ReactNode;
+  workspaceBanner?: ReactNode;
 }
 
 function AppShellFrame({ children, status }: { children: ReactNode; status: AppStatus }) {
@@ -31,7 +32,7 @@ function AppShellFrame({ children, status }: { children: ReactNode; status: AppS
   );
 }
 
-function EditorWorkspaceShell() {
+function EditorWorkspaceShell({ workspaceBanner }: { workspaceBanner?: ReactNode }) {
   useKeyboardShortcuts();
   useAutoSave();
 
@@ -80,6 +81,14 @@ function EditorWorkspaceShell() {
       )}
 
       <div className="flex flex-col flex-1 min-w-0 min-h-0 overflow-hidden">
+        {workspaceBanner ? (
+          <div
+            className="border-b border-border bg-secondary/40 px-4 py-2"
+            data-testid="editor-workspace-banner"
+          >
+            {workspaceBanner}
+          </div>
+        ) : null}
         <ArrangementView
           onBlockSelect={(info) =>
             setPanelContext(info ? { mode: 'block', ...info } : { mode: 'default' })
@@ -95,7 +104,7 @@ function EditorWorkspaceShell() {
   );
 }
 
-export function AppShell({ shellStatus, shellBody }: AppShellProps = {}) {
+export function AppShell({ shellStatus, shellBody, workspaceBanner }: AppShellProps = {}) {
   /* Kill any rogue scroll offset on mount */
   useEffect(() => {
     window.scrollTo(0, 0);
@@ -113,5 +122,5 @@ export function AppShell({ shellStatus, shellBody }: AppShellProps = {}) {
     );
   }
 
-  return <EditorWorkspaceShell />;
+  return <EditorWorkspaceShell workspaceBanner={workspaceBanner} />;
 }

@@ -141,6 +141,10 @@ function querySelectionSurface() {
   return document.querySelector('[data-testid="selection-surface"]');
 }
 
+function queryReadyBanner() {
+  return document.querySelector('[data-testid="editor-route-ready-banner"]');
+}
+
 function getStatusBarText(): string {
   return document.querySelector('[data-testid="status-bar"]')?.textContent ?? '';
 }
@@ -259,6 +263,11 @@ describe('EditorPage route loading gate', () => {
     expect(queryLoadingGate()).toBeNull();
     expect(queryAppShell()).not.toBeNull();
     expect(querySelectionSurface()).not.toBeNull();
+    expect(queryReadyBanner()).not.toBeNull();
+    expect(document.body.textContent).toContain('Editor route ready for project project-a.');
+    expect(document.body.textContent).toContain(
+      'Current state: the requested project is loaded in this workspace. Next step: edit this arrangement or return to the library to open a different project.'
+    );
   });
 
   it('removes the stale workspace immediately when the route switches to another project', async () => {

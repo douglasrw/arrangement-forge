@@ -75,6 +75,22 @@ function getLoadingMessage(projectId: string | undefined) {
     : 'Opening the requested project route in the editor.';
 }
 
+function EditorRouteReadyBanner({ projectId }: { projectId: string }) {
+  return (
+    <div
+      className="flex flex-col gap-0.5 text-left"
+      data-testid="editor-route-ready-banner"
+      data-editor-route-state="ready"
+    >
+      <p className="text-xs font-medium text-foreground">Editor route ready for project {projectId}.</p>
+      <p className="text-[11px] text-muted-foreground">
+        Current state: the requested project is loaded in this workspace. Next step: edit this
+        arrangement or return to the library to open a different project.
+      </p>
+    </div>
+  );
+}
+
 export default function EditorPage({
   routeMode = 'project-id',
 }: {
@@ -200,5 +216,5 @@ export default function EditorPage({
     );
   }
 
-  return <AppShell />;
+  return <AppShell workspaceBanner={<EditorRouteReadyBanner projectId={id} />} />;
 }
