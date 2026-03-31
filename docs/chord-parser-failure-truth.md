@@ -3,7 +3,7 @@
 Status date: 2026-03-31
 
 Status: landed on `main`; reverified on 2026-03-31 against product head
-`337372b4` with no remaining bounded product delta visible in this family
+`1be8d8bd` with no remaining bounded product delta visible in this family
 
 Purpose: preserve the current chord parser failure contract and its landing
 proof in one repo-local place so future work does not have to reconstruct it
@@ -87,6 +87,9 @@ and scattered tests.
 - blocked upload feedback now reuses the same parser `truth.currentState` and
   `truth.nextStep`, so file-import failures stay explicit on the upload surface
   instead of collapsing back into generic success or generic blocked copy
+- blocked upload feedback now also reuses parser `truth.summary`, so the upload
+  surface keeps why the chart is blocked explicit instead of surfacing only the
+  blocked state and repair step
 - blocked upload feedback now also surfaces the same line-aware flagged chart
   locations as the text editor hint, so imported parser failures still point at
   the exact row and bar that need repair without requiring a second lookup in
@@ -125,7 +128,7 @@ Current focused proofs for this slice:
 
 - `pnpm test -- --run src/lib/chord-chart-parser.test.ts src/components/left-panel/InputSection.test.tsx src/components/left-panel/AiAssistantSection.test.tsx src/components/left-panel/LeftPanel.test.tsx src/hooks/useGenerate.test.tsx`
 - `pnpm run type-check`
-- verification head: `337372b4f9b72e31f4c076e179f93e1a194cadce`
+- verification head: `1be8d8bd34bd27e7ef22b2cf577a8defb679f154`
 
 ## Tracked Landing
 
@@ -163,6 +166,14 @@ Current focused proofs for this slice:
   `commitpath_c40ed88d Surface upload parser locations`
 - `337372b4f9b72e31f4c076e179f93e1a194cadce`:
   `commitpath_c40ed88d Refresh chord parser failure truth evidence`
+- `0dca5dd091a0e45304f95f7b2259e0c7bfd60234`:
+  `commitpath_c40ed88d Refresh chord parser failure truth evidence`
+- `89ea1676e2d0f5dbebccded26be5f17a39c3e915`:
+  `commitpath_c40ed88d Clarify blocked upload parser summary`
+- `d280a54aa352bee6f04793aea55623f8aec7d90e`:
+  `Clarify chord parser recovery steps`
+- `d7b6256dd28b86b16a43dc1f41f33e7e9cd14bab`:
+  `commitpath_c40ed88d Keep chord chart hint reason local`
 - `ab75242f879e4dc47afb0e875bf4aa8dbbfae649`:
   `commitpath_c40ed88d Refresh chord parser failure truth evidence`
 - `91846681feee6561f1df252ea1d8306b2999bb49`:
@@ -375,7 +386,20 @@ Current focused proofs for this slice:
   in this family, so this family is exhausted again for now and the honest
   move was another repo-local evidence refresh instead of a speculative parser
   or input-surface edit.
-- The latest 2026-03-31 recheck at verified repo head `337372b4` produced the
+- Commit `89ea1676` kept blocked upload feedback honest by surfacing parser
+  `summary` beside the blocked state and next step, so file imports now say why
+  the chart is blocked instead of only that generation is still gated.
+- Commit `d280a54a` clarified parser recovery wording so invalid-token blockers
+  say to fix or replace the flagged chord bars, while repeat-marker blockers
+  still name the explicit-chord repair path they actually require.
+- Commit `d7b6256d` kept the raw chord-chart field hint self-contained by
+  carrying parser `summary` into that local surface, so the operator does not
+  have to scroll back to the blocked banner to recover the reason a chart is
+  still gated.
+- Commit `0dca5dd0` refreshed the same repo-local evidence after those product
+  changes landed, keeping the artifact aligned with the then-current verified
+  proof boundary instead of stopping at `337372b4`.
+- The latest 2026-03-31 recheck at verified repo head `1be8d8bd` produced the
   same focused proof results again with no remaining bounded product-file
   delta in this family, so the honest move remains to stop here unless a new
   parser-truth behavior changes the contract or proof surface.
