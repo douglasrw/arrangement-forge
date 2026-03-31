@@ -3,7 +3,7 @@
 Status date: 2026-03-31
 
 Status: landed on `main`; reverified on 2026-03-31 against product head
-`f353b811` with no remaining bounded product delta visible in this family
+`337372b4` with no remaining bounded product delta visible in this family
 
 Purpose: preserve the current chord parser failure contract and its landing
 proof in one repo-local place so future work does not have to reconstruct it
@@ -125,7 +125,7 @@ Current focused proofs for this slice:
 
 - `pnpm test -- --run src/lib/chord-chart-parser.test.ts src/components/left-panel/InputSection.test.tsx src/components/left-panel/AiAssistantSection.test.tsx src/components/left-panel/LeftPanel.test.tsx src/hooks/useGenerate.test.tsx`
 - `pnpm run type-check`
-- verification head: `f353b811f5d2968dc5d98159a8396d6a1dd5e5b2`
+- verification head: `337372b4f9b72e31f4c076e179f93e1a194cadce`
 
 ## Tracked Landing
 
@@ -161,6 +161,8 @@ Current focused proofs for this slice:
   `Promote to main: Arrangement Forge chord parser failure truth slice`
 - `f353b811f5d2968dc5d98159a8396d6a1dd5e5b2`:
   `commitpath_c40ed88d Surface upload parser locations`
+- `337372b4f9b72e31f4c076e179f93e1a194cadce`:
+  `commitpath_c40ed88d Refresh chord parser failure truth evidence`
 - `ab75242f879e4dc47afb0e875bf4aa8dbbfae649`:
   `commitpath_c40ed88d Refresh chord parser failure truth evidence`
 - `91846681feee6561f1df252ea1d8306b2999bb49`:
@@ -373,6 +375,10 @@ Current focused proofs for this slice:
   in this family, so this family is exhausted again for now and the honest
   move was another repo-local evidence refresh instead of a speculative parser
   or input-surface edit.
+- The latest 2026-03-31 recheck at verified repo head `337372b4` produced the
+  same focused proof results again with no remaining bounded product-file
+  delta in this family, so the honest move remains to stop here unless a new
+  parser-truth behavior changes the contract or proof surface.
 
 The tests cover:
 
