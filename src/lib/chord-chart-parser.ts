@@ -26,6 +26,7 @@ export interface ChordChartParseTruth {
   nextStep: string | null;
   blockedBars: number[];
   issueHighlights: string[];
+  remainingIssueCount: number;
 }
 
 const REPEAT_MARKERS = new Set(['%', '/']);
@@ -109,6 +110,7 @@ function buildParseTruth(
       nextStep: null,
       blockedBars: [],
       issueHighlights: [],
+      remainingIssueCount: 0,
     };
   }
 
@@ -141,6 +143,10 @@ function buildParseTruth(
     );
   }
 
+  const issueHighlights = warnings
+    .slice(0, 3)
+    .map((warning) => warning.replace(/, treated as N\.C\.$/, ''));
+
   return {
     state: 'blocked',
     title: blockedBars.length === 1 ? 'Chord chart needs attention' : 'Chord chart has parse issues',
@@ -151,9 +157,8 @@ function buildParseTruth(
         ? 'Replace the flagged repeat bars with explicit chords or fix the bar before them.'
         : 'Fix or replace the flagged chord bars before generating.',
     blockedBars,
-    issueHighlights: warnings
-      .slice(0, 3)
-      .map((warning) => warning.replace(/, treated as N\.C\.$/, '')),
+    issueHighlights,
+    remainingIssueCount: Math.max(issues.length - issueHighlights.length, 0),
   };
 }
 

@@ -228,6 +228,9 @@ export function InputSection() {
   const parseFeedbackHighlights = hasParseIssues && parseTruth?.issueHighlights.length
     ? `Flagged bars: ${parseTruth.issueHighlights.join(" ")}`
     : null
+  const parseFeedbackOverflow = hasParseIssues && (parseTruth?.remainingIssueCount ?? 0) > 0
+    ? `${parseTruth?.remainingIssueCount} more flagged ${parseTruth?.remainingIssueCount === 1 ? "bar needs" : "bars need"} review in the chord chart before generation.`
+    : null
 
   async function handleUploadChange(event: ChangeEvent<HTMLInputElement>) {
     const input = event.currentTarget
@@ -360,6 +363,9 @@ export function InputSection() {
           )}
           {parseFeedbackHighlights && (
             <p className="mt-1 text-muted-foreground">{parseFeedbackHighlights}</p>
+          )}
+          {parseFeedbackOverflow && (
+            <p className="mt-1 text-muted-foreground">{parseFeedbackOverflow}</p>
           )}
         </div>
       )}

@@ -14,6 +14,7 @@ describe('parseChordChart', () => {
       nextStep: null,
       blockedBars: [],
       issueHighlights: [],
+      remainingIssueCount: 0,
     });
   });
 
@@ -95,6 +96,7 @@ describe('parseChordChart', () => {
       nextStep: 'Fix or replace the flagged chord bars before generating.',
       blockedBars: [2],
       issueHighlights: ['Bar 2: could not parse "xyz??"'],
+      remainingIssueCount: 0,
     });
   });
 
@@ -139,6 +141,21 @@ describe('parseChordChart', () => {
         'Bar 1: could not parse "xyz??"',
         'Bar 2: repeat marker "%" follows a bar that could not be resolved',
       ],
+      remainingIssueCount: 0,
+    });
+  });
+
+  it('keeps hidden overflow issue count explicit when only the first highlights are surfaced', () => {
+    const { truth } = parseChordChart('xyz?? | % | / | % | C', 'C');
+
+    expect(truth).toMatchObject({
+      blockedBars: [1, 2, 3, 4],
+      issueHighlights: [
+        'Bar 1: could not parse "xyz??"',
+        'Bar 2: repeat marker "%" follows a bar that could not be resolved',
+        'Bar 3: repeat marker "/" follows a bar that could not be resolved',
+      ],
+      remainingIssueCount: 1,
     });
   });
 

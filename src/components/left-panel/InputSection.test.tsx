@@ -237,6 +237,29 @@ describe('InputSection upload tab', () => {
     );
   });
 
+  it('keeps additional blocked bars explicit when parse highlights are truncated', () => {
+    useProjectStore.setState({
+      project: makeProject({
+        chordChartRaw: 'xyz?? | % | / | % | Cmaj7',
+      }),
+    });
+
+    const mounted = renderSection();
+    mountedRoot = mounted.root;
+    mountedContainer = mounted.container;
+
+    expect(mounted.container.textContent).toContain('Flagged bars: Bar 1: could not parse "xyz??"');
+    expect(mounted.container.textContent).toContain(
+      'Bar 2: repeat marker "%" follows a bar that could not be resolved'
+    );
+    expect(mounted.container.textContent).toContain(
+      'Bar 3: repeat marker "/" follows a bar that could not be resolved'
+    );
+    expect(mounted.container.textContent).toContain(
+      '1 more flagged bar needs review in the chord chart before generation.'
+    );
+  });
+
   it('shows waiting readiness truth and blocks uploads while generation is running', () => {
     useProjectStore.setState({
       project: makeProject({

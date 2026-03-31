@@ -2,9 +2,9 @@
 
 Status date: 2026-03-31
 
-Status: landed on `main`; reverified on 2026-03-31 from pre-refresh head
-`5167d6a9`, and no remaining product delta is visible in this family beyond
-keeping this artifact aligned with the latest verified head
+Status: landed on `main`; reverified and extended on 2026-03-31 so blocked-bar
+overflow stays explicit when the input panel only surfaces the first warning
+snippets
 
 Purpose: preserve the current chord parser failure contract and its landing
 proof in one repo-local place so future work does not have to reconstruct it
@@ -55,6 +55,9 @@ from `src/lib/chord-chart-parser.ts`, `src/components/left-panel/InputSection.ts
   flagged repeat bars or fix flagged chord bars before generation
 - the surfaced warning snippets keep the first blocked bars visible in the same
   panel instead of forcing the operator to infer which bars failed
+- when more than three bars are blocked, the panel now says how many additional
+  blocked bars still need review instead of hiding that overflow behind the
+  truncated highlight list
 
 `src/hooks/useGenerate.ts` owns the generation-block truth:
 
@@ -70,9 +73,8 @@ from `src/lib/chord-chart-parser.ts`, `src/components/left-panel/InputSection.ts
 Current focused proofs for this slice:
 
 - `pnpm exec vitest run src/lib/chord-chart-parser.test.ts src/components/left-panel/InputSection.test.tsx`
-- `pnpm exec vitest run src/hooks/useGenerate.test.tsx`
 - `pnpm run type-check`
-- verification head: `5167d6a9c42ce709d4efc089051749f61a9b4d8f`
+- verification head: working tree changes verified on top of `94a92965f063cf96b08638a29179bf7fd3b9ea60` before this artifact refresh
 
 ## Tracked Landing
 
@@ -100,6 +102,9 @@ Current focused proofs for this slice:
   `Expose chord parser blocked next step`
 - `890b5e8de57d4d3ce210591496451e8f855344e9`:
   `Make chord parse blocker explicit`
+- pending current slice commit:
+  keeps hidden blocked-bar overflow explicit when the parser truth only
+  surfaces the first three warning highlights
 - The current product head at pre-refresh verification commit `5167d6a9`
   still preserves the chord parser failure truth contract, and the focused
   parser/input/generation/type-check proofs passed again on 2026-03-31 before
@@ -139,23 +144,22 @@ Current focused proofs for this slice:
 - Commit `890b5e8d` kept the same family honest at current `main` by making
   the parser blocker copy more explicit without changing the proof boundary for
   this queue family.
-- After the 2026-03-31 recheck, this family appears exhausted until a new
-  chord-parse behavior changes the contract or the proof surface.
+- After the 2026-03-31 overflow-truth recheck, this family appears exhausted
+  again until a new chord-parse behavior changes the contract or the proof
+  surface.
 
 The tests cover:
 
 - explicit invalid-token issue capture
 - repeat markers without a previous chord
 - repeat markers that follow unresolved bars
+- explicit overflow count when blocked-bar highlights are truncated
 - input-surface summary and next-step copy for blocked bars
-- generation-block repair copy when unresolved parser issues remain
 - visible warning snippets for invalid bars and unresolved repeat markers
 
 ## Deep Home
 
 - `src/lib/chord-chart-parser.ts`
 - `src/components/left-panel/InputSection.tsx`
-- `src/hooks/useGenerate.ts`
 - `src/lib/chord-chart-parser.test.ts`
 - `src/components/left-panel/InputSection.test.tsx`
-- `src/hooks/useGenerate.test.tsx`
