@@ -8,7 +8,11 @@ export interface ChordChartParseIssue {
   lineNumber: number;
   barNumber: number;
   token: string;
-  reason: 'repeat_without_previous' | 'repeat_without_resolved_chord' | 'invalid_token';
+  reason:
+    | 'repeat_without_previous'
+    | 'repeat_without_playable_chord'
+    | 'repeat_without_resolved_chord'
+    | 'invalid_token';
   message: string;
 }
 
@@ -177,6 +181,9 @@ function buildParseTruth(
   const repeatWithoutPreviousCount = issues.filter(
     (issue) => issue.reason === 'repeat_without_previous'
   ).length;
+  const repeatWithoutPlayableChordCount = issues.filter(
+    (issue) => issue.reason === 'repeat_without_playable_chord'
+  ).length;
   const repeatWithoutResolvedChordCount = issues.filter(
     (issue) => issue.reason === 'repeat_without_resolved_chord'
   ).length;
@@ -198,6 +205,14 @@ function buildParseTruth(
     );
   }
 
+  if (repeatWithoutPlayableChordCount > 0) {
+    summaryParts.push(
+      `${repeatWithoutPlayableChordCount} ${
+        repeatWithoutPlayableChordCount === 1 ? 'repeat marker follows' : 'repeat markers follow'
+      } a bar with no playable chord.`
+    );
+  }
+
   if (repeatWithoutResolvedChordCount > 0) {
     summaryParts.push(
       `${repeatWithoutResolvedChordCount} ${repeatWithoutResolvedChordCount === 1 ? 'repeat marker follows' : 'repeat markers follow'} an unresolved bar.`
@@ -214,9 +229,13 @@ function buildParseTruth(
     currentState: `${readyBarCount} of ${parsedBarCount} ${parsedBarCount === 1 ? 'bar is' : 'bars are'} ready. ${barLabel} ${blockedBars.length === 1 ? 'currently parses' : 'currently parse'} as N.C., so Generate stays blocked until the chart is fixed.`,
     summary: summaryParts.join(' '),
     nextStep:
-      repeatWithoutPreviousCount > 0 && repeatWithoutResolvedChordCount === 0
+      repeatWithoutPreviousCount > 0 &&
+      repeatWithoutPlayableChordCount === 0 &&
+      repeatWithoutResolvedChordCount === 0
         ? `Replace ${formatBlockedBarReference(blockedBars, 'the flagged repeat bars')} with explicit chords before using repeat markers.`
-        : repeatWithoutPreviousCount > 0 || repeatWithoutResolvedChordCount > 0
+        : repeatWithoutPreviousCount > 0 ||
+          repeatWithoutPlayableChordCount > 0 ||
+          repeatWithoutResolvedChordCount > 0
         ? `Replace ${formatBlockedBarReference(blockedBars, 'the flagged repeat bars')} with explicit chords or fix the bar before ${blockedBars.length === 1 ? 'it' : 'them'}.`
         : `Fix or replace ${formatBlockedBarReference(blockedBars, 'the flagged chord bars')} before generating.`,
     blockedBars,
@@ -268,10 +287,27 @@ function parseBarToken(
 
   // Repeat marker
   if (REPEAT_MARKERS.has(lower)) {
-    if (prevChord && prevBarState !== 'issue') {
+    if (prevChord && prevBarState === 'chord') {
       return {
         entry: { ...prevChord, bar_number: barNumber },
         state: prevBarState ?? 'no_chord',
+      };
+    }
+
+    if (prevChord && prevBarState === 'no_chord') {
+      const location = formatIssueLocation({ lineNumber, barNumber });
+      const message = `${location}: repeat marker "${token}" follows a bar with no playable chord, treated as N.C.`;
+      warnings.push(message);
+      issues.push({
+        lineNumber,
+        barNumber,
+        token,
+        reason: 'repeat_without_playable_chord',
+        message,
+      });
+      return {
+        entry: { bar_number: barNumber, degree: null, quality: null, bass_degree: null },
+        state: 'issue',
       };
     }
 

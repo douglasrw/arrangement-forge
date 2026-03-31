@@ -210,6 +210,34 @@ describe('parseChordChart', () => {
     });
   });
 
+  it('keeps repeat markers after no-chord bars blocked instead of inheriting N.C. as chord truth', () => {
+    const { chords, issues, warnings, truth } = parseChordChart('N.C. | % | C', 'C');
+
+    expect(chords[0].degree).toBeNull();
+    expect(chords[1].degree).toBeNull();
+    expect(issues).toEqual([
+      expect.objectContaining({
+        lineNumber: 1,
+        barNumber: 2,
+        token: '%',
+        reason: 'repeat_without_playable_chord',
+      }),
+    ]);
+    expect(warnings[0]).toContain('follows a bar with no playable chord');
+    expect(truth).toMatchObject({
+      state: 'blocked',
+      title: 'Chord chart needs attention',
+      currentState:
+        '2 of 3 bars are ready. Bar 2 currently parses as N.C., so Generate stays blocked until the chart is fixed.',
+      summary: '1 repeat marker follows a bar with no playable chord.',
+      nextStep: 'Replace bar 2 with explicit chords or fix the bar before it.',
+      blockedBars: [2],
+      blockedTokenLabels: ['bar 2 "%"'],
+      issueHighlights: ['Line 1, bar 2: repeat marker "%" follows a bar with no playable chord'],
+      remainingIssueCount: 0,
+    });
+  });
+
   it('captures repeat markers that follow an unresolved bar', () => {
     const { chords, issues, warnings, truth } = parseChordChart('xyz?? | % | C', 'C');
     expect(chords[0].degree).toBeNull();

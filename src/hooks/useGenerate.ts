@@ -151,6 +151,7 @@ function describeChordParseBlocker(parseResult: ChordParseFailureLike): string {
   const repeatIssueCount = issues.filter(
     (issue) =>
       issue.reason === 'repeat_without_previous' ||
+      issue.reason === 'repeat_without_playable_chord' ||
       issue.reason === 'repeat_without_resolved_chord'
   ).length;
   const invalidIssueCount = issues.filter((issue) => issue.reason === 'invalid_token').length;
