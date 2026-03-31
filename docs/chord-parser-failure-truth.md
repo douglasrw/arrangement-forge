@@ -2,9 +2,10 @@
 
 Status date: 2026-03-31
 
-Status: landed on `main`; reverified on 2026-03-31 with the focused parser,
-input-surface, generation, and type-check proofs passing again, and no
-remaining bounded product delta is visible in this family
+Status: landed on `main`; reverified again on 2026-03-31 with the focused
+parser, input-surface, generation, and type-check proofs passing at the
+current `main` head, and no remaining bounded product delta is visible in this
+family
 
 Purpose: preserve the current chord parser failure contract and its landing
 proof in one repo-local place so future work does not have to reconstruct it
@@ -141,8 +142,8 @@ Current focused proofs for this slice:
 
 - `pnpm test -- --run src/lib/chord-chart-parser.test.ts src/components/left-panel/InputSection.test.tsx src/hooks/useGenerate.test.tsx`
 - `pnpm type-check`
-- the latest evidence refresh at `a350f32e` remains aligned with the same
-  focused proof set after the 2026-03-31 recheck
+- the current proof set still matches the same bounded parser, input-surface,
+  and generation contract after the 2026-03-31 recheck
 
 ## Tracked Landing
 
@@ -205,6 +206,8 @@ Current focused proofs for this slice:
 - `e7cbe50bbb583bf5489f0eac0cf220e1ad5ffef7`:
   `commitpath_c40ed88d Refresh chord parser failure truth evidence`
 - `a350f32e14fb472bbf229529c6539845c7895780`:
+  `commitpath_c40ed88d Refresh chord parser failure truth evidence`
+- `f7ec7fa797530fdb01d685e34db031918591d5f8`:
   `commitpath_c40ed88d Refresh chord parser failure truth evidence`
 - `f353b811f5d2968dc5d98159a8396d6a1dd5e5b2`:
   `commitpath_c40ed88d Surface upload parser locations`
