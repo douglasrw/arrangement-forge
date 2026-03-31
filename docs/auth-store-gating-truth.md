@@ -21,7 +21,8 @@ repo-local place so future work does not have to reconstruct it from
 - Incomplete authenticated state stays blocked until both `user` and `profile`
   are present.
 - Trailing Supabase sign-out replays do not erase more specific bootstrap truth
-  like `no-session` or `missing-profile`.
+  like `no-session`, `missing-profile`, `profile-load-failed`, or
+  `session-lookup-failed`.
 
 ## Operator-Facing Truth
 
@@ -42,6 +43,8 @@ repo-local place so future work does not have to reconstruct it from
   truth instead of silent null state
 - stale hydrations do not reopen the auth gate after sign-out
 - explicit signed-out bootstrap reasons survive trailing `SIGNED_OUT` events
+  across missing-profile, profile-load-failed, and session-lookup-failed
+  outcomes
 
 ## Proof
 
@@ -95,6 +98,8 @@ The tests cover:
 - stable shared truth derivation between gate and status surfaces
 - incomplete authenticated state staying blocked
 - stale hydration and trailing sign-out replay protection
+- preserved trailing sign-out truth for missing profile, profile load failure,
+  and session lookup failure bootstrap outcomes
 
 ## Deep Home
 

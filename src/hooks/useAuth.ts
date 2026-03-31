@@ -33,6 +33,21 @@ type HydrationResult =
   | { status: 'signed-out'; reason: SignedOutReason }
   | { status: 'stale' };
 
+function shouldPreserveBootstrapSignedOutTruth(state: {
+  authStatus: AuthTruth['status'];
+  signedOutReason: SignedOutReason | null;
+  user: User | null;
+  profile: ReturnType<typeof useAuthStore.getState>['profile'];
+}) {
+  return (
+    state.authStatus === 'signed-out'
+    && state.signedOutReason !== null
+    && state.signedOutReason !== 'signed-out'
+    && !state.user
+    && !state.profile
+  );
+}
+
 export function useAuth(): UseAuthResult {
   const authStoreTruth = useAuthStore(useShallow(selectAuthStoreTruthSlice));
   const { user, profile, authTruth } = authStoreTruth;
@@ -150,16 +165,10 @@ export function useAuth(): UseAuthResult {
           }
         });
       } else if (event === 'SIGNED_OUT') {
-        const { authStatus, signedOutReason, user, profile } = useAuthStore.getState();
+        const authState = useAuthStore.getState();
 
         // Preserve specific signed-out bootstrap truth when Supabase replays a trailing sign-out.
-        if (
-          authStatus === 'signed-out'
-          && signedOutReason !== null
-          && signedOutReason !== 'signed-out'
-          && !user
-          && !profile
-        ) {
+        if (shouldPreserveBootstrapSignedOutTruth(authState)) {
           return;
         }
 

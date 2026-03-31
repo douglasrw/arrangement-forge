@@ -11,7 +11,7 @@ import { useUiStore } from '@/store/ui-store';
 type Row = Record<string, unknown>;
 type ProfileQueryResult = {
   data: Row | null;
-  error: null;
+  error: Error | null;
 };
 
 const supabaseMock = vi.hoisted(() => ({
@@ -725,6 +725,102 @@ describe('useAuth session bootstrap truth', () => {
       nextStepLabel: 'Complete the profile',
       nextStepDetail: 'Restore or complete the profile, then sign in again.',
       signedOutReason: 'missing-profile',
+    });
+  });
+
+  it('keeps the profile-load-failed bootstrap truth when Supabase emits a trailing sign-out event', async () => {
+    profileQueryResult = Promise.resolve({
+      data: null,
+      error: new Error('Profile load failed'),
+    });
+    supabaseMock.auth.getSession.mockResolvedValue({
+      data: {
+        session: {
+          user: { id: 'user-1', email: 'ash@example.com' },
+        },
+      },
+    });
+
+    const mounted = renderHarness();
+    mountedRoot = mounted.root;
+    mountedContainer = mounted.container;
+
+    act(() => {
+      hookValue!.initAuth();
+    });
+
+    await act(async () => {
+      await flushAsyncWork();
+    });
+
+    expect(useAuthStore.getState()).toMatchObject({
+      user: null,
+      profile: null,
+      authStatus: 'signed-out',
+      signedOutReason: 'profile-load-failed',
+    });
+
+    act(() => {
+      authStateChangeHandler?.('SIGNED_OUT', null);
+    });
+
+    expect(useAuthStore.getState()).toMatchObject({
+      user: null,
+      profile: null,
+      authStatus: 'signed-out',
+      signedOutReason: 'profile-load-failed',
+    });
+    expect(hookValue!.authTruth).toMatchObject({
+      status: 'signed-out',
+      access: 'blocked',
+      currentState: 'The saved profile could not be loaded.',
+      nextStep: 'retry-profile-load',
+      nextStepLabel: 'Retry the profile load',
+      nextStepDetail: 'Retry the profile load by signing in again.',
+      signedOutReason: 'profile-load-failed',
+    });
+  });
+
+  it('keeps the session-lookup-failed bootstrap truth when Supabase emits a trailing sign-out event', async () => {
+    supabaseMock.auth.getSession.mockRejectedValue(new Error('Session lookup failed'));
+
+    const mounted = renderHarness();
+    mountedRoot = mounted.root;
+    mountedContainer = mounted.container;
+
+    act(() => {
+      hookValue!.initAuth();
+    });
+
+    await act(async () => {
+      await flushAsyncWork();
+    });
+
+    expect(useAuthStore.getState()).toMatchObject({
+      user: null,
+      profile: null,
+      authStatus: 'signed-out',
+      signedOutReason: 'session-lookup-failed',
+    });
+
+    act(() => {
+      authStateChangeHandler?.('SIGNED_OUT', null);
+    });
+
+    expect(useAuthStore.getState()).toMatchObject({
+      user: null,
+      profile: null,
+      authStatus: 'signed-out',
+      signedOutReason: 'session-lookup-failed',
+    });
+    expect(hookValue!.authTruth).toMatchObject({
+      status: 'signed-out',
+      access: 'blocked',
+      currentState: 'The previous session could not be restored.',
+      nextStep: 'retry-session',
+      nextStepLabel: 'Retry session restore',
+      nextStepDetail: 'Retry session restoration by signing in again.',
+      signedOutReason: 'session-lookup-failed',
     });
   });
 
