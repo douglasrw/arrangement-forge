@@ -164,7 +164,7 @@ function buildParseTruth(
   return {
     state: 'blocked',
     title: blockedBars.length === 1 ? 'Chord chart needs attention' : 'Chord chart has parse issues',
-    currentState: `${barLabel} will become N.C. during generation, so Generate stays blocked until the chart is fixed.`,
+    currentState: `${barLabel} ${blockedBars.length === 1 ? 'currently parses' : 'currently parse'} as N.C., so Generate stays blocked until the chart is fixed.`,
     summary: summaryParts.join(' '),
     nextStep:
       repeatWithoutPreviousCount > 0 || repeatWithoutResolvedChordCount > 0

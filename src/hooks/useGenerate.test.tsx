@@ -254,7 +254,7 @@ describe('useGenerate assistant prompt flow', () => {
       ],
       truth: {
         currentState:
-          'Bar 2 will become N.C. during generation, so Generate stays blocked until the chart is fixed.',
+          'Bar 2 currently parses as N.C., so Generate stays blocked until the chart is fixed.',
         nextStep: 'Fix or replace the flagged chord bars before generating.',
       },
     });
@@ -274,7 +274,7 @@ describe('useGenerate assistant prompt flow', () => {
       generationState: 'idle',
       systemStatus: 'error',
       errorMessage:
-        'Bar 2 will become N.C. during generation, so Generate stays blocked until the chart is fixed. Next step: Fix or replace the flagged chord bars before generating.',
+        'Bar 2 currently parses as N.C., so Generate stays blocked until the chart is fixed. Next step: Fix or replace the flagged chord bars before generating.',
     });
     expect(saveProjectMock).toHaveBeenCalledTimes(1);
     expect(useProjectStore.getState().chatMessages).toHaveLength(1);
@@ -282,7 +282,7 @@ describe('useGenerate assistant prompt flow', () => {
       role: 'assistant',
       scope: 'setup',
       content:
-        'Generation failed: Bar 2 will become N.C. during generation, so Generate stays blocked until the chart is fixed. Next step: Fix or replace the flagged chord bars before generating.',
+        'Generation failed: Bar 2 currently parses as N.C., so Generate stays blocked until the chart is fixed. Next step: Fix or replace the flagged chord bars before generating.',
     });
   });
 
