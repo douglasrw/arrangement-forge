@@ -3,12 +3,12 @@
 Status date: 2026-03-31
 
 Status: landed on `main`; reverified on 2026-03-31 against product head
-`b039c28d`, after `efc2e1e2` promoted the family, `e9a0db10` kept invalid
-uploaded chord rows visible, `6ef4d8f1` refreshed the same evidence, and the
-latest rechecked product head still leaves the parser, input surface, and
-generation block contract unchanged, so this repo-local truth artifact now
-points at the latest verified product state without inventing a new product
-delta
+`91846681`, after `efc2e1e2` promoted the family, `e9a0db10` kept invalid
+uploaded chord rows visible, `6ef4d8f1`, `b039c28d`, and `91846681` refreshed
+the same evidence, and the latest rechecked product head still leaves the
+parser, input surface, and generation block contract unchanged, so this
+repo-local truth artifact now points at the latest verified product state
+without inventing a new product delta
 
 Purpose: preserve the current chord parser failure contract and its landing
 proof in one repo-local place so future work does not have to reconstruct it
@@ -92,10 +92,12 @@ Current focused proofs for this slice:
 
 - `pnpm test -- --run src/lib/chord-chart-parser.test.ts src/components/left-panel/InputSection.test.tsx src/hooks/useGenerate.test.tsx`
 - `pnpm type-check`
-- verification head: `b039c28d5d8baaca719c3efbec0f57e2249ca042`
+- verification head: `91846681feee6561f1df252ea1d8306b2999bb49`
 
 ## Tracked Landing
 
+- `91846681feee6561f1df252ea1d8306b2999bb49`:
+  `commitpath_c40ed88d Refresh chord parser failure truth evidence`
 - `b039c28d5d8baaca719c3efbec0f57e2249ca042`:
   `commitpath_c40ed88d Refresh chord parser failure truth evidence`
 - `6ef4d8f1c02457132942ad198926def2fca69a6e`:
