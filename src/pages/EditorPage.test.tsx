@@ -14,6 +14,8 @@ import EditorPage from './EditorPage';
 const loadProjectMock = vi.fn<(projectId: string) => Promise<LoadProjectResult>>();
 const signOutMock = vi.hoisted(() => vi.fn());
 let routeProjectId: string | undefined = 'project-a';
+let routeSearch = '';
+let routeHash = '';
 const reactActEnv = globalThis as typeof globalThis & {
   IS_REACT_ACT_ENVIRONMENT?: boolean;
 };
@@ -72,6 +74,11 @@ vi.mock('react-router-dom', () => ({
     </a>
   ),
   useParams: () => ({ id: routeProjectId }),
+  useLocation: () => ({
+    pathname: routeProjectId ? `/project/${routeProjectId}` : '/project',
+    search: routeSearch,
+    hash: routeHash,
+  }),
 }));
 
 function makeProject(id: string): Project {
@@ -99,8 +106,14 @@ function makeProject(id: string): Project {
   };
 }
 
-function renderEditor(projectId: string | undefined, routeMode?: EditorRouteMode) {
+function renderEditor(
+  projectId: string | undefined,
+  routeMode?: EditorRouteMode,
+  routeState?: { search?: string; hash?: string }
+) {
   routeProjectId = projectId;
+  routeSearch = routeState?.search ?? '';
+  routeHash = routeState?.hash ?? '';
   const container = document.createElement('div');
   document.body.appendChild(container);
 
@@ -167,6 +180,8 @@ let mountedContainer: HTMLDivElement | null = null;
 beforeEach(() => {
   reactActEnv.IS_REACT_ACT_ENVIRONMENT = true;
   routeProjectId = 'project-a';
+  routeSearch = '';
+  routeHash = '';
   loadProjectMock.mockReset();
   loadProjectMock.mockResolvedValue({ status: 'ready' });
   signOutMock.mockReset();
@@ -257,6 +272,35 @@ describe('EditorPage route loading gate', () => {
     expect(querySelectionSurface()).not.toBeNull();
   });
 
+  it('keeps the exact requested editor route visible while the project is still loading', async () => {
+    let resolveLoad: (() => void) | undefined;
+    loadProjectMock.mockImplementation(
+      (projectId) =>
+        new Promise<LoadProjectResult>((resolve) => {
+          resolveLoad = () => {
+            useProjectStore.setState({ project: makeProject(projectId) });
+            resolve({ status: 'ready' });
+          };
+        })
+    );
+
+    const mounted = renderEditor('project-b', undefined, {
+      search: '?tab=arrangement',
+      hash: '#bridge',
+    });
+    mountedRoot = mounted.root;
+    mountedContainer = mounted.container;
+
+    expect(document.body.textContent).toContain(
+      'Current route: /project/project-b?tab=arrangement#bridge'
+    );
+
+    await act(async () => {
+      resolveLoad?.();
+      await Promise.resolve();
+    });
+  });
+
   it('keeps route loading truth even when the store already holds the requested project id', async () => {
     useProjectStore.setState({ project: makeProject('project-a') });
 
@@ -299,6 +343,37 @@ describe('EditorPage route loading gate', () => {
     );
     expect(queryReadyBannerLink('/project')).not.toBeNull();
     expect(queryReadyBannerLink('/library')).not.toBeNull();
+  });
+
+  it('keeps the exact requested editor route visible after the project is ready', async () => {
+    useProjectStore.setState({ project: makeProject('project-a') });
+
+    let resolveLoad: (() => void) | undefined;
+    loadProjectMock.mockImplementation(
+      (projectId) =>
+        new Promise<LoadProjectResult>((resolve) => {
+          resolveLoad = () => {
+            useProjectStore.setState({ project: makeProject(projectId) });
+            resolve({ status: 'ready' });
+          };
+        })
+    );
+
+    const mounted = renderEditor('project-a', undefined, {
+      search: '?tab=arrangement',
+      hash: '#bridge',
+    });
+    mountedRoot = mounted.root;
+    mountedContainer = mounted.container;
+
+    await act(async () => {
+      resolveLoad?.();
+      await Promise.resolve();
+    });
+
+    expect(document.body.textContent).toContain(
+      'Current route: /project/project-a?tab=arrangement#bridge'
+    );
   });
 
   it('removes the stale workspace immediately when the route switches to another project', async () => {

@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Link, useParams } from 'react-router-dom';
+import { Link, useLocation, useParams } from 'react-router-dom';
 import { AppShell } from '@/components/layout/AppShell';
 import type { LoadProjectResult } from '@/hooks/useProject';
 import { useProject } from '@/hooks/useProject';
@@ -115,6 +115,26 @@ function describeEditorRoute(routeMode: EditorRouteMode, projectId: string | und
   }
 
   return projectId ? `/project/${projectId}` : '/project/:id (missing project id)';
+}
+
+function getCurrentEditorRoute({
+  pathname,
+  search,
+  hash,
+  routeMode,
+  projectId,
+}: {
+  pathname: string;
+  search: string;
+  hash: string;
+  routeMode: EditorRouteMode;
+  projectId: string | undefined;
+}) {
+  const describedRoute = describeEditorRoute(routeMode, projectId);
+  const currentPath =
+    routeMode === 'project-id' && !projectId ? describedRoute : pathname || describedRoute;
+
+  return `${currentPath}${search}${hash}`;
 }
 
 function getEditorFallbackRoute() {
@@ -248,6 +268,7 @@ export default function EditorPage({
   routeMode?: EditorRouteMode;
 }) {
   const { id } = useParams<{ id: string }>();
+  const location = useLocation();
   const { loadProject } = useProject();
   const loadedProjectId = useProjectStore((state) => state.project?.id ?? null);
   const [routeState, setRouteState] = useState<EditorRouteState>(() =>
@@ -258,7 +279,13 @@ export default function EditorPage({
     routeState: routeState.status,
     projectId: id,
   });
-  const currentRoute = describeEditorRoute(routeMode, id);
+  const currentRoute = getCurrentEditorRoute({
+    pathname: location.pathname,
+    search: location.search,
+    hash: location.hash,
+    routeMode,
+    projectId: id,
+  });
   const fallbackRoute = getEditorFallbackRoute();
   const currentState = getEditorRouteCurrentState({
     routeMode,

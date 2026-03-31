@@ -14,6 +14,9 @@ and scattered tests.
   instead of flashing login or protected content.
 - After authentication, the editor must keep route state explicit while the
   requested project is loading, missing, malformed, unavailable, or ready.
+- If the active editor route includes a query string or hash fragment, the
+  editor readiness surface keeps that exact route visible instead of collapsing
+  it to pathname-only truth.
 
 ## Operator-Facing Truth
 
@@ -29,6 +32,8 @@ and scattered tests.
 - `project-selection` keeps `/project` parked with no active project and points
   the operator back to the library.
 - `project-id` keeps the current route explicit while a project is loading.
+- `project-id` preserves any active query or hash on the current route while
+  readiness is still resolving and after the route is ready.
 - Missing, malformed, and load-failure states explain why the route cannot
   open and point back to the library.
 - Ready state keeps the active route explicit and reminds the operator that
