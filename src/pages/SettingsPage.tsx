@@ -124,10 +124,15 @@ function getDisplayNameTruth(
   const savedDisplayName = profile?.displayName ?? null;
   const hasPendingChange = draft.displayName !== (savedDisplayName ?? '');
 
+  if (!profile) {
+    return {
+      currentState: 'No saved display name exists yet.',
+      nextStep: `The first save will create the profile with ${formatDisplayNameValue(draft.displayName)} as the display name.`,
+    };
+  }
+
   return {
-    currentState: profile
-      ? `Saved now as ${formatDisplayNameValue(savedDisplayName)}.`
-      : 'No saved display name exists yet.',
+    currentState: `Saved now as ${formatDisplayNameValue(savedDisplayName)}.`,
     nextStep: hasPendingChange
       ? `Next save will store ${formatDisplayNameValue(draft.displayName)} as the display name.`
       : 'Edit this field to change the saved display name.',
@@ -141,10 +146,15 @@ function getChordModeTruth(
   const savedChordMode = profile?.chordDisplayMode ?? null;
   const hasPendingChange = draft.chordMode !== (savedChordMode ?? 'letter');
 
+  if (!profile) {
+    return {
+      currentState: 'No saved chord display mode exists yet.',
+      nextStep: `The first save will create the profile with ${formatChordDisplayModeLabel(draft.chordMode)} as the chord display mode.`,
+    };
+  }
+
   return {
-    currentState: profile
-      ? `Saved now as ${formatChordDisplayModeLabel(savedChordMode)}.`
-      : 'No saved chord display mode exists yet.',
+    currentState: `Saved now as ${formatChordDisplayModeLabel(savedChordMode)}.`,
     nextStep: hasPendingChange
       ? `Next save will switch the saved chord display mode to ${formatChordDisplayModeLabel(draft.chordMode)}.`
       : 'Choose a different option here to update the saved chord display mode.',
@@ -159,10 +169,15 @@ function getDefaultGenreTruth(
   const draftDefaultGenre = draft.defaultGenre || null;
   const hasPendingChange = draftDefaultGenre !== savedDefaultGenre;
 
+  if (!profile) {
+    return {
+      currentState: 'No saved default genre exists yet.',
+      nextStep: `The first save will create the profile with ${formatDefaultGenreValue(draftDefaultGenre)} for new projects.`,
+    };
+  }
+
   return {
-    currentState: profile
-      ? `Saved now as ${formatDefaultGenreValue(savedDefaultGenre)}.`
-      : 'No saved default genre exists yet.',
+    currentState: `Saved now as ${formatDefaultGenreValue(savedDefaultGenre)}.`,
     nextStep: hasPendingChange
       ? `Next save will store ${formatDefaultGenreValue(draftDefaultGenre)} for new projects.`
       : 'Choose a different genre here to update the saved project default.',

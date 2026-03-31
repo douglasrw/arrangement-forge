@@ -690,4 +690,27 @@ describe('SettingsPage truth surface', () => {
       'Sign in to reopen the app. Pending changes stay local until saving is unblocked.'
     );
   });
+
+  it('states what the first saved profile will contain when no profile exists yet', () => {
+    setAuthStoreFixture({
+      user: { id: 'user-1', email: 'ash@example.com' } as User,
+      profile: null,
+      authStatus: 'authenticated',
+      signedOutReason: null,
+    });
+
+    const mounted = renderSettingsPage();
+    mountedRoot = mounted.root;
+    mountedContainer = mounted.container;
+
+    expect(mounted.container.textContent).toContain(
+      'No saved display name exists yet. The first save will create the profile with blank as the display name.'
+    );
+    expect(mounted.container.textContent).toContain(
+      'No saved chord display mode exists yet. The first save will create the profile with Letter names as the chord display mode.'
+    );
+    expect(mounted.container.textContent).toContain(
+      'Pre-selected when creating a new project. Saved profile truth accepts Jazz, Blues, Rock, Funk, Country, Gospel, R&B, Latin, or Pop. No saved default genre exists yet. The first save will create the profile with no default genre for new projects.'
+    );
+  });
 });
