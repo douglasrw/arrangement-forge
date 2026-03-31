@@ -2,9 +2,9 @@
 
 Status date: 2026-03-31
 
-Status: landed on `main`; reverified on 2026-03-31 with focused settings
-proofs and no remaining product delta visible in this family beyond this
-evidence refresh
+Status: landed on `main`; reverified on 2026-03-31 at head `6824b2c5`
+after explicit per-field saved-versus-next-save truth landed, and no
+remaining product delta is visible in this family beyond this evidence refresh
 
 Purpose: preserve the current settings and persisted profile validation
 contract in one repo-local place so future work does not have to reconstruct it
@@ -15,6 +15,8 @@ from `src/pages/SettingsPage.tsx`, `src/lib/profile.ts`, and scattered tests.
 - Settings keeps editable profile preferences separate from unavailable settings
   so the current state does not have to be inferred from missing controls.
 - The page distinguishes saved settings from pending local edits before save.
+- Each editable profile field now states both the currently saved value and
+  the next saved value that will land after pending local edits.
 - Pending settings expose whether save is ready, active, or blocked before the
   operator tries to submit.
 - A successful profile save is not treated as truth until the returned profile
@@ -41,6 +43,8 @@ from `src/pages/SettingsPage.tsx`, `src/lib/profile.ts`, and scattered tests.
   validation from a later failure
 - save-caption and pending-state copy keep the next step explicit while edits
   are still local
+- per-field helper copy now states the saved display name, chord display mode,
+  and default genre alongside the next saved value when a local draft differs
 - save readiness now states when sign-in blocks persistence, keeps the button
   disabled, and names the next step instead of silently no-oping on submit
 - save failures and invalid returned profile rows stay visible instead of
@@ -54,6 +58,8 @@ from `src/pages/SettingsPage.tsx`, `src/lib/profile.ts`, and scattered tests.
   inventing a saved setting
 - `parseDefaultGenre` rejects unsupported persisted genres while normalizing
   blank and missing values to `null`
+- `formatChordDisplayModeLabel` keeps saved-value copy aligned between the
+  settings surface and validation helpers
 - supported-values errors name the accepted modes and genres directly so the
   failure stays actionable
 
@@ -61,11 +67,13 @@ from `src/pages/SettingsPage.tsx`, `src/lib/profile.ts`, and scattered tests.
 
 Current focused proofs for this slice:
 
-- `pnpm test -- --run src/pages/SettingsPage.test.tsx`
+- `pnpm exec vitest run src/lib/profile.test.ts src/pages/SettingsPage.test.tsx`
 - `pnpm run type-check`
 
 ## Tracked Landing
 
+- `6824b2c5fe750610d7423e8b8b73f2e2eb3ded1e`:
+  `commitpath_c40ed88d: expose settings profile truth`
 - `7c18ba9ce471bf3bf350583a75170ded2905ac50`:
   `Promote settings profile validation truth`
 - `dbc5b968a2884c82c50d02654fdad3866e44dca2`:
@@ -105,10 +113,11 @@ Current focused proofs for this slice:
 - The landing made saved, pending, unavailable, blocked-save, invalid, and
   failed-save states explicit on the settings surface instead of relying on
   hidden surrounding context.
-- The current `main` head still preserves that contract, including the
-  explicit saved display-name truth in the Profile card, and the focused
-  settings proofs passed again on 2026-03-31 without additional product
-  changes to the settings or persisted-profile surfaces.
+- The current `main` head at `6824b2c5` still preserves that contract and now
+  makes the saved-versus-next-save truth explicit for display name, chord
+  display mode, and default genre on the settings surface.
+- The focused settings proofs passed again on 2026-03-31 before this doc-only
+  evidence refresh updated the repo-local artifact.
 - After the 2026-03-31 recheck, this family appears exhausted until a new
   settings or persisted-profile behavior changes the contract or the proof
   surface.
@@ -117,6 +126,7 @@ The tests cover:
 
 - settings draft reconciliation against saved profile state
 - explicit separation of saved, pending, and unavailable settings truth
+- field-level saved-versus-next-save truth for each editable profile setting
 - pending edits that are blocked from save by signed-out auth truth
 - invalid returned saved-profile rows after save
 - supported chord mode and default genre validation errors
