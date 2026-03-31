@@ -4,6 +4,7 @@ import { useUndoStore } from './undo-store';
 import { useUiStore } from './ui-store';
 import { useSelectionStore } from './selection-store';
 import { snapshotArrangement } from '@/lib/undo-helpers';
+import { formatChord } from '@/lib/chords';
 import { generateMidiForBlock } from '@/lib/midi-generator';
 import { resolveStyle } from '@/lib/style-cascade';
 
@@ -234,6 +235,25 @@ function describeBlockUndoTarget(
   const sectionTarget = sectionName ? ` in ${sectionName}` : '';
 
   return `${action} ${blockLabel}${sectionTarget} (bars ${block.startBar}-${block.endBar})`;
+}
+
+function formatChordUndoTarget(chord: Chord): string {
+  return formatChord(chord, 'C', 'roman');
+}
+
+function describeChordUndoTarget(currentChord: Chord, nextChord: Chord): string {
+  return (
+    `Update chord at bar ${currentChord.barNumber}: ` +
+    `${formatChordUndoTarget(currentChord)} -> ${formatChordUndoTarget(nextChord)}`
+  );
+}
+
+function chordChanged(currentChord: Chord, nextChord: Chord): boolean {
+  return (
+    currentChord.degree !== nextChord.degree ||
+    currentChord.quality !== nextChord.quality ||
+    currentChord.bassDegree !== nextChord.bassDegree
+  );
 }
 
 function regenerateBlockWithProjectState(state: {
@@ -965,12 +985,21 @@ export const useProjectStore = create<ProjectStore>()((set, get) => ({
   },
 
   updateChord: (barNumber, chord) => {
+    const currentChord = get().chords.find((candidate) => candidate.barNumber === barNumber);
+    if (!currentChord) return;
+
+    const nextChord: Chord = { ...currentChord, ...chord };
+    if (!chordChanged(currentChord, nextChord)) return;
+
     const before = snapshotArrangement(get());
     set((state) => ({
       chords: state.chords.map((c) => (c.barNumber === barNumber ? { ...c, ...chord } : c)),
     }));
     const after = snapshotArrangement(get());
-    useUndoStore.getState().pushUndo(`Update chord at bar ${barNumber}`, { undo: before, redo: after });
+    useUndoStore.getState().pushUndo(describeChordUndoTarget(currentChord, nextChord), {
+      undo: before,
+      redo: after,
+    });
     useUiStore.getState().markDirty();
   },
 

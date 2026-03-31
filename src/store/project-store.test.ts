@@ -1210,6 +1210,35 @@ describe('undo push coverage', () => {
     expect(hasSnapshotKeys(stack[0].redoSnapshot)).toBe(true);
   });
 
+  it('names updated chords in undo entries with before and after harmony', () => {
+    useProjectStore.getState().setArrangement({
+      stems: [makeStem()],
+      sections: [makeSection()],
+      blocks: [makeBlock()],
+      chords: [makeChord({ barNumber: 1, degree: 'I', quality: 'maj7' })],
+    });
+
+    useProjectStore.getState().updateChord(1, { degree: 'V', quality: 'dom7' });
+
+    expect(useUndoStore.getState().undoStack[0]?.description).toBe(
+      'Update chord at bar 1: Imaj7 -> V7'
+    );
+  });
+
+  it('does not push chord undo history when the harmony stays the same', () => {
+    useProjectStore.getState().setArrangement({
+      stems: [makeStem()],
+      sections: [makeSection()],
+      blocks: [makeBlock()],
+      chords: [makeChord({ barNumber: 1, degree: 'I', quality: 'maj7' })],
+    });
+
+    useProjectStore.getState().updateChord(1, { degree: 'I', quality: 'maj7' });
+
+    expect(useUndoStore.getState().undoStack).toHaveLength(0);
+    expect(useUiStore.getState().unsavedChanges).toBe(false);
+  });
+
   // Negative tests: non-undo actions
   it('updateProject does NOT push undo entry', () => {
     useProjectStore.getState().setProject(makeProject());

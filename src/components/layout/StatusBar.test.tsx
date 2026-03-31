@@ -386,6 +386,29 @@ describe('StatusBar', () => {
     );
   });
 
+  it('renders chord-change context when harmony edits push undo boundaries through the store', () => {
+    useProjectStore.setState({
+      project: makeProject(),
+      stems: [makeStem()],
+      sections: [makeSection()],
+      blocks: [makeBlock()],
+      chords: [makeChord({ barNumber: 1, degree: 'I', quality: 'maj7' })],
+    });
+
+    useProjectStore.getState().updateChord(1, { degree: 'V', quality: 'dom7' });
+
+    const container = renderStatusBar('saved');
+    const history = container.querySelector(
+      '[data-testid="status-bar-history"]'
+    ) as HTMLSpanElement | null;
+
+    expect(history?.textContent).toBe('Undo: Update chord at bar 1: Imaj7 -> V7');
+    expect(history?.title).toBe(
+      'Undo is ready to restore the arrangement captured before Update chord at bar 1: Imaj7 -> V7. ' +
+      'Use Undo to restore the arrangement captured before Update chord at bar 1: Imaj7 -> V7.'
+    );
+  });
+
   it('renders reordered section context when the history boundary comes from a project reorder', () => {
     useProjectStore.setState({
       project: makeProject(),
