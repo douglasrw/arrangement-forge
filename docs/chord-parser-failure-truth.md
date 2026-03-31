@@ -4,7 +4,7 @@ Status date: 2026-03-31
 
 Status: landed on `main`; reverified again on 2026-03-31 with the focused
 parser, input-surface, generation, and type-check proofs passing at the
-current `main` head `88923362`, and no remaining bounded product delta is
+current `main` head `f0073d0e`, and no remaining bounded product delta is
 visible in this family
 
 Purpose: preserve the current chord parser failure contract and its landing
@@ -152,7 +152,7 @@ Current focused proofs for this slice:
 - `pnpm type-check`
 - the current proof set still matches the same bounded parser, input-surface,
   and generation contract after the 2026-03-31 recheck at verified repo head
-  `88923362`
+  `f0073d0e`
 
 ## Tracked Landing
 
