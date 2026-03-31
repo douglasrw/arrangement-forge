@@ -2,10 +2,10 @@
 
 Status date: 2026-03-31
 
-Status: landed on `main`; reverified on 2026-03-31 at repo head `05e8c7c9`
-after the latest evidence refresh landed, and no remaining product delta is
-visible in this family beyond keeping this artifact aligned with the verified
-head
+Status: landed on `main`; reverified on 2026-03-31 at repo head `52a02392`
+after the latest input-surface truth tighten landed, and no remaining product
+delta is visible in this family beyond keeping this artifact aligned with the
+verified head
 
 Purpose: preserve the current chord parser failure contract and its landing
 proof in one repo-local place so future work does not have to reconstruct it
@@ -46,6 +46,9 @@ from `src/lib/chord-chart-parser.ts`, `src/components/left-panel/InputSection.ts
 - the input readiness banner now reuses parser `truth.title` and
   `truth.currentState`, so blocked bars stay explicit in the first status
   surface instead of being compressed into generic readiness copy
+- the blocked-state sentence now says Generate stays blocked until the chart is
+  fixed, so the first surfaced message carries both the parser state and the
+  action gate without requiring separate inference
 - the summary line counts unresolved bars, invalid chord bars, first-bar repeat
   markers, and repeat markers after unresolved bars without collapsing the
   blocked-state sentence into the same field
@@ -70,7 +73,7 @@ Current focused proofs for this slice:
 - `pnpm exec vitest run src/lib/chord-chart-parser.test.ts src/components/left-panel/InputSection.test.tsx`
 - `pnpm exec vitest run src/hooks/useGenerate.test.tsx`
 - `pnpm run type-check`
-- verification head: `05e8c7c935304e999249d6c91f8439db2100ab21`
+- verification head: `52a02392ef56ee4ca68b435f218b0bc82353c631`
 
 ## Tracked Landing
 
@@ -94,7 +97,9 @@ Current focused proofs for this slice:
   `commitpath_c40ed88d: make chord parse truth explicit`
 - `05e8c7c935304e999249d6c91f8439db2100ab21`:
   `commitpath_c40ed88d Refresh chord parser failure truth evidence`
-- The current product head at `58283c48` still preserves the chord parser
+- `52a02392ef56ee4ca68b435f218b0bc82353c631`:
+  `Expose chord parser blocked next step`
+- The current product head at `52a02392` still preserves the chord parser
   failure truth contract, and the focused parser/input/generation/type-check
   proofs passed again on 2026-03-31 before this follow-up doc-only evidence
   refresh updated the repo-local artifact.
@@ -126,6 +131,10 @@ Current focused proofs for this slice:
 - Commit `05e8c7c9` refreshed the same repo-local evidence after another clean
   focused recheck, keeping the artifact aligned with the latest verified
   `main` head instead of the prior product-only proof pointer.
+- Commit `52a02392` tightened the blocked-state sentence so it explicitly says
+  Generate remains blocked until the chart is fixed, and kept the parse banner
+  focused on summary, next step, and flagged bars instead of collapsing those
+  surfaces back into one sentence.
 - After the 2026-03-31 recheck, this family appears exhausted until a new
   chord-parse behavior changes the contract or the proof surface.
 
