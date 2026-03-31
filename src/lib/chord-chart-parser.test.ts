@@ -189,7 +189,7 @@ describe('parseChordChart', () => {
   });
 
   it('captures repeat markers that do not have a previous chord', () => {
-    const { chords, issues } = parseChordChart('% | C', 'C');
+    const { chords, issues, truth } = parseChordChart('% | C', 'C');
     expect(chords[0].degree).toBeNull();
     expect(issues).toEqual([
       expect.objectContaining({
@@ -199,6 +199,10 @@ describe('parseChordChart', () => {
         reason: 'repeat_without_previous',
       }),
     ]);
+    expect(truth).toMatchObject({
+      state: 'blocked',
+      nextStep: 'Replace bar 1 with explicit chords before using repeat markers.',
+    });
   });
 
   it('captures repeat markers that follow an unresolved bar', () => {

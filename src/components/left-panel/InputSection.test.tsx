@@ -438,7 +438,41 @@ describe('InputSection upload tab', () => {
     );
     expect(mounted.container.textContent).toContain('1 repeat marker starts before any chord.');
     expect(mounted.container.textContent).toContain(
-      'Replace bar 1 with explicit chords or fix the bar before it.'
+      'Replace bar 1 with explicit chords before using repeat markers.'
+    );
+    expect(mounted.container.textContent).toContain(
+      'Line 1, bar 1: repeat marker "%" with no previous chord'
+    );
+  });
+
+  it('keeps blocked upload next steps honest when an imported chart starts with a repeat marker', async () => {
+    useProjectStore.setState({
+      project: makeProject({
+        chordChartRaw: 'Cmaj7 | Fmaj7 | G7 | Cmaj7',
+        generationHints: 'Keep the brushes light',
+      }),
+    });
+
+    const mounted = renderSection();
+    mountedRoot = mounted.root;
+    mountedContainer = mounted.container;
+
+    openUploadTab(mounted.container);
+    const fileInput = getUploadFileInput(mounted.container);
+
+    const file = new File(['placeholder'], 'leading-repeat.txt', { type: 'text/plain' });
+    vi.spyOn(file, 'text').mockResolvedValue('% | Cmaj7 | Fmaj7');
+
+    await importFile(fileInput, file);
+
+    expect(mounted.container.textContent).toContain(
+      'Chart is blocked: Chord chart needs attention. Bar 1 currently parses as N.C., so Generate stays blocked until the chart is fixed.'
+    );
+    expect(mounted.container.textContent).toContain(
+      'Why it is blocked: 1 repeat marker starts before any chord.'
+    );
+    expect(mounted.container.textContent).toContain(
+      'Next step: Replace bar 1 with explicit chords before using repeat markers.'
     );
     expect(mounted.container.textContent).toContain(
       'Line 1, bar 1: repeat marker "%" with no previous chord'

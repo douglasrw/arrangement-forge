@@ -208,7 +208,9 @@ function buildParseTruth(
     currentState: `${barLabel} ${blockedBars.length === 1 ? 'currently parses' : 'currently parse'} as N.C., so Generate stays blocked until the chart is fixed.`,
     summary: summaryParts.join(' '),
     nextStep:
-      repeatWithoutPreviousCount > 0 || repeatWithoutResolvedChordCount > 0
+      repeatWithoutPreviousCount > 0 && repeatWithoutResolvedChordCount === 0
+        ? `Replace ${formatBlockedBarReference(blockedBars, 'the flagged repeat bars')} with explicit chords before using repeat markers.`
+        : repeatWithoutPreviousCount > 0 || repeatWithoutResolvedChordCount > 0
         ? `Replace ${formatBlockedBarReference(blockedBars, 'the flagged repeat bars')} with explicit chords or fix the bar before ${blockedBars.length === 1 ? 'it' : 'them'}.`
         : `Fix or replace ${formatBlockedBarReference(blockedBars, 'the flagged chord bars')} before generating.`,
     blockedBars,
