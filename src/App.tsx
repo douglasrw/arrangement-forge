@@ -40,18 +40,18 @@ function describeProtectedRecoveryTruth(path: string) {
   }
 
   if (routePath.startsWith('/project/')) {
-    return 'Route truth: the requested editor project route stays reserved during authentication, and /project remains the editor fallback route if you need to choose a different project after recovery.';
+    return `Route truth: ${routePath} stays reserved during authentication, and /project remains the editor fallback route if you need to choose a different project after recovery.`;
   }
 
   if (routePath.startsWith('/settings')) {
-    return 'Route truth: the protected settings route stays reserved until authentication finishes.';
+    return `Route truth: ${routePath} stays reserved until authentication finishes.`;
   }
 
   if (routePath.startsWith('/library')) {
-    return 'Route truth: the protected library route stays reserved until authentication finishes.';
+    return `Route truth: ${routePath} stays reserved until authentication finishes.`;
   }
 
-  return 'Route truth: this protected workspace route stays reserved until authentication finishes.';
+  return `Route truth: ${routePath || '/'} stays reserved until authentication finishes.`;
 }
 
 function describeProtectedRouteLabel(path: string) {
@@ -76,18 +76,18 @@ function describeProtectedRouteReadiness(path: string) {
   }
 
   if (routePath.startsWith('/project/')) {
-    return 'The requested editor project route is reserved until authentication finishes.';
+    return `${routePath} is reserved until authentication finishes.`;
   }
 
   if (routePath.startsWith('/settings')) {
-    return 'The settings route is reserved until authentication finishes.';
+    return `${routePath} is reserved until authentication finishes.`;
   }
 
   if (routePath.startsWith('/library')) {
-    return 'The library route is reserved until authentication finishes.';
+    return `${routePath} is reserved until authentication finishes.`;
   }
 
-  return 'This protected workspace route is reserved until authentication finishes.';
+  return `${routePath || '/'} is reserved until authentication finishes.`;
 }
 
 function LoadingScreen({
