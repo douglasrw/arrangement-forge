@@ -2,7 +2,7 @@
 
 Status date: 2026-03-31
 
-Status: landed on `main`; reverified on 2026-03-31 at head `6824b2c5`
+Status: landed on `main`; reverified on 2026-03-31 at head `7d0cf31e`
 after explicit per-field saved-versus-next-save truth landed, and no
 remaining product delta is visible in this family beyond this evidence refresh
 
@@ -68,7 +68,7 @@ from `src/pages/SettingsPage.tsx`, `src/lib/profile.ts`, and scattered tests.
 Current focused proofs for this slice:
 
 - `pnpm exec vitest run src/lib/profile.test.ts src/pages/SettingsPage.test.tsx`
-- `pnpm run type-check`
+- `pnpm exec tsc --noEmit`
 
 ## Tracked Landing
 
@@ -113,7 +113,7 @@ Current focused proofs for this slice:
 - The landing made saved, pending, unavailable, blocked-save, invalid, and
   failed-save states explicit on the settings surface instead of relying on
   hidden surrounding context.
-- The current `main` head at `6824b2c5` still preserves that contract and now
+- The current `main` head at `7d0cf31e` still preserves that contract and now
   makes the saved-versus-next-save truth explicit for display name, chord
   display mode, and default genre on the settings surface.
 - The focused settings proofs passed again on 2026-03-31 before this doc-only
