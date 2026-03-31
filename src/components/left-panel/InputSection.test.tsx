@@ -334,6 +334,15 @@ describe('InputSection upload tab', () => {
     expect(chordChartInput?.getAttribute('aria-invalid')).toBe('true');
     expect(chordChartInput?.getAttribute('aria-describedby')).toBe('chord-chart-raw-input-hint');
     expect(chordChartHint?.getAttribute('data-chord-chart-editor-state')).toBe('blocked');
+    expect(readiness?.textContent).toContain(
+      '1 bar has an unrecognized chord token.'
+    );
+    expect(readiness?.textContent).toContain(
+      '1 repeat marker follows an unresolved bar.'
+    );
+    expect(readiness?.textContent).toContain(
+      'Flagged chart locations: Line 1, bar 2: could not parse "xyz??"'
+    );
     expect(mounted.container.textContent).toContain('Chord chart has parse issues');
     expect(mounted.container.textContent).toContain(
       '1 of 3 bars are ready. Bars 2 and 3 currently parse as N.C., so Generate stays blocked until the chart is fixed.'

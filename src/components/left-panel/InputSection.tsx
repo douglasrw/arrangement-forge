@@ -310,12 +310,7 @@ export function InputSection() {
   const inputReadinessTitle = hasParseBlockers
     ? parseTruth?.title ?? inputReadiness.title
     : inputReadiness.title
-  const inputReadinessDetail = hasParseBlockers
-    ? [
-      parseTruth?.currentState,
-      parseTruth?.nextStep ? `Next step: ${parseTruth.nextStep}` : null,
-    ].filter(Boolean).join(" ")
-    : inputReadiness.detail
+  const inputReadinessDetail = inputReadiness.detail
   const parseFeedbackHighlights = hasParseBlockers && parseTruth?.issueHighlights.length
     ? `Flagged chart locations: ${parseTruth.issueHighlights.join(" ")}`
     : null

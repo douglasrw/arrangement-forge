@@ -217,8 +217,13 @@ describe('AiAssistantSection', () => {
     expect(composerState?.textContent).toContain(
       'Bars 2 and 3 currently parse as N.C., so Generate stays blocked until the chart is fixed.'
     );
+    expect(composerState?.textContent).toContain('1 bar has an unrecognized chord token.');
+    expect(composerState?.textContent).toContain('1 repeat marker follows an unresolved bar.');
     expect(composerState?.textContent).toContain(
       'Next step: Replace bars 2 and 3 with explicit chords or fix the bar before them.'
+    );
+    expect(composerState?.textContent).toContain(
+      'Flagged chart locations: Line 1, bar 2: could not parse "xyz??"'
     );
     expect(composerState?.textContent).toContain(
       'Fix the chord chart in Input before asking the assistant to generate or revise the arrangement.'

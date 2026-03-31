@@ -233,7 +233,12 @@ describe('LeftPanel inspector truth regression', () => {
     );
     expect(mounted.container.textContent).toContain('Chord chart needs fixes');
     expect(mounted.container.textContent).toContain(
-      'Bars 2 and 3 currently parse as N.C., so Generate stays blocked until the chart is fixed. Next step: Replace bars 2 and 3 with explicit chords or fix the bar before them.'
+      'Bars 2 and 3 currently parse as N.C., so Generate stays blocked until the chart is fixed. 1 bar has an unrecognized chord token. 1 repeat marker follows an unresolved bar. Next step: Replace bars 2 and 3 with explicit chords or fix the bar before them.'
+    );
+    expect(mounted.container.textContent).toContain('1 bar has an unrecognized chord token.');
+    expect(mounted.container.textContent).toContain('1 repeat marker follows an unresolved bar.');
+    expect(mounted.container.textContent).toContain(
+      'Flagged chart locations: Line 1, bar 2: could not parse "xyz??"'
     );
   });
 
@@ -251,7 +256,7 @@ describe('LeftPanel inspector truth regression', () => {
     expect(mounted.container.querySelector('[data-left-panel-coordination="blocked"]')).not.toBeNull();
     expect(mounted.container.textContent).toContain('Chord chart fixes are blocking generation');
     expect(mounted.container.textContent).toContain(
-      'No playable chord bars are present yet, so Generate stays blocked until the chart includes at least one chord bar. Next step: Add at least one chord bar such as Cmaj7 | Fmaj7 | G7 | Cmaj7.'
+      'No playable chord bars are present yet, so Generate stays blocked until the chart includes at least one chord bar. Section labels and blank lines do not create playable bars on their own. Next step: Add at least one chord bar such as Cmaj7 | Fmaj7 | G7 | Cmaj7.'
     );
     expect(mounted.container.textContent).not.toContain('Flagged bars would resolve to N.C.');
   });

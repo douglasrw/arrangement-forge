@@ -57,18 +57,23 @@ export type LeftPanelCoordinationTruth = {
 
 function describeBlockedChordChart(parseTruth?: ChordChartParseTruth | null) {
   const currentState = parseTruth?.currentState?.trim()
+  const summary = parseTruth?.summary?.trim()
   const nextStep = parseTruth?.nextStep?.trim()
+  const issueHighlights = parseTruth?.issueHighlights?.filter(Boolean) ?? []
+  const remainingIssueCount = parseTruth?.remainingIssueCount ?? 0
 
-  if (currentState && nextStep) {
-    return `${currentState} Next step: ${nextStep}`
-  }
+  const truthDetails = [
+    currentState,
+    summary,
+    nextStep ? `Next step: ${nextStep}` : null,
+    issueHighlights.length ? `Flagged chart locations: ${issueHighlights.join(" ")}` : null,
+    remainingIssueCount > 0
+      ? `${remainingIssueCount} more flagged ${remainingIssueCount === 1 ? "bar needs" : "bars need"} review in the chord chart before generation.`
+      : null,
+  ].filter(Boolean)
 
-  if (currentState) {
-    return currentState
-  }
-
-  if (nextStep) {
-    return `Next step: ${nextStep}`
+  if (truthDetails.length > 0) {
+    return truthDetails.join(" ")
   }
 
   return "Fix the chord chart in Input before generating."
