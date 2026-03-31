@@ -218,20 +218,18 @@ export function InputSection() {
   const parseFeedbackTitle = parseIssueCount === 1
     ? "Chord chart needs attention"
     : "Chord chart has parse issues"
+  const parseTruth = parseResult?.truth ?? null
   const inputReadinessTitle = hasParseIssues
-    ? parseResult?.truth.title ?? inputReadiness.title
+    ? parseTruth?.title ?? inputReadiness.title
     : inputReadiness.title
   const inputReadinessDetail = hasParseIssues
-    ? parseResult?.truth.currentState ?? inputReadiness.detail
-    : inputReadiness.detail
-  const parseFeedbackDetail = hasParseIssues
     ? [
-      parseResult?.truth.summary,
-      parseResult?.truth.nextStep ? `Next step: ${parseResult.truth.nextStep}` : null,
-      parseResult?.truth.issueHighlights.length
-        ? `Flagged bars: ${parseResult.truth.issueHighlights.join(" ")}`
-        : null,
+      parseTruth?.currentState,
+      parseTruth?.nextStep ? `Next step: ${parseTruth.nextStep}` : null,
     ].filter(Boolean).join(" ")
+    : inputReadiness.detail
+  const parseFeedbackHighlights = hasParseIssues && parseTruth?.issueHighlights.length
+    ? `Flagged bars: ${parseTruth.issueHighlights.join(" ")}`
     : null
 
   async function handleUploadChange(event: ChangeEvent<HTMLInputElement>) {
@@ -352,9 +350,17 @@ export function InputSection() {
             <span className="rounded-full bg-amber-500/10 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.18em] text-amber-300">
               Attention
             </span>
-            <span className="font-medium text-foreground">{parseResult?.truth.title ?? parseFeedbackTitle}</span>
+            <span className="font-medium text-foreground">{parseTruth?.title ?? parseFeedbackTitle}</span>
           </div>
-          <p className="mt-1 text-muted-foreground">{parseFeedbackDetail}</p>
+          {parseTruth?.summary && (
+            <p className="mt-1 text-muted-foreground">{parseTruth.summary}</p>
+          )}
+          {parseTruth?.nextStep && (
+            <p className="mt-1 text-muted-foreground">Next step: {parseTruth.nextStep}</p>
+          )}
+          {parseFeedbackHighlights && (
+            <p className="mt-1 text-muted-foreground">{parseFeedbackHighlights}</p>
+          )}
         </div>
       )}
 
