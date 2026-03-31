@@ -1,6 +1,7 @@
 import { useEffect } from 'react';
 import { createBrowserRouter, RouterProvider, Navigate, useLocation } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
+import { getAuthGateTruth } from '@/store/auth-store';
 import { useAuthStore } from '@/store/auth-store';
 import EditorPage from '@/pages/EditorPage';
 import LoginPage from '@/pages/LoginPage';
@@ -19,11 +20,13 @@ function LoadingScreen() {
 }
 
 export function AuthGuard({ children }: { children: React.ReactNode }) {
-  const { authStatus } = useAuthStore();
+  const authStatus = useAuthStore((state) => state.authStatus);
+  const signedOutReason = useAuthStore((state) => state.signedOutReason);
+  const authGate = getAuthGateTruth({ authStatus, signedOutReason });
   const location = useLocation();
 
-  if (authStatus === 'checking-session') return <LoadingScreen />;
-  if (authStatus !== 'authenticated') {
+  if (authGate.access === 'pending') return <LoadingScreen />;
+  if (authGate.access !== 'granted') {
     return (
       <Navigate
         to="/login"
@@ -42,9 +45,30 @@ export function createAppRoutes() {
   return [
     { path: '/', element: <Navigate to="/library" replace /> },
     { path: '/login', element: <LoginPage /> },
-    { path: '/library', element: <AuthGuard><LibraryPage /></AuthGuard> },
-    { path: '/project/:id', element: <AuthGuard><EditorPage /></AuthGuard> },
-    { path: '/settings', element: <AuthGuard><SettingsPage /></AuthGuard> },
+    {
+      path: '/library',
+      element: (
+        <AuthGuard>
+          <LibraryPage />
+        </AuthGuard>
+      ),
+    },
+    {
+      path: '/project/:id',
+      element: (
+        <AuthGuard>
+          <EditorPage />
+        </AuthGuard>
+      ),
+    },
+    {
+      path: '/settings',
+      element: (
+        <AuthGuard>
+          <SettingsPage />
+        </AuthGuard>
+      ),
+    },
   ];
 }
 

@@ -9,6 +9,38 @@ import type { SignUpResult } from '@/hooks/useAuth';
 const authApi = vi.hoisted(() => ({
   authStatus: 'signed-out',
   signedOutReason: 'no-session',
+  get authGate() {
+    if (this.authStatus === 'checking-session') {
+      return {
+        access: 'pending',
+        nextStep: 'wait-for-session',
+        signedOutReason: null,
+      };
+    }
+
+    if (this.authStatus === 'authenticated') {
+      return {
+        access: 'granted',
+        nextStep: 'open-app',
+        signedOutReason: null,
+      };
+    }
+
+    return {
+      access: 'blocked',
+      nextStep:
+        this.signedOutReason === 'email-confirmation-required'
+          ? 'confirm-email'
+          : this.signedOutReason === 'missing-profile'
+            ? 'complete-profile'
+            : this.signedOutReason === 'profile-load-failed'
+              ? 'retry-profile-load'
+              : this.signedOutReason === 'session-lookup-failed'
+                ? 'retry-session'
+                : 'sign-in',
+      signedOutReason: this.signedOutReason,
+    };
+  },
   signIn: vi.fn<(email: string, password: string) => Promise<void>>(),
   signUp: vi.fn<(email: string, password: string) => Promise<SignUpResult>>(),
   signInWithGoogle: vi.fn<() => Promise<void>>(),
@@ -98,9 +130,11 @@ function submitLoginForm(container: HTMLElement) {
 }
 
 function findButtonByText(container: HTMLElement, text: string): HTMLButtonElement | null {
-  return Array.from(container.querySelectorAll('button')).find(
-    (button): button is HTMLButtonElement => button.textContent?.trim() === text
-  ) ?? null;
+  return (
+    Array.from(container.querySelectorAll('button')).find(
+      (button): button is HTMLButtonElement => button.textContent?.trim() === text
+    ) ?? null
+  );
 }
 
 let mountedRoot: Root | null = null;
@@ -234,7 +268,9 @@ describe('LoginPage failure truth', () => {
     expect(mounted.container.textContent).toContain('return you to settings');
     expect(navigateMock).not.toHaveBeenCalled();
 
-    const submitButton = mounted.container.querySelector('button[type="submit"]') as HTMLButtonElement | null;
+    const submitButton = mounted.container.querySelector(
+      'button[type="submit"]'
+    ) as HTMLButtonElement | null;
     expect(submitButton?.disabled).toBe(false);
   });
 
@@ -256,8 +292,14 @@ describe('LoginPage failure truth', () => {
     expect(authApi.signIn).toHaveBeenCalledWith('ash@example.com', 'secret-1');
     expect(mounted.container.textContent).toContain('Waiting on authentication');
     expect(mounted.container.textContent).toContain('continue to the library');
-    expect((mounted.container.querySelector('button[type="submit"]') as HTMLButtonElement | null)?.textContent).toBe('Signing in...');
-    expect((mounted.container.querySelector('button[type="submit"]') as HTMLButtonElement | null)?.disabled).toBe(true);
+    expect(
+      (mounted.container.querySelector('button[type="submit"]') as HTMLButtonElement | null)
+        ?.textContent
+    ).toBe('Signing in...');
+    expect(
+      (mounted.container.querySelector('button[type="submit"]') as HTMLButtonElement | null)
+        ?.disabled
+    ).toBe(true);
     expect(findButtonByText(mounted.container, 'Continue with Google')?.disabled).toBe(true);
 
     await act(async () => {
@@ -315,8 +357,14 @@ describe('LoginPage failure truth', () => {
     });
 
     expect(authApi.signUp).toHaveBeenCalledWith('ash@example.com', 'secret-1');
-    expect((mounted.container.querySelector('button[type="submit"]') as HTMLButtonElement | null)?.textContent).toBe('Creating account...');
-    expect((mounted.container.querySelector('button[type="submit"]') as HTMLButtonElement | null)?.disabled).toBe(true);
+    expect(
+      (mounted.container.querySelector('button[type="submit"]') as HTMLButtonElement | null)
+        ?.textContent
+    ).toBe('Creating account...');
+    expect(
+      (mounted.container.querySelector('button[type="submit"]') as HTMLButtonElement | null)
+        ?.disabled
+    ).toBe(true);
     expect(findButtonByText(mounted.container, 'Continue with Google')?.disabled).toBe(true);
 
     await act(async () => {
@@ -374,8 +422,14 @@ describe('LoginPage failure truth', () => {
     });
 
     expect(authApi.signInWithGoogle).toHaveBeenCalledTimes(1);
-    expect((findButtonByText(mounted.container, 'Connecting to Google...') as HTMLButtonElement | null)?.disabled).toBe(true);
-    expect((mounted.container.querySelector('button[type="submit"]') as HTMLButtonElement | null)?.disabled).toBe(true);
+    expect(
+      (findButtonByText(mounted.container, 'Connecting to Google...') as HTMLButtonElement | null)
+        ?.disabled
+    ).toBe(true);
+    expect(
+      (mounted.container.querySelector('button[type="submit"]') as HTMLButtonElement | null)
+        ?.disabled
+    ).toBe(true);
 
     await act(async () => {
       googleRequest.reject?.(new Error('Authentication failed'));
@@ -386,7 +440,10 @@ describe('LoginPage failure truth', () => {
     expect(mounted.container.textContent).toContain('Authentication failed');
     expect(mounted.container.textContent).not.toContain('Email sign-in failed');
     expect(findButtonByText(mounted.container, 'Continue with Google')?.disabled).toBe(false);
-    expect((mounted.container.querySelector('button[type="submit"]') as HTMLButtonElement | null)?.disabled).toBe(false);
+    expect(
+      (mounted.container.querySelector('button[type="submit"]') as HTMLButtonElement | null)
+        ?.disabled
+    ).toBe(false);
     expect(navigateMock).not.toHaveBeenCalled();
   });
 

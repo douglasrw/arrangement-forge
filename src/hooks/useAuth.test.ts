@@ -38,10 +38,12 @@ function createProfileQuery(profileRow: Row | null) {
   return {
     select: () => ({
       eq: () => ({
-        single: () => profileQueryResult ?? Promise.resolve({
-          data: profileRow,
-          error: null,
-        }),
+        single: () =>
+          profileQueryResult ??
+          Promise.resolve({
+            data: profileRow,
+            error: null,
+          }),
       }),
     }),
   };
@@ -409,6 +411,34 @@ describe('useAuth session bootstrap truth', () => {
       isLoading: false,
     });
     expect(useUiStore.getState().chordDisplayMode).toBe('letter');
+  });
+
+  it('surfaces the blocked next step when session restore stops at a missing profile', async () => {
+    supabaseMock.auth.getSession.mockResolvedValue({
+      data: {
+        session: {
+          user: { id: 'user-1', email: 'ash@example.com' },
+        },
+      },
+    });
+
+    const mounted = renderHarness();
+    mountedRoot = mounted.root;
+    mountedContainer = mounted.container;
+
+    act(() => {
+      hookValue!.initAuth();
+    });
+
+    await act(async () => {
+      await flushAsyncWork();
+    });
+
+    expect(hookValue!.authGate).toEqual({
+      access: 'blocked',
+      nextStep: 'complete-profile',
+      signedOutReason: 'missing-profile',
+    });
   });
 
   it('exits bootstrap loading when Supabase session lookup fails', async () => {
