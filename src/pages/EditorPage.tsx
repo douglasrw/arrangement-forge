@@ -75,6 +75,26 @@ type EditorRouteState =
   | { status: 'error'; message: string }
   | { status: 'ready' };
 
+function getInitialEditorRouteState(
+  routeMode: EditorRouteMode,
+  projectId: string | undefined
+): EditorRouteState {
+  if (projectId) {
+    return { status: 'loading' };
+  }
+
+  return routeMode === 'project-selection'
+    ? {
+        status: 'no-project-selected',
+        message: 'The /project editor route is open, but no project has been selected yet.',
+      }
+    : {
+        status: 'error',
+        message:
+          'The /project/:id editor route is missing a project id, so Arrangement Forge cannot load a project here.',
+      };
+}
+
 function getLoadingMessage(projectId: string | undefined) {
   return projectId
     ? `Opening project ${projectId} in the editor.`
@@ -212,7 +232,9 @@ export default function EditorPage({
   const { id } = useParams<{ id: string }>();
   const { loadProject } = useProject();
   const loadedProjectId = useProjectStore((state) => state.project?.id ?? null);
-  const [routeState, setRouteState] = useState<EditorRouteState>({ status: 'loading' });
+  const [routeState, setRouteState] = useState<EditorRouteState>(() =>
+    getInitialEditorRouteState(routeMode, id)
+  );
   const routeTruth = getEditorRouteTruth({
     routeMode,
     routeState: routeState.status,
@@ -227,13 +249,7 @@ export default function EditorPage({
   useEffect(() => {
     if (!id) {
       useProjectStore.getState().clearProjectSession();
-      setRouteState({
-        status: routeMode === 'project-selection' ? 'no-project-selected' : 'error',
-        message:
-          routeMode === 'project-selection'
-            ? 'The /project editor route is open, but no project has been selected yet.'
-            : 'The /project/:id editor route is missing a project id, so Arrangement Forge cannot load a project here.',
-      });
+      setRouteState(getInitialEditorRouteState(routeMode, id));
       return;
     }
 

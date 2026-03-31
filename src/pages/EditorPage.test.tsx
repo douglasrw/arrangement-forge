@@ -580,6 +580,19 @@ describe('EditorPage route loading gate', () => {
     });
   });
 
+  it('renders the /project fallback state immediately instead of flashing a loading shell first', () => {
+    const mounted = renderEditor(undefined, 'project-selection');
+    mountedRoot = mounted.root;
+    mountedContainer = mounted.container;
+
+    expect(loadProjectMock).not.toHaveBeenCalled();
+    expect(queryNoProjectState()).not.toBeNull();
+    expect(queryLoadingGate()).toBeNull();
+    expect(document.body.textContent).toContain(
+      'Current state: The editor fallback route is open with no active project in this workspace.'
+    );
+  });
+
   it('keeps export wired into the editor shell alongside project, tempo, and selection surfaces', async () => {
     useProjectStore.setState({
       project: {
