@@ -143,7 +143,8 @@ Current focused proofs for this slice:
 - `pnpm test -- --run src/lib/chord-chart-parser.test.ts src/components/left-panel/InputSection.test.tsx src/hooks/useGenerate.test.tsx`
 - `pnpm type-check`
 - the current proof set still matches the same bounded parser, input-surface,
-  and generation contract after the 2026-03-31 recheck
+  and generation contract after the 2026-03-31 recheck at verified repo head
+  `f7fe60ee`
 
 ## Tracked Landing
 
@@ -208,6 +209,8 @@ Current focused proofs for this slice:
 - `a350f32e14fb472bbf229529c6539845c7895780`:
   `commitpath_c40ed88d Refresh chord parser failure truth evidence`
 - `f7ec7fa797530fdb01d685e34db031918591d5f8`:
+  `commitpath_c40ed88d Refresh chord parser failure truth evidence`
+- `f7fe60eeaee2847a7dbea87a4a48a23803869384`:
   `commitpath_c40ed88d Refresh chord parser failure truth evidence`
 - `f353b811f5d2968dc5d98159a8396d6a1dd5e5b2`:
   `commitpath_c40ed88d Surface upload parser locations`
@@ -480,6 +483,10 @@ Current focused proofs for this slice:
   delta in this family, so the honest move remains another repo-local
   evidence refresh instead of reopening the parser or input surfaces without a
   fresh product truth gap.
+- The latest 2026-03-31 recheck at verified repo head `f7fe60ee` produced the
+  same focused proof results again with no remaining bounded product-file
+  delta in this family, so the honest move remains to stop here unless a new
+  parser-truth behavior changes the contract or proof surface.
 
 The tests cover:
 
