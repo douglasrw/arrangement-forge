@@ -4,7 +4,7 @@ Status date: 2026-03-31
 
 Status: landed on `main`; reverified again on 2026-03-31 with the focused
 parser, input-surface, and type-check proofs passing after the repeat-after-
-`N.C.` repair at repo head `5c942dbd`, and no remaining bounded product delta is
+`N.C.` repair at repo head `cbe36765`, and no remaining bounded product delta is
 visible in this family
 
 Purpose: preserve the current chord parser failure contract and its landing
@@ -158,11 +158,11 @@ Current focused proofs for this slice:
 - `pnpm exec tsc --noEmit`
 - the current proof set still matches the same bounded parser and
   input-surface contract after the 2026-03-31 recheck at verified repo head
-  `5c942dbd`
+  `cbe36765`
 
 ## Tracked Landing
 
-- `5c942dbde03f4fb6dc6019cd2253bb0df74cc8f7`:
+- `cbe367650e58fe4584fb35da32103ff71c6b82d8`:
   `commitpath_c40ed88d Keep repeat-after-rest parser truth blocked`
 - `889233623b9b0eba1d3b86afdcf4c56fcb1f1bf4`:
   `commitpath_c40ed88d: propagate chord parse blocker truth into readiness`
