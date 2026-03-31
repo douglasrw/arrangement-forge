@@ -2,9 +2,8 @@
 
 Status date: 2026-03-31
 
-Status: landed on `main`; reverified on 2026-03-31 at proof head `f433c4ed`,
-with the same parser, input surface, and generation block contract still
-holding at the current repo head without a new product delta
+Status: landed on `main`; reverified on 2026-03-31 at current product head
+`bb0ef690` with no remaining bounded product delta visible in this family
 
 Purpose: preserve the current chord parser failure contract and its landing
 proof in one repo-local place so future work does not have to reconstruct it
@@ -88,10 +87,12 @@ Current focused proofs for this slice:
 
 - `pnpm test -- --run src/lib/chord-chart-parser.test.ts src/components/left-panel/InputSection.test.tsx src/hooks/useGenerate.test.tsx`
 - `pnpm type-check`
-- verification head: `f433c4ed012a35b196555b3f3e94ae02d70cf39e`
+- verification head: `bb0ef6907c1668f001efbc94e35a1f332d4e9cf3`
 
 ## Tracked Landing
 
+- `bb0ef6907c1668f001efbc94e35a1f332d4e9cf3`:
+  `Clarify chord parser blocked-state truth`
 - `f433c4ed012a35b196555b3f3e94ae02d70cf39e`:
   `commitpath_c40ed88d Refresh chord parser failure truth evidence`
 - `c60dbed13e48ea66881d37b7bad8d1456ee63447`:
