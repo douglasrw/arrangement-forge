@@ -237,6 +237,50 @@ function describeBlockUndoTarget(
   return `${action} ${blockLabel}${sectionTarget} (bars ${block.startBar}-${block.endBar})`;
 }
 
+function describeSplitBlockUndoTarget(
+  block: Block | undefined,
+  atBar: number,
+  sections: Section[],
+  stems: Stem[]
+): string {
+  if (!block) {
+    return `Split block at bar ${atBar}`;
+  }
+
+  const sectionName = getSectionDisplayName(
+    sections.find((section) => section.id === block.sectionId)
+  );
+  const stemInstrument = stems.find((stem) => stem.id === block.stemId)?.instrument?.trim() || null;
+  const blockLabel = stemInstrument ? `${stemInstrument} block` : 'block';
+  const sectionTarget = sectionName ? ` in ${sectionName}` : '';
+
+  return `Split ${blockLabel}${sectionTarget} at bar ${atBar} (bars ${block.startBar}-${block.endBar})`;
+}
+
+function describeMergeBlocksUndoTarget(
+  firstBlock: Block | undefined,
+  secondBlock: Block | undefined,
+  sections: Section[],
+  stems: Stem[]
+): string {
+  if (!firstBlock || !secondBlock) {
+    return 'Merge blocks';
+  }
+
+  const sectionName = getSectionDisplayName(
+    sections.find((section) => section.id === firstBlock.sectionId)
+  );
+  const stemInstrument =
+    stems.find((stem) => stem.id === firstBlock.stemId)?.instrument?.trim() || null;
+  const blockLabel = stemInstrument ? `${stemInstrument} blocks` : 'blocks';
+  const sectionTarget = sectionName ? ` in ${sectionName}` : '';
+
+  return (
+    `Merge ${blockLabel}${sectionTarget} ` +
+    `(bars ${firstBlock.startBar}-${firstBlock.endBar} and ${secondBlock.startBar}-${secondBlock.endBar})`
+  );
+}
+
 function formatChordUndoTarget(chord: Chord): string {
   return formatChord(chord, 'C', 'roman');
 }
@@ -920,7 +964,8 @@ export const useProjectStore = create<ProjectStore>()((set, get) => ({
   },
 
   splitBlock: (blockId, atBar) => {
-    const { blocks } = get();
+    const state = get();
+    const { blocks } = state;
     const original = blocks.find((b) => b.id === blockId);
     if (!original) return;
     if (atBar <= original.startBar || atBar > original.endBar) return;
@@ -931,12 +976,16 @@ export const useProjectStore = create<ProjectStore>()((set, get) => ({
     const newBlocks = blocks.map((b) => (b.id === blockId ? block1 : b)).concat(block2);
     set({ blocks: newBlocks });
     const after = snapshotArrangement(get());
-    useUndoStore.getState().pushUndo(`Split block at bar ${atBar}`, { undo: before, redo: after });
+    useUndoStore.getState().pushUndo(
+      describeSplitBlockUndoTarget(original, atBar, state.sections, state.stems),
+      { undo: before, redo: after }
+    );
     useUiStore.getState().markDirty();
   },
 
   mergeBlocks: (blockId1, blockId2) => {
-    const { blocks } = get();
+    const state = get();
+    const { blocks } = state;
     const b1 = blocks.find((b) => b.id === blockId1);
     const b2 = blocks.find((b) => b.id === blockId2);
     if (!b1 || !b2) return;
@@ -949,7 +998,10 @@ export const useProjectStore = create<ProjectStore>()((set, get) => ({
     set({ blocks: newBlocks });
     reconcileSelectionWithArrangement(get());
     const after = snapshotArrangement(get());
-    useUndoStore.getState().pushUndo(`Merge blocks (bars ${b1.startBar}-${b2.endBar})`, { undo: before, redo: after });
+    useUndoStore.getState().pushUndo(
+      describeMergeBlocksUndoTarget(b1, b2, state.sections, state.stems),
+      { undo: before, redo: after }
+    );
     useUiStore.getState().markDirty();
   },
 

@@ -1051,6 +1051,21 @@ describe('undo push coverage', () => {
     expect(hasSnapshotKeys(stack[0].redoSnapshot)).toBe(true);
   });
 
+  it('names split blocks in undo entries with section and split-bar context', () => {
+    useProjectStore.getState().setArrangement({
+      stems: [makeStem({ instrument: 'piano' })],
+      sections: [makeSection({ name: 'Verse' })],
+      blocks: [makeBlock({ startBar: 1, endBar: 8 })],
+      chords: [],
+    });
+
+    useProjectStore.getState().splitBlock('b1', 5);
+
+    expect(useUndoStore.getState().undoStack[0]?.description).toBe(
+      'Split piano block in Verse at bar 5 (bars 1-8)'
+    );
+  });
+
   it('mergeBlocks pushes undo entry with unified snapshot format', () => {
     useProjectStore.getState().setArrangement({
       stems: [makeStem()], sections: [makeSection()],
@@ -1065,6 +1080,24 @@ describe('undo push coverage', () => {
     expect(stack).toHaveLength(1);
     expect(hasSnapshotKeys(stack[0].undoSnapshot)).toBe(true);
     expect(hasSnapshotKeys(stack[0].redoSnapshot)).toBe(true);
+  });
+
+  it('names merged blocks in undo entries with section and paired bar context', () => {
+    useProjectStore.getState().setArrangement({
+      stems: [makeStem({ instrument: 'piano' })],
+      sections: [makeSection({ name: 'Verse' })],
+      blocks: [
+        makeBlock({ id: 'b1', startBar: 1, endBar: 4 }),
+        makeBlock({ id: 'b2', startBar: 5, endBar: 8 }),
+      ],
+      chords: [],
+    });
+
+    useProjectStore.getState().mergeBlocks('b1', 'b2');
+
+    expect(useUndoStore.getState().undoStack[0]?.description).toBe(
+      'Merge piano blocks in Verse (bars 1-4 and 5-8)'
+    );
   });
 
   it('deleteBlock pushes undo entry with unified snapshot format', () => {

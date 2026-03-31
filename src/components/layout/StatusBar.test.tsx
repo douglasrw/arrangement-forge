@@ -409,6 +409,55 @@ describe('StatusBar', () => {
     );
   });
 
+  it('renders split-block context when the history boundary comes from a project split', () => {
+    useProjectStore.setState({
+      project: makeProject(),
+      stems: [makeStem({ instrument: 'piano' })],
+      sections: [makeSection({ name: 'Verse', barCount: 8 })],
+      blocks: [makeBlock({ startBar: 1, endBar: 8 })],
+      chords: [],
+    });
+
+    useProjectStore.getState().splitBlock('block-1', 5);
+
+    const container = renderStatusBar('saved');
+    const history = container.querySelector(
+      '[data-testid="status-bar-history"]'
+    ) as HTMLSpanElement | null;
+
+    expect(history?.textContent).toBe('Undo: Split piano block in Verse at bar 5 (bars 1-8)');
+    expect(history?.title).toBe(
+      'Undo is ready to restore the arrangement captured before Split piano block in Verse at bar 5 (bars 1-8). ' +
+      'Use Undo to restore the arrangement captured before Split piano block in Verse at bar 5 (bars 1-8).'
+    );
+  });
+
+  it('renders merge-block context when the history boundary comes from a project merge', () => {
+    useProjectStore.setState({
+      project: makeProject(),
+      stems: [makeStem({ instrument: 'piano' })],
+      sections: [makeSection({ name: 'Verse', barCount: 8 })],
+      blocks: [
+        makeBlock({ id: 'block-1', startBar: 1, endBar: 4 }),
+        makeBlock({ id: 'block-2', startBar: 5, endBar: 8 }),
+      ],
+      chords: [],
+    });
+
+    useProjectStore.getState().mergeBlocks('block-1', 'block-2');
+
+    const container = renderStatusBar('saved');
+    const history = container.querySelector(
+      '[data-testid="status-bar-history"]'
+    ) as HTMLSpanElement | null;
+
+    expect(history?.textContent).toBe('Undo: Merge piano blocks in Verse (bars 1-4 and 5-8)');
+    expect(history?.title).toBe(
+      'Undo is ready to restore the arrangement captured before Merge piano blocks in Verse (bars 1-4 and 5-8). ' +
+      'Use Undo to restore the arrangement captured before Merge piano blocks in Verse (bars 1-4 and 5-8).'
+    );
+  });
+
   it('renders reordered section context when the history boundary comes from a project reorder', () => {
     useProjectStore.setState({
       project: makeProject(),
