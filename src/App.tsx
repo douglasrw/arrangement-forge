@@ -32,6 +32,28 @@ function describeProtectedDestination(path: string) {
   return 'your workspace';
 }
 
+function describeProtectedRecoveryTruth(path: string) {
+  const routePath = path.split(/[?#]/, 1)[0] ?? path;
+
+  if (routePath === '/project') {
+    return 'Route truth: /project is the editor fallback route, and it stays reserved until authentication finishes and you can choose a project.';
+  }
+
+  if (routePath.startsWith('/project/')) {
+    return 'Route truth: the requested editor project route stays reserved during authentication, and /project remains the editor fallback route if you need to choose a different project after recovery.';
+  }
+
+  if (routePath.startsWith('/settings')) {
+    return 'Route truth: the protected settings route stays reserved until authentication finishes.';
+  }
+
+  if (routePath.startsWith('/library')) {
+    return 'Route truth: the protected library route stays reserved until authentication finishes.';
+  }
+
+  return 'Route truth: this protected workspace route stays reserved until authentication finishes.';
+}
+
 function LoadingScreen({
   authTruth,
   recoveryPath,
@@ -40,6 +62,7 @@ function LoadingScreen({
   recoveryPath: string;
 }) {
   const recoveryDestination = describeProtectedDestination(recoveryPath);
+  const recoveryTruth = describeProtectedRecoveryTruth(recoveryPath);
 
   return (
     <div
@@ -52,10 +75,11 @@ function LoadingScreen({
           <div className="space-y-1">
             <h1 className="text-base font-semibold text-foreground">Waiting on authentication</h1>
             <p className="text-sm text-muted-foreground">
-              {authTruth.currentState} Next step: {authTruth.nextStepLabel}.{' '}
+              Current state: {authTruth.currentState} Next step: {authTruth.nextStepLabel}.{' '}
               {authTruth.nextStepDetail} If a session is restored, Arrangement Forge will continue
               to {recoveryDestination}.
             </p>
+            <p className="text-xs text-foreground/80">{recoveryTruth}</p>
           </div>
         </div>
       </div>

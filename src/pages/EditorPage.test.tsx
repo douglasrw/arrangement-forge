@@ -224,6 +224,9 @@ describe('EditorPage route loading gate', () => {
     expect(getStatusBarText()).toContain('Loading project');
     expect(document.body.textContent).toContain('Opening project project-b in the editor.');
     expect(document.body.textContent).toContain(
+      'Current state: Arrangement Forge is still loading the requested project route for project-b.'
+    );
+    expect(document.body.textContent).toContain(
       'Route truth: /project/project-b is still resolving before the editor becomes ready.'
     );
     expect(document.body.textContent).toContain(
@@ -346,6 +349,9 @@ describe('EditorPage route loading gate', () => {
       'Project missing-project is not available, so the editor cannot open this route. Project not found'
     );
     expect(document.body.textContent).toContain(
+      'Current state: The requested project route for missing-project did not resolve to an available project.'
+    );
+    expect(document.body.textContent).toContain(
       'Route truth: /project/missing-project cannot open because the requested project is unavailable.'
     );
     expect(document.body.textContent).toContain(
@@ -379,6 +385,9 @@ describe('EditorPage route loading gate', () => {
     expect(querySelectionSurface()).toBeNull();
     expect(document.body.textContent).toContain(
       'Project project-a could not be loaded for this editor route. Backend unavailable'
+    );
+    expect(document.body.textContent).toContain(
+      'Current state: The requested project route for project-a is blocked by a load failure.'
     );
     expect(document.body.textContent).toContain(
       'Route truth: /project/project-a is blocked until Arrangement Forge can load the requested project.'
@@ -474,6 +483,9 @@ describe('EditorPage route loading gate', () => {
     expect(querySelectionSurface()).toBeNull();
     expect(document.body.textContent).toContain(
       'The /project editor route is open, but no project has been selected yet.'
+    );
+    expect(document.body.textContent).toContain(
+      'Current state: The editor fallback route is open with no active project in this workspace.'
     );
     expect(document.body.textContent).toContain(
       'Route truth: /project is the editor fallback route, and it stays parked here until you choose a project from the library.'

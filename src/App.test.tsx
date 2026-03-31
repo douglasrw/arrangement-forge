@@ -177,9 +177,12 @@ describe('App protected route recovery truth', () => {
     expect(mounted.container.querySelector('[data-testid="location-path"]')?.textContent).toBe('/settings');
     expect(mounted.container.querySelector('[data-testid="auth-loading-screen"]')).not.toBeNull();
     expect(mounted.container.textContent).toContain('Waiting on authentication');
-    expect(mounted.container.textContent).toContain('Checking for an existing session.');
+    expect(mounted.container.textContent).toContain('Current state: Checking for an existing session.');
     expect(mounted.container.textContent).toContain('Wait for session bootstrap.');
     expect(mounted.container.textContent).toContain('continue to settings');
+    expect(mounted.container.textContent).toContain(
+      'Route truth: the protected settings route stays reserved until authentication finishes.'
+    );
     expect(mounted.container.querySelector('[data-testid="login-page"]')).toBeNull();
     expect(mounted.container.querySelector('[data-testid="settings-page"]')).toBeNull();
   });
@@ -198,6 +201,9 @@ describe('App protected route recovery truth', () => {
 
     expect(mounted.container.querySelector('[data-testid="auth-loading-screen"]')).not.toBeNull();
     expect(mounted.container.textContent).toContain('continue to project project-1 in the editor');
+    expect(mounted.container.textContent).toContain(
+      'Route truth: the requested editor project route stays reserved during authentication, and /project remains the editor fallback route if you need to choose a different project after recovery.'
+    );
     expect(mounted.container.querySelector('[data-testid="login-page"]')).toBeNull();
     expect(mounted.container.querySelector('[data-testid="editor-page"]')).toBeNull();
   });
@@ -216,6 +222,9 @@ describe('App protected route recovery truth', () => {
 
     expect(mounted.container.querySelector('[data-testid="auth-loading-screen"]')).not.toBeNull();
     expect(mounted.container.textContent).toContain('continue to project selection in the editor');
+    expect(mounted.container.textContent).toContain(
+      'Route truth: /project is the editor fallback route, and it stays reserved until authentication finishes and you can choose a project.'
+    );
     expect(mounted.container.querySelector('[data-testid="login-page"]')).toBeNull();
     expect(mounted.container.querySelector('[data-testid="editor-page"]')).toBeNull();
   });

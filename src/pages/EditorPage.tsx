@@ -10,6 +10,7 @@ export type EditorRouteMode = 'project-selection' | 'project-id';
 function EditorShellState({
   title,
   message,
+  currentState,
   routeTruth,
   nextStep,
   testId,
@@ -20,6 +21,7 @@ function EditorShellState({
 }: {
   title: string;
   message: string;
+  currentState: string;
   routeTruth: string;
   nextStep: string;
   testId: string;
@@ -50,6 +52,7 @@ function EditorShellState({
       <div className="space-y-1">
         <p className="text-sm font-medium text-foreground">{title}</p>
         <p className="text-xs text-muted-foreground">{message}</p>
+        <p className="text-xs text-foreground/80">Current state: {currentState}</p>
         <p className="text-xs text-foreground/80">{routeTruth}</p>
         <p className="text-xs text-foreground/80">Next step: {nextStep}</p>
       </div>
@@ -116,6 +119,46 @@ function getEditorRouteTruth({
   return `Route truth: ${routeLabel} is still resolving before the editor becomes ready.`;
 }
 
+function getEditorRouteCurrentState({
+  routeMode,
+  routeState,
+  projectId,
+}: {
+  routeMode: EditorRouteMode;
+  routeState: EditorRouteState['status'];
+  projectId: string | undefined;
+}) {
+  if (routeState === 'no-project-selected') {
+    return 'The editor fallback route is open with no active project in this workspace.';
+  }
+
+  if (routeState === 'missing-project') {
+    return projectId
+      ? `The requested project route for ${projectId} did not resolve to an available project.`
+      : 'The requested project route did not resolve to an available project.';
+  }
+
+  if (routeState === 'error') {
+    return projectId
+      ? `The requested project route for ${projectId} is blocked by a load failure.`
+      : 'The requested project route is blocked by a load failure.';
+  }
+
+  if (routeState === 'ready') {
+    return projectId
+      ? `The requested project route for ${projectId} is loaded in this workspace.`
+      : 'The requested project route is loaded in this workspace.';
+  }
+
+  if (routeMode === 'project-selection') {
+    return 'Arrangement Forge is resolving whether the editor fallback route should stay parked or move into a project.';
+  }
+
+  return projectId
+    ? `Arrangement Forge is still loading the requested project route for ${projectId}.`
+    : 'Arrangement Forge is still loading the requested project route.';
+}
+
 function EditorRouteReadyBanner({
   projectId,
   routeTruth,
@@ -167,6 +210,11 @@ export default function EditorPage({
     routeState: routeState.status,
     projectId: id,
   });
+  const currentState = getEditorRouteCurrentState({
+    routeMode,
+    routeState: routeState.status,
+    projectId: id,
+  });
 
   useEffect(() => {
     if (!id) {
@@ -208,6 +256,7 @@ export default function EditorPage({
           <EditorShellState
             title="Loading project route"
             message={getLoadingMessage(id)}
+            currentState={currentState}
             routeTruth={routeTruth}
             nextStep="Wait for the current route load to finish before editing this arrangement."
             testId="editor-shell-loading-state"
@@ -226,6 +275,7 @@ export default function EditorPage({
           <EditorShellState
             title="Choose a project to open the editor"
             message={routeState.message}
+            currentState={currentState}
             routeTruth={routeTruth}
             nextStep="Return to the library, then open an existing project or create a new one to finish this editor route."
             testId="editor-shell-no-project-state"
@@ -250,6 +300,7 @@ export default function EditorPage({
                 ? `Project ${id} is not available, so the editor cannot open this route. ${routeState.message}`
                 : routeState.message
             }
+            currentState={currentState}
             routeTruth={routeTruth}
             nextStep="Return to the library and open a different project."
             testId="editor-shell-missing-project-state"
@@ -275,6 +326,7 @@ export default function EditorPage({
                 ? `Project ${id} could not be loaded for this editor route. ${routeState.message}`
                 : routeState.message
             }
+            currentState={currentState}
             routeTruth={routeTruth}
             nextStep="Return to the library, then retry this project after the load failure is resolved."
             testId="editor-shell-error-state"
