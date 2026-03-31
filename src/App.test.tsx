@@ -242,6 +242,34 @@ describe('App protected route recovery truth', () => {
     expect(mounted.container.querySelector('[data-testid="editor-page"]')).toBeNull();
   });
 
+  it('keeps the exact fallback editor route visible during auth bootstrap', () => {
+    setAuthStoreFixture({
+      authStatus: 'checking-session',
+      signedOutReason: null,
+      user: null,
+      profile: null,
+    });
+
+    const mounted = renderRoute('/project?tab=arrangement#new');
+    mountedRoot = mounted.root;
+    mountedContainer = mounted.container;
+
+    expect(mounted.container.querySelector('[data-testid="auth-loading-screen"]')).not.toBeNull();
+    expect(mounted.container.textContent).toContain('continue to project selection in the editor');
+    expect(mounted.container.textContent).toContain(
+      'Route readiness: /project is reserved as the editor fallback route until authentication finishes.'
+    );
+    expect(mounted.container.textContent).toContain(
+      'Current route: /project?tab=arrangement#new'
+    );
+    expect(mounted.container.textContent).toContain('Editor fallback route: /project');
+    expect(mounted.container.textContent).toContain(
+      'Route truth: /project is the editor fallback route, and it stays reserved until authentication finishes and you can choose a project.'
+    );
+    expect(mounted.container.querySelector('[data-testid="login-page"]')).toBeNull();
+    expect(mounted.container.querySelector('[data-testid="editor-page"]')).toBeNull();
+  });
+
   it('keeps authenticated users on the requested protected route', async () => {
     setAuthStoreFixture({
       user: { id: 'user-1', email: 'ash@example.com' },

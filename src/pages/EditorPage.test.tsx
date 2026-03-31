@@ -697,6 +697,26 @@ describe('EditorPage route loading gate', () => {
     expect(document.body.textContent).toContain('Editor fallback route: /project');
   });
 
+  it('keeps the exact /project fallback route visible when no project is selected', async () => {
+    const mounted = renderEditor(undefined, 'project-selection', {
+      search: '?tab=arrangement',
+      hash: '#new',
+    });
+    mountedRoot = mounted.root;
+    mountedContainer = mounted.container;
+
+    await act(async () => {
+      await Promise.resolve();
+    });
+
+    expect(loadProjectMock).not.toHaveBeenCalled();
+    expect(queryNoProjectState()).not.toBeNull();
+    expect(document.body.textContent).toContain(
+      'Current route: /project?tab=arrangement#new'
+    );
+    expect(document.body.textContent).toContain('Editor fallback route: /project');
+  });
+
   it('keeps export wired into the editor shell alongside project, tempo, and selection surfaces', async () => {
     useProjectStore.setState({
       project: {
