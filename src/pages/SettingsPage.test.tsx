@@ -5,8 +5,6 @@ import { createRoot, type Root } from 'react-dom/client';
 import type { User } from '@supabase/supabase-js';
 import { MemoryRouter } from 'react-router-dom';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { getAuthGateTruth } from '@/store/auth-store';
-import { getAuthTruth } from '@/store/auth-store';
 import { useAuthStore } from '@/store/auth-store';
 import { useUiStore } from '@/store/ui-store';
 import type { Profile } from '@/types';
@@ -75,17 +73,7 @@ function createProfileSaveQuery(response: SaveResponse) {
 }
 
 function setAuthStoreFixture(state: Partial<ReturnType<typeof useAuthStore.getState>>) {
-  const currentState = useAuthStore.getState();
-  const nextState = {
-    ...currentState,
-    ...state,
-  };
-
-  useAuthStore.setState({
-    ...state,
-    authTruth: getAuthTruth(nextState),
-    authGate: getAuthGateTruth(nextState),
-  });
+  useAuthStore.setState(state);
 }
 
 async function flushAsyncWork() {

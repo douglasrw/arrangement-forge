@@ -34,14 +34,6 @@ export interface AuthTruth extends AuthGateTruth {
   status: AuthStatus;
 }
 
-function toAuthGateTruth(authTruth: AuthTruth): AuthGateTruth {
-  return {
-    access: authTruth.access,
-    nextStep: authTruth.nextStep,
-    signedOutReason: authTruth.signedOutReason,
-  };
-}
-
 const CHECKING_SESSION_AUTH_GATE: AuthGateTruth = {
   access: 'pending',
   nextStep: 'wait-for-session',
@@ -142,8 +134,6 @@ type AuthStoreState = {
   signedOutReason: SignedOutReason | null;
   isLoading: boolean;
   isAuthenticated: boolean;
-  authTruth: AuthTruth;
-  authGate: AuthGateTruth;
 };
 
 interface AuthStore {
@@ -153,8 +143,6 @@ interface AuthStore {
   signedOutReason: SignedOutReason | null;
   isLoading: boolean;
   isAuthenticated: boolean;
-  authTruth: AuthTruth;
-  authGate: AuthGateTruth;
 
   beginSessionCheck: () => void;
   completeAuthenticatedSession: (session: { user: User; profile: Profile }) => void;
@@ -206,13 +194,9 @@ export function selectAuthTruth(
   return getAuthTruth(state);
 }
 
-function createAuthStoreState(overrides: Omit<AuthStoreState, 'authGate' | 'authTruth'>): AuthStoreState {
-  const authTruth = getAuthTruth(overrides);
-
+function createAuthStoreState(overrides: AuthStoreState): AuthStoreState {
   return {
     ...overrides,
-    authTruth,
-    authGate: toAuthGateTruth(authTruth),
   };
 }
 

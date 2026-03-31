@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it } from 'vitest';
-import { getAuthTruth, useAuthStore } from './auth-store';
+import { getAuthGateTruth, getAuthTruth, useAuthStore } from './auth-store';
 
 describe('auth-store gate truth', () => {
   beforeEach(() => {
@@ -7,12 +7,12 @@ describe('auth-store gate truth', () => {
   });
 
   it('stores the pending next step while session bootstrap is in progress', () => {
-    expect(useAuthStore.getState().authGate).toEqual({
+    expect(getAuthGateTruth(useAuthStore.getState())).toEqual({
       access: 'pending',
       nextStep: 'wait-for-session',
       signedOutReason: null,
     });
-    expect(useAuthStore.getState().authTruth).toEqual({
+    expect(getAuthTruth(useAuthStore.getState())).toEqual({
       status: 'checking-session',
       access: 'pending',
       nextStep: 'wait-for-session',
@@ -23,12 +23,12 @@ describe('auth-store gate truth', () => {
   it('stores the blocked recovery step when authentication is cleared', () => {
     useAuthStore.getState().setSignedOut('missing-profile');
 
-    expect(useAuthStore.getState().authGate).toEqual({
+    expect(getAuthGateTruth(useAuthStore.getState())).toEqual({
       access: 'blocked',
       nextStep: 'complete-profile',
       signedOutReason: 'missing-profile',
     });
-    expect(useAuthStore.getState().authTruth).toEqual({
+    expect(getAuthTruth(useAuthStore.getState())).toEqual({
       status: 'signed-out',
       access: 'blocked',
       nextStep: 'complete-profile',
@@ -49,6 +49,19 @@ describe('auth-store gate truth', () => {
       access: 'blocked',
       nextStep: 'complete-profile',
       signedOutReason: 'missing-profile',
+    });
+  });
+
+  it('keeps the persisted store focused on raw auth state instead of duplicated truth snapshots', () => {
+    const state = useAuthStore.getState();
+
+    expect('authTruth' in state).toBe(false);
+    expect('authGate' in state).toBe(false);
+    expect(getAuthTruth(state)).toEqual({
+      status: 'checking-session',
+      access: 'pending',
+      nextStep: 'wait-for-session',
+      signedOutReason: null,
     });
   });
 });

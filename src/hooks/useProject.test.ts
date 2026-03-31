@@ -5,8 +5,6 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { createRoot, type Root } from 'react-dom/client';
 import { getProjectExportReadiness, getProjectSavePlan, useProject } from './useProject';
 import type { LoadProjectResult } from './useProject';
-import { getAuthGateTruth } from '@/store/auth-store';
-import { getAuthTruth } from '@/store/auth-store';
 import { useAuthStore } from '@/store/auth-store';
 import { useProjectStore } from '@/store/project-store';
 import { useSelectionStore } from '@/store/selection-store';
@@ -109,17 +107,7 @@ function buildStoredProject(projectId: string, hasArrangement = false): Project 
 }
 
 function setAuthStoreFixture(state: Partial<ReturnType<typeof useAuthStore.getState>>) {
-  const currentState = useAuthStore.getState();
-  const nextState = {
-    ...currentState,
-    ...state,
-  };
-
-  useAuthStore.setState({
-    ...state,
-    authTruth: getAuthTruth(nextState),
-    authGate: getAuthGateTruth(nextState),
-  });
+  useAuthStore.setState(state);
 }
 
 function buildStoredMessage(projectId: string, partial: Partial<AiChatMessage> = {}): AiChatMessage {

@@ -4,7 +4,6 @@ import { act, createElement } from 'react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { createRoot, type Root } from 'react-dom/client';
 import { useAuth } from './useAuth';
-import { getAuthGateTruth } from '@/store/auth-store';
 import { getAuthTruth } from '@/store/auth-store';
 import { useAuthStore } from '@/store/auth-store';
 import { useUiStore } from '@/store/ui-store';
@@ -106,11 +105,7 @@ function setAuthStoreFixture(
     'user' | 'profile' | 'authStatus' | 'signedOutReason' | 'isLoading' | 'isAuthenticated'
   >
 ) {
-  useAuthStore.setState({
-    ...state,
-    authTruth: getAuthTruth(state),
-    authGate: getAuthGateTruth(state),
-  });
+  useAuthStore.setState(state);
 }
 
 beforeEach(() => {
@@ -372,17 +367,6 @@ describe('useAuth auth action failures', () => {
         signedOutReason: 'missing-profile',
         isLoading: false,
         isAuthenticated: false,
-        authTruth: {
-          status: 'authenticated',
-          access: 'granted',
-          nextStep: 'open-app',
-          signedOutReason: null,
-        },
-        authGate: {
-          access: 'granted',
-          nextStep: 'open-app',
-          signedOutReason: null,
-        },
       });
       await Promise.resolve();
     });
@@ -413,17 +397,6 @@ describe('useAuth auth action failures', () => {
         signedOutReason: 'session-lookup-failed',
         isLoading: false,
         isAuthenticated: false,
-        authTruth: {
-          status: 'authenticated',
-          access: 'granted',
-          nextStep: 'open-app',
-          signedOutReason: null,
-        },
-        authGate: {
-          access: 'granted',
-          nextStep: 'open-app',
-          signedOutReason: null,
-        },
       });
       await Promise.resolve();
     });

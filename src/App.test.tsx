@@ -5,8 +5,6 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { createRoot, type Root } from 'react-dom/client';
 import { MemoryRouter, Route, Routes, useLocation } from 'react-router-dom';
 import { AuthGuard } from './App';
-import { getAuthGateTruth } from '@/store/auth-store';
-import { getAuthTruth } from '@/store/auth-store';
 import { useAuthStore } from '@/store/auth-store';
 
 vi.mock('@/pages/LoginPage', () => ({
@@ -97,11 +95,7 @@ function setAuthStoreFixture(
     'user' | 'profile' | 'authStatus' | 'signedOutReason' | 'isLoading' | 'isAuthenticated'
   >
 ) {
-  useAuthStore.setState({
-    ...state,
-    authTruth: getAuthTruth(state),
-    authGate: getAuthGateTruth(state),
-  });
+  useAuthStore.setState(state);
 }
 
 let mountedRoot: Root | null = null;
