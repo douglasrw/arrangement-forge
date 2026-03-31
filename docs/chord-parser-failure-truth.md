@@ -2,9 +2,10 @@
 
 Status date: 2026-03-31
 
-Status: landed on `main`; reverified on 2026-03-31 at product head `58283c48`
-after the latest explicit-truth follow-up landed, and no remaining product
-delta is visible in this family beyond this evidence refresh
+Status: landed on `main`; reverified on 2026-03-31 at repo head `05e8c7c9`
+after the latest evidence refresh landed, and no remaining product delta is
+visible in this family beyond keeping this artifact aligned with the verified
+head
 
 Purpose: preserve the current chord parser failure contract and its landing
 proof in one repo-local place so future work does not have to reconstruct it
@@ -69,7 +70,7 @@ Current focused proofs for this slice:
 - `pnpm exec vitest run src/lib/chord-chart-parser.test.ts src/components/left-panel/InputSection.test.tsx`
 - `pnpm exec vitest run src/hooks/useGenerate.test.tsx`
 - `pnpm run type-check`
-- verification head: `58283c488a53e10e64933a3f8475e14885aeca9c`
+- verification head: `05e8c7c935304e999249d6c91f8439db2100ab21`
 
 ## Tracked Landing
 
@@ -91,6 +92,8 @@ Current focused proofs for this slice:
   `commitpath_c40ed88d Refresh chord parser failure truth evidence`
 - `58283c488a53e10e64933a3f8475e14885aeca9c`:
   `commitpath_c40ed88d: make chord parse truth explicit`
+- `05e8c7c935304e999249d6c91f8439db2100ab21`:
+  `commitpath_c40ed88d Refresh chord parser failure truth evidence`
 - The current product head at `58283c48` still preserves the chord parser
   failure truth contract, and the focused parser/input/generation/type-check
   proofs passed again on 2026-03-31 before this follow-up doc-only evidence
@@ -120,6 +123,9 @@ Current focused proofs for this slice:
   `summary` fields, then reused the explicit blocked-state copy in the input
   readiness banner so the first surfaced message keeps the blocked bars visible
   without overloading the summary sentence.
+- Commit `05e8c7c9` refreshed the same repo-local evidence after another clean
+  focused recheck, keeping the artifact aligned with the latest verified
+  `main` head instead of the prior product-only proof pointer.
 - After the 2026-03-31 recheck, this family appears exhausted until a new
   chord-parse behavior changes the contract or the proof surface.
 
