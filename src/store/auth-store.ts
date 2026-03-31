@@ -48,6 +48,11 @@ type AuthStoreTruthSliceState = Pick<
   'user' | 'profile' | 'authStatus' | 'signedOutReason'
 >;
 
+type AuthTruthState = Pick<
+  AuthStoreState,
+  'user' | 'profile' | 'authStatus' | 'signedOutReason'
+>;
+
 type AuthGateDefinition = Omit<AuthGateTruth, 'signedOutReason'>;
 
 const CHECKING_SESSION_AUTH_GATE: AuthGateDefinition = {
@@ -64,6 +69,14 @@ const AUTHENTICATED_AUTH_GATE: AuthGateDefinition = {
   nextStep: 'open-app',
   nextStepLabel: 'Open the app',
   nextStepDetail: 'Open the app.',
+};
+
+const INCOMPLETE_AUTHENTICATED_AUTH_GATE: AuthGateDefinition = {
+  access: 'blocked',
+  currentState: 'The saved session is incomplete, so access is still blocked.',
+  nextStep: 'sign-in',
+  nextStepLabel: 'Sign in again',
+  nextStepDetail: 'Sign in again to restore a complete session.',
 };
 
 const SIGNED_OUT_AUTH_GATES: Record<SignedOutReason, AuthGateDefinition> = {
@@ -161,6 +174,10 @@ function createAuthTruth(
 
 const CHECKING_SESSION_AUTH_GATE_TRUTH = createAuthGateTruth(CHECKING_SESSION_AUTH_GATE, null);
 const AUTHENTICATED_AUTH_GATE_TRUTH = createAuthGateTruth(AUTHENTICATED_AUTH_GATE, null);
+const INCOMPLETE_AUTHENTICATED_AUTH_GATE_TRUTH = createAuthGateTruth(
+  INCOMPLETE_AUTHENTICATED_AUTH_GATE,
+  null
+);
 const SIGNED_OUT_AUTH_GATE_TRUTHS: Record<SignedOutReason, AuthGateTruth> = {
   'no-session': createAuthGateTruth(SIGNED_OUT_AUTH_GATES['no-session'], 'no-session'),
   'signed-out': createAuthGateTruth(SIGNED_OUT_AUTH_GATES['signed-out'], 'signed-out'),
@@ -184,6 +201,11 @@ const SIGNED_OUT_WITHOUT_REASON_AUTH_GATE_TRUTH = createAuthGateTruth(
 );
 const CHECKING_SESSION_AUTH_TRUTH = createAuthTruth('checking-session', CHECKING_SESSION_AUTH_GATE, null);
 const AUTHENTICATED_AUTH_TRUTH = createAuthTruth('authenticated', AUTHENTICATED_AUTH_GATE, null);
+const INCOMPLETE_AUTHENTICATED_AUTH_TRUTH = createAuthTruth(
+  'signed-out',
+  INCOMPLETE_AUTHENTICATED_AUTH_GATE,
+  null
+);
 const SIGNED_OUT_AUTH_TRUTHS: Record<SignedOutReason, AuthTruth> = {
   'no-session': createAuthTruth('signed-out', SIGNED_OUT_AUTH_GATES['no-session'], 'no-session'),
   'signed-out': createAuthTruth('signed-out', SIGNED_OUT_AUTH_GATES['signed-out'], 'signed-out'),
@@ -216,14 +238,18 @@ const SIGNED_OUT_WITHOUT_REASON_AUTH_TRUTH = createAuthTruth(
 
 // Keep auth gating and the operator's next step derivable from one shared surface.
 export function getAuthGateTruth({
+  user,
+  profile,
   authStatus,
   signedOutReason,
-}: Pick<AuthStoreState, 'authStatus' | 'signedOutReason'>): AuthGateTruth {
+}: AuthTruthState): AuthGateTruth {
   switch (authStatus) {
     case 'checking-session':
       return CHECKING_SESSION_AUTH_GATE_TRUTH;
     case 'authenticated':
-      return AUTHENTICATED_AUTH_GATE_TRUTH;
+      return user && profile
+        ? AUTHENTICATED_AUTH_GATE_TRUTH
+        : INCOMPLETE_AUTHENTICATED_AUTH_GATE_TRUTH;
     default:
       return signedOutReason
         ? SIGNED_OUT_AUTH_GATE_TRUTHS[signedOutReason]
@@ -232,19 +258,21 @@ export function getAuthGateTruth({
 }
 
 export function selectAuthGateTruth(
-  state: Pick<AuthStoreState, 'authStatus' | 'signedOutReason'>
+  state: AuthTruthState
 ): AuthGateTruth {
   return getAuthGateTruth(state);
 }
 
 export function getAuthTruth(
-  state: Pick<AuthStoreState, 'authStatus' | 'signedOutReason'>
+  state: AuthTruthState
 ): AuthTruth {
   switch (state.authStatus) {
     case 'checking-session':
       return CHECKING_SESSION_AUTH_TRUTH;
     case 'authenticated':
-      return AUTHENTICATED_AUTH_TRUTH;
+      return state.user && state.profile
+        ? AUTHENTICATED_AUTH_TRUTH
+        : INCOMPLETE_AUTHENTICATED_AUTH_TRUTH;
     default:
       return state.signedOutReason
         ? SIGNED_OUT_AUTH_TRUTHS[state.signedOutReason]
@@ -253,7 +281,7 @@ export function getAuthTruth(
 }
 
 export function selectAuthTruth(
-  state: Pick<AuthStoreState, 'authStatus' | 'signedOutReason'>
+  state: AuthTruthState
 ): AuthTruth {
   return getAuthTruth(state);
 }

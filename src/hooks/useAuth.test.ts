@@ -431,6 +431,8 @@ describe('useAuth auth action failures', () => {
 
     expect(hookValue!.authTruth).toEqual(
       getAuthTruth({
+        user: null,
+        profile: null,
         authStatus: 'signed-out',
         signedOutReason: 'session-lookup-failed',
       })

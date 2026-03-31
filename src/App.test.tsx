@@ -27,6 +27,17 @@ const reactActEnv = globalThis as typeof globalThis & {
   IS_REACT_ACT_ENVIRONMENT?: boolean;
 };
 
+function makeProfile() {
+  return {
+    id: 'user-1',
+    displayName: 'Ashlyn',
+    chordDisplayMode: 'roman' as const,
+    defaultGenre: 'Pop',
+    createdAt: '2026-03-29T00:00:00Z',
+    updatedAt: '2026-03-29T01:00:00Z',
+  };
+}
+
 function LocationProbe() {
   const location = useLocation();
   const redirectTo = (
@@ -164,7 +175,7 @@ describe('App protected route recovery truth', () => {
   it('keeps authenticated users on the requested protected route', async () => {
     setAuthStoreFixture({
       user: { id: 'user-1', email: 'ash@example.com' },
-      profile: null,
+      profile: makeProfile(),
       authStatus: 'authenticated',
       signedOutReason: null,
     });
@@ -185,7 +196,7 @@ describe('App protected route recovery truth', () => {
   it('removes protected content immediately after auth state is cleared', async () => {
     setAuthStoreFixture({
       user: { id: 'user-1', email: 'ash@example.com' },
-      profile: null,
+      profile: makeProfile(),
       authStatus: 'authenticated',
       signedOutReason: null,
     });
@@ -207,5 +218,27 @@ describe('App protected route recovery truth', () => {
     expect(mounted.container.querySelector('[data-testid="location-path"]')?.textContent).toBe('/login');
     expect(mounted.container.querySelector('[data-testid="login-page"]')).not.toBeNull();
     expect(mounted.container.querySelector('[data-testid="settings-page"]')).toBeNull();
+  });
+
+  it('redirects incomplete authenticated state back to login instead of treating it as granted', async () => {
+    setAuthStoreFixture({
+      user: { id: 'user-1', email: 'ash@example.com' },
+      profile: null,
+      authStatus: 'authenticated',
+      signedOutReason: null,
+    });
+
+    const mounted = renderRoute('/project/project-1');
+    mountedRoot = mounted.root;
+    mountedContainer = mounted.container;
+
+    await act(async () => {
+      await Promise.resolve();
+    });
+
+    expect(mounted.container.querySelector('[data-testid="location-path"]')?.textContent).toBe('/login');
+    expect(mounted.container.querySelector('[data-testid="location-redirect"]')?.textContent).toBe('/project/project-1');
+    expect(mounted.container.querySelector('[data-testid="login-page"]')).not.toBeNull();
+    expect(mounted.container.querySelector('[data-testid="editor-page"]')).toBeNull();
   });
 });

@@ -59,6 +59,8 @@ describe('auth-store gate truth', () => {
 
     expect(
       getAuthTruth({
+        user: useAuthStore.getState().user,
+        profile: useAuthStore.getState().profile,
         authStatus: useAuthStore.getState().authStatus,
         signedOutReason: useAuthStore.getState().signedOutReason,
       })
@@ -96,6 +98,25 @@ describe('auth-store gate truth', () => {
       nextStep: 'retry-session',
       nextStepLabel: 'Retry session restore',
       nextStepDetail: 'Retry session restoration by signing in again.',
+    });
+  });
+
+  it('keeps incomplete authenticated state blocked until both user and profile are present', () => {
+    expect(
+      getAuthTruth({
+        user: { id: 'user-1' } as const,
+        profile: null,
+        authStatus: 'authenticated',
+        signedOutReason: null,
+      })
+    ).toEqual({
+      status: 'signed-out',
+      access: 'blocked',
+      currentState: 'The saved session is incomplete, so access is still blocked.',
+      nextStep: 'sign-in',
+      nextStepLabel: 'Sign in again',
+      nextStepDetail: 'Sign in again to restore a complete session.',
+      signedOutReason: null,
     });
   });
 
