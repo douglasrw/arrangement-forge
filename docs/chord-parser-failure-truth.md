@@ -3,7 +3,7 @@
 Status date: 2026-03-31
 
 Status: landed on `main`; reverified on 2026-03-31 against product head
-`63b905c3` with no remaining bounded product delta visible in this family
+`fffb1c64` with no remaining bounded product delta visible in this family
 
 Purpose: preserve the current chord parser failure contract and its landing
 proof in one repo-local place so future work does not have to reconstruct it
@@ -94,6 +94,10 @@ and scattered tests.
   locations as the text editor hint, so imported parser failures still point at
   the exact row and bar that need repair without requiring a second lookup in
   the raw chord chart field
+- blocked upload feedback for no-chord-only imports stays locked to the same
+  `Chord chart needs chord bars` contract, blocked-state sentence, and repair
+  step as the in-editor parse surface, so uploads like `N.C. | - | nc` do not
+  drift back toward generic import success copy
 - the surfaced warning snippets keep the first blocked bars visible in the same
   panel instead of forcing the operator to infer which bars failed
 - when more than three bars are blocked, the panel now says how many additional
@@ -128,10 +132,12 @@ Current focused proofs for this slice:
 
 - `pnpm test -- --run src/lib/chord-chart-parser.test.ts src/components/left-panel/InputSection.test.tsx src/components/left-panel/AiAssistantSection.test.tsx src/components/left-panel/LeftPanel.test.tsx src/hooks/useGenerate.test.tsx`
 - `pnpm run type-check`
-- verification head: `63b905c3fc0b4fad9cf259366d5d35db095dfd58`
+- verification head: `fffb1c64ceb02eebe9f6769780da2b07c04fa462`
 
 ## Tracked Landing
 
+- `fffb1c64ceb02eebe9f6769780da2b07c04fa462`:
+  `commitpath_c40ed88d Lock no-chord upload blocked truth`
 - `63b905c3fc0b4fad9cf259366d5d35db095dfd58`:
   `commitpath_c40ed88d Clarify no-chord chart truth`
 - `dd7179bc1631c33fd69373a8f77354539c4f3a29`:
