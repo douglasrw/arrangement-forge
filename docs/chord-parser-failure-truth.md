@@ -4,7 +4,7 @@ Status date: 2026-04-01
 
 Status: landed on local `main`; reverified again on 2026-04-01 with the
 focused parser, input-surface, generation-block, and type-check proofs passing
-against the then-current verified local `main` head `a060f2b0`, no remaining
+against the then-current verified local `main` head `2db22da3`, no remaining
 bounded product delta visible in this family beyond keeping this repo-local
 truth artifact aligned with the latest verified state, and this refresh still
 does not claim any fresh product promotion beyond the already-verified local
@@ -163,7 +163,7 @@ Current focused proofs for this slice:
 - `pnpm exec tsc --noEmit`
 - the current proof set still matches the same bounded parser, input-surface,
   and generation-block contract after the 2026-04-01 recheck against the
-  then-current verified local `main` head `a060f2b0`
+  then-current verified local `main` head `2db22da3`
 - this artifact proves the verified local `main` worktree state at that head;
   it does not claim any fresh product promotion happened during this refresh
 
@@ -196,6 +196,8 @@ Current focused proofs for this slice:
 - `592280246c14cdc6036e7298e0838e5b96375816`:
   `commitpath_c40ed88d Refresh chord parser truth evidence`
 - `a060f2b069598a1fb647e43b477532bf77cff6b5`:
+  `commitpath_c40ed88d Refresh chord parser truth evidence`
+- `2db22da31c9b98080f81ef8f1fd7df75e8eae4d7`:
   `commitpath_c40ed88d Refresh chord parser truth evidence`
 - `808ce22e2c1cb91568b584dca34b67fbc4b85323`:
   `commitpath_c40ed88d Refresh chord parser failure truth evidence`
@@ -518,6 +520,11 @@ Current focused proofs for this slice:
   repo-local evidence refresh instead of reopening the parser or input
   surfaces without a fresh product truth gap.
 - The latest 2026-03-31 recheck at verified local `main` head `e922baaa`
+  again produced the same focused proof results with no remaining bounded
+  product-file delta in this family, so the honest move stayed a repo-local
+  evidence refresh rather than reopening the parser, input surface, or
+  generation gate without a fresh product truth gap.
+- The latest 2026-04-01 recheck at verified local `main` head `2db22da3`
   again produced the same focused proof results with no remaining bounded
   product-file delta in this family, so the honest move stayed a repo-local
   evidence refresh rather than reopening the parser, input surface, or
