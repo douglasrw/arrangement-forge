@@ -752,6 +752,9 @@ describe('InputSection upload tab', () => {
     expect(mounted.container.textContent).toContain(
       'Bars 2 and 3 currently parse as N.C., so Generate stays blocked until the chart is fixed.'
     );
+    expect(
+      mounted.container.querySelector('[data-upload-feedback-tone="blocked"]')
+    ).not.toBeNull();
     expect(getGenerateButton(mounted.container).disabled).toBe(true);
   });
 
@@ -872,6 +875,9 @@ describe('InputSection upload tab', () => {
       'Next step: Add at least one chord bar such as Cmaj7 | Fmaj7 | G7 | Cmaj7.'
     );
     expect(mounted.container.textContent).toContain('Chord chart needs chord bars');
+    expect(
+      mounted.container.querySelector('[data-upload-feedback-tone="blocked"]')
+    ).not.toBeNull();
     expect(getGenerateButton(mounted.container).disabled).toBe(true);
   });
 

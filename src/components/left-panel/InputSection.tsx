@@ -10,7 +10,7 @@ import { useUiStore } from "@/store/ui-store"
 
 const INPUT_TABS = ["Chord", "Text", "Upload"] as const
 type InputTab = (typeof INPUT_TABS)[number]
-type UploadFeedbackTone = "neutral" | "success" | "error"
+type UploadFeedbackTone = "neutral" | "success" | "blocked" | "error"
 type ImportedChordChartUpload = {
   chordChartRaw: string
   generationHints: string
@@ -371,7 +371,7 @@ export function InputSection() {
       })
       const importedParseTruth = parseChordChart(importedUpload.chordChartRaw, project?.key ?? "C").truth
       setUploadFeedback({
-        tone: "success",
+        tone: importedParseTruth.state === "blocked" ? "blocked" : "success",
         message: formatImportedChordChartFeedback(
           file.name,
           importedUpload.generationHints,
@@ -597,6 +597,7 @@ export function InputSection() {
           />
 
           <p
+            data-upload-feedback-tone={uploadFeedback.tone}
             className={cn(
               "text-xs",
               uploadBlocked && !isImporting
@@ -605,6 +606,8 @@ export function InputSection() {
                 ? "text-muted-foreground"
                 : uploadFeedback.tone === "error"
                   ? "text-destructive"
+                  : uploadFeedback.tone === "blocked"
+                    ? "text-destructive"
                   : uploadFeedback.tone === "success"
                     ? "text-foreground"
                     : "text-muted-foreground"
