@@ -23,6 +23,7 @@ export type ProtectedRouteTruth = EditorRouteBase & {
 
 export type EditorRouteTruth = EditorRouteBase & {
   currentState: string;
+  nextStep: string;
   routeReadiness: string;
   routeTruth: string;
   fallbackHandling: string | null;
@@ -152,6 +153,8 @@ export function getEditorRouteTruth({
       fallbackRoute,
       routeModeLabel,
       currentState: 'The editor fallback route is open with no active project in this workspace.',
+      nextStep:
+        'Return to the library, then open an existing project or create a new one to finish this editor route.',
       routeReadiness:
         '/project is parked as the editor fallback route until you choose a project from the library.',
       routeTruth:
@@ -170,6 +173,7 @@ export function getEditorRouteTruth({
       currentState: projectId
         ? `The requested project route for ${projectId} did not resolve to an available project.`
         : 'The requested project route did not resolve to an available project.',
+      nextStep: 'Return to the library and open a different project.',
       routeReadiness: projectId
         ? `/project/${projectId} is blocked because that project is unavailable.`
         : 'The requested editor route is blocked because that project is unavailable.',
@@ -187,6 +191,8 @@ export function getEditorRouteTruth({
         fallbackRoute,
         routeModeLabel,
         currentState: 'The requested editor route is malformed because no project id was provided.',
+        nextStep:
+          'Return to the library, then open a project to replace this malformed editor route.',
         routeReadiness: '/project/:id is blocked because the route is missing a project id.',
         routeTruth: 'Route truth: /project/:id cannot open because the route is missing a project id.',
         fallbackHandling:
@@ -202,6 +208,10 @@ export function getEditorRouteTruth({
       currentState: projectId
         ? `The requested project route for ${projectId} is blocked by a load failure.`
         : 'The requested project route is blocked by a load failure.',
+      nextStep:
+        routeMode === 'project-id' && !projectId
+          ? 'Return to the library, then open a project to replace this malformed editor route.'
+          : 'Return to the library, then retry this project after the load failure is resolved.',
       routeReadiness: projectId
         ? `/project/${projectId} is blocked until the load failure is resolved.`
         : 'The requested editor route is blocked until the load failure is resolved.',
@@ -220,6 +230,7 @@ export function getEditorRouteTruth({
       currentState: projectId
         ? `The requested project route for ${projectId} is loaded in this workspace.`
         : 'The requested project route is loaded in this workspace.',
+      nextStep: 'Edit this arrangement or return to the library to open a different project.',
       routeReadiness: projectId
         ? `/project/${projectId} is ready in this workspace.`
         : 'The requested editor route is ready in this workspace.',
@@ -240,6 +251,7 @@ export function getEditorRouteTruth({
         : projectId
           ? `Arrangement Forge is still loading the requested project route for ${projectId}.`
           : 'Arrangement Forge is still loading the requested project route.',
+    nextStep: 'Wait for the current route load to finish before editing this arrangement.',
     routeReadiness: projectId
       ? `/project/${projectId} is still loading before the editor becomes interactive.`
       : 'The requested editor route is still loading before the editor becomes interactive.',

@@ -125,6 +125,8 @@ function getLoadingMessage(projectId: string | undefined) {
 
 function EditorRouteReadyBanner({
   projectId,
+  currentState,
+  nextStep,
   currentRoute,
   fallbackRoute,
   routeModeLabel,
@@ -133,6 +135,8 @@ function EditorRouteReadyBanner({
   fallbackHandling,
 }: {
   projectId: string;
+  currentState: string;
+  nextStep: string;
   currentRoute: string;
   fallbackRoute: string;
   routeModeLabel: string;
@@ -150,12 +154,8 @@ function EditorRouteReadyBanner({
       <p className="text-[11px] text-muted-foreground">
         The requested project route is open and the editor workspace is ready.
       </p>
-      <p className="text-[11px] text-foreground/80">
-        Current state: the requested project is loaded in this workspace.
-      </p>
-      <p className="text-[11px] text-foreground/80">
-        Next step: edit this arrangement or return to the library to open a different project.
-      </p>
+      <p className="text-[11px] text-foreground/80">Current state: {currentState}</p>
+      <p className="text-[11px] text-foreground/80">Next step: {nextStep}</p>
       <p className="text-[11px] text-foreground/80">Route mode: {routeModeLabel}</p>
       <p className="text-[11px] text-foreground/80">Route readiness: {routeReadiness}</p>
       <p className="text-[11px] text-foreground/80">Current route: {currentRoute}</p>
@@ -244,7 +244,7 @@ export default function EditorPage({
             fallbackRoute={routeTruth.fallbackRoute ?? undefined}
             routeTruth={routeTruth.routeTruth}
             fallbackHandling={routeTruth.fallbackHandling}
-            nextStep="Wait for the current route load to finish before editing this arrangement."
+            nextStep={routeTruth.nextStep}
             testId="editor-shell-loading-state"
             routeStatus="loading"
           />
@@ -268,7 +268,7 @@ export default function EditorPage({
             fallbackRoute={routeTruth.fallbackRoute ?? undefined}
             routeTruth={routeTruth.routeTruth}
             fallbackHandling={routeTruth.fallbackHandling}
-            nextStep="Return to the library, then open an existing project or create a new one to finish this editor route."
+            nextStep={routeTruth.nextStep}
             testId="editor-shell-no-project-state"
             actionHref="/library"
             actionLabel="Go to library"
@@ -298,7 +298,7 @@ export default function EditorPage({
             fallbackRoute={routeTruth.fallbackRoute ?? undefined}
             routeTruth={routeTruth.routeTruth}
             fallbackHandling={routeTruth.fallbackHandling}
-            nextStep="Return to the library and open a different project."
+            nextStep={routeTruth.nextStep}
             testId="editor-shell-missing-project-state"
             tone="error"
             actionHref="/library"
@@ -329,11 +329,7 @@ export default function EditorPage({
             fallbackRoute={routeTruth.fallbackRoute ?? undefined}
             routeTruth={routeTruth.routeTruth}
             fallbackHandling={routeTruth.fallbackHandling}
-            nextStep={
-              routeMode === 'project-id' && !id
-                ? 'Return to the library, then open a project to replace this malformed editor route.'
-                : 'Return to the library, then retry this project after the load failure is resolved.'
-            }
+            nextStep={routeTruth.nextStep}
             testId="editor-shell-error-state"
             tone="error"
             actionHref="/library"
@@ -350,6 +346,8 @@ export default function EditorPage({
       workspaceBanner={
         <EditorRouteReadyBanner
           projectId={id}
+          currentState={routeTruth.currentState}
+          nextStep={routeTruth.nextStep}
           currentRoute={routeTruth.currentRoute}
           fallbackRoute={routeTruth.fallbackRoute ?? '/project'}
           routeModeLabel={routeTruth.routeModeLabel}

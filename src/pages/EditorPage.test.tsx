@@ -344,11 +344,11 @@ describe('EditorPage route loading gate', () => {
       'The requested project route is open and the editor workspace is ready.'
     );
     expect(document.body.textContent).toContain(
-      'Current state: the requested project is loaded in this workspace.'
+      'Current state: The requested project route for project-a is loaded in this workspace.'
     );
     expect(document.body.textContent).toContain('Route mode: active project route');
     expect(document.body.textContent).toContain(
-      'Next step: edit this arrangement or return to the library to open a different project.'
+      'Next step: Edit this arrangement or return to the library to open a different project.'
     );
     expect(document.body.textContent).toContain(
       'Route readiness: /project/project-a is ready in this workspace.'

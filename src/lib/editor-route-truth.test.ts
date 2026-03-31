@@ -31,6 +31,8 @@ describe('editor-route-truth', () => {
       fallbackRoute: '/project',
       routeModeLabel: 'editor fallback route',
       currentState: 'The editor fallback route is open with no active project in this workspace.',
+      nextStep:
+        'Return to the library, then open an existing project or create a new one to finish this editor route.',
       routeReadiness:
         '/project is parked as the editor fallback route until you choose a project from the library.',
       routeTruth:
@@ -55,10 +57,36 @@ describe('editor-route-truth', () => {
       fallbackRoute: '/project',
       routeModeLabel: 'requested project route',
       currentState: 'The requested editor route is malformed because no project id was provided.',
+      nextStep:
+        'Return to the library, then open a project to replace this malformed editor route.',
       routeReadiness: '/project/:id is blocked because the route is missing a project id.',
       routeTruth: 'Route truth: /project/:id cannot open because the route is missing a project id.',
       fallbackHandling:
         'Fallback handling: switch to /project to clear this malformed route and park the editor until you choose a project from the library.',
+    });
+  });
+
+  it('keeps the next step in the same shared truth contract when the requested project route is ready', () => {
+    expect(
+      getEditorRouteTruth({
+        pathname: '/project/project-1',
+        search: '?tab=arrangement',
+        hash: '#bridge',
+        routeMode: 'project-id',
+        routeStatus: 'ready',
+        projectId: 'project-1',
+      })
+    ).toMatchObject({
+      currentRoute: '/project/project-1?tab=arrangement#bridge',
+      fallbackRoute: '/project',
+      routeModeLabel: 'active project route',
+      currentState: 'The requested project route for project-1 is loaded in this workspace.',
+      nextStep: 'Edit this arrangement or return to the library to open a different project.',
+      routeReadiness: '/project/project-1 is ready in this workspace.',
+      routeTruth:
+        'Route truth: /project/project-1 is loaded in this workspace. If you leave this project route, /project is the editor fallback route until you choose another project from the library.',
+      fallbackHandling:
+        'Fallback handling: opening /project clears the active workspace and parks the editor until you choose another project from the library.',
     });
   });
 });
