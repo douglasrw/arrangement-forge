@@ -1,0 +1,102 @@
+# Settings Profile Validation Truth
+
+Status date: 2026-03-31
+
+Status: landed on `main`; reverified on 2026-03-31 at head `099b6052` after
+persisted profile validation, save-failure truth, supported-values copy, and
+default-genre regression coverage landed, and no remaining product delta is
+visible in this family beyond this evidence refresh
+
+Purpose: preserve the current settings and persisted profile validation
+contract in one repo-local place so future work does not have to reconstruct it
+from `src/pages/SettingsPage.tsx`, `src/lib/profile.ts`, and scattered tests.
+
+## Validation Contract
+
+- Settings keeps editable profile preferences separate from unavailable settings
+  so the current state does not have to be inferred from missing controls.
+- The page distinguishes saved settings from pending local edits before save.
+- A successful profile save is not treated as truth until the returned profile
+  row validates cleanly.
+- Persisted chord display mode accepts only `letter` or `roman`.
+- Persisted default genre accepts only the supported `GENRES` list and
+  normalizes blank or missing values to `null`.
+- Required persisted profile fields stay validated instead of being silently
+  coerced into saved truth.
+- Save failures, missing returned rows, and invalid returned rows stay explicit
+  on the settings surface so the operator can tell why saved truth did not
+  advance.
+
+## Operator-Facing Truth
+
+`src/pages/SettingsPage.tsx` owns settings-state and save-result truth:
+
+- the Settings State card separates saved, pending, and unavailable settings
+  into one named surface
+- unavailable settings show current fixed behavior instead of fake disabled
+  controls
+- save-caption and pending-state copy keep the next step explicit while edits
+  are still local
+- save failures and invalid returned profile rows stay visible instead of
+  silently updating the auth store
+
+`src/lib/profile.ts` owns persisted profile-row validation:
+
+- `rowToProfile` validates required string fields before mapping into shared
+  `Profile` state
+- `parseChordDisplayMode` rejects unsupported persisted modes instead of
+  inventing a saved setting
+- `parseDefaultGenre` rejects unsupported persisted genres while normalizing
+  blank and missing values to `null`
+- supported-values errors name the accepted modes and genres directly so the
+  failure stays actionable
+
+## Proof
+
+Current focused proofs for this slice:
+
+- `pnpm exec vitest run src/lib/profile.test.ts src/pages/SettingsPage.test.tsx`
+- `pnpm run type-check`
+- verification head: `099b6052709f9f750367b4c34c2feac66f21ed31`
+
+## Tracked Landing
+
+- `099b6052709f9f750367b4c34c2feac66f21ed31`:
+  `commitpath_c40ed88d Add invalid default genre settings regression`
+- `b33cb608c838c8dc85184e63b458477363ae83b5`:
+  `commitpath_c40ed88d Clarify settings profile validation truth`
+- `ee982a8a62ebe8572092dd4f3b7729f4404133ee`:
+  `commitpath_c40ed88d Cover settings save failure truth`
+- `081ff22a0a08d8a62916270e0ac86628b37418fe`:
+  `commitpath_c40ed88d Harden settings profile row validation truth`
+- `5c4555a1d47ffcbb4ea602c5791c2f9fcfa8ee04`:
+  `commitpath_c40ed88d Surface invalid saved profile settings truth`
+- `2b80e28b19c8617fb0cae87e767272df9a42b32a`:
+  `commitpath_c40ed88d Validate persisted settings profile truth`
+- `4d1e0342d92ba2597f0fc0eecae0e3b0bdd16391`:
+  `Add settings truth regression coverage`
+- The landing made saved, pending, unavailable, invalid, and failed-save
+  states explicit on the settings surface instead of relying on hidden
+  surrounding context.
+- The current `main` head at `099b6052` still preserves that contract, and the
+  focused settings proofs passed again on 2026-03-31 before this doc-only
+  evidence refresh updated the repo-local artifact.
+- After the 2026-03-31 recheck, this family appears exhausted until a new
+  settings or persisted-profile behavior changes the contract or the proof
+  surface.
+
+The tests cover:
+
+- settings draft reconciliation against saved profile state
+- explicit separation of saved, pending, and unavailable settings truth
+- invalid returned saved-profile rows after save
+- supported chord mode and default genre validation errors
+- malformed required persisted profile fields
+- rejected saves and saves that return no persisted row
+
+## Deep Home
+
+- `src/pages/SettingsPage.tsx`
+- `src/pages/SettingsPage.test.tsx`
+- `src/lib/profile.ts`
+- `src/lib/profile.test.ts`
