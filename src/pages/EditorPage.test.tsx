@@ -149,6 +149,14 @@ function queryReadyBannerLink(href: string) {
   return document.querySelector(`[data-testid="editor-route-ready-banner"] a[href="${href}"]`);
 }
 
+function queryProjectNameTrigger() {
+  return document.querySelector('[data-testid="project-name-trigger"]');
+}
+
+function queryTopBarSaveLabel() {
+  return document.querySelector('[data-testid="topbar-save-label"]');
+}
+
 function getStatusBarText(): string {
   return document.querySelector('[data-testid="status-bar"]')?.textContent ?? '';
 }
@@ -232,6 +240,10 @@ describe('EditorPage route loading gate', () => {
     expect(document.body.textContent).toContain(
       'Next step: Wait for the current route load to finish before editing this arrangement.'
     );
+    expect(queryProjectNameTrigger()?.textContent).toBe('Loading project route');
+    expect(queryTopBarSaveLabel()?.textContent).toBe('Loading project...');
+    expect(mounted.container.textContent).not.toContain('Untitled Project');
+    expect(mounted.container.textContent).not.toContain('120 bpm');
 
     await act(async () => {
       resolveLoad?.();
@@ -432,6 +444,9 @@ describe('EditorPage route loading gate', () => {
       'Next step: Return to the library, then open a project to replace this malformed editor route.'
     );
     expect(queryBackToLibraryLink()).not.toBeNull();
+    expect(queryProjectNameTrigger()?.textContent).toBe('Editor route blocked');
+    expect(queryTopBarSaveLabel()?.textContent).toBe('Editor route blocked');
+    expect(mounted.container.textContent).not.toContain('Untitled Project');
     expect(useProjectStore.getState()).toMatchObject({
       project: null,
       stems: [],
@@ -541,7 +556,11 @@ describe('EditorPage route loading gate', () => {
     expect(getStatusBarText()).not.toContain('Saved');
     expect(queryBackToLibraryLink()).not.toBeNull();
     expect(queryNoProjectState()?.getAttribute('data-editor-route-state')).toBe('no-project-selected');
+    expect(queryProjectNameTrigger()?.textContent).toBe('No project selected');
+    expect(queryTopBarSaveLabel()?.textContent).toBe('No project selected');
     expect(mounted.container.textContent).not.toContain('Night Train');
+    expect(mounted.container.textContent).not.toContain('Untitled Project');
+    expect(mounted.container.textContent).not.toContain('120 bpm');
     expect(
       mounted.container.querySelector('[data-testid="topbar-export-button"]')?.textContent
     ).toBe('Nothing to export');

@@ -12,6 +12,7 @@ import { serializeProjectExportSnapshot, useProjectStore } from '@/store/project
 import { useUiStore } from '@/store/ui-store';
 import { useAuth } from '@/hooks/useAuth';
 import { ALL_KEYS } from '@/lib/chords';
+import type { AppStatus } from './StatusBar';
 
 export function reconcileProjectNameDraft(
   currentDraft: string,
@@ -264,6 +265,47 @@ export function getTopBarSaveIndicatorCopy(
   };
 }
 
+function getRouteShellProjectLabel(shellStatus: AppStatus | undefined): string {
+  switch (shellStatus) {
+    case 'loading-project':
+      return 'Loading project route';
+    case 'no-project-selected':
+      return 'No project selected';
+    case 'error':
+      return 'Editor route blocked';
+    default:
+      return 'Untitled Project';
+  }
+}
+
+function getRouteShellSaveIndicatorCopy(
+  shellStatus: AppStatus,
+  errorMessage: string | null
+): { label: string; tooltip: string } {
+  switch (shellStatus) {
+    case 'loading-project':
+      return {
+        label: 'Loading project...',
+        tooltip: 'Arrangement Forge is still loading the requested project route.',
+      };
+    case 'no-project-selected':
+      return {
+        label: 'No project selected',
+        tooltip: 'The editor fallback route is open with no active project in this workspace.',
+      };
+    case 'error':
+      return {
+        label: errorMessage ? formatTopBarErrorLabel(errorMessage) : 'Editor route blocked',
+        tooltip: errorMessage?.trim() || 'The requested editor route is blocked until a project can be loaded.',
+      };
+    default:
+      return {
+        label: 'Saved',
+        tooltip: 'All changes saved',
+      };
+  }
+}
+
 /* ------------------------------------------------------------------ */
 /*  Key dropdown                                                       */
 /* ------------------------------------------------------------------ */
@@ -424,7 +466,7 @@ function ChordDisplayToggle({
 /* ------------------------------------------------------------------ */
 /*  TopBar                                                             */
 /* ------------------------------------------------------------------ */
-export function TopBar() {
+export function TopBar({ shellStatus }: { shellStatus?: AppStatus }) {
   const { project, stems, sections, blocks, chords, updateProject } = useProjectStore();
   const { loadProject } = useProject();
   const {
@@ -438,7 +480,14 @@ export function TopBar() {
     useUiStore();
   const { signOut } = useAuth();
 
-  const projectName = project?.name ?? 'Untitled Project';
+  const routeShellStatus =
+    shellStatus === 'loading-project' || shellStatus === 'no-project-selected' || shellStatus === 'error'
+      ? shellStatus
+      : undefined;
+  const hasActiveProject = Boolean(project) && !routeShellStatus;
+  const projectName = routeShellStatus
+    ? getRouteShellProjectLabel(routeShellStatus)
+    : (project?.name ?? 'Untitled Project');
   const key = project?.key ?? 'C';
   const tempo = project?.tempo ?? 120;
   const genre = project?.genre ?? 'Jazz';
@@ -587,15 +636,19 @@ export function TopBar() {
   }
 
   const exportActionEnabled =
-    Boolean(project) && !reloadingSavedSnapshot && exportReadiness.actionType !== 'none';
-  const exportTitle = reloadingSavedSnapshot
-    ? 'Reloading the saved arrangement rows for this project.'
-    : (exportFeedback ?? `${exportReadiness.currentState} ${exportReadiness.nextStep}`.trim());
-  const exportButtonLabel = reloadingSavedSnapshot
-    ? 'Reloading snapshot...'
-    : exportFeedback
-      ? 'Exported'
-      : exportReadiness.actionLabel;
+    !routeShellStatus && Boolean(project) && !reloadingSavedSnapshot && exportReadiness.actionType !== 'none';
+  const exportTitle = routeShellStatus
+    ? getRouteShellSaveIndicatorCopy(routeShellStatus, errorMessage).tooltip
+    : reloadingSavedSnapshot
+      ? 'Reloading the saved arrangement rows for this project.'
+      : (exportFeedback ?? `${exportReadiness.currentState} ${exportReadiness.nextStep}`.trim());
+  const exportButtonLabel = routeShellStatus
+    ? 'Nothing to export'
+    : reloadingSavedSnapshot
+      ? 'Reloading snapshot...'
+      : exportFeedback
+        ? 'Exported'
+        : exportReadiness.actionLabel;
   const saveIndicatorState = deriveTopBarSaveIndicatorState({
     systemStatus,
     unsavedChanges,
@@ -606,6 +659,10 @@ export function TopBar() {
     errorMessage,
     savePlan
   );
+  const displayedSaveIndicatorCopy = routeShellStatus
+    ? getRouteShellSaveIndicatorCopy(routeShellStatus, errorMessage)
+    : saveIndicatorCopy;
+  const displayedSaveIndicatorState = routeShellStatus ?? saveIndicatorState;
 
   function commitName(newName: string) {
     setIsEditing(false);
@@ -672,11 +729,11 @@ export function TopBar() {
               data-testid="topbar-save-dot"
               className={cn(
                 'size-1.5 rounded-full transition-colors',
-                saveIndicatorState === 'error'
+                displayedSaveIndicatorState === 'error'
                   ? 'bg-destructive'
-                  : saveIndicatorState === 'saving'
+                  : displayedSaveIndicatorState === 'saving' || displayedSaveIndicatorState === 'loading-project'
                   ? 'bg-status-saving animate-pulse'
-                  : saveIndicatorState === 'unsaved'
+                  : displayedSaveIndicatorState === 'unsaved'
                     ? 'bg-status-unsaved'
                     : 'bg-status-ready'
               )}
@@ -684,13 +741,13 @@ export function TopBar() {
             <span
               data-testid="topbar-save-label"
               className="max-w-40 truncate text-xs text-muted-foreground"
-              title={saveIndicatorCopy.tooltip}
+              title={displayedSaveIndicatorCopy.tooltip}
             >
-              {saveIndicatorCopy.label}
+              {displayedSaveIndicatorCopy.label}
             </span>
             {/* Tooltip */}
             <div className="pointer-events-none absolute left-1/2 top-full mt-2 -translate-x-1/2 whitespace-nowrap rounded-md bg-popover px-2.5 py-1.5 text-xs text-popover-foreground opacity-0 shadow-lg ring-1 ring-border transition-opacity group-hover:opacity-100">
-              {saveIndicatorCopy.tooltip}
+              {displayedSaveIndicatorCopy.tooltip}
             </div>
           </div>
         </div>
@@ -698,6 +755,8 @@ export function TopBar() {
 
       {/* ---- CENTER: Interactive metadata controls ---- */}
       <div className="hidden items-center gap-1.5 md:flex">
+        {hasActiveProject ? (
+          <>
         <KeyDropdown value={key} onChange={(k) => updateProject({ key: k })} />
         <BpmEditor value={tempo} onChange={(bpm) => updateProject({ tempo: bpm })} />
         <span className="h-8 flex items-center rounded-md border border-border/30 bg-secondary/50 px-2 text-xs text-muted-foreground">
@@ -707,6 +766,8 @@ export function TopBar() {
           {timeSig}
         </span>
         <ChordDisplayToggle mode={chordDisplayMode} onToggle={toggleChordDisplay} />
+          </>
+        ) : null}
       </div>
 
       {/* ---- RIGHT: Export + Gear + Avatar ---- */}

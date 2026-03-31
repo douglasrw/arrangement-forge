@@ -25,7 +25,7 @@ function AppShellFrame({ children, status }: { children: ReactNode; status: AppS
       className="flex h-screen flex-col overflow-hidden bg-background"
       data-testid="editor-shell"
     >
-      <TopBar />
+      <TopBar shellStatus={status} />
       <div className="flex min-h-0 flex-1">{children}</div>
       <StatusBar status={status} />
     </div>
