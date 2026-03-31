@@ -1180,6 +1180,24 @@ describe('undo push coverage', () => {
     expect(hasSnapshotKeys(stack[0].redoSnapshot)).toBe(true);
   });
 
+  it('names reordered sections in undo entries with the resulting order', () => {
+    useProjectStore.getState().setArrangement({
+      stems: [makeStem()],
+      sections: [
+        makeSection({ id: 's1', name: 'Verse' }),
+        makeSection({ id: 's2', name: 'Chorus', sortOrder: 1, startBar: 9 }),
+      ],
+      blocks: [],
+      chords: [],
+    });
+
+    useProjectStore.getState().reorderSections(['s2', 's1']);
+
+    expect(useUndoStore.getState().undoStack[0]?.description).toBe(
+      'Reorder sections: Chorus -> Verse'
+    );
+  });
+
   it('updateChord pushes undo entry with unified snapshot format', () => {
     useProjectStore.getState().setArrangement({
       stems: [makeStem()], sections: [makeSection()], blocks: [makeBlock()],

@@ -386,6 +386,32 @@ describe('StatusBar', () => {
     );
   });
 
+  it('renders reordered section context when the history boundary comes from a project reorder', () => {
+    useProjectStore.setState({
+      project: makeProject(),
+      stems: [makeStem()],
+      sections: [
+        makeSection({ id: 'section-1', name: 'Verse' }),
+        makeSection({ id: 'section-2', name: 'Chorus', sortOrder: 1, startBar: 5 }),
+      ],
+      blocks: [],
+      chords: [],
+    });
+
+    useProjectStore.getState().reorderSections(['section-2', 'section-1']);
+
+    const container = renderStatusBar('saved');
+    const history = container.querySelector(
+      '[data-testid="status-bar-history"]'
+    ) as HTMLSpanElement | null;
+
+    expect(history?.textContent).toBe('Undo: Reorder sections: Chorus -> Verse');
+    expect(history?.title).toBe(
+      'Undo is ready to restore the arrangement captured before Reorder sections: Chorus -> Verse. ' +
+      'Use Undo to restore the arrangement captured before Reorder sections: Chorus -> Verse.'
+    );
+  });
+
   it('renders blocked undo boundary truth instead of implying history is simply idle', () => {
     useUndoStore.getState().pushUndo('Broken action', {
       undo: 'not json',

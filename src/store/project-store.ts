@@ -197,6 +197,25 @@ function describeSectionUpdateUndoTarget(
   return describeSectionUndoTarget('Update', section);
 }
 
+function describeSectionReorderUndoTarget(sectionIds: string[], sections: Section[]): string {
+  if (!sectionIds.length) {
+    return 'Reorder sections';
+  }
+
+  const orderedNames = sectionIds.map((sectionId, index) => {
+    const sectionName = getSectionDisplayName(
+      sections.find((section) => section.id === sectionId)
+    );
+
+    return sectionName ?? `Section ${index + 1}`;
+  });
+  const preview = orderedNames.slice(0, 3).join(' -> ');
+
+  return orderedNames.length > 3
+    ? `Reorder sections: ${preview} -> ...`
+    : `Reorder sections: ${preview}`;
+}
+
 function describeBlockUndoTarget(
   action: string,
   block: Block | undefined,
@@ -839,6 +858,7 @@ export const useProjectStore = create<ProjectStore>()((set, get) => ({
   },
 
   reorderSections: (sectionIds) => {
+    const sections = get().sections;
     const before = snapshotArrangement(get());
     set((state) => ({
       sections: sectionIds
@@ -849,7 +869,10 @@ export const useProjectStore = create<ProjectStore>()((set, get) => ({
         .filter(Boolean) as Section[],
     }));
     const after = snapshotArrangement(get());
-    useUndoStore.getState().pushUndo('Reorder sections', { undo: before, redo: after });
+    useUndoStore.getState().pushUndo(
+      describeSectionReorderUndoTarget(sectionIds, sections),
+      { undo: before, redo: after }
+    );
     useUiStore.getState().markDirty();
   },
 
