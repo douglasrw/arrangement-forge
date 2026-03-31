@@ -2,10 +2,9 @@
 
 Status date: 2026-03-31
 
-Status: landed on `main`; reverified on 2026-03-31 at repo head `890b5e8d`
-after the latest blocker-copy tighten landed, and no remaining product
-delta is visible in this family beyond keeping this artifact aligned with the
-verified head
+Status: landed on `main`; reverified on 2026-03-31 from pre-refresh head
+`6ea4b581`, and no remaining product delta is visible in this family beyond
+keeping this artifact aligned with the latest verified head
 
 Purpose: preserve the current chord parser failure contract and its landing
 proof in one repo-local place so future work does not have to reconstruct it
@@ -73,7 +72,7 @@ Current focused proofs for this slice:
 - `pnpm exec vitest run src/lib/chord-chart-parser.test.ts src/components/left-panel/InputSection.test.tsx`
 - `pnpm exec vitest run src/hooks/useGenerate.test.tsx`
 - `pnpm run type-check`
-- verification head: `890b5e8de57d4d3ce210591496451e8f855344e9`
+- verification head: `6ea4b581a7f0dcf4fa4263e4cb5d2611ef17742f`
 
 ## Tracked Landing
 
@@ -101,10 +100,10 @@ Current focused proofs for this slice:
   `Expose chord parser blocked next step`
 - `890b5e8de57d4d3ce210591496451e8f855344e9`:
   `Make chord parse blocker explicit`
-- The current product head at `890b5e8d` still preserves the chord parser
-  failure truth contract, and the focused parser/input/generation/type-check
-  proofs passed again on 2026-03-31 before this follow-up doc-only evidence
-  refresh updated the repo-local artifact.
+- The current product head at pre-refresh verification commit `6ea4b581`
+  still preserves the chord parser failure truth contract, and the focused
+  parser/input/generation/type-check proofs passed again on 2026-03-31 before
+  this follow-up doc-only evidence refresh updated the repo-local artifact.
 - Commit `9150d7d0` introduced explicit issue tracking and input-surface copy
   for invalid bars, first-bar repeat markers, and repeat markers that follow
   unresolved bars.
