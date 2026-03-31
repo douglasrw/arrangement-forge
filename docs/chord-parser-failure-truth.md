@@ -2,7 +2,7 @@
 
 Status date: 2026-03-31
 
-Status: landed on `main`; reverified on 2026-03-31 at product head `c18e9f62`
+Status: landed on `main`; reverified on 2026-03-31 at product head `e19c8fcc`
 after the latest evidence refresh follow-up landed, and no remaining product
 delta is visible in this family beyond this evidence refresh
 
@@ -65,7 +65,7 @@ Current focused proofs for this slice:
 - `pnpm exec vitest run src/lib/chord-chart-parser.test.ts src/components/left-panel/InputSection.test.tsx`
 - `pnpm exec vitest run src/hooks/useGenerate.test.tsx`
 - `pnpm run type-check`
-- verification head: `c18e9f62cbf2b1f43ca88f77cab4956c9539d7fd`
+- verification head: `e19c8fcc886d8b53e6caac4e5f4a56b0e8fc555f`
 
 ## Tracked Landing
 
@@ -81,7 +81,9 @@ Current focused proofs for this slice:
   `commitpath_c40ed88d Refresh chord parser failure truth docs`
 - `c18e9f62cbf2b1f43ca88f77cab4956c9539d7fd`:
   `commitpath_c40ed88d Refresh chord parser failure truth evidence`
-- The current product head at `c18e9f62` still preserves the chord parser
+- `e19c8fcc886d8b53e6caac4e5f4a56b0e8fc555f`:
+  `commitpath_c40ed88d Refresh chord parser failure truth evidence`
+- The current product head at `e19c8fcc` still preserves the chord parser
   failure truth contract, and the focused parser/input/generation proofs passed
   again on 2026-03-31 before this follow-up doc-only evidence refresh updated
   the repo-local artifact.
@@ -100,6 +102,9 @@ Current focused proofs for this slice:
   archaeology.
 - Commit `c18e9f62` refreshed the same repo-local evidence after another clean
   focused recheck at the current product head.
+- Commit `e19c8fcc` repeated that doc-only evidence refresh so the repo-local
+  artifact kept tracking the verified `main` head instead of a stale proof
+  pointer.
 - After the 2026-03-31 recheck, this family appears exhausted until a new
   chord-parse behavior changes the contract or the proof surface.
 
