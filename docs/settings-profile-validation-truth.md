@@ -2,10 +2,10 @@
 
 Status date: 2026-03-31
 
-Status: landed on `main`; reverified on 2026-03-31 at head `8fb339322576` after
-persisted profile validation, save-failure truth, supported-values copy, and
-default-genre regression coverage landed, and no remaining product delta is
-visible in this family beyond this evidence refresh
+Status: landed on `main`; reverified on 2026-03-31 at head `e7ef800e0ea3` after
+blocked-save truth landed beside persisted profile validation, save-failure
+truth, supported-values copy, and default-genre regression coverage, and no
+remaining product delta is visible in this family beyond this evidence refresh
 
 Purpose: preserve the current settings and persisted profile validation
 contract in one repo-local place so future work does not have to reconstruct it
@@ -16,6 +16,8 @@ from `src/pages/SettingsPage.tsx`, `src/lib/profile.ts`, and scattered tests.
 - Settings keeps editable profile preferences separate from unavailable settings
   so the current state does not have to be inferred from missing controls.
 - The page distinguishes saved settings from pending local edits before save.
+- Pending settings expose whether save is ready, active, or blocked before the
+  operator tries to submit.
 - A successful profile save is not treated as truth until the returned profile
   row validates cleanly.
 - Persisted chord display mode accepts only `letter` or `roman`.
@@ -37,6 +39,8 @@ from `src/pages/SettingsPage.tsx`, `src/lib/profile.ts`, and scattered tests.
   controls
 - save-caption and pending-state copy keep the next step explicit while edits
   are still local
+- save readiness now states when sign-in blocks persistence, keeps the button
+  disabled, and names the next step instead of silently no-oping on submit
 - save failures and invalid returned profile rows stay visible instead of
   silently updating the auth store
 
@@ -55,12 +59,14 @@ from `src/pages/SettingsPage.tsx`, `src/lib/profile.ts`, and scattered tests.
 
 Current focused proofs for this slice:
 
-- `pnpm exec vitest run src/lib/profile.test.ts src/pages/SettingsPage.test.tsx`
+- `pnpm test -- --run src/pages/SettingsPage.test.tsx`
 - `pnpm run type-check`
-- verification head: `8fb339322576bc7a785e1169a0ee338c0f48128b`
+- verification head: `e7ef800e0ea3bbe42d5844cbd2c5d8436a65d325`
 
 ## Tracked Landing
 
+- `e7ef800e0ea3bbe42d5844cbd2c5d8436a65d325`:
+  `commitpath_c40ed88d Surface blocked settings save truth`
 - `8fb339322576bc7a785e1169a0ee338c0f48128b`:
   `commitpath_c40ed88d Refresh settings profile validation truth evidence`
 - `c05a288eae09cdb564869f5b71aa4fdc001154cd`:
@@ -81,10 +87,10 @@ Current focused proofs for this slice:
   `commitpath_c40ed88d Validate persisted settings profile truth`
 - `4d1e0342d92ba2597f0fc0eecae0e3b0bdd16391`:
   `Add settings truth regression coverage`
-- The landing made saved, pending, unavailable, invalid, and failed-save
-  states explicit on the settings surface instead of relying on hidden
-  surrounding context.
-- The current `main` head at `8fb339322576` still preserves that contract, and the
+- The landing made saved, pending, unavailable, blocked-save, invalid, and
+  failed-save states explicit on the settings surface instead of relying on
+  hidden surrounding context.
+- The current `main` head at `e7ef800e0ea3` preserves that contract, and the
   focused settings proofs passed again on 2026-03-31 before this doc-only
   evidence refresh updated the repo-local artifact.
 - After the 2026-03-31 recheck, this family appears exhausted until a new
@@ -95,6 +101,7 @@ The tests cover:
 
 - settings draft reconciliation against saved profile state
 - explicit separation of saved, pending, and unavailable settings truth
+- pending edits that are blocked from save by signed-out auth truth
 - invalid returned saved-profile rows after save
 - supported chord mode and default genre validation errors
 - malformed required persisted profile fields
