@@ -2,7 +2,7 @@
 
 Status date: 2026-03-31
 
-Status: landed on `main`; reverified on 2026-03-31 at proof head `1f643de7`
+Status: landed on `main`; reverified on 2026-03-31 at proof head `3db73757`
 with generation parse-blocker detail truth preserved, and no remaining bounded
 product delta is visible in this family
 
@@ -138,7 +138,7 @@ Current focused proofs for this slice:
 
 - `pnpm test -- --run src/lib/chord-chart-parser.test.ts src/components/left-panel/InputSection.test.tsx src/hooks/useGenerate.test.tsx`
 - `pnpm type-check`
-- verification head for this recheck: `1f643de75a985bd95f0a008a2d907e8128d40ebb`
+- verification head for this recheck: `3db73757d1a955ff8dceff03eacb396557c13eab`
 
 ## Tracked Landing
 
@@ -186,6 +186,10 @@ Current focused proofs for this slice:
   `Promote to main: Arrangement Forge chord parser failure truth slice`
 - `b97ac259d751c18c413d3222a2f668ee43ab6ab7`:
   `Promote to main: Arrangement Forge chord parser failure truth slice`
+- `1f643de75a985bd95f0a008a2d907e8128d40ebb`:
+  `commitpath_c40ed88d Refresh chord parser failure truth evidence`
+- `3db73757d1a955ff8dceff03eacb396557c13eab`:
+  `commitpath_c40ed88d Refresh chord parser failure truth evidence`
 - `f5355a1ddc47c78ddcc3d8c40975c7bb945ce43c`:
   `commitpath_c40ed88d Refresh chord parser failure truth evidence`
 - `b778baa4a8f71f4e57ec8b88d64041b1510c99cc`:
