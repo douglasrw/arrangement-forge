@@ -126,6 +126,9 @@ describe('undoStore', () => {
       statusLabel: 'Undo ready: Split block',
       currentState: 'Undo is ready to restore the arrangement captured before Split block.',
       nextStep: 'Use Undo to restore the arrangement captured before Split block.',
+      tooltip:
+        'Undo is ready to restore the arrangement captured before Split block. ' +
+        'Use Undo to restore the arrangement captured before Split block.',
     });
   });
 
@@ -200,6 +203,9 @@ describe('undoStore', () => {
       currentState:
         'The latest redo boundary is still on the stack, but the arrangement captured after Broken redo cannot be read.',
       nextStep:
+        'Do not offer Redo for the arrangement captured after Broken redo until a valid restore snapshot is stored.',
+      tooltip:
+        'The latest redo boundary is still on the stack, but the arrangement captured after Broken redo cannot be read. ' +
         'Do not offer Redo for the arrangement captured after Broken redo until a valid restore snapshot is stored.',
     });
   });

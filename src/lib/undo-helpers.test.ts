@@ -124,6 +124,8 @@ describe('createUndoBoundaryTruth', () => {
       statusLabel: 'Nothing to undo',
       currentState: 'No undo boundary is available right now.',
       nextStep: 'Edit the arrangement to create the next undo boundary.',
+      tooltip:
+        'No undo boundary is available right now. Edit the arrangement to create the next undo boundary.',
       transition: null,
     });
   });
@@ -157,6 +159,10 @@ describe('createUndoBoundaryTruth', () => {
     expect(truth.nextStep).toBe(
       'Use Undo to restore the arrangement captured before Split block.'
     );
+    expect(truth.tooltip).toBe(
+      'Undo is ready to restore the arrangement captured before Split block. ' +
+      'Use Undo to restore the arrangement captured before Split block.'
+    );
     expect(truth.transition?.restoreSnapshot).toMatchObject({
       stems: [{ id: 'undo-stem' }],
     });
@@ -184,6 +190,10 @@ describe('createUndoBoundaryTruth', () => {
       'The latest redo boundary is still on the stack, but the arrangement captured after Split block cannot be read.'
     );
     expect(truth.nextStep).toBe(
+      'Do not offer Redo for the arrangement captured after Split block until a valid restore snapshot is stored.'
+    );
+    expect(truth.tooltip).toBe(
+      'The latest redo boundary is still on the stack, but the arrangement captured after Split block cannot be read. ' +
       'Do not offer Redo for the arrangement captured after Split block until a valid restore snapshot is stored.'
     );
     expect(truth.transition?.restoreSnapshot).toBeNull();
@@ -222,6 +232,9 @@ describe('createUndoBoundaryExecutionTruth', () => {
       currentState:
         'Generation is still running, so Undo is temporarily paused even though the arrangement captured before Split block is still preserved on the stack.',
       nextStep:
+        'Wait for generation to finish, then use Undo to restore the arrangement captured before Split block.',
+      tooltip:
+        'Generation is still running, so Undo is temporarily paused even though the arrangement captured before Split block is still preserved on the stack. ' +
         'Wait for generation to finish, then use Undo to restore the arrangement captured before Split block.',
     });
   });

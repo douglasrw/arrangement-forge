@@ -36,6 +36,7 @@ export interface UndoBoundaryTruth {
   statusLabel: string;
   currentState: string;
   nextStep: string;
+  tooltip: string;
   transition: UndoBoundaryTransition | null;
 }
 
@@ -185,7 +186,7 @@ function createPausedUndoBoundaryTruth(boundaryTruth: UndoBoundaryTruth): UndoBo
     boundaryTruth.description
   );
 
-  return {
+  const pausedBoundaryTruth: UndoBoundaryTruth = {
     ...boundaryTruth,
     status: 'paused',
     actionLabel: null,
@@ -199,6 +200,12 @@ function createPausedUndoBoundaryTruth(boundaryTruth: UndoBoundaryTruth): UndoBo
       `even though the arrangement captured ${captureTarget} is still preserved on the stack.`,
     nextStep:
       `Wait for generation to finish, then use ${action} to restore the arrangement captured ${captureTarget}.`,
+    tooltip: boundaryTruth.tooltip,
+  };
+
+  return {
+    ...pausedBoundaryTruth,
+    tooltip: formatUndoBoundaryTooltip(pausedBoundaryTruth),
   };
 }
 
@@ -247,7 +254,7 @@ export function createUndoBoundaryTruth(
   const normalizedDescription = description?.trim() || null;
 
   if (!entry) {
-    return {
+    const emptyBoundaryTruth: UndoBoundaryTruth = {
       boundary,
       status: 'empty',
       description: normalizedDescription,
@@ -258,7 +265,13 @@ export function createUndoBoundaryTruth(
         boundary === 'undo'
           ? 'Edit the arrangement to create the next undo boundary.'
           : 'Undo a change to create the next redo boundary.',
+      tooltip: '',
       transition: null,
+    };
+
+    return {
+      ...emptyBoundaryTruth,
+      tooltip: formatUndoBoundaryTooltip(emptyBoundaryTruth),
     };
   }
 
@@ -275,7 +288,7 @@ export function createUndoBoundaryTruth(
         ? ` ${formatTrappedUndoHistoryNextStep(boundary)}`
         : '';
 
-    return {
+    const blockedBoundaryTruth: UndoBoundaryTruth = {
       boundary,
       status: 'blocked',
       description: normalizedDescription,
@@ -287,14 +300,20 @@ export function createUndoBoundaryTruth(
       nextStep:
         `Do not offer ${action} for the arrangement captured ${captureTarget} until a valid ` +
         `restore snapshot is stored.${trappedHistoryNextStep}`,
+      tooltip: '',
       transition,
+    };
+
+    return {
+      ...blockedBoundaryTruth,
+      tooltip: formatUndoBoundaryTooltip(blockedBoundaryTruth),
     };
   }
 
   const actionTarget = getUndoBoundaryActionTarget(normalizedDescription);
   const actionLabel = normalizedDescription ? `${action}: ${normalizedDescription}` : action;
 
-  return {
+  const availableBoundaryTruth: UndoBoundaryTruth = {
     boundary,
     status: 'available',
     description: normalizedDescription,
@@ -308,7 +327,13 @@ export function createUndoBoundaryTruth(
       boundary === 'undo'
         ? `Use Undo to restore the arrangement captured before ${actionTarget}.`
         : `Use Redo to restore the arrangement captured after ${actionTarget}.`,
+    tooltip: '',
     transition,
+  };
+
+  return {
+    ...availableBoundaryTruth,
+    tooltip: formatUndoBoundaryTooltip(availableBoundaryTruth),
   };
 }
 

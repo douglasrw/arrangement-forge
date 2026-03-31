@@ -94,13 +94,6 @@ function buildPlayheadTruth({
   }
 }
 
-function getHistoryBoundaryTooltip(boundaryTruth: {
-  currentState: string
-  nextStep: string
-}) {
-  return `${boundaryTruth.currentState} ${boundaryTruth.nextStep}`.trim()
-}
-
 function getHistoryButtonClassName(status: "empty" | "available" | "blocked" | "paused") {
   if (status === "available") {
     return "bg-secondary text-zinc-200 hover:bg-border"
@@ -173,8 +166,8 @@ export function TransportBar() {
   const metronomePressed = transportReady && metronomeActive
   const undoButtonDisabled = undoBoundaryTruth.status !== "available"
   const redoButtonDisabled = redoBoundaryTruth.status !== "available"
-  const undoButtonTitle = getHistoryBoundaryTooltip(undoBoundaryTruth)
-  const redoButtonTitle = getHistoryBoundaryTooltip(redoBoundaryTruth)
+  const undoButtonTitle = undoBoundaryTruth.tooltip
+  const redoButtonTitle = redoBoundaryTruth.tooltip
   const undoButtonLabel = undoBoundaryTruth.actionLabel ?? undoBoundaryTruth.statusLabel
   const redoButtonLabel = redoBoundaryTruth.actionLabel ?? redoBoundaryTruth.statusLabel
   const noTimelineGuidance = arrangementTruth.status === "persisted-only"
