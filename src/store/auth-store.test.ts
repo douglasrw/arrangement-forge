@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it } from 'vitest';
-import { getAuthGateTruth, getAuthTruth, useAuthStore } from './auth-store';
+import { getAuthGateTruth, getAuthStoreTruthSlice, getAuthTruth, useAuthStore } from './auth-store';
 
 describe('auth-store gate truth', () => {
   beforeEach(() => {
@@ -62,6 +62,36 @@ describe('auth-store gate truth', () => {
       access: 'pending',
       nextStep: 'wait-for-session',
       signedOutReason: null,
+    });
+  });
+
+  it('exposes one named auth slice with user, current state, and next step', () => {
+    const user = { id: 'user-1' } as const;
+    const profile = {
+      id: 'user-1',
+      displayName: 'Ashlyn',
+      chordDisplayMode: 'roman',
+      defaultGenre: 'Pop',
+      createdAt: '2026-03-29T00:00:00Z',
+      updatedAt: '2026-03-29T01:00:00Z',
+    };
+
+    useAuthStore.getState().completeAuthenticatedSession({ user, profile });
+
+    expect(getAuthStoreTruthSlice(useAuthStore.getState())).toEqual({
+      user,
+      profile,
+      authTruth: {
+        status: 'authenticated',
+        access: 'granted',
+        nextStep: 'open-app',
+        signedOutReason: null,
+      },
+      authGate: {
+        access: 'granted',
+        nextStep: 'open-app',
+        signedOutReason: null,
+      },
     });
   });
 });

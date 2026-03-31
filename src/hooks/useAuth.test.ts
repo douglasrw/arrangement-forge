@@ -246,6 +246,21 @@ describe('useAuth auth action failures', () => {
     expect(hookValue).toMatchObject({
       user: null,
       profile: null,
+      authState: {
+        user: null,
+        profile: null,
+        authTruth: {
+          status: 'signed-out',
+          access: 'blocked',
+          nextStep: 'sign-in',
+          signedOutReason: 'no-session',
+        },
+        authGate: {
+          access: 'blocked',
+          nextStep: 'sign-in',
+          signedOutReason: 'no-session',
+        },
+      },
       authTruth: {
         status: 'signed-out',
         access: 'blocked',
@@ -407,6 +422,54 @@ describe('useAuth auth action failures', () => {
         signedOutReason: 'session-lookup-failed',
       })
     );
+  });
+
+  it('exposes a named auth state slice so consumers do not have to stitch user and gate truth together', async () => {
+    const mounted = renderHarness();
+    mountedRoot = mounted.root;
+    mountedContainer = mounted.container;
+
+    await act(async () => {
+      useAuthStore.setState({
+        user: { id: 'user-1', email: 'ash@example.com' },
+        profile: {
+          id: 'user-1',
+          displayName: 'Ashlyn',
+          chordDisplayMode: 'roman',
+          defaultGenre: 'Pop',
+          createdAt: '2026-03-29T00:00:00Z',
+          updatedAt: '2026-03-29T01:00:00Z',
+        },
+        authStatus: 'authenticated',
+        signedOutReason: null,
+        isLoading: false,
+        isAuthenticated: true,
+      });
+      await Promise.resolve();
+    });
+
+    expect(hookValue!.authState).toEqual({
+      user: { id: 'user-1', email: 'ash@example.com' },
+      profile: {
+        id: 'user-1',
+        displayName: 'Ashlyn',
+        chordDisplayMode: 'roman',
+        defaultGenre: 'Pop',
+        createdAt: '2026-03-29T00:00:00Z',
+        updatedAt: '2026-03-29T01:00:00Z',
+      },
+      authTruth: {
+        status: 'authenticated',
+        access: 'granted',
+        nextStep: 'open-app',
+        signedOutReason: null,
+      },
+      authGate: {
+        access: 'granted',
+        nextStep: 'open-app',
+        signedOutReason: null,
+      },
+    });
   });
 
   it('preserves Google auth failures from Supabase', async () => {

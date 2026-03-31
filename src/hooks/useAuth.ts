@@ -2,11 +2,16 @@
 
 import { useCallback, useRef } from 'react';
 import type { User } from '@supabase/supabase-js';
+import { useShallow } from 'zustand/react/shallow';
 import { supabase } from '@/lib/supabase';
 import { rowToProfile } from '@/lib/profile';
-import type { SignedOutReason } from '@/store/auth-store';
-import { selectAuthGateTruth } from '@/store/auth-store';
-import { selectAuthTruth } from '@/store/auth-store';
+import type {
+  AuthGateTruth,
+  AuthStoreTruthSlice,
+  AuthTruth,
+  SignedOutReason,
+} from '@/store/auth-store';
+import { selectAuthStoreTruthSlice } from '@/store/auth-store';
 import { useAuthStore } from '@/store/auth-store';
 import { useUiStore } from '@/store/ui-store';
 
@@ -14,8 +19,9 @@ export type SignUpResult = { status: 'session-pending' } | { status: 'confirmati
 export type UseAuthResult = {
   user: User | null;
   profile: ReturnType<typeof useAuthStore.getState>['profile'];
-  authTruth: ReturnType<typeof selectAuthTruth>;
-  authGate: ReturnType<typeof selectAuthGateTruth>;
+  authState: AuthStoreTruthSlice;
+  authTruth: AuthTruth;
+  authGate: AuthGateTruth;
   initAuth: () => () => void;
   signIn: (email: string, password: string) => Promise<void>;
   signUp: (email: string, password: string) => Promise<SignUpResult>;
@@ -30,10 +36,8 @@ type HydrationResult =
   | { status: 'stale' };
 
 export function useAuth(): UseAuthResult {
-  const user = useAuthStore((state) => state.user);
-  const profile = useAuthStore((state) => state.profile);
-  const authTruth = useAuthStore(selectAuthTruth);
-  const authGate = useAuthStore(selectAuthGateTruth);
+  const authState = useAuthStore(useShallow(selectAuthStoreTruthSlice));
+  const { user, profile, authTruth, authGate } = authState;
   const authTransitionIdRef = useRef(0);
 
   const beginSessionCheck = useCallback(() => {
@@ -201,6 +205,7 @@ export function useAuth(): UseAuthResult {
   return {
     user,
     profile,
+    authState,
     authGate,
     authTruth,
     initAuth,

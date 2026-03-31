@@ -34,6 +34,13 @@ export interface AuthTruth extends AuthGateTruth {
   status: AuthStatus;
 }
 
+export interface AuthStoreTruthSlice {
+  user: User | null;
+  profile: Profile | null;
+  authTruth: AuthTruth;
+  authGate: AuthGateTruth;
+}
+
 const CHECKING_SESSION_AUTH_GATE: AuthGateTruth = {
   access: 'pending',
   nextStep: 'wait-for-session',
@@ -192,6 +199,23 @@ export function selectAuthTruth(
   state: Pick<AuthStoreState, 'authStatus' | 'signedOutReason'>
 ): AuthTruth {
   return getAuthTruth(state);
+}
+
+export function getAuthStoreTruthSlice(
+  state: Pick<AuthStoreState, 'user' | 'profile' | 'authStatus' | 'signedOutReason'>
+): AuthStoreTruthSlice {
+  return {
+    user: state.user,
+    profile: state.profile,
+    authTruth: getAuthTruth(state),
+    authGate: getAuthGateTruth(state),
+  };
+}
+
+export function selectAuthStoreTruthSlice(
+  state: Pick<AuthStoreState, 'user' | 'profile' | 'authStatus' | 'signedOutReason'>
+): AuthStoreTruthSlice {
+  return getAuthStoreTruthSlice(state);
 }
 
 function createAuthStoreState(overrides: AuthStoreState): AuthStoreState {
