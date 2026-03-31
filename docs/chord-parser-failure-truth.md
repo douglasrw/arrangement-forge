@@ -4,10 +4,11 @@ Status date: 2026-03-31
 
 Status: landed on local `main`; reverified again on 2026-03-31 with the
 focused parser, input-surface, generation-block, and type-check proofs passing
-against the pre-refresh local `main` head `27c778ab`, no remaining bounded
+against the pre-refresh local `main` head `e922baaac541`, no remaining bounded
 product delta visible in this family beyond keeping this repo-local truth
-artifact aligned with the latest verified state, and no upstream push proof
-captured from this worktree
+artifact aligned with the latest verified state, and this refresh still does
+not claim any fresh product promotion beyond the already-verified local
+`main` state
 
 Purpose: preserve the current chord parser failure contract and its landing
 proof in one repo-local place so future work does not have to reconstruct it
@@ -161,12 +162,16 @@ Current focused proofs for this slice:
 - `pnpm exec tsc --noEmit`
 - the current proof set still matches the same bounded parser, input-surface,
   and generation-block contract after the 2026-03-31 recheck against the
-  pre-refresh local `main` head `27c778ab`
-- this artifact only proves the current local `main` worktree state; it does
-  not claim that `origin/main` received a fresh promotion during this refresh
+  pre-refresh local `main` head `e922baaac541`
+- this artifact proves the current local `main` worktree state at that head;
+  it does not claim any fresh product promotion happened during this refresh
 
 ## Tracked Landing
 
+- `e922baaac5415d1b99895a0ae3389f510c244383`:
+  `Promote to main: Arrangement Forge chord parser failure truth slice`
+- `7f4b396d94f408e78458cd4524f84ab332d7479e`:
+  `commitpath_c40ed88d Refresh chord parser truth evidence`
 - `5abd387ca50a8427478963d2ea5fa60bf7305f57`:
   `commitpath_c40ed88d Clarify chord parser truth refresh landing`
 - `b9f16220a7f80ebea79fe9fc61c3a5a76a9daf38`:
@@ -397,47 +402,7 @@ Current focused proofs for this slice:
   checked proof behind.
 - Commit `d9be6cb2` repeated that same repo-local evidence refresh after
   another clean focused recheck, keeping the artifact aligned with the latest
-  verified `main` head instead of the prior evidence pointer.
-- Commit `56ab735c` repeated that same repo-local evidence refresh after
-  another clean focused recheck, keeping the artifact aligned with the latest
-  verified `main` head instead of stopping at the prior evidence pointer.
-- Commit `69736cb8` carried the same blocked-state repair step into the text
-  editor field hint, so the operator now sees the current blocked state and
-  the next action directly beside the raw chord chart input instead of having
-  to rely on the status card above it.
-- Commit `ac957eae` kept uploaded invalid chord bars in the imported chart
-  instead of silently dropping them during import, so the same parse-failure
-  truth now stays visible after a broken text-file upload as well as direct
-  text entry.
-- Commit `5dee0b98` refreshed the same repo-local evidence after another clean
-  focused recheck, so the artifact kept tracking the latest verified `main`
-  head instead of stopping at the prior product pointer.
-- Commit `46f62414` repeated that same repo-local evidence refresh after one
-  more clean focused recheck, keeping the artifact aligned with the latest
-  verified `main` head instead of the prior evidence pointer.
-- Commit `cb527b72` made direct text-entry section labels follow the same
-  parser path as imported chord charts, so `Verse:` no longer creates a false
-  blocked bar or shifts subsequent bar numbers.
-- Commit `13ea108e` kept the same family honest at the next `main` head by
-  making the raw chord-chart field hint carry the same flagged-bar and overflow
-  truth as the blocked banner, so the repair guidance remains local even when
-  the banner is not the operator's current focal surface.
-- Commit `efc2e1e2` promoted the already-landed parser-failure truth family to
-  `main` without changing the bounded proof contract.
-- Commit `e9a0db10` kept invalid uploaded chord rows visible in the current
-  product head, and the same focused proofs still passed without exposing a
-  new parser-truth gap.
-- Commit `808ce22e` repeated that same repo-local evidence refresh after one
-  more clean focused recheck at the latest verified product head, so the
-  artifact now points at the checked `main` state instead of the prior
-  evidence pointer.
-- Commit `b0507a1d` repeated that same repo-local evidence refresh after one
-  more clean focused recheck at the latest verified product head, so the
-  artifact now points at that checked state instead of the prior evidence
-  pointer.
-- Commit `1d9f1d5a` repeated that same repo-local evidence refresh after
-  another clean focused recheck, keeping the artifact aligned with the latest
-  verified product head instead of stopping at the prior evidence pointer.
+  verified product head instead of the prior evidence pointer.
 - Commit `6ef4d8f1` repeated that same repo-local evidence refresh after one
   more clean focused recheck at the latest verified product head, so the
   artifact now points at that checked state instead of stopping at the prior
@@ -543,6 +508,11 @@ Current focused proofs for this slice:
   product-file delta in this family, so the honest move remained another
   repo-local evidence refresh instead of reopening the parser or input
   surfaces without a fresh product truth gap.
+- The latest 2026-03-31 recheck at verified local `main` head `e922baaa`
+  again produced the same focused proof results with no remaining bounded
+  product-file delta in this family, so the honest move stayed a repo-local
+  evidence refresh rather than reopening the parser, input surface, or
+  generation gate without a fresh product truth gap.
 
 The tests cover:
 
