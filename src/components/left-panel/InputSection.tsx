@@ -165,6 +165,33 @@ function trimEmptyChartLines(lines: string[]) {
   return nextLines
 }
 
+function getLineSelectionRange(text: string, lineNumber: number) {
+  if (lineNumber < 1) {
+    return null
+  }
+
+  let lineStart = 0
+  let currentLine = 1
+
+  while (currentLine < lineNumber) {
+    const nextLineBreak = text.indexOf("\n", lineStart)
+
+    if (nextLineBreak === -1) {
+      return null
+    }
+
+    lineStart = nextLineBreak + 1
+    currentLine += 1
+  }
+
+  const nextLineBreak = text.indexOf("\n", lineStart)
+
+  return {
+    start: lineStart,
+    end: nextLineBreak === -1 ? text.length : nextLineBreak,
+  }
+}
+
 function parseImportedChordChartUpload(text: string, key: string): ImportedChordChartUpload {
   const chartLines: string[] = []
   const hintLines: string[] = []
@@ -300,6 +327,7 @@ export function InputSection() {
   const [activeTab, setActiveTab] = useState<InputTab>("Chord")
   const [isImporting, setIsImporting] = useState(false)
   const [shouldFocusChordChartEditor, setShouldFocusChordChartEditor] = useState(false)
+  const [reviewLineNumber, setReviewLineNumber] = useState<number | null>(null)
   const [uploadFeedback, setUploadFeedback] = useState<{
     tone: UploadFeedbackTone
     message: string
@@ -342,6 +370,7 @@ export function InputSection() {
         ? "Importing chord chart..."
         : uploadFeedback.message
   const parseTruth = parseResult?.truth ?? null
+  const firstBlockedIssue = parseResult?.issues[0] ?? null
   const chordChartFieldHintId = "chord-chart-raw-input-hint"
   const inputReadinessTitle = hasParseBlockers
     ? parseTruth?.title ?? inputReadiness.title
@@ -375,17 +404,33 @@ export function InputSection() {
       parseTruth,
     })
     : null
+  const reviewBlockedChartLabel = firstBlockedIssue
+    ? `Review chord chart text at line ${firstBlockedIssue.lineNumber}`
+    : "Review chord chart text"
 
   useEffect(() => {
     if (!shouldFocusChordChartEditor || activeTab !== "Text") {
       return
     }
 
-    chordChartEditorRef.current?.focus()
+    const chordChartEditor = chordChartEditorRef.current
+
+    chordChartEditor?.focus()
+
+    if (reviewLineNumber !== null && chordChartEditor) {
+      const selectionRange = getLineSelectionRange(chordChartRaw, reviewLineNumber)
+
+      if (selectionRange) {
+        chordChartEditor.setSelectionRange(selectionRange.start, selectionRange.end)
+      }
+    }
+
     setShouldFocusChordChartEditor(false)
-  }, [activeTab, shouldFocusChordChartEditor])
+    setReviewLineNumber(null)
+  }, [activeTab, chordChartRaw, reviewLineNumber, shouldFocusChordChartEditor])
 
   function handleReviewBlockedChart() {
+    setReviewLineNumber(firstBlockedIssue?.lineNumber ?? null)
     setShouldFocusChordChartEditor(true)
     setActiveTab("Text")
   }
@@ -536,7 +581,7 @@ export function InputSection() {
               onClick={handleReviewBlockedChart}
               className="mt-2 inline-flex rounded-md border border-destructive/40 px-2 py-1 text-[11px] font-medium text-destructive transition-colors hover:bg-destructive/10 focus:outline-none focus:ring-1 focus:ring-destructive/40"
             >
-              Review chord chart text
+              {reviewBlockedChartLabel}
             </button>
           )}
         </div>

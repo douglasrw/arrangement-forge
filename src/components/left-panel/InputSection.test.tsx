@@ -403,7 +403,7 @@ describe('InputSection upload tab', () => {
   it('turns blocked chord-chart recovery into a direct action from the default tab', () => {
     useProjectStore.setState({
       project: makeProject({
-        chordChartRaw: 'Cmaj7 | xyz?? | %',
+        chordChartRaw: '[Verse]\n\nCmaj7 | xyz?? | %',
       }),
     });
 
@@ -412,7 +412,7 @@ describe('InputSection upload tab', () => {
     mountedContainer = mounted.container;
 
     const reviewButton = Array.from(mounted.container.querySelectorAll('button')).find(
-      (button) => button.textContent === 'Review chord chart text'
+      (button) => button.textContent === 'Review chord chart text at line 3'
     ) as HTMLButtonElement | undefined;
 
     expect(reviewButton).not.toBeUndefined();
@@ -425,9 +425,14 @@ describe('InputSection upload tab', () => {
 
     expect(chordChartInput).not.toBeNull();
     expect(document.activeElement).toBe(chordChartInput);
+    expect(chordChartInput?.selectionStart).toBe(9);
+    expect(chordChartInput?.selectionEnd).toBe(26);
+    expect(chordChartInput?.value.slice(chordChartInput.selectionStart, chordChartInput.selectionEnd)).toBe(
+      'Cmaj7 | xyz?? | %'
+    );
     expect(
       Array.from(mounted.container.querySelectorAll('button')).some(
-        (button) => button.textContent === 'Review chord chart text'
+        (button) => button.textContent === 'Review chord chart text at line 3'
       )
     ).toBe(false);
     expect(mounted.container.textContent).toContain(
