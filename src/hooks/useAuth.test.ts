@@ -853,4 +853,66 @@ describe('useAuth signOut', () => {
     expect(useUiStore.getState().chordDisplayMode).toBe('letter');
     expect(redirectHref).toBe('/login');
   });
+
+  it('preserves the authenticated truth surface when Supabase sign-out fails', async () => {
+    const failure = new Error('Sign-out failed');
+    supabaseMock.auth.signOut.mockResolvedValue({ error: failure });
+
+    const originalLocation = window.location;
+    const fakeLocation = { href: '/library' };
+
+    Object.defineProperty(window, 'location', {
+      configurable: true,
+      value: fakeLocation,
+    });
+
+    setAuthStoreFixture({
+      user: { id: 'user-1', email: 'ash@example.com' },
+      profile: {
+        id: 'user-1',
+        displayName: 'Ashlyn',
+        chordDisplayMode: 'roman',
+        defaultGenre: 'Pop',
+        createdAt: '2026-03-29T00:00:00Z',
+        updatedAt: '2026-03-29T01:00:00Z',
+      },
+      authStatus: 'authenticated',
+      signedOutReason: null,
+      isAuthenticated: true,
+      isLoading: false,
+    });
+    useUiStore.getState().setChordDisplayMode('roman');
+
+    const mounted = renderHarness();
+    mountedRoot = mounted.root;
+    mountedContainer = mounted.container;
+
+    try {
+      await expect(hookValue!.signOut()).rejects.toBe(failure);
+    } finally {
+      Object.defineProperty(window, 'location', {
+        configurable: true,
+        value: originalLocation,
+      });
+    }
+
+    expect(supabaseMock.auth.signOut).toHaveBeenCalledTimes(1);
+    expect(useAuthStore.getState()).toMatchObject({
+      user: { id: 'user-1', email: 'ash@example.com' },
+      profile: {
+        id: 'user-1',
+        displayName: 'Ashlyn',
+        chordDisplayMode: 'roman',
+        defaultGenre: 'Pop',
+        createdAt: '2026-03-29T00:00:00Z',
+        updatedAt: '2026-03-29T01:00:00Z',
+      },
+      authStatus: 'authenticated',
+      signedOutReason: null,
+      isAuthenticated: true,
+      isLoading: false,
+    });
+    expect(useUiStore.getState().chordDisplayMode).toBe('roman');
+    expect(fakeLocation.href).toBe('/library');
+  });
 });
