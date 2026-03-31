@@ -176,18 +176,10 @@ export default function LoginPage() {
     setError(null);
     setActiveSubmissionPath(submissionPath);
     try {
-      let shouldNavigate = false;
-
       if (submissionPath === 'signin') {
         await signIn(email, password);
-        shouldNavigate = true;
       } else {
-        const signUpResult = await signUp(email, password);
-        shouldNavigate = signUpResult.status === 'session-pending';
-      }
-
-      if (shouldNavigate) {
-        navigate(recoveryPath, { replace: true });
+        await signUp(email, password);
       }
     } catch (err) {
       setError({

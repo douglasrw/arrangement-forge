@@ -129,6 +129,12 @@ function renderLoginPage() {
   return { container, root };
 }
 
+function rerenderLoginPage(root: Root) {
+  act(() => {
+    root.render(<LoginPage />);
+  });
+}
+
 function setInputValue(input: HTMLInputElement, value: string) {
   const valueSetter = Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value')?.set;
   valueSetter?.call(input, value);
@@ -223,10 +229,13 @@ afterEach(() => {
 });
 
 describe('LoginPage failure truth', () => {
-  it('returns successful sign-ins to the originally requested protected route', async () => {
+  it('returns successful sign-ins to the originally requested protected route after auth truth is granted', async () => {
     locationMock.state = {
       redirectTo: '/project/project-1?tab=arrangement#bridge',
     };
+    authApi.signIn.mockImplementation(async () => {
+      authApi.authStatus = 'checking-session';
+    });
 
     const mounted = renderLoginPage();
     mountedRoot = mounted.root;
@@ -240,15 +249,29 @@ describe('LoginPage failure truth', () => {
     });
 
     expect(authApi.signIn).toHaveBeenCalledWith('ash@example.com', 'secret-1');
+    expect(navigateMock).not.toHaveBeenCalled();
+    expect(mounted.container.querySelector('[data-testid="auth-loading-screen"]')).not.toBeNull();
+    expect(mounted.container.textContent).toContain('Checking for an existing session.');
+
+    authApi.authStatus = 'authenticated';
+    rerenderLoginPage(mounted.root);
+
+    await act(async () => {
+      await Promise.resolve();
+    });
+
     expect(navigateMock).toHaveBeenCalledWith('/project/project-1?tab=arrangement#bridge', {
       replace: true,
     });
   });
 
-  it('falls back to the library when no safe recovery route is present', async () => {
+  it('falls back to the library when no safe recovery route is present after auth truth is granted', async () => {
     locationMock.state = {
       redirectTo: '//evil.example/session',
     };
+    authApi.signIn.mockImplementation(async () => {
+      authApi.authStatus = 'checking-session';
+    });
 
     const mounted = renderLoginPage();
     mountedRoot = mounted.root;
@@ -258,6 +281,15 @@ describe('LoginPage failure truth', () => {
 
     await act(async () => {
       submitLoginForm(mounted.container);
+      await Promise.resolve();
+    });
+
+    expect(navigateMock).not.toHaveBeenCalled();
+
+    authApi.authStatus = 'authenticated';
+    rerenderLoginPage(mounted.root);
+
+    await act(async () => {
       await Promise.resolve();
     });
 
