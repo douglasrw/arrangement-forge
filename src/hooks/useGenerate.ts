@@ -28,6 +28,14 @@ type RunGenerationOptions = {
   assistantPrompt?: string;
 };
 
+type ChordParseFailureLike = {
+  issues?: Array<{ reason?: string }>;
+  truth?: {
+    nextStep?: string | null;
+    summary?: string | null;
+  };
+};
+
 function createChatMessage(
   projectId: string,
   role: AiChatMessage['role'],
@@ -99,6 +107,40 @@ function describeGenerationUndoBoundary(assistantPrompt: string | null): string 
   return `Assistant revision: ${summarizeGenerationUndoPrompt(assistantPrompt)}`;
 }
 
+function describeChordParseBlocker(parseResult: ChordParseFailureLike): string {
+  const nextStep = parseResult.truth?.nextStep?.trim();
+  if (nextStep) {
+    return nextStep;
+  }
+
+  const summary = parseResult.truth?.summary?.trim();
+  if (summary) {
+    return summary;
+  }
+
+  const issues = parseResult.issues ?? [];
+  const repeatIssueCount = issues.filter(
+    (issue) =>
+      issue.reason === 'repeat_without_previous' ||
+      issue.reason === 'repeat_without_resolved_chord'
+  ).length;
+  const invalidIssueCount = issues.filter((issue) => issue.reason === 'invalid_token').length;
+
+  if (repeatIssueCount > 0) {
+    return repeatIssueCount === 1
+      ? 'Replace the flagged repeat bar with an explicit chord or fix the bar before it.'
+      : 'Replace the flagged repeat bars with explicit chords or fix the bar before them.';
+  }
+
+  if (invalidIssueCount > 0) {
+    return invalidIssueCount === 1
+      ? 'Fix the flagged chord bar before generating.'
+      : 'Fix the flagged chord bars before generating.';
+  }
+
+  return 'Fix the flagged chord chart bars before generating.';
+}
+
 export function useGenerate() {
   const {
     project,
@@ -151,11 +193,7 @@ export function useGenerate() {
       const parseIssues = parseResult.issues ?? [];
 
       if (parseIssues.length > 0) {
-        throw new Error(
-          [parseResult.truth.summary, parseResult.truth.nextStep]
-            .filter(Boolean)
-            .join(' ')
-        );
+        throw new Error(describeChordParseBlocker(parseResult));
       }
 
       const parsedChords = parseResult.chords;
