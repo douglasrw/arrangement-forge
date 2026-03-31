@@ -4,11 +4,11 @@ Status date: 2026-04-01
 
 Status: landed on local `main`; reverified again on 2026-04-01 with the
 focused parser, input-surface, generation-block, and type-check proofs passing
-against the then-current verified local `main` head `c1588453`, no remaining
+against the then-current verified local `main` head `60b64de3`, no remaining
 bounded product delta visible in this family beyond keeping this repo-local
-truth artifact aligned with the latest verified state, and this refresh still
-does not claim any fresh product promotion beyond the already-verified local
-`main` state
+truth artifact aligned with the latest verified state, and the current
+portfolio dispatch still points at an already-landed promotion instead of a
+fresh product delta
 
 Purpose: preserve the current chord parser failure contract and its landing
 proof in one repo-local place so future work does not have to reconstruct it
@@ -163,12 +163,20 @@ Current focused proofs for this slice:
 - `pnpm exec tsc --noEmit`
 - the current proof set still matches the same bounded parser, input-surface,
   and generation-block contract after the 2026-04-01 recheck against the
-  then-current verified local `main` head `c1588453`
+  then-current verified local `main` head `60b64de3`
+- the dispatch context at
+  `/data/projects/converge-canonical/docs/_local/runtime/closeout_bridge/closeout-bridge-arrangement-forge-20260331205637.dispatch-context`
+  still recommends `Promote to main: Arrangement Forge chord parser failure truth slice`
+  even though the promoted product commit already exists in local history as
+  `e922baaa`; this refresh records that stale-dispatch finding instead of
+  claiming a new product landing
 - this artifact proves the verified local `main` worktree state at that head;
   it does not claim any fresh product promotion happened during this refresh
 
 ## Tracked Landing
 
+- `60b64de3442401631f520ffd1937948c199112e3`:
+  `commitpath_c40ed88d Refresh chord parser truth evidence`
 - `c1588453d13ec20d4bc98bc95926f760f32f1a2f`:
   `commitpath_c40ed88d Refresh chord parser truth evidence`
 - `e922baaac5415d1b99895a0ae3389f510c244383`:
