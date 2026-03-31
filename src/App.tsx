@@ -90,6 +90,28 @@ function describeProtectedRouteReadiness(path: string) {
   return `${routePath || '/'} is reserved until authentication finishes.`;
 }
 
+function describeProtectedRouteMode(path: string) {
+  const routePath = path.split(/[?#]/, 1)[0] ?? path;
+
+  if (routePath === '/project') {
+    return 'editor fallback route';
+  }
+
+  if (routePath.startsWith('/project/')) {
+    return 'requested project route';
+  }
+
+  if (routePath.startsWith('/settings')) {
+    return 'protected settings route';
+  }
+
+  if (routePath.startsWith('/library')) {
+    return 'protected library route';
+  }
+
+  return 'protected route';
+}
+
 function LoadingScreen({
   authTruth,
   recoveryPath,
@@ -102,6 +124,7 @@ function LoadingScreen({
   const routeReadiness = describeProtectedRouteReadiness(recoveryPath);
   const currentRoute = describeProtectedRouteLabel(recoveryPath);
   const fallbackRoute = describeProtectedFallbackRoute(recoveryPath);
+  const routeMode = describeProtectedRouteMode(recoveryPath);
 
   return (
     <div
@@ -120,6 +143,7 @@ function LoadingScreen({
             <p className="text-xs text-foreground/80">
               Next step: {authTruth.nextStepLabel}. {authTruth.nextStepDetail}
             </p>
+            <p className="text-xs text-foreground/80">Route mode: {routeMode}</p>
             <p className="text-xs text-foreground/80">Route readiness: {routeReadiness}</p>
             <p className="text-xs text-foreground/80">Current route: {currentRoute}</p>
             {fallbackRoute ? (

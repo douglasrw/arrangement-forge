@@ -11,6 +11,7 @@ function EditorShellState({
   title,
   message,
   currentState,
+  routeModeLabel,
   routeReadiness,
   currentRoute,
   fallbackRoute,
@@ -25,6 +26,7 @@ function EditorShellState({
   title: string;
   message: string;
   currentState: string;
+  routeModeLabel: string;
   routeReadiness: string;
   currentRoute: string;
   fallbackRoute?: string;
@@ -59,6 +61,7 @@ function EditorShellState({
         <p className="text-sm font-medium text-foreground">{title}</p>
         <p className="text-xs text-muted-foreground">{message}</p>
         <p className="text-xs text-foreground/80">Current state: {currentState}</p>
+        <p className="text-xs text-foreground/80">Route mode: {routeModeLabel}</p>
         <p className="text-xs text-foreground/80">Route readiness: {routeReadiness}</p>
         <p className="text-xs text-foreground/80">Current route: {currentRoute}</p>
         {fallbackRoute ? (
@@ -142,6 +145,24 @@ function getCurrentEditorRoute({
 
 function getEditorFallbackRoute() {
   return '/project';
+}
+
+function getEditorRouteModeLabel({
+  routeMode,
+  routeState,
+}: {
+  routeMode: EditorRouteMode;
+  routeState: EditorRouteState['status'];
+}) {
+  if (routeMode === 'project-selection') {
+    return 'editor fallback route';
+  }
+
+  if (routeState === 'ready') {
+    return 'active project route';
+  }
+
+  return 'requested project route';
 }
 
 function getEditorRouteTruth({
@@ -266,12 +287,14 @@ function EditorRouteReadyBanner({
   projectId,
   currentRoute,
   fallbackRoute,
+  routeModeLabel,
   routeReadiness,
   routeTruth,
 }: {
   projectId: string;
   currentRoute: string;
   fallbackRoute: string;
+  routeModeLabel: string;
   routeReadiness: string;
   routeTruth: string;
 }) {
@@ -291,6 +314,7 @@ function EditorRouteReadyBanner({
       <p className="text-[11px] text-foreground/80">
         Next step: edit this arrangement or return to the library to open a different project.
       </p>
+      <p className="text-[11px] text-foreground/80">Route mode: {routeModeLabel}</p>
       <p className="text-[11px] text-foreground/80">Route readiness: {routeReadiness}</p>
       <p className="text-[11px] text-foreground/80">Current route: {currentRoute}</p>
       <p className="text-[11px] text-foreground/80">Editor fallback route: {fallbackRoute}</p>
@@ -348,6 +372,10 @@ export default function EditorPage({
     routeState: routeState.status,
     projectId: id,
   });
+  const routeModeLabel = getEditorRouteModeLabel({
+    routeMode,
+    routeState: routeState.status,
+  });
 
   useEffect(() => {
     if (!id) {
@@ -384,6 +412,7 @@ export default function EditorPage({
             title="Loading project route"
             message={getLoadingMessage(id)}
             currentState={currentState}
+            routeModeLabel={routeModeLabel}
             routeReadiness={routeReadiness}
             currentRoute={currentRoute}
             fallbackRoute={fallbackRoute}
@@ -406,6 +435,7 @@ export default function EditorPage({
             title="Choose a project to open the editor"
             message={routeState.message}
             currentState={currentState}
+            routeModeLabel={routeModeLabel}
             routeReadiness={routeReadiness}
             currentRoute={currentRoute}
             fallbackRoute={fallbackRoute}
@@ -434,6 +464,7 @@ export default function EditorPage({
                 : routeState.message
             }
             currentState={currentState}
+            routeModeLabel={routeModeLabel}
             routeReadiness={routeReadiness}
             currentRoute={currentRoute}
             fallbackRoute={fallbackRoute}
@@ -463,6 +494,7 @@ export default function EditorPage({
                 : routeState.message
             }
             currentState={currentState}
+            routeModeLabel={routeModeLabel}
             routeReadiness={routeReadiness}
             currentRoute={currentRoute}
             fallbackRoute={fallbackRoute}
@@ -490,6 +522,7 @@ export default function EditorPage({
           projectId={id}
           currentRoute={currentRoute}
           fallbackRoute={fallbackRoute}
+          routeModeLabel={routeModeLabel}
           routeReadiness={routeReadiness}
           routeTruth={routeTruth}
         />

@@ -249,6 +249,7 @@ describe('EditorPage route loading gate', () => {
     expect(document.body.textContent).toContain(
       'Current state: Arrangement Forge is still loading the requested project route for project-b.'
     );
+    expect(document.body.textContent).toContain('Route mode: requested project route');
     expect(document.body.textContent).toContain(
       'Route readiness: /project/project-b is still loading before the editor becomes interactive.'
     );
@@ -342,6 +343,7 @@ describe('EditorPage route loading gate', () => {
     expect(document.body.textContent).toContain(
       'Current state: the requested project is loaded in this workspace.'
     );
+    expect(document.body.textContent).toContain('Route mode: active project route');
     expect(document.body.textContent).toContain(
       'Next step: edit this arrangement or return to the library to open a different project.'
     );
@@ -655,6 +657,7 @@ describe('EditorPage route loading gate', () => {
     expect(document.body.textContent).toContain(
       'Current state: The editor fallback route is open with no active project in this workspace.'
     );
+    expect(document.body.textContent).toContain('Route mode: editor fallback route');
     expect(document.body.textContent).toContain(
       'Route readiness: /project is parked as the editor fallback route until you choose a project from the library.'
     );

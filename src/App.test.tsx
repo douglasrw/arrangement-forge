@@ -206,6 +206,7 @@ describe('App protected route recovery truth', () => {
     expect(mounted.container.querySelector('[data-testid="auth-loading-screen"]')).not.toBeNull();
     expect(mounted.container.textContent).toContain('continue to project project-1 in the editor');
     expect(mounted.container.textContent).toContain('Next step: Wait for session bootstrap.');
+    expect(mounted.container.textContent).toContain('Route mode: requested project route');
     expect(mounted.container.textContent).toContain(
       'Route readiness: /project/project-1 is reserved until authentication finishes.'
     );
@@ -235,6 +236,7 @@ describe('App protected route recovery truth', () => {
     expect(mounted.container.querySelector('[data-testid="auth-loading-screen"]')).not.toBeNull();
     expect(mounted.container.textContent).toContain('continue to project selection in the editor');
     expect(mounted.container.textContent).toContain('Next step: Wait for session bootstrap.');
+    expect(mounted.container.textContent).toContain('Route mode: editor fallback route');
     expect(mounted.container.textContent).toContain(
       'Route readiness: /project is reserved as the editor fallback route until authentication finishes.'
     );
