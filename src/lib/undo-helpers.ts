@@ -111,6 +111,10 @@ function formatUndoBoundaryTooltip(boundary: UndoBoundaryTruth): string {
   return `${boundary.currentState} ${boundary.nextStep}`.trim();
 }
 
+function hasUndoBoundaryTruth(boundary: UndoBoundaryTruth): boolean {
+  return boundary.status !== 'empty';
+}
+
 function getUndoBoundaryCaptureTarget(
   boundary: UndoBoundary,
   description: string | null
@@ -162,6 +166,17 @@ function selectUndoHistoryBoundaryTruth(
   if (undoBoundary.status === 'available') return undoBoundary;
   if (redoBoundary.status === 'available') return redoBoundary;
   return null;
+}
+
+function getCompanionUndoHistoryBoundaryTruth(
+  activeBoundary: UndoBoundaryTruth,
+  undoBoundary: UndoBoundaryTruth,
+  redoBoundary: UndoBoundaryTruth
+): UndoBoundaryTruth | null {
+  const companionBoundary =
+    activeBoundary.boundary === 'undo' ? redoBoundary : undoBoundary;
+
+  return hasUndoBoundaryTruth(companionBoundary) ? companionBoundary : null;
 }
 
 export function createUndoBoundaryTruth(
@@ -239,13 +254,28 @@ export function createUndoHistoryTruth(
     };
   }
 
+  const companionBoundary = getCompanionUndoHistoryBoundaryTruth(
+    activeBoundary,
+    undoBoundary,
+    redoBoundary
+  );
+  const label = companionBoundary
+    ? `${activeBoundary.statusLabel} · ${companionBoundary.statusLabel}`
+    : activeBoundary.statusLabel;
+  const currentState = companionBoundary
+    ? `${activeBoundary.currentState} ${companionBoundary.currentState}`
+    : activeBoundary.currentState;
+  const nextStep = companionBoundary
+    ? `${activeBoundary.nextStep} ${companionBoundary.nextStep}`
+    : activeBoundary.nextStep;
+
   return {
     status: activeBoundary.status,
     boundary: activeBoundary.boundary,
-    label: activeBoundary.statusLabel,
-    currentState: activeBoundary.currentState,
-    nextStep: activeBoundary.nextStep,
-    tooltip: formatUndoBoundaryTooltip(activeBoundary),
+    label,
+    currentState,
+    nextStep,
+    tooltip: `${currentState} ${nextStep}`.trim(),
   };
 }
 

@@ -278,6 +278,64 @@ describe('createUndoHistoryTruth', () => {
         'Redo is ready to restore the arrangement captured after Split block. Use Redo to restore the arrangement captured after Split block.',
     });
   });
+
+  it('surfaces both undo and redo boundary truth when both stack edges are still restorable', () => {
+    const historyTruth = createUndoHistoryTruth(
+      createUndoBoundaryTruth(
+        {
+          undoSnapshot: JSON.stringify({
+            stems: [{ id: 'undo-stem' }],
+            sections: [],
+            blocks: [],
+            chords: [],
+          }),
+          redoSnapshot: JSON.stringify({
+            stems: [{ id: 'undo-redo-stem' }],
+            sections: [],
+            blocks: [],
+            chords: [],
+          }),
+        },
+        'undo',
+        'Split block'
+      ),
+      createUndoBoundaryTruth(
+        {
+          undoSnapshot: JSON.stringify({
+            stems: [{ id: 'redo-undo-stem' }],
+            sections: [],
+            blocks: [],
+            chords: [],
+          }),
+          redoSnapshot: JSON.stringify({
+            stems: [{ id: 'redo-stem' }],
+            sections: [],
+            blocks: [],
+            chords: [],
+          }),
+        },
+        'redo',
+        'Merge blocks'
+      )
+    );
+
+    expect(historyTruth).toEqual({
+      status: 'available',
+      boundary: 'undo',
+      label: 'Undo: Split block · Redo: Merge blocks',
+      currentState:
+        'Undo is ready to restore the arrangement captured before Split block. ' +
+        'Redo is ready to restore the arrangement captured after Merge blocks.',
+      nextStep:
+        'Use Undo to restore the arrangement captured before Split block. ' +
+        'Use Redo to restore the arrangement captured after Merge blocks.',
+      tooltip:
+        'Undo is ready to restore the arrangement captured before Split block. ' +
+        'Redo is ready to restore the arrangement captured after Merge blocks. ' +
+        'Use Undo to restore the arrangement captured before Split block. ' +
+        'Use Redo to restore the arrangement captured after Merge blocks.',
+    });
+  });
 });
 
 describe('parseUndoSnapshot', () => {

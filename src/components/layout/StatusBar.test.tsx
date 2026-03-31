@@ -398,6 +398,31 @@ describe('StatusBar', () => {
     );
   });
 
+  it('renders both undo and redo boundary truth when both history paths remain available', () => {
+    useUndoStore.getState().pushUndo('Split block', {
+      undo: makeSnapshot('split-before'),
+      redo: makeSnapshot('split-after'),
+    });
+    useUndoStore.getState().pushUndo('Merge blocks', {
+      undo: makeSnapshot('merge-before'),
+      redo: makeSnapshot('merge-after'),
+    });
+    expect(useUndoStore.getState().undo()).not.toBeNull();
+
+    const container = renderStatusBar('saved');
+    const history = container.querySelector(
+      '[data-testid="status-bar-history"]'
+    ) as HTMLSpanElement | null;
+
+    expect(history?.textContent).toBe('Undo: Split block · Redo: Merge blocks');
+    expect(history?.title).toBe(
+      'Undo is ready to restore the arrangement captured before Split block. ' +
+      'Redo is ready to restore the arrangement captured after Merge blocks. ' +
+      'Use Undo to restore the arrangement captured before Split block. ' +
+      'Use Redo to restore the arrangement captured after Merge blocks.'
+    );
+  });
+
   it('renders paused undo history while generation temporarily locks the stack', () => {
     useUiStore.setState({
       generationState: 'generating',

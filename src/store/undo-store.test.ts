@@ -219,6 +219,30 @@ describe('undoStore', () => {
     });
   });
 
+  it('surfaces both undo and redo history truth when both stack edges remain available', () => {
+    useUndoStore.getState().pushUndo('Split block', {
+      undo: makeSnapshot('split-before'),
+      redo: makeSnapshot('split-after'),
+    });
+    useUndoStore.getState().pushUndo('Merge blocks', {
+      undo: makeSnapshot('merge-before'),
+      redo: makeSnapshot('merge-after'),
+    });
+
+    expect(useUndoStore.getState().undo()).not.toBeNull();
+    expect(useUndoStore.getState().getHistoryTruth()).toMatchObject({
+      status: 'available',
+      boundary: 'undo',
+      label: 'Undo: Split block · Redo: Merge blocks',
+      currentState:
+        'Undo is ready to restore the arrangement captured before Split block. ' +
+        'Redo is ready to restore the arrangement captured after Merge blocks.',
+      nextStep:
+        'Use Undo to restore the arrangement captured before Split block. ' +
+        'Use Redo to restore the arrangement captured after Merge blocks.',
+    });
+  });
+
   it('leaves the redo stack unchanged while generation keeps the redo boundary paused', () => {
     useUndoStore.getState().pushUndo('Split block', {
       undo: makeSnapshot('before'),
