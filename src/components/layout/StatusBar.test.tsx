@@ -346,6 +346,19 @@ describe('StatusBar', () => {
     expect(container.textContent).not.toContain('Loading samples');
   });
 
+  it('renders fully empty history as explicit undo-and-redo truth', () => {
+    const container = renderStatusBar('saved');
+    const history = container.querySelector(
+      '[data-testid="status-bar-history"]'
+    ) as HTMLSpanElement | null;
+
+    expect(history?.textContent).toBe('Nothing to undo or redo');
+    expect(history?.title).toBe(
+      'No undo boundary is available right now, and no redo boundary exists because nothing has been undone yet. ' +
+      'Edit the arrangement to create the next undo boundary. After you undo a change, redo will become available for that boundary.'
+    );
+  });
+
   it('renders the next undo boundary as explicit status-bar history truth', () => {
     useUndoStore.getState().pushUndo('Split block', {
       undo: makeSnapshot('before'),

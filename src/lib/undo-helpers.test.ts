@@ -237,11 +237,14 @@ describe('createUndoHistoryTruth', () => {
     ).toEqual({
       status: 'idle',
       boundary: null,
-      label: 'History idle',
-      currentState: 'No undo boundary is available right now.',
-      nextStep: 'Edit the arrangement to create the next undo boundary.',
+      label: 'Nothing to undo or redo',
+      currentState:
+        'No undo boundary is available right now, and no redo boundary exists because nothing has been undone yet.',
+      nextStep:
+        'Edit the arrangement to create the next undo boundary. After you undo a change, redo will become available for that boundary.',
       tooltip:
-        'No undo boundary is available right now. Edit the arrangement to create the next undo boundary.',
+        'No undo boundary is available right now, and no redo boundary exists because nothing has been undone yet. ' +
+        'Edit the arrangement to create the next undo boundary. After you undo a change, redo will become available for that boundary.',
     });
   });
 

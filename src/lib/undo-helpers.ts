@@ -262,13 +262,18 @@ export function createUndoHistoryTruth(
 ): UndoHistoryTruth {
   const activeBoundary = selectUndoHistoryBoundaryTruth(undoBoundary, redoBoundary);
   if (!activeBoundary) {
+    const currentState =
+      'No undo boundary is available right now, and no redo boundary exists because nothing has been undone yet.';
+    const nextStep =
+      'Edit the arrangement to create the next undo boundary. After you undo a change, redo will become available for that boundary.';
+
     return {
       status: 'idle',
       boundary: null,
-      label: 'History idle',
-      currentState: undoBoundary.currentState,
-      nextStep: undoBoundary.nextStep,
-      tooltip: formatUndoBoundaryTooltip(undoBoundary),
+      label: 'Nothing to undo or redo',
+      currentState,
+      nextStep,
+      tooltip: `${currentState} ${nextStep}`.trim(),
     };
   }
 
