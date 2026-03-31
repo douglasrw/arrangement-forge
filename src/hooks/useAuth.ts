@@ -150,6 +150,18 @@ export function useAuth(): UseAuthResult {
           }
         });
       } else if (event === 'SIGNED_OUT') {
+        const { authStatus, signedOutReason, user, profile } = useAuthStore.getState();
+
+        // Preserve the more specific bootstrap truth when no prior session existed.
+        if (
+          authStatus === 'signed-out'
+          && signedOutReason === 'no-session'
+          && !user
+          && !profile
+        ) {
+          return;
+        }
+
         clearSessionState('signed-out');
       }
     });

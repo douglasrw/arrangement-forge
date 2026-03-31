@@ -656,6 +656,51 @@ describe('useAuth session bootstrap truth', () => {
     });
   });
 
+  it('keeps the no-session bootstrap truth when Supabase emits a trailing sign-out event', async () => {
+    const mounted = renderHarness();
+    mountedRoot = mounted.root;
+    mountedContainer = mounted.container;
+
+    act(() => {
+      hookValue!.initAuth();
+    });
+
+    await act(async () => {
+      await flushAsyncWork();
+    });
+
+    expect(useAuthStore.getState()).toMatchObject({
+      user: null,
+      profile: null,
+      authStatus: 'signed-out',
+      signedOutReason: 'no-session',
+      isAuthenticated: false,
+      isLoading: false,
+    });
+
+    act(() => {
+      authStateChangeHandler?.('SIGNED_OUT', null);
+    });
+
+    expect(useAuthStore.getState()).toMatchObject({
+      user: null,
+      profile: null,
+      authStatus: 'signed-out',
+      signedOutReason: 'no-session',
+      isAuthenticated: false,
+      isLoading: false,
+    });
+    expect(hookValue!.authTruth).toMatchObject({
+      status: 'signed-out',
+      access: 'blocked',
+      currentState: 'No saved session was found.',
+      nextStep: 'sign-in',
+      nextStepLabel: 'Sign in',
+      nextStepDetail: 'Sign in to reopen the app.',
+      signedOutReason: 'no-session',
+    });
+  });
+
   it('keeps the auth gate closed until a signed-in profile finishes hydrating', async () => {
     const profileRequest = createDeferred<ProfileQueryResult>();
     profileQueryResult = profileRequest.promise;
