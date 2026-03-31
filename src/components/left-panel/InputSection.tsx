@@ -89,6 +89,10 @@ function isChordChartLine(line: string, key: string) {
   return sawChordToken
 }
 
+function isBarDelimitedChordChartLine(line: string) {
+  return line.includes("|")
+}
+
 function trimEmptyChartLines(lines: string[]) {
   const nextLines = [...lines]
 
@@ -137,7 +141,9 @@ function parseImportedChordChartUpload(text: string, key: string): ImportedChord
 
     inHintBlock = false
 
-    if (isChordChartLine(trimmed, key)) {
+    // Keep bar-delimited rows in the chart even when some bars are invalid so
+    // the parser can surface blocked-state truth instead of silently dropping them.
+    if (isChordChartLine(trimmed, key) || isBarDelimitedChordChartLine(trimmed)) {
       chartLines.push(normalizeSectionHeader(trimmed))
       continue
     }
