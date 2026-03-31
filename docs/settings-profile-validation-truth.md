@@ -2,10 +2,11 @@
 
 Status date: 2026-03-31
 
-Status: landed on `main`; reverified on 2026-03-31 at head `e7ef800e0ea3` after
-blocked-save truth landed beside persisted profile validation, save-failure
-truth, supported-values copy, and default-genre regression coverage, and no
-remaining product delta is visible in this family beyond this evidence refresh
+Status: landed on `main`; reverified on 2026-03-31 at head `169548e6644a`
+after blocked-save truth landed beside persisted profile validation,
+save-failure truth, supported-values copy, and default-genre regression
+coverage, and no remaining product delta is visible in this family beyond this
+evidence refresh
 
 Purpose: preserve the current settings and persisted profile validation
 contract in one repo-local place so future work does not have to reconstruct it
@@ -61,10 +62,12 @@ Current focused proofs for this slice:
 
 - `pnpm test -- --run src/pages/SettingsPage.test.tsx`
 - `pnpm run type-check`
-- verification head: `e7ef800e0ea3bbe42d5844cbd2c5d8436a65d325`
+- verification head: `169548e6644aa2f46aeb6d2576dabddf2f3ba0a7`
 
 ## Tracked Landing
 
+- `169548e6644aa2f46aeb6d2576dabddf2f3ba0a7`:
+  `commitpath_c40ed88d Refresh settings profile validation truth evidence`
 - `e7ef800e0ea3bbe42d5844cbd2c5d8436a65d325`:
   `commitpath_c40ed88d Surface blocked settings save truth`
 - `8fb339322576bc7a785e1169a0ee338c0f48128b`:
@@ -90,7 +93,7 @@ Current focused proofs for this slice:
 - The landing made saved, pending, unavailable, blocked-save, invalid, and
   failed-save states explicit on the settings surface instead of relying on
   hidden surrounding context.
-- The current `main` head at `e7ef800e0ea3` preserves that contract, and the
+- The current `main` head at `169548e6644a` preserves that contract, and the
   focused settings proofs passed again on 2026-03-31 before this doc-only
   evidence refresh updated the repo-local artifact.
 - After the 2026-03-31 recheck, this family appears exhausted until a new
