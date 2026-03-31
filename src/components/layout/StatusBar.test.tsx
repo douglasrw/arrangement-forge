@@ -413,6 +413,31 @@ describe('StatusBar', () => {
     );
   });
 
+  it('renders block dynamics override context when the history boundary comes from that edit path', () => {
+    useProjectStore.setState({
+      project: makeProject(),
+      stems: [makeStem({ instrument: 'piano' })],
+      sections: [makeSection({ name: 'Verse' })],
+      blocks: [makeBlock({ startBar: 1, endBar: 4, dynamicsOverride: null })],
+      chords: [],
+    });
+
+    useProjectStore.getState().updateBlock('block-1', { dynamicsOverride: 18 });
+
+    const container = renderStatusBar('saved');
+    const history = container.querySelector(
+      '[data-testid="status-bar-history"]'
+    ) as HTMLSpanElement | null;
+
+    expect(history?.textContent).toBe(
+      'Undo: Change piano block dynamics override in Verse (bars 1-4): inherit -> 18'
+    );
+    expect(history?.title).toBe(
+      'Undo is ready to restore the arrangement captured before Change piano block dynamics override in Verse (bars 1-4): inherit -> 18. ' +
+      'Use Undo to restore the arrangement captured before Change piano block dynamics override in Verse (bars 1-4): inherit -> 18.'
+    );
+  });
+
   it('renders chord-change context when harmony edits push undo boundaries through the store', () => {
     useProjectStore.setState({
       project: makeProject(),
@@ -558,6 +583,53 @@ describe('StatusBar', () => {
       'Use Undo to restore the arrangement captured before Change section groove override: Verse (inherit -> 82).'
     );
   });
+
+  it.each([
+    {
+      caseLabel: 'energy',
+      partial: { energyOverride: 64 },
+      expectedText: 'Undo: Change section energy override: Verse (inherit -> 64)',
+    },
+    {
+      caseLabel: 'feel',
+      partial: { feelOverride: 58 },
+      expectedText: 'Undo: Change section feel override: Verse (inherit -> 58)',
+    },
+    {
+      caseLabel: 'swing',
+      partial: { swingPctOverride: 71 },
+      expectedText: 'Undo: Change section swing override: Verse (inherit -> 71%)',
+    },
+    {
+      caseLabel: 'dynamics',
+      partial: { dynamicsOverride: 42 },
+      expectedText: 'Undo: Change section dynamics override: Verse (inherit -> 42)',
+    },
+  ])(
+    'renders section $caseLabel override context when the history boundary comes from that edit path',
+    ({ partial, expectedText }) => {
+      useProjectStore.setState({
+        project: makeProject(),
+        stems: [makeStem()],
+        sections: [makeSection({ name: 'Verse' })],
+        blocks: [],
+        chords: [],
+      });
+
+      useProjectStore.getState().updateSection('section-1', partial);
+
+      const container = renderStatusBar('saved');
+      const history = container.querySelector(
+        '[data-testid="status-bar-history"]'
+      ) as HTMLSpanElement | null;
+
+      expect(history?.textContent).toBe(expectedText);
+      expect(history?.title).toBe(
+        `Undo is ready to restore the arrangement captured before ${expectedText.slice('Undo: '.length)}. ` +
+        `Use Undo to restore the arrangement captured before ${expectedText.slice('Undo: '.length)}.`
+      );
+    }
+  );
 
   it('renders blocked undo boundary truth instead of implying history is simply idle', () => {
     useUndoStore.getState().pushUndo('Broken action', {
