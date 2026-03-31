@@ -2,7 +2,7 @@
 
 Status date: 2026-03-31
 
-Status: landed on `main`; reverified on 2026-03-31 at proof head `b778baa4`
+Status: landed on `main`; reverified on 2026-03-31 at proof head `9ab1222d`
 with generation parse-blocker detail truth preserved, and no remaining bounded
 product delta is visible in this family
 
@@ -138,7 +138,7 @@ Current focused proofs for this slice:
 
 - `pnpm test -- --run src/lib/chord-chart-parser.test.ts src/components/left-panel/InputSection.test.tsx src/hooks/useGenerate.test.tsx`
 - `pnpm type-check`
-- verification head for this recheck: `b778baa4a8f71f4e57ec8b88d64041b1510c99cc`
+- verification head for this recheck: `9ab1222d863736be05344934184fe5729737c129`
 
 ## Tracked Landing
 
@@ -190,6 +190,8 @@ Current focused proofs for this slice:
   `commitpath_c40ed88d Refresh chord parser failure truth evidence`
 - `b778baa4a8f71f4e57ec8b88d64041b1510c99cc`:
   `commitpath_c40ed88d Surface blocked import feedback truth`
+- `6e70db04de4e570b8462286ac9412c77d86c4368`:
+  `commitpath_c40ed88d Refresh chord parser failure truth evidence`
 - `f353b811f5d2968dc5d98159a8396d6a1dd5e5b2`:
   `commitpath_c40ed88d Surface upload parser locations`
 - `337372b4f9b72e31f4c076e179f93e1a194cadce`:
@@ -447,6 +449,11 @@ Current focused proofs for this slice:
   delta in this family, so the honest move remained a repo-local evidence
   refresh instead of reopening the parser or input surfaces without a fresh
   product truth gap.
+- The latest 2026-03-31 recheck at verified repo head `9ab1222d` produced the
+  same focused proof results again with no remaining bounded product-file
+  delta in this family, so the honest move remains another repo-local
+  evidence refresh instead of reopening the parser or input surfaces without a
+  fresh product truth gap.
 
 The tests cover:
 
