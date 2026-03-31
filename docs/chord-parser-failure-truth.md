@@ -2,9 +2,9 @@
 
 Status date: 2026-03-31
 
-Status: landed on `main`; reverified on 2026-03-31 at proof head `a830c529`
-with upload blocked-title truth preserved, and no remaining bounded product
-delta is visible in this family
+Status: landed on `main`; reverified on 2026-03-31 at proof head `b97ac259`
+with generation parse-blocker detail truth preserved, and no remaining bounded
+product delta is visible in this family
 
 Purpose: preserve the current chord parser failure contract and its landing
 proof in one repo-local place so future work does not have to reconstruct it
@@ -124,6 +124,10 @@ truth:
 - generation stops before calling the generator when parser issues are present
 - the failure path prefers parser `truth.nextStep`, then parser `truth.summary`,
   then a stable fallback derived from the issue reasons themselves
+- the surfaced generation failure message now preserves parser
+  `truth.currentState`, `truth.summary`, flagged chart locations, and hidden
+  overflow count when they exist, so setup-scoped failures mirror the same
+  repair targets already shown in the chord-chart panel
 - the operator sees a repair instruction like `Fix the flagged chord bar before
   generating.` instead of a runtime exception string when the parser result is
   partial or mocked
@@ -134,7 +138,7 @@ Current focused proofs for this slice:
 
 - `pnpm test -- --run src/lib/chord-chart-parser.test.ts src/components/left-panel/InputSection.test.tsx src/hooks/useGenerate.test.tsx`
 - `pnpm type-check`
-- verification head for this recheck: `a830c529f235c22c7adf45eabb1e358f34d6091e`
+- verification head for this recheck: `b97ac259d751c18c413d3222a2f668ee43ab6ab7`
 
 ## Tracked Landing
 
@@ -179,6 +183,8 @@ Current focused proofs for this slice:
 - `a63700d1dd26ca18ee3230ef9a9a24f629aeed12`:
   `commitpath_c40ed88d Stabilize chord parser truth proof head wording`
 - `b5ced43a4740996caccdc29f3e2701d4624a19af`:
+  `Promote to main: Arrangement Forge chord parser failure truth slice`
+- `b97ac259d751c18c413d3222a2f668ee43ab6ab7`:
   `Promote to main: Arrangement Forge chord parser failure truth slice`
 - `f353b811f5d2968dc5d98159a8396d6a1dd5e5b2`:
   `commitpath_c40ed88d Surface upload parser locations`
