@@ -35,6 +35,8 @@ type ChordParseFailureLike = {
     currentState?: string | null;
     nextStep?: string | null;
     summary?: string | null;
+    issueHighlights?: string[];
+    remainingIssueCount?: number;
   };
 };
 
@@ -111,9 +113,24 @@ function describeGenerationUndoBoundary(assistantPrompt: string | null): string 
 
 function describeChordParseBlocker(parseResult: ChordParseFailureLike): string {
   const currentState = parseResult.truth?.currentState?.trim();
+  const summary = parseResult.truth?.summary?.trim();
   const nextStep = parseResult.truth?.nextStep?.trim();
-  if (currentState && nextStep) {
-    return `${currentState} Next step: ${nextStep}`;
+  const issueHighlights = parseResult.truth?.issueHighlights?.filter(Boolean) ?? [];
+  const remainingIssueCount = parseResult.truth?.remainingIssueCount ?? 0;
+  const truthDetails = [
+    currentState,
+    summary,
+    nextStep ? `Next step: ${nextStep}` : null,
+    issueHighlights.length ? `Flagged chart locations: ${issueHighlights.join(' ')}` : null,
+    remainingIssueCount > 0
+      ? `${remainingIssueCount} more flagged ${
+          remainingIssueCount === 1 ? 'bar needs' : 'bars need'
+        } review in the chord chart before generation.`
+      : null,
+  ].filter(Boolean);
+
+  if (truthDetails.length > 0) {
+    return truthDetails.join(' ');
   }
 
   if (currentState) {
@@ -123,8 +140,6 @@ function describeChordParseBlocker(parseResult: ChordParseFailureLike): string {
   if (nextStep) {
     return nextStep;
   }
-
-  const summary = parseResult.truth?.summary?.trim();
   if (summary) {
     return summary;
   }
