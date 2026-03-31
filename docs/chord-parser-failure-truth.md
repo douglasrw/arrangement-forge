@@ -2,12 +2,11 @@
 
 Status date: 2026-03-31
 
-Status: landed on `main`; reverified on 2026-03-31 at current head
-`13ea108e` after the chord-chart field hint kept the same blocked-bar,
-highlight, and overflow truth local to the text editor itself, so blocked
-bars, overflow, editor repair guidance, and generation-stop repair copy still
-stay explicit in the input panel instead of being inferred from truncated
-warning copy
+Status: landed on `main`; reverified on 2026-03-31 after product head
+`13ea108e`, then refreshed at current head `f41f317a` so the repo-local truth
+artifact still points at the latest verified state after the chord-chart field
+hint kept the same blocked-bar, highlight, and overflow truth local to the
+text editor itself
 
 Purpose: preserve the current chord parser failure contract and its landing
 proof in one repo-local place so future work does not have to reconstruct it
@@ -208,9 +207,9 @@ Current focused proofs for this slice:
   making the raw chord-chart field hint carry the same flagged-bar and overflow
   truth as the blocked banner, so the repair guidance remains local even when
   the banner is not the operator's current focal surface.
-- After the 2026-03-31 recheck at current head `13ea108e`, this family again
-  appears exhausted unless a new chord-parse behavior changes the contract or
-  the proof surface.
+- After the 2026-03-31 product recheck at head `13ea108e` and the same-day
+  evidence refresh at `f41f317a`, this family again appears exhausted unless a
+  new chord-parse behavior changes the contract or the proof surface.
 
 The tests cover:
 
