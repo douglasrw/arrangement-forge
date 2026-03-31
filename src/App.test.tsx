@@ -157,6 +157,10 @@ describe('App protected route recovery truth', () => {
 
     expect(mounted.container.querySelector('[data-testid="location-path"]')?.textContent).toBe('/settings');
     expect(mounted.container.querySelector('[data-testid="auth-loading-screen"]')).not.toBeNull();
+    expect(mounted.container.textContent).toContain('Waiting on authentication');
+    expect(mounted.container.textContent).toContain('Checking for an existing session.');
+    expect(mounted.container.textContent).toContain('Wait for session bootstrap.');
+    expect(mounted.container.textContent).toContain('continue to settings');
     expect(mounted.container.querySelector('[data-testid="login-page"]')).toBeNull();
     expect(mounted.container.querySelector('[data-testid="settings-page"]')).toBeNull();
   });
