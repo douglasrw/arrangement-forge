@@ -3,7 +3,7 @@
 Status date: 2026-03-31
 
 Status: landed on `main`; reverified on 2026-03-31 against product head
-`a43c46b8` with no remaining bounded product delta visible in this family
+`f353b811` with no remaining bounded product delta visible in this family
 
 Purpose: preserve the current chord parser failure contract and its landing
 proof in one repo-local place so future work does not have to reconstruct it
@@ -87,6 +87,10 @@ and scattered tests.
 - blocked upload feedback now reuses the same parser `truth.currentState` and
   `truth.nextStep`, so file-import failures stay explicit on the upload surface
   instead of collapsing back into generic success or generic blocked copy
+- blocked upload feedback now also surfaces the same line-aware flagged chart
+  locations as the text editor hint, so imported parser failures still point at
+  the exact row and bar that need repair without requiring a second lookup in
+  the raw chord chart field
 - the surfaced warning snippets keep the first blocked bars visible in the same
   panel instead of forcing the operator to infer which bars failed
 - when more than three bars are blocked, the panel now says how many additional
@@ -121,7 +125,7 @@ Current focused proofs for this slice:
 
 - `pnpm test -- --run src/lib/chord-chart-parser.test.ts src/components/left-panel/InputSection.test.tsx src/components/left-panel/AiAssistantSection.test.tsx src/components/left-panel/LeftPanel.test.tsx src/hooks/useGenerate.test.tsx`
 - `pnpm run type-check`
-- verification head: `a43c46b82d133b70061ce93dd67f75768cc9d2ff`
+- verification head: `f353b811f5d2968dc5d98159a8396d6a1dd5e5b2`
 
 ## Tracked Landing
 
@@ -155,6 +159,8 @@ Current focused proofs for this slice:
   `commitpath_c40ed88d Stabilize chord parser truth proof head wording`
 - `b5ced43a4740996caccdc29f3e2701d4624a19af`:
   `Promote to main: Arrangement Forge chord parser failure truth slice`
+- `f353b811f5d2968dc5d98159a8396d6a1dd5e5b2`:
+  `commitpath_c40ed88d Surface upload parser locations`
 - `ab75242f879e4dc47afb0e875bf4aa8dbbfae649`:
   `commitpath_c40ed88d Refresh chord parser failure truth evidence`
 - `91846681feee6561f1df252ea1d8306b2999bb49`:
