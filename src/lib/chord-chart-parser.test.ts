@@ -9,7 +9,8 @@ describe('parseChordChart', () => {
     expect(truth).toEqual({
       state: 'ready',
       title: 'Chord chart parsed',
-      summary: 'All chord bars resolved cleanly.',
+      currentState: 'All chord bars resolved cleanly.',
+      summary: 'Generation can use the current chord chart as written.',
       nextStep: null,
       blockedBars: [],
       issueHighlights: [],
@@ -88,7 +89,8 @@ describe('parseChordChart', () => {
     expect(truth).toMatchObject({
       state: 'blocked',
       title: 'Chord chart needs attention',
-      summary: 'Bar 2 will become N.C. during generation. 1 bar has an unrecognized chord token.',
+      currentState: 'Bar 2 will become N.C. during generation.',
+      summary: '1 bar has an unrecognized chord token.',
       nextStep: 'Fix or replace the flagged chord bars before generating.',
       blockedBars: [2],
       issueHighlights: ['Bar 2: could not parse "xyz??"'],
@@ -127,8 +129,8 @@ describe('parseChordChart', () => {
     expect(truth).toMatchObject({
       state: 'blocked',
       title: 'Chord chart has parse issues',
-      summary:
-        'Bars 1 and 2 will become N.C. during generation. 1 bar has an unrecognized chord token. 1 repeat marker follows an unresolved bar.',
+      currentState: 'Bars 1 and 2 will become N.C. during generation.',
+      summary: '1 bar has an unrecognized chord token. 1 repeat marker follows an unresolved bar.',
       nextStep: 'Replace the flagged repeat bars with explicit chords or fix the bar before them.',
       blockedBars: [1, 2],
       issueHighlights: [

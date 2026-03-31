@@ -218,11 +218,19 @@ export function InputSection() {
   const parseFeedbackTitle = parseIssueCount === 1
     ? "Chord chart needs attention"
     : "Chord chart has parse issues"
+  const inputReadinessTitle = hasParseIssues
+    ? parseResult?.truth.title ?? inputReadiness.title
+    : inputReadiness.title
+  const inputReadinessDetail = hasParseIssues
+    ? parseResult?.truth.currentState ?? inputReadiness.detail
+    : inputReadiness.detail
   const parseFeedbackDetail = hasParseIssues
     ? [
       parseResult?.truth.summary,
-      parseResult?.truth.nextStep,
-      parseResult?.truth.issueHighlights.join(" "),
+      parseResult?.truth.nextStep ? `Next step: ${parseResult.truth.nextStep}` : null,
+      parseResult?.truth.issueHighlights.length
+        ? `Flagged bars: ${parseResult.truth.issueHighlights.join(" ")}`
+        : null,
     ].filter(Boolean).join(" ")
     : null
 
@@ -327,9 +335,9 @@ export function InputSection() {
             >
               {inputReadiness.badge}
             </span>
-            <span className="font-medium text-foreground">{inputReadiness.title}</span>
+            <span className="font-medium text-foreground">{inputReadinessTitle}</span>
           </div>
-          <p className="mt-1 text-muted-foreground">{inputReadiness.detail}</p>
+          <p className="mt-1 text-muted-foreground">{inputReadinessDetail}</p>
         </div>
       </div>
 

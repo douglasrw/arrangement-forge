@@ -196,17 +196,15 @@ describe('InputSection upload tab', () => {
 
     expect(parseTruth?.getAttribute('data-chord-chart-parse-state')).toBe('attention');
     expect(readiness?.getAttribute('data-input-readiness')).toBe('blocked');
-    expect(mounted.container.textContent).toContain('Chord chart needs fixes');
-    expect(mounted.container.textContent).toContain(
-      'Flagged bars would resolve to N.C. during generation. Fix the chart before generating.'
-    );
+    expect(mounted.container.textContent).toContain('Chord chart has parse issues');
     expect(mounted.container.textContent).toContain('Chord chart has parse issues');
     expect(mounted.container.textContent).toContain('Bars 2 and 3 will become N.C. during generation.');
     expect(mounted.container.textContent).toContain('1 bar has an unrecognized chord token.');
     expect(mounted.container.textContent).toContain('1 repeat marker follows an unresolved bar.');
     expect(mounted.container.textContent).toContain(
-      'Replace the flagged repeat bars with explicit chords or fix the bar before them.'
+      'Next step: Replace the flagged repeat bars with explicit chords or fix the bar before them.'
     );
+    expect(mounted.container.textContent).toContain('Flagged bars: Bar 2: could not parse "xyz??"');
     expect(mounted.container.textContent).toContain('Bar 2: could not parse "xyz??"');
     expect(mounted.container.textContent).toContain(
       'Bar 3: repeat marker "%" follows a bar that could not be resolved'

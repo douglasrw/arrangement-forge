@@ -21,6 +21,7 @@ export interface ChordChartParseResult {
 export interface ChordChartParseTruth {
   state: 'ready' | 'blocked';
   title: string;
+  currentState: string;
   summary: string;
   nextStep: string | null;
   blockedBars: number[];
@@ -103,7 +104,8 @@ function buildParseTruth(
     return {
       state: 'ready',
       title: 'Chord chart parsed',
-      summary: 'All chord bars resolved cleanly.',
+      currentState: 'All chord bars resolved cleanly.',
+      summary: 'Generation can use the current chord chart as written.',
       nextStep: null,
       blockedBars: [],
       issueHighlights: [],
@@ -119,9 +121,7 @@ function buildParseTruth(
   ).length;
   const blockedBars = issues.map((issue) => issue.barNumber);
   const barLabel = formatBarList(blockedBars);
-  const summaryParts = [
-    `${barLabel} ${blockedBars.length === 1 ? 'will become' : 'will become'} N.C. during generation.`,
-  ];
+  const summaryParts: string[] = [];
 
   if (invalidTokenCount > 0) {
     summaryParts.push(
@@ -144,6 +144,7 @@ function buildParseTruth(
   return {
     state: 'blocked',
     title: blockedBars.length === 1 ? 'Chord chart needs attention' : 'Chord chart has parse issues',
+    currentState: `${barLabel} will become N.C. during generation.`,
     summary: summaryParts.join(' '),
     nextStep:
       repeatWithoutPreviousCount > 0 || repeatWithoutResolvedChordCount > 0
