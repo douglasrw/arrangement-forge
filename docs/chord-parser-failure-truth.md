@@ -2,9 +2,10 @@
 
 Status date: 2026-03-31
 
-Status: landed on `main`; reverified again on 2026-03-31 with the focused
-parser, input-surface, and type-check proofs passing at repo head `b0507a1d`,
-and no remaining bounded product delta is visible in this family
+Status: landed on local `main`; reverified again on 2026-03-31 with the
+focused parser, input-surface, and type-check proofs passing at pre-refresh
+repo head `99cfa86d`, no remaining bounded product delta visible in this
+family, and no upstream push proof captured from this worktree
 
 Purpose: preserve the current chord parser failure contract and its landing
 proof in one repo-local place so future work does not have to reconstruct it
@@ -154,10 +155,13 @@ Current focused proofs for this slice:
 
 - `pnpm exec vitest run src/lib/chord-chart-parser.test.ts`
 - `pnpm exec vitest run src/components/left-panel/InputSection.test.tsx`
+- `pnpm exec vitest run src/hooks/useGenerate.test.tsx`
 - `pnpm exec tsc --noEmit`
-- the current proof set still matches the same bounded parser and
-  input-surface contract after the 2026-03-31 recheck at verified repo head
-  `b0507a1d`
+- the current proof set still matches the same bounded parser, input-surface,
+  and generation-block contract after the 2026-03-31 recheck at verified
+  pre-refresh repo head `99cfa86d`
+- this artifact only proves the current local `main` worktree state; it does
+  not claim that `origin/main` received a fresh promotion during this refresh
 
 ## Tracked Landing
 
