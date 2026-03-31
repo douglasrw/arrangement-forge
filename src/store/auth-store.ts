@@ -44,32 +44,36 @@ export interface AuthStoreTruthSlice {
   authGate: AuthGateTruth;
 }
 
-const CHECKING_SESSION_AUTH_GATE: AuthGateTruth = {
+type AuthStoreTruthSliceState = Pick<
+  AuthStoreState,
+  'user' | 'profile' | 'authStatus' | 'signedOutReason'
+>;
+
+type AuthGateDefinition = Omit<AuthGateTruth, 'signedOutReason'>;
+
+const CHECKING_SESSION_AUTH_GATE: AuthGateDefinition = {
   access: 'pending',
   currentState: 'Checking for an existing session.',
   nextStep: 'wait-for-session',
   nextStepLabel: 'Wait for session bootstrap',
   nextStepDetail: 'Wait for session bootstrap to finish.',
-  signedOutReason: null,
 };
 
-const AUTHENTICATED_AUTH_GATE: AuthGateTruth = {
+const AUTHENTICATED_AUTH_GATE: AuthGateDefinition = {
   access: 'granted',
   currentState: 'An authenticated session is ready.',
   nextStep: 'open-app',
   nextStepLabel: 'Open the app',
   nextStepDetail: 'Open the app.',
-  signedOutReason: null,
 };
 
-const SIGNED_OUT_AUTH_GATES: Record<SignedOutReason, AuthGateTruth> = {
+const SIGNED_OUT_AUTH_GATES: Record<SignedOutReason, AuthGateDefinition> = {
   'no-session': {
     access: 'blocked',
     currentState: 'No saved session was found.',
     nextStep: 'sign-in',
     nextStepLabel: 'Sign in',
     nextStepDetail: 'Sign in to reopen the app.',
-    signedOutReason: 'no-session',
   },
   'signed-out': {
     access: 'blocked',
@@ -77,7 +81,6 @@ const SIGNED_OUT_AUTH_GATES: Record<SignedOutReason, AuthGateTruth> = {
     nextStep: 'sign-in',
     nextStepLabel: 'Sign in again',
     nextStepDetail: 'Sign in again to continue.',
-    signedOutReason: 'signed-out',
   },
   'email-confirmation-required': {
     access: 'blocked',
@@ -85,7 +88,6 @@ const SIGNED_OUT_AUTH_GATES: Record<SignedOutReason, AuthGateTruth> = {
     nextStep: 'confirm-email',
     nextStepLabel: 'Confirm your email',
     nextStepDetail: 'Open the confirmation email, then sign in again.',
-    signedOutReason: 'email-confirmation-required',
   },
   'missing-profile': {
     access: 'blocked',
@@ -93,7 +95,6 @@ const SIGNED_OUT_AUTH_GATES: Record<SignedOutReason, AuthGateTruth> = {
     nextStep: 'complete-profile',
     nextStepLabel: 'Complete the profile',
     nextStepDetail: 'Restore or complete the profile, then sign in again.',
-    signedOutReason: 'missing-profile',
   },
   'profile-load-failed': {
     access: 'blocked',
@@ -101,7 +102,6 @@ const SIGNED_OUT_AUTH_GATES: Record<SignedOutReason, AuthGateTruth> = {
     nextStep: 'retry-profile-load',
     nextStepLabel: 'Retry the profile load',
     nextStepDetail: 'Retry the profile load by signing in again.',
-    signedOutReason: 'profile-load-failed',
   },
   'session-lookup-failed': {
     access: 'blocked',
@@ -109,59 +109,15 @@ const SIGNED_OUT_AUTH_GATES: Record<SignedOutReason, AuthGateTruth> = {
     nextStep: 'retry-session',
     nextStepLabel: 'Retry session restore',
     nextStepDetail: 'Retry session restoration by signing in again.',
-    signedOutReason: 'session-lookup-failed',
   },
 };
 
-const SIGNED_OUT_WITHOUT_REASON_AUTH_GATE: AuthGateTruth = {
+const SIGNED_OUT_WITHOUT_REASON_AUTH_GATE: AuthGateDefinition = {
   access: 'blocked',
   currentState: 'Authentication is blocked until a new session starts.',
   nextStep: 'sign-in',
   nextStepLabel: 'Sign in',
   nextStepDetail: 'Sign in to continue.',
-  signedOutReason: null,
-};
-
-const CHECKING_SESSION_AUTH_TRUTH: AuthTruth = {
-  status: 'checking-session',
-  ...CHECKING_SESSION_AUTH_GATE,
-};
-
-const AUTHENTICATED_AUTH_TRUTH: AuthTruth = {
-  status: 'authenticated',
-  ...AUTHENTICATED_AUTH_GATE,
-};
-
-const SIGNED_OUT_AUTH_TRUTHS: Record<SignedOutReason, AuthTruth> = {
-  'no-session': {
-    status: 'signed-out',
-    ...SIGNED_OUT_AUTH_GATES['no-session'],
-  },
-  'signed-out': {
-    status: 'signed-out',
-    ...SIGNED_OUT_AUTH_GATES['signed-out'],
-  },
-  'email-confirmation-required': {
-    status: 'signed-out',
-    ...SIGNED_OUT_AUTH_GATES['email-confirmation-required'],
-  },
-  'missing-profile': {
-    status: 'signed-out',
-    ...SIGNED_OUT_AUTH_GATES['missing-profile'],
-  },
-  'profile-load-failed': {
-    status: 'signed-out',
-    ...SIGNED_OUT_AUTH_GATES['profile-load-failed'],
-  },
-  'session-lookup-failed': {
-    status: 'signed-out',
-    ...SIGNED_OUT_AUTH_GATES['session-lookup-failed'],
-  },
-};
-
-const SIGNED_OUT_WITHOUT_REASON_AUTH_TRUTH: AuthTruth = {
-  status: 'signed-out',
-  ...SIGNED_OUT_WITHOUT_REASON_AUTH_GATE,
 };
 
 type AuthStoreState = {
@@ -187,6 +143,82 @@ interface AuthStore {
   setSignedOut: (reason: SignedOutReason) => void;
 }
 
+function createAuthGateTruth(
+  definition: AuthGateDefinition,
+  signedOutReason: SignedOutReason | null
+): AuthGateTruth {
+  return {
+    ...definition,
+    signedOutReason,
+  };
+}
+
+function createAuthTruth(
+  status: AuthStatus,
+  definition: AuthGateDefinition,
+  signedOutReason: SignedOutReason | null
+): AuthTruth {
+  return {
+    status,
+    ...createAuthGateTruth(definition, signedOutReason),
+  };
+}
+
+const CHECKING_SESSION_AUTH_GATE_TRUTH = createAuthGateTruth(CHECKING_SESSION_AUTH_GATE, null);
+const AUTHENTICATED_AUTH_GATE_TRUTH = createAuthGateTruth(AUTHENTICATED_AUTH_GATE, null);
+const SIGNED_OUT_AUTH_GATE_TRUTHS: Record<SignedOutReason, AuthGateTruth> = {
+  'no-session': createAuthGateTruth(SIGNED_OUT_AUTH_GATES['no-session'], 'no-session'),
+  'signed-out': createAuthGateTruth(SIGNED_OUT_AUTH_GATES['signed-out'], 'signed-out'),
+  'email-confirmation-required': createAuthGateTruth(
+    SIGNED_OUT_AUTH_GATES['email-confirmation-required'],
+    'email-confirmation-required'
+  ),
+  'missing-profile': createAuthGateTruth(SIGNED_OUT_AUTH_GATES['missing-profile'], 'missing-profile'),
+  'profile-load-failed': createAuthGateTruth(
+    SIGNED_OUT_AUTH_GATES['profile-load-failed'],
+    'profile-load-failed'
+  ),
+  'session-lookup-failed': createAuthGateTruth(
+    SIGNED_OUT_AUTH_GATES['session-lookup-failed'],
+    'session-lookup-failed'
+  ),
+};
+const SIGNED_OUT_WITHOUT_REASON_AUTH_GATE_TRUTH = createAuthGateTruth(
+  SIGNED_OUT_WITHOUT_REASON_AUTH_GATE,
+  null
+);
+const CHECKING_SESSION_AUTH_TRUTH = createAuthTruth('checking-session', CHECKING_SESSION_AUTH_GATE, null);
+const AUTHENTICATED_AUTH_TRUTH = createAuthTruth('authenticated', AUTHENTICATED_AUTH_GATE, null);
+const SIGNED_OUT_AUTH_TRUTHS: Record<SignedOutReason, AuthTruth> = {
+  'no-session': createAuthTruth('signed-out', SIGNED_OUT_AUTH_GATES['no-session'], 'no-session'),
+  'signed-out': createAuthTruth('signed-out', SIGNED_OUT_AUTH_GATES['signed-out'], 'signed-out'),
+  'email-confirmation-required': createAuthTruth(
+    'signed-out',
+    SIGNED_OUT_AUTH_GATES['email-confirmation-required'],
+    'email-confirmation-required'
+  ),
+  'missing-profile': createAuthTruth(
+    'signed-out',
+    SIGNED_OUT_AUTH_GATES['missing-profile'],
+    'missing-profile'
+  ),
+  'profile-load-failed': createAuthTruth(
+    'signed-out',
+    SIGNED_OUT_AUTH_GATES['profile-load-failed'],
+    'profile-load-failed'
+  ),
+  'session-lookup-failed': createAuthTruth(
+    'signed-out',
+    SIGNED_OUT_AUTH_GATES['session-lookup-failed'],
+    'session-lookup-failed'
+  ),
+};
+const SIGNED_OUT_WITHOUT_REASON_AUTH_TRUTH = createAuthTruth(
+  'signed-out',
+  SIGNED_OUT_WITHOUT_REASON_AUTH_GATE,
+  null
+);
+
 // Keep auth gating and the operator's next step derivable from one shared surface.
 export function getAuthGateTruth({
   authStatus,
@@ -194,13 +226,13 @@ export function getAuthGateTruth({
 }: Pick<AuthStoreState, 'authStatus' | 'signedOutReason'>): AuthGateTruth {
   switch (authStatus) {
     case 'checking-session':
-      return CHECKING_SESSION_AUTH_GATE;
+      return CHECKING_SESSION_AUTH_GATE_TRUTH;
     case 'authenticated':
-      return AUTHENTICATED_AUTH_GATE;
+      return AUTHENTICATED_AUTH_GATE_TRUTH;
     default:
       return signedOutReason
-        ? SIGNED_OUT_AUTH_GATES[signedOutReason]
-        : SIGNED_OUT_WITHOUT_REASON_AUTH_GATE;
+        ? SIGNED_OUT_AUTH_GATE_TRUTHS[signedOutReason]
+        : SIGNED_OUT_WITHOUT_REASON_AUTH_GATE_TRUTH;
   }
 }
 
@@ -232,7 +264,7 @@ export function selectAuthTruth(
 }
 
 export function getAuthStoreTruthSlice(
-  state: Pick<AuthStoreState, 'user' | 'profile' | 'authStatus' | 'signedOutReason'>
+  state: AuthStoreTruthSliceState
 ): AuthStoreTruthSlice {
   return {
     user: state.user,
@@ -242,10 +274,31 @@ export function getAuthStoreTruthSlice(
   };
 }
 
+let cachedAuthStoreTruthSliceState: AuthStoreTruthSliceState | null = null;
+let cachedAuthStoreTruthSlice: AuthStoreTruthSlice | null = null;
+
 export function selectAuthStoreTruthSlice(
-  state: Pick<AuthStoreState, 'user' | 'profile' | 'authStatus' | 'signedOutReason'>
+  state: AuthStoreTruthSliceState
 ): AuthStoreTruthSlice {
-  return getAuthStoreTruthSlice(state);
+  if (
+    cachedAuthStoreTruthSliceState &&
+    cachedAuthStoreTruthSlice &&
+    cachedAuthStoreTruthSliceState.user === state.user &&
+    cachedAuthStoreTruthSliceState.profile === state.profile &&
+    cachedAuthStoreTruthSliceState.authStatus === state.authStatus &&
+    cachedAuthStoreTruthSliceState.signedOutReason === state.signedOutReason
+  ) {
+    return cachedAuthStoreTruthSlice;
+  }
+
+  cachedAuthStoreTruthSliceState = {
+    user: state.user,
+    profile: state.profile,
+    authStatus: state.authStatus,
+    signedOutReason: state.signedOutReason,
+  };
+  cachedAuthStoreTruthSlice = getAuthStoreTruthSlice(state);
+  return cachedAuthStoreTruthSlice;
 }
 
 function createAuthStoreState(overrides: AuthStoreState): AuthStoreState {

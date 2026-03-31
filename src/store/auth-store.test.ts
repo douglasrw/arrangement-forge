@@ -93,6 +93,28 @@ describe('auth-store gate truth', () => {
     });
   });
 
+  it('derives auth gate and auth truth from one shared state definition across statuses', () => {
+    expect(getAuthTruth(useAuthStore.getState())).toMatchObject(getAuthGateTruth(useAuthStore.getState()));
+
+    useAuthStore.getState().completeAuthenticatedSession({
+      user: { id: 'user-1' } as const,
+      profile: {
+        id: 'user-1',
+        displayName: 'Ashlyn',
+        chordDisplayMode: 'roman',
+        defaultGenre: 'Pop',
+        createdAt: '2026-03-29T00:00:00Z',
+        updatedAt: '2026-03-29T01:00:00Z',
+      },
+    });
+
+    expect(getAuthTruth(useAuthStore.getState())).toMatchObject(getAuthGateTruth(useAuthStore.getState()));
+
+    useAuthStore.getState().setSignedOut('profile-load-failed');
+
+    expect(getAuthTruth(useAuthStore.getState())).toMatchObject(getAuthGateTruth(useAuthStore.getState()));
+  });
+
   it('exposes one named auth slice with user, current state, and next step', () => {
     const user = { id: 'user-1' } as const;
     const profile = {
