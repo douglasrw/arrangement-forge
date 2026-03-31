@@ -3,7 +3,7 @@
 Status date: 2026-03-31
 
 Status: landed on `main`; reverified on 2026-03-31 against product head
-`55e8e7c1` with no remaining bounded product delta visible in this family
+`426bbfb7` with no remaining bounded product delta visible in this family
 
 Purpose: preserve the current chord parser failure contract and its landing
 proof in one repo-local place so future work does not have to reconstruct it
@@ -93,10 +93,12 @@ Current focused proofs for this slice:
 
 - `pnpm test -- --run src/lib/chord-chart-parser.test.ts src/components/left-panel/InputSection.test.tsx src/hooks/useGenerate.test.tsx`
 - `pnpm type-check`
-- verification head: `55e8e7c1f90580401e4fa6e324385636eea97250`
+- verification head: `426bbfb783a536d9e4d8898d452db2b2de0efba1`
 
 ## Tracked Landing
 
+- `426bbfb783a536d9e4d8898d452db2b2de0efba1`:
+  `commitpath_c40ed88d Refresh chord parser failure truth evidence`
 - `8b025e3c3827dd8ee97bf2f8494ba610ac6a527f`:
   `Fix chord parser issue line numbers`
 - `8e7cfcb5b5a86906d1d9fdbf8f2eb0a5cfcedfe7`:
@@ -312,6 +314,11 @@ Current focused proofs for this slice:
   the same focused proof results again with no product-file delta in this
   family, so the honest move remained a repo-local evidence refresh instead of
   another speculative parser or input-surface edit.
+- The latest 2026-03-31 recheck at verified product head `426bbfb7` produced
+  the same focused proof results again with no product-file delta in this
+  family, so this family remains exhausted for now and the honest move was
+  another repo-local evidence refresh instead of another speculative parser or
+  input-surface edit.
 
 The tests cover:
 
