@@ -2,11 +2,12 @@
 
 Status date: 2026-03-31
 
-Status: landed on `main`; reverified on 2026-03-31 at head `7c7511db6e87`
+Status: landed on `main`; reverified on 2026-03-31 at head `dbc5b968a288`
 after the promoted settings-profile validation truth copy landed beside the
 earlier blocked-save truth, persisted profile validation, save-failure truth,
-supported-values copy, and default-genre regression coverage, and no remaining
-product delta is visible in this family beyond this evidence refresh
+supported-values copy, default-genre regression coverage, and explicit saved
+display-name truth, and no remaining product delta is visible in this family
+beyond this evidence refresh
 
 Purpose: preserve the current settings and persisted profile validation
 contract in one repo-local place so future work does not have to reconstruct it
@@ -38,6 +39,9 @@ from `src/pages/SettingsPage.tsx`, `src/lib/profile.ts`, and scattered tests.
   into one named surface
 - unavailable settings show current fixed behavior instead of fake disabled
   controls
+- the Profile card states that saved display names may be blank and are saved
+  exactly as entered, so the operator does not have to infer display-name
+  validation from a later failure
 - save-caption and pending-state copy keep the next step explicit while edits
   are still local
 - save readiness now states when sign-in blocks persistence, keeps the button
@@ -62,12 +66,14 @@ Current focused proofs for this slice:
 
 - `pnpm test -- --run src/pages/SettingsPage.test.tsx`
 - `pnpm run type-check`
-- verification head: `7c7511db6e87769d0394b534169c8d4595dd4053`
+- verification head: `dbc5b968a2884c82c50d02654fdad3866e44dca2`
 
 ## Tracked Landing
 
 - `7c18ba9ce471bf3bf350583a75170ded2905ac50`:
   `Promote settings profile validation truth`
+- `dbc5b968a2884c82c50d02654fdad3866e44dca2`:
+  `commitpath_c40ed88d Clarify saved display name profile truth`
 - `7c7511db6e87769d0394b534169c8d4595dd4053`:
   `commitpath_c40ed88d Refresh settings profile validation truth evidence`
 - `169548e6644aa2f46aeb6d2576dabddf2f3ba0a7`:
@@ -97,9 +103,10 @@ Current focused proofs for this slice:
 - The landing made saved, pending, unavailable, blocked-save, invalid, and
   failed-save states explicit on the settings surface instead of relying on
   hidden surrounding context.
-- The current `main` head at `7c7511db6e87` preserves that contract, and the
-  focused settings proofs passed again on 2026-03-31 before this doc-only
-  evidence refresh updated the repo-local artifact.
+- The current `main` head at `dbc5b968a288` preserves that contract, now with
+  explicit saved display-name truth in the Profile card, and the focused
+  settings proofs passed again on 2026-03-31 before this doc-only evidence
+  refresh updated the repo-local artifact.
 - After the 2026-03-31 recheck, this family appears exhausted until a new
   settings or persisted-profile behavior changes the contract or the proof
   surface.
