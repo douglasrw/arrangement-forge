@@ -4,7 +4,7 @@ Status date: 2026-04-01
 
 Status: landed on local `main`; reverified again on 2026-04-01 with the
 focused parser, input-surface, generation-block, and type-check proofs passing
-against the then-current verified local `main` head `3a615579`, no remaining
+against the then-current verified local `main` head `a060f2b0`, no remaining
 bounded product delta visible in this family beyond keeping this repo-local
 truth artifact aligned with the latest verified state, and this refresh still
 does not claim any fresh product promotion beyond the already-verified local
@@ -163,7 +163,7 @@ Current focused proofs for this slice:
 - `pnpm exec tsc --noEmit`
 - the current proof set still matches the same bounded parser, input-surface,
   and generation-block contract after the 2026-04-01 recheck against the
-  then-current verified local `main` head `3a615579`
+  then-current verified local `main` head `a060f2b0`
 - this artifact proves the verified local `main` worktree state at that head;
   it does not claim any fresh product promotion happened during this refresh
 
@@ -194,6 +194,8 @@ Current focused proofs for this slice:
 - `3a6155799ee2ce8521b8dca08f9c85e4d57c181f`:
   `commitpath_c40ed88d Refresh chord parser truth evidence`
 - `592280246c14cdc6036e7298e0838e5b96375816`:
+  `commitpath_c40ed88d Refresh chord parser truth evidence`
+- `a060f2b069598a1fb647e43b477532bf77cff6b5`:
   `commitpath_c40ed88d Refresh chord parser truth evidence`
 - `808ce22e2c1cb91568b584dca34b67fbc4b85323`:
   `commitpath_c40ed88d Refresh chord parser failure truth evidence`
