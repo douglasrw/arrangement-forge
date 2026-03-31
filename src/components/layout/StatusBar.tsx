@@ -1,6 +1,5 @@
 import type { GenerationState, SystemStatus } from '@/types';
 import { cn } from '@/lib/utils';
-import type { UndoBoundaryTruth } from '@/lib/undo-helpers';
 import { getProjectArrangementTruth } from '@/store/project-store';
 import { getProjectSavePlan } from '@/hooks/useProject';
 import { useProjectStore } from '@/store/project-store';
@@ -35,53 +34,6 @@ export function deriveStatusBarStatus({
   if (systemStatus === 'saving') return 'saving';
   if (unsavedChanges) return 'unsaved';
   return 'saved';
-}
-
-interface StatusBarHistoryCopy {
-  label: string;
-  tooltip: string;
-}
-
-function formatUndoBoundaryTooltip(boundary: UndoBoundaryTruth): string {
-  return `${boundary.currentState} ${boundary.nextStep}`.trim();
-}
-
-export function getStatusBarHistoryCopy(
-  undoBoundary: UndoBoundaryTruth,
-  redoBoundary: UndoBoundaryTruth
-): StatusBarHistoryCopy {
-  if (undoBoundary.status === 'blocked') {
-    return {
-      label: undoBoundary.statusLabel,
-      tooltip: formatUndoBoundaryTooltip(undoBoundary),
-    };
-  }
-
-  if (redoBoundary.status === 'blocked') {
-    return {
-      label: redoBoundary.statusLabel,
-      tooltip: formatUndoBoundaryTooltip(redoBoundary),
-    };
-  }
-
-  if (undoBoundary.status === 'available') {
-    return {
-      label: undoBoundary.statusLabel,
-      tooltip: formatUndoBoundaryTooltip(undoBoundary),
-    };
-  }
-
-  if (redoBoundary.status === 'available') {
-    return {
-      label: redoBoundary.statusLabel,
-      tooltip: formatUndoBoundaryTooltip(redoBoundary),
-    };
-  }
-
-  return {
-    label: 'History idle',
-    tooltip: formatUndoBoundaryTooltip(undoBoundary),
-  };
 }
 
 function formatErrorStatusLabel(errorMessage: string | null): string {
@@ -142,8 +94,7 @@ interface StatusBarProps {
 export function StatusBar({ status = 'saved', className }: StatusBarProps) {
   const errorMessage = useUiStore((state) => state.errorMessage);
   const undoStore = useUndoStore();
-  const undoBoundary = undoStore.getUndoBoundaryTruth();
-  const redoBoundary = undoStore.getRedoBoundaryTruth();
+  const historyTruth = undoStore.getHistoryTruth();
   const { project, stems, sections, blocks, chords } = useProjectStore();
   const arrangementTruth = getProjectArrangementTruth({
     project,
@@ -160,7 +111,6 @@ export function StatusBar({ status = 'saved', className }: StatusBarProps) {
     blocks,
     chords,
   });
-  const historyCopy = getStatusBarHistoryCopy(undoBoundary, redoBoundary);
   const savePlanTooltip = `${savePlan.currentState} ${savePlan.nextStep}`.trim();
   const savedTruthTooltip = `${arrangementTruth.currentState} ${arrangementTruth.nextStep}`.trim();
   const label =
@@ -205,9 +155,9 @@ export function StatusBar({ status = 'saved', className }: StatusBarProps) {
       <span
         data-testid="status-bar-history"
         className="min-w-0 max-w-[35%] truncate text-right text-[10px] text-zinc-600"
-        title={historyCopy.tooltip}
+        title={historyTruth.tooltip}
       >
-        {historyCopy.label}
+        {historyTruth.label}
       </span>
     </div>
   );

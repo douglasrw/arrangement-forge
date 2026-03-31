@@ -2,8 +2,10 @@ import { create } from 'zustand';
 import {
   createUndoBoundaryTruth,
   createUndoBoundaryEntry,
+  createUndoHistoryTruth,
   type UndoBoundaryTruth,
   type UndoBoundaryEntry,
+  type UndoHistoryTruth,
   type UndoBoundarySnapshots,
   type UndoBoundaryTransition,
 } from '@/lib/undo-helpers';
@@ -24,6 +26,7 @@ interface UndoStore {
   redo: () => UndoTransition | null;
   getUndoBoundaryTruth: () => UndoBoundaryTruth;
   getRedoBoundaryTruth: () => UndoBoundaryTruth;
+  getHistoryTruth: () => UndoHistoryTruth;
   canUndo: () => boolean;
   canRedo: () => boolean;
   getUndoDescription: () => string | null;
@@ -36,6 +39,16 @@ function getUndoBoundaryTruthForEntry(entry: UndoEntry | undefined): UndoBoundar
 
 function getRedoBoundaryTruthForEntry(entry: UndoEntry | undefined): UndoBoundaryTruth {
   return createUndoBoundaryTruth(entry ?? null, 'redo', entry?.description ?? null);
+}
+
+function getHistoryTruthForEntries(
+  undoEntry: UndoEntry | undefined,
+  redoEntry: UndoEntry | undefined
+): UndoHistoryTruth {
+  return createUndoHistoryTruth(
+    getUndoBoundaryTruthForEntry(undoEntry),
+    getRedoBoundaryTruthForEntry(redoEntry)
+  );
 }
 
 export const useUndoStore = create<UndoStore>()((set, get) => ({
@@ -88,6 +101,14 @@ export const useUndoStore = create<UndoStore>()((set, get) => ({
   getRedoBoundaryTruth: () => {
     const stack = get().redoStack;
     return getRedoBoundaryTruthForEntry(stack[stack.length - 1]);
+  },
+
+  getHistoryTruth: () => {
+    const { undoStack, redoStack } = get();
+    return getHistoryTruthForEntries(
+      undoStack[undoStack.length - 1],
+      redoStack[redoStack.length - 1]
+    );
   },
 
   canUndo: () => {

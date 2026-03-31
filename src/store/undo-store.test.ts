@@ -168,6 +168,22 @@ describe('undoStore', () => {
     });
   });
 
+  it('surfaces redo as the next history truth after undo consumes the undo boundary', () => {
+    useUndoStore.getState().pushUndo('Split block', {
+      undo: makeSnapshot('before'),
+      redo: makeSnapshot('after'),
+    });
+
+    expect(useUndoStore.getState().undo()).not.toBeNull();
+    expect(useUndoStore.getState().getHistoryTruth()).toMatchObject({
+      status: 'available',
+      boundary: 'redo',
+      label: 'Redo: Split block',
+      currentState: 'Redo is ready to restore the arrangement captured after Split block.',
+      nextStep: 'Use Redo to restore the arrangement captured after Split block.',
+    });
+  });
+
   it('getUndoDescription returns null when empty', () => {
     expect(useUndoStore.getState().getUndoDescription()).toBeNull();
   });

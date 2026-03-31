@@ -2,6 +2,7 @@ import { describe, it, expect } from 'vitest';
 import {
   createUndoBoundaryTruth,
   createUndoBoundaryTransition,
+  createUndoHistoryTruth,
   parseRedoSnapshot,
   parseSnapshot,
   parseUndoBoundarySnapshot,
@@ -185,6 +186,59 @@ describe('createUndoBoundaryTruth', () => {
       'Do not offer Redo for this boundary until a valid restore snapshot is stored.'
     );
     expect(truth.transition?.restoreSnapshot).toBeNull();
+  });
+});
+
+describe('createUndoHistoryTruth', () => {
+  it('stays idle when neither undo nor redo has a restorable boundary', () => {
+    expect(
+      createUndoHistoryTruth(
+        createUndoBoundaryTruth(null, 'undo'),
+        createUndoBoundaryTruth(null, 'redo')
+      )
+    ).toEqual({
+      status: 'idle',
+      boundary: null,
+      label: 'History idle',
+      currentState: 'No undo boundary is available right now.',
+      nextStep: 'Edit the arrangement to create the next undo boundary.',
+      tooltip:
+        'No undo boundary is available right now. Edit the arrangement to create the next undo boundary.',
+    });
+  });
+
+  it('surfaces the redo boundary when it is the next restorable history step', () => {
+    const historyTruth = createUndoHistoryTruth(
+      createUndoBoundaryTruth(null, 'undo'),
+      createUndoBoundaryTruth(
+        {
+          undoSnapshot: JSON.stringify({
+            stems: [{ id: 'undo-stem' }],
+            sections: [],
+            blocks: [],
+            chords: [],
+          }),
+          redoSnapshot: JSON.stringify({
+            stems: [{ id: 'redo-stem' }],
+            sections: [],
+            blocks: [],
+            chords: [],
+          }),
+        },
+        'redo',
+        'Split block'
+      )
+    );
+
+    expect(historyTruth).toEqual({
+      status: 'available',
+      boundary: 'redo',
+      label: 'Redo: Split block',
+      currentState: 'Redo is ready to restore the arrangement captured after Split block.',
+      nextStep: 'Use Redo to restore the arrangement captured after Split block.',
+      tooltip:
+        'Redo is ready to restore the arrangement captured after Split block. Use Redo to restore the arrangement captured after Split block.',
+    });
   });
 });
 

@@ -375,4 +375,22 @@ describe('StatusBar', () => {
       'The latest undo boundary is still on the stack, but its restore snapshot cannot be read. Do not offer Undo for this boundary until a valid restore snapshot is stored.'
     );
   });
+
+  it('renders redo as the next explicit history truth after undo runs', () => {
+    useUndoStore.getState().pushUndo('Split block', {
+      undo: makeSnapshot('before'),
+      redo: makeSnapshot('after'),
+    });
+    expect(useUndoStore.getState().undo()).not.toBeNull();
+
+    const container = renderStatusBar('saved');
+    const history = container.querySelector(
+      '[data-testid="status-bar-history"]'
+    ) as HTMLSpanElement | null;
+
+    expect(history?.textContent).toBe('Redo: Split block');
+    expect(history?.title).toBe(
+      'Redo is ready to restore the arrangement captured after Split block. Use Redo to restore the arrangement captured after Split block.'
+    );
+  });
 });

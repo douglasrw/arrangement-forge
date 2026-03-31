@@ -39,6 +39,15 @@ export interface UndoBoundaryTruth {
   transition: UndoBoundaryTransition | null;
 }
 
+export interface UndoHistoryTruth {
+  status: 'idle' | 'available' | 'blocked';
+  boundary: UndoBoundary | null;
+  label: string;
+  currentState: string;
+  nextStep: string;
+  tooltip: string;
+}
+
 export function snapshotArrangement(state: {
   stems: Stem[];
   sections: Section[];
@@ -98,6 +107,21 @@ function getUndoBoundaryActionTarget(description: string | null): string {
   return description?.trim() || 'the last arrangement change';
 }
 
+function formatUndoBoundaryTooltip(boundary: UndoBoundaryTruth): string {
+  return `${boundary.currentState} ${boundary.nextStep}`.trim();
+}
+
+function selectUndoHistoryBoundaryTruth(
+  undoBoundary: UndoBoundaryTruth,
+  redoBoundary: UndoBoundaryTruth
+): UndoBoundaryTruth | null {
+  if (undoBoundary.status === 'blocked') return undoBoundary;
+  if (redoBoundary.status === 'blocked') return redoBoundary;
+  if (undoBoundary.status === 'available') return undoBoundary;
+  if (redoBoundary.status === 'available') return redoBoundary;
+  return null;
+}
+
 export function createUndoBoundaryTruth(
   entry: UndoBoundaryEntry | null | undefined,
   boundary: UndoBoundary,
@@ -154,6 +178,32 @@ export function createUndoBoundaryTruth(
         ? `Use Undo to restore the arrangement captured before ${actionTarget}.`
         : `Use Redo to restore the arrangement captured after ${actionTarget}.`,
     transition,
+  };
+}
+
+export function createUndoHistoryTruth(
+  undoBoundary: UndoBoundaryTruth,
+  redoBoundary: UndoBoundaryTruth
+): UndoHistoryTruth {
+  const activeBoundary = selectUndoHistoryBoundaryTruth(undoBoundary, redoBoundary);
+  if (!activeBoundary) {
+    return {
+      status: 'idle',
+      boundary: null,
+      label: 'History idle',
+      currentState: undoBoundary.currentState,
+      nextStep: undoBoundary.nextStep,
+      tooltip: formatUndoBoundaryTooltip(undoBoundary),
+    };
+  }
+
+  return {
+    status: activeBoundary.status,
+    boundary: activeBoundary.boundary,
+    label: activeBoundary.statusLabel,
+    currentState: activeBoundary.currentState,
+    nextStep: activeBoundary.nextStep,
+    tooltip: formatUndoBoundaryTooltip(activeBoundary),
   };
 }
 
