@@ -2,7 +2,7 @@
 
 Status date: 2026-03-31
 
-Status: landed on `main`; reverified from current `main` head `83815871` on 2026-03-31 with focused route proofs and no remaining product delta in this family beyond this evidence refresh
+Status: landed on `main`; reverified on 2026-03-31 with focused route proofs from the current route surfaces, and no remaining product delta is visible in this family beyond this evidence refresh
 
 Purpose: preserve the current editor route contract and its landing proof in
 one repo-local place so future work does not have to reconstruct it from
@@ -58,7 +58,7 @@ one repo-local place so future work does not have to reconstruct it from
 Current focused proofs for this slice:
 
 - `pnpm exec vitest run src/App.test.tsx src/pages/EditorPage.test.tsx`
-- `pnpm exec tsc --noEmit`
+- `pnpm run type-check`
 
 ## Tracked Landing
 
@@ -100,6 +100,8 @@ Current focused proofs for this slice:
   `test: cover requested editor route wiring commitpath_c40ed88d`
 - `838158710846ff70c59bdb512eff9544c06b2d86`:
   `commitpath_c40ed88d Refresh editor route readiness truth evidence`
+- `a5d62f7b046717e84d1f4514601bbe949c18b347`:
+  pre-refresh verification head for the latest 2026-03-31 route-truth evidence check
 - The landing made current route, fallback route, and route readiness explicit
   across auth bootstrap, route loading, malformed-route handling, missing or
   unavailable project states, and ready-state recovery.
@@ -113,8 +115,8 @@ Current focused proofs for this slice:
 - Commit `83815871` refreshed this repo-local truth artifact so the latest
   requested-route wiring proof and the current `main` evidence chain stay
   aligned in one place.
-- The focused route proofs passed again on 2026-03-31 from `83815871` after
-  that doc-only evidence refresh.
+- The focused route proofs passed again on 2026-03-31 from pre-refresh head
+  `a5d62f7b` before this doc-only evidence refresh updated the local artifact.
 - After the 2026-03-31 recheck, this family appears exhausted until a new
   editor-route behavior changes the contract or the proof surface.
 
