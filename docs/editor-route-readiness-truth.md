@@ -2,7 +2,7 @@
 
 Status date: 2026-03-31
 
-Status: landed on `main`; reverified on 2026-03-31 after the shared route-truth refresh and explicit fallback-handling truth landed, and no remaining product delta is visible in this family beyond this evidence refresh
+Status: landed on `main`; reverified on 2026-03-31 after shared route-truth, fallback-handling truth, and explicit next-step truth landed, and no remaining product delta is visible in this family beyond this evidence refresh
 
 Purpose: preserve the current editor route contract and its landing proof in
 one repo-local place so future work does not have to reconstruct it from
@@ -62,6 +62,9 @@ opens:
 - Route shells and the ready banner name route mode directly so requested
   project routes, the editor fallback route, and the active project route do
   not have to be inferred from surrounding copy.
+- Route shells and the ready banner now also read the next step from the same
+  shared truth helper so loading, parked fallback, blocked, and ready states
+  do not drift between `src/lib/editor-route-truth.ts` and `EditorPage.tsx`.
 - Missing, malformed, and load-failure states explain why the route cannot
   open and point back to the library.
 - Ready state keeps the active route explicit and reminds the operator that
@@ -126,12 +129,14 @@ Current focused proofs for this slice:
   `commitpath_c40ed88d Refresh shared editor route truth evidence`
 - `d5110bb0a42278938130c4f9d9bb53a7c00b074b`:
   `commitpath_c40ed88d: surface editor fallback handling truth`
-- `d5110bb0a42278938130c4f9d9bb53a7c00b074b`:
+- `5d30628807dfa3d3d4d5ef7ac26b1013dabb5d2b`:
+  `Promote editor route next-step truth`
+- `5d30628807dfa3d3d4d5ef7ac26b1013dabb5d2b`:
   pre-refresh verification head for the latest 2026-03-31 route-truth evidence check
 - The landing made current route, fallback route, and route readiness explicit
   across auth bootstrap, route loading, malformed-route handling, missing or
   unavailable project states, and ready-state recovery.
-- The current `main` head at `d5110bb0` still preserves that contract. After
+- The current `main` head at `5d306288` still preserves that contract. After
   the last doc-only evidence refresh at `83815871`, commit `1b7ce2d3` added
   explicit route-mode copy across the auth bootstrap loading gate, editor route
   shells, and ready banner without changing the fallback route contract.
@@ -148,8 +153,11 @@ Current focused proofs for this slice:
 - Commit `d5110bb0` made fallback handling explicit on the shared route-truth
   surfaces so operators no longer have to infer what `/project` does after the
   current project route opens or fails.
+- Commit `5d306288` moved route-level next-step copy fully into the shared
+  truth helper and ready banner so loading, fallback, blocked, and ready
+  surfaces all report the same explicit next action from one contract.
 - The focused route proofs passed again on 2026-03-31 from pre-refresh head
-  `d5110bb0` before this doc-only evidence refresh updated the local artifact.
+  `5d306288` before this doc-only evidence refresh updated the local artifact.
 - After the 2026-03-31 recheck, this family appears exhausted until a new
   editor-route behavior changes the contract or the proof surface.
 
