@@ -3,7 +3,7 @@
 Status date: 2026-03-31
 
 Status: landed on `main`; reverified again on 2026-03-31 with the focused
-parser, input-surface, and type-check proofs passing at repo head `e9f54d61`,
+parser, input-surface, and type-check proofs passing at repo head `808ce22e`,
 and no remaining bounded product delta is visible in this family
 
 Purpose: preserve the current chord parser failure contract and its landing
@@ -157,10 +157,12 @@ Current focused proofs for this slice:
 - `pnpm exec tsc --noEmit`
 - the current proof set still matches the same bounded parser and
   input-surface contract after the 2026-03-31 recheck at verified repo head
-  `e9f54d61`
+  `808ce22e`
 
 ## Tracked Landing
 
+- `808ce22e2c1cb91568b584dca34b67fbc4b85323`:
+  `commitpath_c40ed88d Refresh chord parser failure truth evidence`
 - `cbe367650e58fe4584fb35da32103ff71c6b82d8`:
   `commitpath_c40ed88d Keep repeat-after-rest parser truth blocked`
 - `889233623b9b0eba1d3b86afdcf4c56fcb1f1bf4`:
@@ -403,6 +405,10 @@ Current focused proofs for this slice:
 - Commit `e9a0db10` kept invalid uploaded chord rows visible in the current
   product head, and the same focused proofs still passed without exposing a
   new parser-truth gap.
+- Commit `808ce22e` repeated that same repo-local evidence refresh after one
+  more clean focused recheck at the latest verified product head, so the
+  artifact now points at the checked `main` state instead of the prior
+  evidence pointer.
 - Commit `1d9f1d5a` repeated that same repo-local evidence refresh after
   another clean focused recheck, keeping the artifact aligned with the latest
   verified product head instead of stopping at the prior evidence pointer.
