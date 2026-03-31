@@ -2,7 +2,7 @@
 
 Status date: 2026-03-31
 
-Status: landed on `main`; reverified on 2026-03-31 after shared route-truth, fallback-handling truth, and explicit next-step truth landed, and no remaining product delta is visible in this family beyond this evidence refresh
+Status: landed on `main`; reverified on 2026-03-31 at head `26728535` after shared route-truth, fallback-handling truth, and explicit next-step truth landed, and no remaining product delta is visible in this family beyond this evidence refresh
 
 Purpose: preserve the current editor route contract and its landing proof in
 one repo-local place so future work does not have to reconstruct it from
@@ -80,6 +80,7 @@ Current focused proofs for this slice:
 
 - `pnpm exec vitest run src/lib/editor-route-truth.test.ts src/App.test.tsx src/pages/EditorPage.test.tsx`
 - `pnpm run type-check`
+- verification head: `26728535976db73d4930d426fe7add460fcecd20`
 
 ## Tracked Landing
 
@@ -131,12 +132,12 @@ Current focused proofs for this slice:
   `commitpath_c40ed88d: surface editor fallback handling truth`
 - `5d30628807dfa3d3d4d5ef7ac26b1013dabb5d2b`:
   `Promote editor route next-step truth`
-- `5d30628807dfa3d3d4d5ef7ac26b1013dabb5d2b`:
+- `26728535976db73d4930d426fe7add460fcecd20`:
   pre-refresh verification head for the latest 2026-03-31 route-truth evidence check
 - The landing made current route, fallback route, and route readiness explicit
   across auth bootstrap, route loading, malformed-route handling, missing or
   unavailable project states, and ready-state recovery.
-- The current `main` head at `5d306288` still preserves that contract. After
+- The current `main` head at `26728535` still preserves that contract. After
   the last doc-only evidence refresh at `83815871`, commit `1b7ce2d3` added
   explicit route-mode copy across the auth bootstrap loading gate, editor route
   shells, and ready banner without changing the fallback route contract.
