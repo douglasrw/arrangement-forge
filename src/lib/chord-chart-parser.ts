@@ -5,6 +5,7 @@ import { parseChordInput } from './chords';
 import type { ChordEntry } from '@/types';
 
 export interface ChordChartParseIssue {
+  lineNumber: number;
   barNumber: number;
   token: string;
   reason: 'repeat_without_previous' | 'repeat_without_resolved_chord' | 'invalid_token';
@@ -39,6 +40,10 @@ function isSectionHeaderLine(line: string) {
   return /^\[.*\]$/.test(line) || SECTION_HEADER_RE.test(line);
 }
 
+function formatIssueLocation(issue: Pick<ChordChartParseIssue, 'lineNumber' | 'barNumber'>) {
+  return `Line ${issue.lineNumber}, bar ${issue.barNumber}`;
+}
+
 /**
  * Parse a raw chord chart string into a sequence of ChordEntry objects.
  * Supports pipe-separated bars, space-separated bars, newline-delimited sections,
@@ -69,7 +74,9 @@ export function parseChordChart(raw: string, key: string): ChordChartParseResult
   let prevChord: ChordEntry | null = null;
   let prevBarState: ParsedBarState | null = null;
 
-  for (const line of lines) {
+  for (const [lineIndex, line] of lines.entries()) {
+    const lineNumber = lineIndex + 1;
+
     // Skip section header lines like [Verse 1], Verse:, [Chorus], [Bridge], etc.
     if (isSectionHeaderLine(line)) continue;
 
@@ -89,6 +96,7 @@ export function parseChordChart(raw: string, key: string): ChordChartParseResult
           key,
           prevChord,
           prevBarState,
+          lineNumber,
           barNumber,
           warnings,
           issues
@@ -185,6 +193,7 @@ function parseBarToken(
   key: string,
   prevChord: ChordEntry | null,
   prevBarState: ParsedBarState | null,
+  lineNumber: number,
   barNumber: number,
   warnings: string[],
   issues: ChordChartParseIssue[]
@@ -201,9 +210,11 @@ function parseBarToken(
     }
 
     if (prevChord && prevBarState === 'issue') {
-      const message = `Bar ${barNumber}: repeat marker "${token}" follows a bar that could not be resolved, treated as N.C.`;
+      const location = formatIssueLocation({ lineNumber, barNumber });
+      const message = `${location}: repeat marker "${token}" follows a bar that could not be resolved, treated as N.C.`;
       warnings.push(message);
       issues.push({
+        lineNumber,
         barNumber,
         token,
         reason: 'repeat_without_resolved_chord',
@@ -215,9 +226,11 @@ function parseBarToken(
       };
     }
 
-    const message = `Bar ${barNumber}: repeat marker "${token}" with no previous chord, treated as N.C.`;
+    const location = formatIssueLocation({ lineNumber, barNumber });
+    const message = `${location}: repeat marker "${token}" with no previous chord, treated as N.C.`;
     warnings.push(message);
     issues.push({
+      lineNumber,
       barNumber,
       token,
       reason: 'repeat_without_previous',
@@ -251,9 +264,11 @@ function parseBarToken(
     };
   }
 
-  const message = `Bar ${barNumber}: could not parse "${token}", treated as N.C.`;
+  const location = formatIssueLocation({ lineNumber, barNumber });
+  const message = `${location}: could not parse "${token}", treated as N.C.`;
   warnings.push(message);
   issues.push({
+    lineNumber,
     barNumber,
     token,
     reason: 'invalid_token',

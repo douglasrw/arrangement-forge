@@ -255,10 +255,12 @@ describe('InputSection upload tab', () => {
       'Next step: Replace the flagged repeat bars with explicit chords or fix the bar before them.'
     );
     expect(mounted.container.textContent).toContain('Blocked');
-    expect(mounted.container.textContent).toContain('Flagged bars: Bar 2: could not parse "xyz??"');
-    expect(mounted.container.textContent).toContain('Bar 2: could not parse "xyz??"');
     expect(mounted.container.textContent).toContain(
-      'Bar 3: repeat marker "%" follows a bar that could not be resolved'
+      'Flagged chart locations: Line 1, bar 2: could not parse "xyz??"'
+    );
+    expect(mounted.container.textContent).toContain('Line 1, bar 2: could not parse "xyz??"');
+    expect(mounted.container.textContent).toContain(
+      'Line 1, bar 3: repeat marker "%" follows a bar that could not be resolved'
     );
     expect(chordChartHint?.textContent).toContain(
       'Bars 2 and 3 will become N.C. during generation, so Generate stays blocked until the chart is fixed.'
@@ -266,9 +268,11 @@ describe('InputSection upload tab', () => {
     expect(chordChartHint?.textContent).toContain(
       'Next step: Replace the flagged repeat bars with explicit chords or fix the bar before them.'
     );
-    expect(chordChartHint?.textContent).toContain('Flagged bars: Bar 2: could not parse "xyz??"');
     expect(chordChartHint?.textContent).toContain(
-      'Bar 3: repeat marker "%" follows a bar that could not be resolved'
+      'Flagged chart locations: Line 1, bar 2: could not parse "xyz??"'
+    );
+    expect(chordChartHint?.textContent).toContain(
+      'Line 1, bar 3: repeat marker "%" follows a bar that could not be resolved'
     );
     expect(getGenerateButton(mounted.container).disabled).toBe(true);
   });
@@ -292,7 +296,7 @@ describe('InputSection upload tab', () => {
       'Replace the flagged repeat bars with explicit chords or fix the bar before them.'
     );
     expect(mounted.container.textContent).toContain(
-      'Bar 1: repeat marker "%" with no previous chord'
+      'Line 1, bar 1: repeat marker "%" with no previous chord'
     );
   });
 
@@ -307,12 +311,14 @@ describe('InputSection upload tab', () => {
     mountedRoot = mounted.root;
     mountedContainer = mounted.container;
 
-    expect(mounted.container.textContent).toContain('Flagged bars: Bar 1: could not parse "xyz??"');
     expect(mounted.container.textContent).toContain(
-      'Bar 2: repeat marker "%" follows a bar that could not be resolved'
+      'Flagged chart locations: Line 1, bar 1: could not parse "xyz??"'
     );
     expect(mounted.container.textContent).toContain(
-      'Bar 3: repeat marker "/" follows a bar that could not be resolved'
+      'Line 1, bar 2: repeat marker "%" follows a bar that could not be resolved'
+    );
+    expect(mounted.container.textContent).toContain(
+      'Line 1, bar 3: repeat marker "/" follows a bar that could not be resolved'
     );
     expect(mounted.container.textContent).toContain(
       '1 more flagged bar needs review in the chord chart before generation.'
@@ -338,12 +344,14 @@ describe('InputSection upload tab', () => {
     expect(chordChartHint?.textContent).toContain(
       'Bars 1, 2, 3, and 4 will become N.C. during generation, so Generate stays blocked until the chart is fixed.'
     );
-    expect(chordChartHint?.textContent).toContain('Flagged bars: Bar 1: could not parse "xyz??"');
     expect(chordChartHint?.textContent).toContain(
-      'Bar 2: repeat marker "%" follows a bar that could not be resolved'
+      'Flagged chart locations: Line 1, bar 1: could not parse "xyz??"'
     );
     expect(chordChartHint?.textContent).toContain(
-      'Bar 3: repeat marker "/" follows a bar that could not be resolved'
+      'Line 1, bar 2: repeat marker "%" follows a bar that could not be resolved'
+    );
+    expect(chordChartHint?.textContent).toContain(
+      'Line 1, bar 3: repeat marker "/" follows a bar that could not be resolved'
     );
     expect(chordChartHint?.textContent).toContain(
       '1 more flagged bar needs review in the chord chart before generation.'
@@ -619,6 +627,36 @@ describe('InputSection upload tab', () => {
       'Bars 2 and 3 will become N.C. during generation, so Generate stays blocked until the chart is fixed.'
     );
     expect(getGenerateButton(mounted.container).disabled).toBe(true);
+  });
+
+  it('surfaces line-aware chart locations when invalid rows appear after a section header', () => {
+    useProjectStore.setState({
+      project: makeProject({
+        chordChartRaw: '[Verse]\nCmaj7 | xyz?? | %',
+      }),
+    });
+
+    const mounted = renderSection();
+    mountedRoot = mounted.root;
+    mountedContainer = mounted.container;
+    openTextTab(mounted.container);
+
+    const chordChartHint = mounted.container.querySelector(
+      '[data-chord-chart-editor-state]'
+    ) as HTMLParagraphElement | null;
+
+    expect(mounted.container.textContent).toContain(
+      'Flagged chart locations: Line 2, bar 2: could not parse "xyz??"'
+    );
+    expect(mounted.container.textContent).toContain(
+      'Line 2, bar 3: repeat marker "%" follows a bar that could not be resolved'
+    );
+    expect(chordChartHint?.textContent).toContain(
+      'Flagged chart locations: Line 2, bar 2: could not parse "xyz??"'
+    );
+    expect(chordChartHint?.textContent).toContain(
+      'Line 2, bar 3: repeat marker "%" follows a bar that could not be resolved'
+    );
   });
 
   it('surfaces an explicit error for unreadable uploads', async () => {

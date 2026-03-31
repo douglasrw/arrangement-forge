@@ -95,6 +95,7 @@ describe('parseChordChart', () => {
     expect(warnings[0]).toContain('xyz??');
     expect(issues).toEqual([
       expect.objectContaining({
+        lineNumber: 1,
         barNumber: 2,
         token: 'xyz??',
         reason: 'invalid_token',
@@ -108,7 +109,7 @@ describe('parseChordChart', () => {
       summary: '1 bar has an unrecognized chord token.',
       nextStep: 'Fix or replace the flagged chord bars before generating.',
       blockedBars: [2],
-      issueHighlights: ['Bar 2: could not parse "xyz??"'],
+      issueHighlights: ['Line 1, bar 2: could not parse "xyz??"'],
       remainingIssueCount: 0,
     });
   });
@@ -118,6 +119,7 @@ describe('parseChordChart', () => {
     expect(chords[0].degree).toBeNull();
     expect(issues).toEqual([
       expect.objectContaining({
+        lineNumber: 1,
         barNumber: 1,
         token: '%',
         reason: 'repeat_without_previous',
@@ -131,11 +133,13 @@ describe('parseChordChart', () => {
     expect(chords[1].degree).toBeNull();
     expect(issues).toEqual([
       expect.objectContaining({
+        lineNumber: 1,
         barNumber: 1,
         token: 'xyz??',
         reason: 'invalid_token',
       }),
       expect.objectContaining({
+        lineNumber: 1,
         barNumber: 2,
         token: '%',
         reason: 'repeat_without_resolved_chord',
@@ -151,8 +155,8 @@ describe('parseChordChart', () => {
       nextStep: 'Replace the flagged repeat bars with explicit chords or fix the bar before them.',
       blockedBars: [1, 2],
       issueHighlights: [
-        'Bar 1: could not parse "xyz??"',
-        'Bar 2: repeat marker "%" follows a bar that could not be resolved',
+        'Line 1, bar 1: could not parse "xyz??"',
+        'Line 1, bar 2: repeat marker "%" follows a bar that could not be resolved',
       ],
       remainingIssueCount: 0,
     });
@@ -164,12 +168,35 @@ describe('parseChordChart', () => {
     expect(truth).toMatchObject({
       blockedBars: [1, 2, 3, 4],
       issueHighlights: [
-        'Bar 1: could not parse "xyz??"',
-        'Bar 2: repeat marker "%" follows a bar that could not be resolved',
-        'Bar 3: repeat marker "/" follows a bar that could not be resolved',
+        'Line 1, bar 1: could not parse "xyz??"',
+        'Line 1, bar 2: repeat marker "%" follows a bar that could not be resolved',
+        'Line 1, bar 3: repeat marker "/" follows a bar that could not be resolved',
       ],
       remainingIssueCount: 1,
     });
+  });
+
+  it('keeps issue locations line-aware when invalid bars appear after section headers', () => {
+    const { issues, truth } = parseChordChart('[Verse]\nCmaj7 | xyz?? | %', 'C');
+
+    expect(issues).toEqual([
+      expect.objectContaining({
+        lineNumber: 2,
+        barNumber: 2,
+        token: 'xyz??',
+        reason: 'invalid_token',
+      }),
+      expect.objectContaining({
+        lineNumber: 2,
+        barNumber: 3,
+        token: '%',
+        reason: 'repeat_without_resolved_chord',
+      }),
+    ]);
+    expect(truth.issueHighlights).toEqual([
+      'Line 2, bar 2: could not parse "xyz??"',
+      'Line 2, bar 3: repeat marker "%" follows a bar that could not be resolved',
+    ]);
   });
 
   it('handles slash chords', () => {

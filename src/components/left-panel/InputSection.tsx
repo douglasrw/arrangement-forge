@@ -291,7 +291,7 @@ export function InputSection() {
     ].filter(Boolean).join(" ")
     : inputReadiness.detail
   const parseFeedbackHighlights = hasParseIssues && parseTruth?.issueHighlights.length
-    ? `Flagged bars: ${parseTruth.issueHighlights.join(" ")}`
+    ? `Flagged chart locations: ${parseTruth.issueHighlights.join(" ")}`
     : null
   const parseFeedbackOverflow = hasParseIssues && (parseTruth?.remainingIssueCount ?? 0) > 0
     ? `${parseTruth?.remainingIssueCount} more flagged ${parseTruth?.remainingIssueCount === 1 ? "bar needs" : "bars need"} review in the chord chart before generation.`
