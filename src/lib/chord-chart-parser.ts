@@ -65,17 +65,17 @@ export function parseChordChart(raw: string, key: string): ChordChartParseResult
 
   // Normalize: strip carriage returns, collapse runs of whitespace
   const normalized = raw.replace(/\r/g, '').replace(/[ \t]+/g, ' ');
-  const lines = normalized
-    .split('\n')
-    .map((l) => l.trim())
-    .filter((l) => l.length > 0);
+  const lines = normalized.split('\n');
 
   let barNumber = 0;
   let prevChord: ChordEntry | null = null;
   let prevBarState: ParsedBarState | null = null;
 
-  for (const [lineIndex, line] of lines.entries()) {
+  for (const [lineIndex, rawLine] of lines.entries()) {
+    const line = rawLine.trim();
     const lineNumber = lineIndex + 1;
+
+    if (!line) continue;
 
     // Skip section header lines like [Verse 1], Verse:, [Chorus], [Bridge], etc.
     if (isSectionHeaderLine(line)) continue;

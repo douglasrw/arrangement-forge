@@ -199,6 +199,29 @@ describe('parseChordChart', () => {
     ]);
   });
 
+  it('keeps issue locations aligned to the original chart line numbers when blank lines are present', () => {
+    const { issues, truth } = parseChordChart('[Verse]\n\nCmaj7 | xyz?? | %', 'C');
+
+    expect(issues).toEqual([
+      expect.objectContaining({
+        lineNumber: 3,
+        barNumber: 2,
+        token: 'xyz??',
+        reason: 'invalid_token',
+      }),
+      expect.objectContaining({
+        lineNumber: 3,
+        barNumber: 3,
+        token: '%',
+        reason: 'repeat_without_resolved_chord',
+      }),
+    ]);
+    expect(truth.issueHighlights).toEqual([
+      'Line 3, bar 2: could not parse "xyz??"',
+      'Line 3, bar 3: repeat marker "%" follows a bar that could not be resolved',
+    ]);
+  });
+
   it('handles slash chords', () => {
     const { chords } = parseChordChart('G7/B', 'C');
     expect(chords[0].degree).toBe('V');

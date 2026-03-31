@@ -659,6 +659,36 @@ describe('InputSection upload tab', () => {
     );
   });
 
+  it('keeps parse failure line references aligned when blank lines separate the section header and blocked row', () => {
+    useProjectStore.setState({
+      project: makeProject({
+        chordChartRaw: '[Verse]\n\nCmaj7 | xyz?? | %',
+      }),
+    });
+
+    const mounted = renderSection();
+    mountedRoot = mounted.root;
+    mountedContainer = mounted.container;
+    openTextTab(mounted.container);
+
+    const chordChartHint = mounted.container.querySelector(
+      '[data-chord-chart-editor-state]'
+    ) as HTMLParagraphElement | null;
+
+    expect(mounted.container.textContent).toContain(
+      'Flagged chart locations: Line 3, bar 2: could not parse "xyz??"'
+    );
+    expect(mounted.container.textContent).toContain(
+      'Line 3, bar 3: repeat marker "%" follows a bar that could not be resolved'
+    );
+    expect(chordChartHint?.textContent).toContain(
+      'Flagged chart locations: Line 3, bar 2: could not parse "xyz??"'
+    );
+    expect(chordChartHint?.textContent).toContain(
+      'Line 3, bar 3: repeat marker "%" follows a bar that could not be resolved'
+    );
+  });
+
   it('surfaces an explicit error for unreadable uploads', async () => {
     useProjectStore.setState({
       project: makeProject({
