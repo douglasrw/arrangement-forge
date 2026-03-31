@@ -152,10 +152,11 @@ export function useAuth(): UseAuthResult {
       } else if (event === 'SIGNED_OUT') {
         const { authStatus, signedOutReason, user, profile } = useAuthStore.getState();
 
-        // Preserve the more specific bootstrap truth when no prior session existed.
+        // Preserve specific signed-out bootstrap truth when Supabase replays a trailing sign-out.
         if (
           authStatus === 'signed-out'
-          && signedOutReason === 'no-session'
+          && signedOutReason !== null
+          && signedOutReason !== 'signed-out'
           && !user
           && !profile
         ) {

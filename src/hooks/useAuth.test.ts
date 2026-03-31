@@ -679,6 +679,55 @@ describe('useAuth session bootstrap truth', () => {
     });
   });
 
+  it('keeps the missing-profile bootstrap truth when Supabase emits a trailing sign-out event', async () => {
+    supabaseMock.auth.getSession.mockResolvedValue({
+      data: {
+        session: {
+          user: { id: 'user-1', email: 'ash@example.com' },
+        },
+      },
+    });
+
+    const mounted = renderHarness();
+    mountedRoot = mounted.root;
+    mountedContainer = mounted.container;
+
+    act(() => {
+      hookValue!.initAuth();
+    });
+
+    await act(async () => {
+      await flushAsyncWork();
+    });
+
+    expect(useAuthStore.getState()).toMatchObject({
+      user: null,
+      profile: null,
+      authStatus: 'signed-out',
+      signedOutReason: 'missing-profile',
+    });
+
+    act(() => {
+      authStateChangeHandler?.('SIGNED_OUT', null);
+    });
+
+    expect(useAuthStore.getState()).toMatchObject({
+      user: null,
+      profile: null,
+      authStatus: 'signed-out',
+      signedOutReason: 'missing-profile',
+    });
+    expect(hookValue!.authTruth).toMatchObject({
+      status: 'signed-out',
+      access: 'blocked',
+      currentState: 'The saved profile is missing, so the session cannot reopen yet.',
+      nextStep: 'complete-profile',
+      nextStepLabel: 'Complete the profile',
+      nextStepDetail: 'Restore or complete the profile, then sign in again.',
+      signedOutReason: 'missing-profile',
+    });
+  });
+
   it('keeps the auth gate closed until a signed-in profile finishes hydrating', async () => {
     const profileRequest = createDeferred<ProfileQueryResult>();
     profileQueryResult = profileRequest.promise;
