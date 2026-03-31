@@ -394,6 +394,7 @@ describe('EditorPage route loading gate', () => {
     expect(document.body.textContent).toContain(
       'Route readiness: /project/project-a is ready in this workspace.'
     );
+    expect(document.body.textContent).toContain('Route target: /project/project-a');
     expect(document.body.textContent).toContain(
       'Current route: /project/project-a?tab=arrangement#bridge'
     );
@@ -747,6 +748,7 @@ describe('EditorPage route loading gate', () => {
 
     expect(loadProjectMock).not.toHaveBeenCalled();
     expect(queryNoProjectState()).not.toBeNull();
+    expect(document.body.textContent).toContain('Route target: /project');
     expect(document.body.textContent).toContain(
       'Current route: /project?tab=arrangement#new'
     );

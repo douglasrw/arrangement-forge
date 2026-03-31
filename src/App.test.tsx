@@ -270,6 +270,7 @@ describe('App protected route recovery truth', () => {
     expect(mounted.container.textContent).toContain(
       'Route readiness: /project is reserved as the editor fallback route until authentication finishes.'
     );
+    expect(mounted.container.textContent).toContain('Route target: /project');
     expect(mounted.container.textContent).toContain(
       'Current route: /project?tab=arrangement#new'
     );

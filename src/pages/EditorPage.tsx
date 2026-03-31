@@ -18,6 +18,7 @@ function EditorShellState({
   currentState,
   routeModeLabel,
   routeReadiness,
+  routeTarget,
   currentRoute,
   fallbackRoute,
   routeTruth,
@@ -34,6 +35,7 @@ function EditorShellState({
   currentState: string;
   routeModeLabel: string;
   routeReadiness: string;
+  routeTarget: string;
   currentRoute: string;
   fallbackRoute?: string;
   routeTruth: string;
@@ -70,6 +72,7 @@ function EditorShellState({
         <p className="text-xs text-foreground/80">Current state: {currentState}</p>
         <p className="text-xs text-foreground/80">Route mode: {routeModeLabel}</p>
         <p className="text-xs text-foreground/80">Route readiness: {routeReadiness}</p>
+        <p className="text-xs text-foreground/80">Route target: {routeTarget}</p>
         <p className="text-xs text-foreground/80">Current route: {currentRoute}</p>
         {fallbackRoute ? (
           <p className="text-xs text-foreground/80">Editor fallback route: {fallbackRoute}</p>
@@ -127,6 +130,7 @@ function EditorRouteReadyBanner({
   projectId,
   currentState,
   nextStep,
+  routeTarget,
   currentRoute,
   fallbackRoute,
   routeModeLabel,
@@ -137,6 +141,7 @@ function EditorRouteReadyBanner({
   projectId: string;
   currentState: string;
   nextStep: string;
+  routeTarget: string;
   currentRoute: string;
   fallbackRoute: string;
   routeModeLabel: string;
@@ -158,6 +163,7 @@ function EditorRouteReadyBanner({
       <p className="text-[11px] text-foreground/80">Next step: {nextStep}</p>
       <p className="text-[11px] text-foreground/80">Route mode: {routeModeLabel}</p>
       <p className="text-[11px] text-foreground/80">Route readiness: {routeReadiness}</p>
+      <p className="text-[11px] text-foreground/80">Route target: {routeTarget}</p>
       <p className="text-[11px] text-foreground/80">Current route: {currentRoute}</p>
       <p className="text-[11px] text-foreground/80">Editor fallback route: {fallbackRoute}</p>
       <p className="text-[11px] text-foreground/80">{routeTruth}</p>
@@ -240,6 +246,7 @@ export default function EditorPage({
             currentState={routeTruth.currentState}
             routeModeLabel={routeTruth.routeModeLabel}
             routeReadiness={routeTruth.routeReadiness}
+            routeTarget={routeTruth.routeLabel}
             currentRoute={routeTruth.currentRoute}
             fallbackRoute={routeTruth.fallbackRoute ?? undefined}
             routeTruth={routeTruth.routeTruth}
@@ -264,6 +271,7 @@ export default function EditorPage({
             currentState={routeTruth.currentState}
             routeModeLabel={routeTruth.routeModeLabel}
             routeReadiness={routeTruth.routeReadiness}
+            routeTarget={routeTruth.routeLabel}
             currentRoute={routeTruth.currentRoute}
             fallbackRoute={routeTruth.fallbackRoute ?? undefined}
             routeTruth={routeTruth.routeTruth}
@@ -294,6 +302,7 @@ export default function EditorPage({
             currentState={routeTruth.currentState}
             routeModeLabel={routeTruth.routeModeLabel}
             routeReadiness={routeTruth.routeReadiness}
+            routeTarget={routeTruth.routeLabel}
             currentRoute={routeTruth.currentRoute}
             fallbackRoute={routeTruth.fallbackRoute ?? undefined}
             routeTruth={routeTruth.routeTruth}
@@ -325,6 +334,7 @@ export default function EditorPage({
             currentState={routeTruth.currentState}
             routeModeLabel={routeTruth.routeModeLabel}
             routeReadiness={routeTruth.routeReadiness}
+            routeTarget={routeTruth.routeLabel}
             currentRoute={routeTruth.currentRoute}
             fallbackRoute={routeTruth.fallbackRoute ?? undefined}
             routeTruth={routeTruth.routeTruth}
@@ -348,6 +358,7 @@ export default function EditorPage({
           projectId={id}
           currentState={routeTruth.currentState}
           nextStep={routeTruth.nextStep}
+          routeTarget={routeTruth.routeLabel}
           currentRoute={routeTruth.currentRoute}
           fallbackRoute={routeTruth.fallbackRoute ?? '/project'}
           routeModeLabel={routeTruth.routeModeLabel}

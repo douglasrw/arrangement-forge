@@ -44,6 +44,9 @@ function LoadingScreen({
               Route readiness: {protectedRouteTruth.routeReadiness}
             </p>
             <p className="text-xs text-foreground/80">
+              Route target: {protectedRouteTruth.routeLabel}
+            </p>
+            <p className="text-xs text-foreground/80">
               Current route: {protectedRouteTruth.currentRoute}
             </p>
             {protectedRouteTruth.fallbackRoute ? (
