@@ -8,6 +8,7 @@ import type { Project } from '@/types';
 import { useProjectStore } from '@/store/project-store';
 import { useSelectionStore } from '@/store/selection-store';
 import { useUiStore } from '@/store/ui-store';
+import type { EditorRouteMode } from './EditorPage';
 import EditorPage from './EditorPage';
 
 const loadProjectMock = vi.fn<(projectId: string) => Promise<LoadProjectResult>>();
@@ -98,7 +99,7 @@ function makeProject(id: string): Project {
   };
 }
 
-function renderEditor(projectId: string | undefined) {
+function renderEditor(projectId: string | undefined, routeMode?: EditorRouteMode) {
   routeProjectId = projectId;
   const container = document.createElement('div');
   document.body.appendChild(container);
@@ -106,7 +107,7 @@ function renderEditor(projectId: string | undefined) {
   const root = createRoot(container);
 
   act(() => {
-    root.render(<EditorPage />);
+    root.render(<EditorPage routeMode={routeMode} />);
   });
 
   return { container, root };
@@ -126,6 +127,10 @@ function queryAppShell() {
 
 function queryErrorState() {
   return document.querySelector('[data-testid="editor-shell-error-state"]');
+}
+
+function queryNoProjectState() {
+  return document.querySelector('[data-testid="editor-shell-no-project-state"]');
 }
 
 function queryBackToLibraryLink() {
@@ -357,8 +362,8 @@ describe('EditorPage route loading gate', () => {
     expect(queryBackToLibraryLink()).not.toBeNull();
   });
 
-  it('shows an explicit next step when the editor route is missing a project id', async () => {
-    const mounted = renderEditor(undefined);
+  it('shows an explicit no-project-selected state for the /project fallback route', async () => {
+    const mounted = renderEditor(undefined, 'project-selection');
     mountedRoot = mounted.root;
     mountedContainer = mounted.container;
 
@@ -367,13 +372,13 @@ describe('EditorPage route loading gate', () => {
     });
 
     expect(loadProjectMock).not.toHaveBeenCalled();
-    expect(queryErrorState()).not.toBeNull();
+    expect(queryNoProjectState()).not.toBeNull();
     expect(querySelectionSurface()).toBeNull();
     expect(document.body.textContent).toContain(
-      'The requested project route is missing an id.'
+      'The editor route is open, but no project has been selected yet.'
     );
     expect(document.body.textContent).toContain(
-      'Next step: Return to the library, then retry this project after the load failure is resolved.'
+      'Next step: Return to the library, then open an existing project or create a new one.'
     );
     expect(queryBackToLibraryLink()).not.toBeNull();
   });

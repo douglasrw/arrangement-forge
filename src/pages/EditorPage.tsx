@@ -5,6 +5,8 @@ import type { LoadProjectResult } from '@/hooks/useProject';
 import { useProject } from '@/hooks/useProject';
 import { useProjectStore } from '@/store/project-store';
 
+export type EditorRouteMode = 'project-selection' | 'project-id';
+
 function EditorShellState({
   title,
   message,
@@ -62,6 +64,7 @@ function EditorShellState({
 
 type EditorRouteState =
   | { status: 'loading' }
+  | { status: 'no-project-selected'; message: string }
   | { status: 'missing-project'; message: string }
   | { status: 'error'; message: string }
   | { status: 'ready' };
@@ -72,7 +75,11 @@ function getLoadingMessage(projectId: string | undefined) {
     : 'Opening the requested project route in the editor.';
 }
 
-export default function EditorPage() {
+export default function EditorPage({
+  routeMode = 'project-id',
+}: {
+  routeMode?: EditorRouteMode;
+}) {
   const { id } = useParams<{ id: string }>();
   const { loadProject } = useProject();
   const loadedProjectId = useProjectStore((state) => state.project?.id ?? null);
@@ -81,8 +88,11 @@ export default function EditorPage() {
   useEffect(() => {
     if (!id) {
       setRouteState({
-        status: 'error',
-        message: 'The requested project route is missing an id.',
+        status: routeMode === 'project-selection' ? 'no-project-selected' : 'error',
+        message:
+          routeMode === 'project-selection'
+            ? 'The editor route is open, but no project has been selected yet.'
+            : 'The requested project route is missing an id.',
       });
       return;
     }
@@ -104,7 +114,7 @@ export default function EditorPage() {
     return () => {
       cancelled = true;
     };
-  }, [id, loadProject]);
+  }, [id, loadProject, routeMode]);
 
   if (routeState.status === 'loading' || (routeState.status === 'ready' && loadedProjectId !== id)) {
     return (
@@ -117,6 +127,25 @@ export default function EditorPage() {
             nextStep="Wait for the current route load to finish before editing this arrangement."
             testId="editor-shell-loading-state"
             routeStatus="loading"
+          />
+        }
+      />
+    );
+  }
+
+  if (routeState.status === 'no-project-selected') {
+    return (
+      <AppShell
+        shellStatus="saved"
+        shellBody={
+          <EditorShellState
+            title="Choose a project to open the editor"
+            message={routeState.message}
+            nextStep="Return to the library, then open an existing project or create a new one."
+            testId="editor-shell-no-project-state"
+            actionHref="/library"
+            actionLabel="Go to library"
+            routeStatus="error"
           />
         }
       />

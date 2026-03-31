@@ -16,7 +16,11 @@ vi.mock('@/pages/LibraryPage', () => ({
 }));
 
 vi.mock('@/pages/EditorPage', () => ({
-  default: () => <div data-testid="editor-page">Editor page</div>,
+  default: ({ routeMode }: { routeMode?: 'project-selection' | 'project-id' }) => (
+    <div data-testid="editor-page" data-route-mode={routeMode ?? 'project-id'}>
+      Editor page
+    </div>
+  ),
 }));
 
 vi.mock('@/pages/SettingsPage', () => ({
@@ -239,6 +243,9 @@ describe('App protected route recovery truth', () => {
 
     expect(router.state.location.pathname).toBe('/project');
     expect(container.querySelector('[data-testid="editor-page"]')).not.toBeNull();
+    expect(container.querySelector('[data-testid="editor-page"]')?.getAttribute('data-route-mode')).toBe(
+      'project-selection'
+    );
   });
 
   it('removes protected content immediately after auth state is cleared', async () => {

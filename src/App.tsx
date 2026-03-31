@@ -98,7 +98,7 @@ export function createAppRoutes() {
       path: '/project',
       element: (
         <AuthGuard>
-          <EditorPage />
+          <EditorPage routeMode="project-selection" />
         </AuthGuard>
       ),
     },
@@ -106,7 +106,7 @@ export function createAppRoutes() {
       path: '/project/:id',
       element: (
         <AuthGuard>
-          <EditorPage />
+          <EditorPage routeMode="project-id" />
         </AuthGuard>
       ),
     },
