@@ -390,6 +390,41 @@ describe('InputSection upload tab', () => {
     expect(getGenerateButton(mounted.container).disabled).toBe(true);
   });
 
+  it('turns blocked chord-chart recovery into a direct action from the default tab', () => {
+    useProjectStore.setState({
+      project: makeProject({
+        chordChartRaw: 'Cmaj7 | xyz?? | %',
+      }),
+    });
+
+    const mounted = renderSection();
+    mountedRoot = mounted.root;
+    mountedContainer = mounted.container;
+
+    const reviewButton = Array.from(mounted.container.querySelectorAll('button')).find(
+      (button) => button.textContent === 'Review chord chart text'
+    ) as HTMLButtonElement | undefined;
+
+    expect(reviewButton).not.toBeUndefined();
+
+    act(() => {
+      reviewButton?.dispatchEvent(new MouseEvent('click', { bubbles: true }));
+    });
+
+    const chordChartInput = mounted.container.querySelector('#chord-chart-raw-input') as HTMLTextAreaElement | null;
+
+    expect(chordChartInput).not.toBeNull();
+    expect(document.activeElement).toBe(chordChartInput);
+    expect(
+      Array.from(mounted.container.querySelectorAll('button')).some(
+        (button) => button.textContent === 'Review chord chart text'
+      )
+    ).toBe(false);
+    expect(mounted.container.textContent).toContain(
+      'Blocked tokens: bar 2 "xyz??"; bar 3 "%".'
+    );
+  });
+
   it('keeps all-invalid charts visibly blocked with parse failure truth instead of generic missing-bar copy', () => {
     useProjectStore.setState({
       project: makeProject({

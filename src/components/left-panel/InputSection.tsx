@@ -1,4 +1,4 @@
-import { useState, type ChangeEvent } from "react"
+import { useEffect, useRef, useState, type ChangeEvent } from "react"
 import { cn } from "@/lib/utils"
 import { parseChordInput } from "@/lib/chords"
 import { parseChordChart } from "@/lib/chord-chart-parser"
@@ -265,6 +265,7 @@ function formatImportedChordChartFeedback(
 export function InputSection() {
   const [activeTab, setActiveTab] = useState<InputTab>("Chord")
   const [isImporting, setIsImporting] = useState(false)
+  const [shouldFocusChordChartEditor, setShouldFocusChordChartEditor] = useState(false)
   const [uploadFeedback, setUploadFeedback] = useState<{
     tone: UploadFeedbackTone
     message: string
@@ -272,6 +273,7 @@ export function InputSection() {
     tone: "neutral",
     message: DEFAULT_UPLOAD_FEEDBACK,
   })
+  const chordChartEditorRef = useRef<HTMLTextAreaElement | null>(null)
 
   const { project, updateProject } = useProjectStore()
   const { runGeneration } = useGenerate()
@@ -330,6 +332,20 @@ export function InputSection() {
       parseFeedbackOverflow,
     ].filter(Boolean).join(" ")
     : "Use one bar per token or pipe-separated bar, and bracket section labels like [Verse] when needed."
+
+  useEffect(() => {
+    if (!shouldFocusChordChartEditor || activeTab !== "Text") {
+      return
+    }
+
+    chordChartEditorRef.current?.focus()
+    setShouldFocusChordChartEditor(false)
+  }, [activeTab, shouldFocusChordChartEditor])
+
+  function handleReviewBlockedChart() {
+    setShouldFocusChordChartEditor(true)
+    setActiveTab("Text")
+  }
 
   async function handleUploadChange(event: ChangeEvent<HTMLInputElement>) {
     const input = event.currentTarget
@@ -471,6 +487,15 @@ export function InputSection() {
           {parseFeedbackOverflow && (
             <p className="mt-1 text-muted-foreground">{parseFeedbackOverflow}</p>
           )}
+          {activeTab !== "Text" && (
+            <button
+              type="button"
+              onClick={handleReviewBlockedChart}
+              className="mt-2 inline-flex rounded-md border border-destructive/40 px-2 py-1 text-[11px] font-medium text-destructive transition-colors hover:bg-destructive/10 focus:outline-none focus:ring-1 focus:ring-destructive/40"
+            >
+              Review chord chart text
+            </button>
+          )}
         </div>
       )}
 
@@ -515,6 +540,7 @@ export function InputSection() {
               Chord Chart
             </label>
             <textarea
+              ref={chordChartEditorRef}
               id="chord-chart-raw-input"
               value={chordChartRaw}
               onChange={(e) => updateProject({ chordChartRaw: e.target.value })}
