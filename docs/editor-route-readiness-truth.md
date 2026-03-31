@@ -2,7 +2,7 @@
 
 Status date: 2026-03-31
 
-Status: landed on `main`; reverified on current `main` with focused route proofs on 2026-03-31
+Status: landed on `main`; reverified at `577493b5` on 2026-03-31 with focused route proofs
 
 Purpose: preserve the current editor route contract and its landing proof in
 one repo-local place so future work does not have to reconstruct it from
@@ -56,12 +56,16 @@ Current focused proofs for this slice:
   `commitpath_c40ed88d Add exact fallback route truth regressions`
 - `8b9593e1f868f29b8f05c3764797ef65e9097965`:
   `commitpath_c40ed88d Refresh editor route readiness truth evidence`
+- `34fea3b93c03cd9f6cff8007d3f7c2a326772682`:
+  `commitpath_c40ed88d Reverify editor route readiness truth docs`
+- `577493b594a29bf0424880078a3432c5516e514b`:
+  `commitpath_c40ed88d Refresh editor route readiness truth evidence`
 - The landing made current route, fallback route, and route readiness explicit
   across auth bootstrap, route loading, malformed-route handling, missing or
   unavailable project states, and ready-state recovery.
 - The current `main` head still preserves that contract, and the focused route
-  proofs passed again on 2026-03-31 without additional product changes to the
-  route surface.
+  proofs passed again at `577493b5` on 2026-03-31 without additional product
+  changes to the route surface.
 
 The tests cover:
 
