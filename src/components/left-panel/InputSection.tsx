@@ -1,6 +1,7 @@
 import { useState, type ChangeEvent } from "react"
 import { cn } from "@/lib/utils"
 import { parseChordInput } from "@/lib/chords"
+import { parseChordChart } from "@/lib/chord-chart-parser"
 import { ChordPalette } from "./ChordPalette"
 import { getInputReadinessTruth } from "./left-panel-readiness"
 import { useProjectStore } from "@/store/project-store"
@@ -171,6 +172,13 @@ function formatImportedNotesFeedback(
   return `Imported ${fileName} and updated Description with ${noteCount} note ${noteCount === 1 ? "line" : "lines"}.`
 }
 
+function formatParseIssueList(rawWarnings: string[]) {
+  return rawWarnings
+    .slice(0, 3)
+    .map((warning) => warning.replace(/, treated as N\.C\.$/, ""))
+    .join(" ")
+}
+
 export function InputSection() {
   const [activeTab, setActiveTab] = useState<InputTab>("Chord")
   const [isImporting, setIsImporting] = useState(false)
@@ -192,6 +200,11 @@ export function InputSection() {
   const projectKey = project?.key ?? "C"
   const timeSignature = project?.timeSignature ?? "4/4"
   const hasChordChart = Boolean(chordChartRaw.trim())
+  const parseResult = hasProject && hasChordChart
+    ? parseChordChart(chordChartRaw, projectKey)
+    : null
+  const hasParseIssues = Boolean(parseResult && parseResult.issues.length > 0)
+  const parseIssueCount = parseResult?.issues.length ?? 0
   const isGenerating = generationState === "generating"
   const inputReadiness = getInputReadinessTruth({
     hasProject,
@@ -208,6 +221,12 @@ export function InputSection() {
       : isImporting
         ? "Importing chord chart..."
         : uploadFeedback.message
+  const parseFeedbackTitle = parseIssueCount === 1
+    ? "Chord chart needs attention"
+    : "Chord chart has parse issues"
+  const parseFeedbackDetail = hasParseIssues
+    ? `${parseIssueCount} ${parseIssueCount === 1 ? "bar could not be parsed" : "bars could not be parsed"} and will be treated as N.C. during generation. ${formatParseIssueList(parseResult?.warnings ?? [])}`
+    : null
 
   async function handleUploadChange(event: ChangeEvent<HTMLInputElement>) {
     const input = event.currentTarget
@@ -309,6 +328,23 @@ export function InputSection() {
           <p className="mt-1 text-muted-foreground">{inputReadiness.detail}</p>
         </div>
       </div>
+
+      {hasParseIssues && (
+        <div
+          data-chord-chart-parse-state="attention"
+          role="status"
+          aria-live="polite"
+          className="rounded-md border border-amber-500/30 bg-amber-500/10 px-3 py-2 text-xs leading-relaxed text-foreground"
+        >
+          <div className="flex items-center gap-2">
+            <span className="rounded-full bg-amber-500/10 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.18em] text-amber-300">
+              Attention
+            </span>
+            <span className="font-medium text-foreground">{parseFeedbackTitle}</span>
+          </div>
+          <p className="mt-1 text-muted-foreground">{parseFeedbackDetail}</p>
+        </div>
+      )}
 
       {/* Tab switcher row */}
       <div className="flex gap-1 rounded-md bg-secondary p-0.5">

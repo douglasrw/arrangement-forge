@@ -4,9 +4,17 @@
 import { parseChordInput } from './chords';
 import type { ChordEntry } from '@/types';
 
+export interface ChordChartParseIssue {
+  barNumber: number;
+  token: string;
+  reason: 'repeat_without_previous' | 'invalid_token';
+  message: string;
+}
+
 export interface ChordChartParseResult {
   chords: ChordEntry[];
   warnings: string[];
+  issues: ChordChartParseIssue[];
 }
 
 const REPEAT_MARKERS = new Set(['%', '/']);
@@ -18,9 +26,10 @@ const NC_TOKENS = new Set(['n.c.', 'nc', '-']);
  * repeat markers (% and /), and N.C. entries.
  */
 export function parseChordChart(raw: string, key: string): ChordChartParseResult {
-  if (!raw.trim()) return { chords: [], warnings: [] };
+  if (!raw.trim()) return { chords: [], warnings: [], issues: [] };
 
   const warnings: string[] = [];
+  const issues: ChordChartParseIssue[] = [];
   const chords: ChordEntry[] = [];
 
   // Normalize: strip carriage returns, collapse runs of whitespace
@@ -48,14 +57,14 @@ export function parseChordChart(raw: string, key: string): ChordChartParseResult
 
       for (const token of tokens) {
         barNumber++;
-        const entry = parseBarToken(token, key, prevChord, barNumber, warnings);
+        const entry = parseBarToken(token, key, prevChord, barNumber, warnings, issues);
         chords.push(entry);
         prevChord = entry;
       }
     }
   }
 
-  return { chords, warnings };
+  return { chords, warnings, issues };
 }
 
 function parseBarToken(
@@ -63,7 +72,8 @@ function parseBarToken(
   key: string,
   prevChord: ChordEntry | null,
   barNumber: number,
-  warnings: string[]
+  warnings: string[],
+  issues: ChordChartParseIssue[]
 ): ChordEntry {
   const lower = token.toLowerCase().trim();
 
@@ -72,7 +82,14 @@ function parseBarToken(
     if (prevChord) {
       return { ...prevChord, bar_number: barNumber };
     }
-    warnings.push(`Bar ${barNumber}: repeat marker "${token}" with no previous chord, treated as N.C.`);
+    const message = `Bar ${barNumber}: repeat marker "${token}" with no previous chord, treated as N.C.`;
+    warnings.push(message);
+    issues.push({
+      barNumber,
+      token,
+      reason: 'repeat_without_previous',
+      message,
+    });
     return { bar_number: barNumber, degree: null, quality: null, bass_degree: null };
   }
 
@@ -92,6 +109,13 @@ function parseBarToken(
     };
   }
 
-  warnings.push(`Bar ${barNumber}: could not parse "${token}", treated as N.C.`);
+  const message = `Bar ${barNumber}: could not parse "${token}", treated as N.C.`;
+  warnings.push(message);
+  issues.push({
+    barNumber,
+    token,
+    reason: 'invalid_token',
+    message,
+  });
   return { bar_number: barNumber, degree: null, quality: null, bass_degree: null };
 }

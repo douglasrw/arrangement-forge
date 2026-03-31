@@ -178,6 +178,28 @@ describe('InputSection upload tab', () => {
     expect(getGenerateButton(mounted.container).disabled).toBe(false);
   });
 
+  it('surfaces parse failure truth when the current chord chart has invalid bars', () => {
+    useProjectStore.setState({
+      project: makeProject({
+        chordChartRaw: 'Cmaj7 | xyz?? | %',
+      }),
+    });
+
+    const mounted = renderSection();
+    mountedRoot = mounted.root;
+    mountedContainer = mounted.container;
+
+    const parseTruth = mounted.container.querySelector(
+      '[data-chord-chart-parse-state]'
+    ) as HTMLDivElement | null;
+
+    expect(parseTruth?.getAttribute('data-chord-chart-parse-state')).toBe('attention');
+    expect(mounted.container.textContent).toContain('Chord chart needs attention');
+    expect(mounted.container.textContent).toContain('1 bar could not be parsed and will be treated as N.C. during generation.');
+    expect(mounted.container.textContent).toContain('Bar 2: could not parse "xyz??"');
+    expect(getGenerateButton(mounted.container).disabled).toBe(false);
+  });
+
   it('shows waiting readiness truth and blocks uploads while generation is running', () => {
     useProjectStore.setState({
       project: makeProject({

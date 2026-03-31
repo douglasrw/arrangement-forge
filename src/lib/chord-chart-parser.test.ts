@@ -66,10 +66,29 @@ describe('parseChordChart', () => {
   });
 
   it('unparseable token produces N.C. and a warning', () => {
-    const { chords, warnings } = parseChordChart('C | xyz??', 'C');
+    const { chords, warnings, issues } = parseChordChart('C | xyz??', 'C');
     expect(chords[1].degree).toBeNull();
     expect(warnings.length).toBeGreaterThan(0);
     expect(warnings[0]).toContain('xyz??');
+    expect(issues).toEqual([
+      expect.objectContaining({
+        barNumber: 2,
+        token: 'xyz??',
+        reason: 'invalid_token',
+      }),
+    ]);
+  });
+
+  it('captures repeat markers that do not have a previous chord', () => {
+    const { chords, issues } = parseChordChart('% | C', 'C');
+    expect(chords[0].degree).toBeNull();
+    expect(issues).toEqual([
+      expect.objectContaining({
+        barNumber: 1,
+        token: '%',
+        reason: 'repeat_without_previous',
+      }),
+    ]);
   });
 
   it('handles slash chords', () => {
