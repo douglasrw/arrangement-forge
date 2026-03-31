@@ -3,7 +3,7 @@
 Status date: 2026-03-31
 
 Status: landed on `main`; reverified on 2026-03-31 against current head
-`b44acb0c` with no remaining product delta visible in this family
+`942820f3` with no remaining product delta visible in this family
 
 Purpose: preserve the current settings and persisted profile validation
 contract in one repo-local place so future work does not have to reconstruct it
@@ -118,7 +118,7 @@ Current focused proofs for this slice:
 - The landing made saved, pending, unavailable, blocked-save, invalid, and
   failed-save states explicit on the settings surface instead of relying on
   hidden surrounding context.
-- The verified current head at `b44acb0c` still preserves that contract and
+- The verified current head at `942820f3` still preserves that contract and
   makes the saved-versus-next-save truth explicit for display name, chord
   display mode, and default genre on the settings surface.
 - The focused settings proofs passed again on 2026-03-31 against current
