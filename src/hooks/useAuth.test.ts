@@ -8,6 +8,10 @@ import { useAuthStore } from '@/store/auth-store';
 import { useUiStore } from '@/store/ui-store';
 
 type Row = Record<string, unknown>;
+type ProfileQueryResult = {
+  data: Row | null;
+  error: null;
+};
 
 const supabaseMock = vi.hoisted(() => ({
   auth: {
@@ -34,11 +38,10 @@ function createProfileQuery(profileRow: Row | null) {
   return {
     select: () => ({
       eq: () => ({
-        single: () =>
-          Promise.resolve({
-            data: profileRow,
-            error: null,
-          }),
+        single: () => profileQueryResult ?? Promise.resolve({
+          data: profileRow,
+          error: null,
+        }),
       }),
     }),
   };
@@ -48,6 +51,7 @@ let hookValue: ReturnType<typeof useAuth> | null = null;
 let mountedRoot: Root | null = null;
 let mountedContainer: HTMLDivElement | null = null;
 let profileRow: Row | null = null;
+let profileQueryResult: Promise<ProfileQueryResult> | null = null;
 let unsubscribeMock: ReturnType<typeof vi.fn>;
 let authStateChangeHandler:
   | ((event: string, session: { user?: { id: string; email?: string } } | null) => void)
@@ -57,6 +61,21 @@ async function flushAsyncWork() {
   await Promise.resolve();
   await Promise.resolve();
   await Promise.resolve();
+}
+
+function createDeferred<T>() {
+  let resolve: ((value: T | PromiseLike<T>) => void) | undefined;
+  let reject: ((reason?: unknown) => void) | undefined;
+  const promise = new Promise<T>((resolvePromise, rejectPromise) => {
+    resolve = resolvePromise;
+    reject = rejectPromise;
+  });
+
+  return {
+    promise,
+    resolve,
+    reject,
+  };
 }
 
 function UseAuthHarness() {
@@ -81,6 +100,7 @@ beforeEach(() => {
   reactActEnv.IS_REACT_ACT_ENVIRONMENT = true;
   hookValue = null;
   profileRow = null;
+  profileQueryResult = null;
   unsubscribeMock = vi.fn();
   authStateChangeHandler = null;
 
@@ -113,8 +133,22 @@ beforeEach(() => {
       },
     };
   });
-  supabaseMock.auth.signInWithPassword.mockResolvedValue({ error: null });
-  supabaseMock.auth.signUp.mockResolvedValue({ error: null });
+  supabaseMock.auth.signInWithPassword.mockResolvedValue({
+    data: {
+      session: {
+        user: { id: 'user-1', email: 'ash@example.com' },
+      },
+    },
+    error: null,
+  });
+  supabaseMock.auth.signUp.mockResolvedValue({
+    data: {
+      session: {
+        user: { id: 'user-1', email: 'ash@example.com' },
+      },
+    },
+    error: null,
+  });
   supabaseMock.auth.signInWithOAuth.mockResolvedValue({ error: null });
   supabaseMock.auth.signOut.mockResolvedValue({ error: null });
   supabaseMock.from.mockImplementation((table: string) => {
@@ -128,6 +162,8 @@ beforeEach(() => {
   useAuthStore.setState({
     user: null,
     profile: null,
+    authStatus: 'signed-out',
+    signedOutReason: 'no-session',
     isLoading: false,
     isAuthenticated: false,
   });
@@ -151,7 +187,7 @@ afterEach(() => {
 });
 
 describe('useAuth loadProfile', () => {
-  it('reloads the persisted profile and applies its chord display preference', async () => {
+  it('loads the persisted profile without opening the auth gate early', async () => {
     profileRow = {
       id: 'user-1',
       display_name: 'Ashlyn',
@@ -165,12 +201,14 @@ describe('useAuth loadProfile', () => {
     mountedRoot = mounted.root;
     mountedContainer = mounted.container;
 
+    let loadedProfile: Awaited<ReturnType<ReturnType<typeof useAuth>['loadProfile']>> | null = null;
+
     await act(async () => {
-      await hookValue!.loadProfile();
+      loadedProfile = await hookValue!.loadProfile();
       await Promise.resolve();
     });
 
-    expect(useAuthStore.getState().profile).toEqual({
+    expect(loadedProfile).toEqual({
       id: 'user-1',
       displayName: 'Ashlyn',
       chordDisplayMode: 'roman',
@@ -178,11 +216,33 @@ describe('useAuth loadProfile', () => {
       createdAt: '2026-03-29T00:00:00Z',
       updatedAt: '2026-03-29T01:00:00Z',
     });
-    expect(useUiStore.getState().chordDisplayMode).toBe('roman');
+    expect(useAuthStore.getState()).toMatchObject({
+      profile: null,
+      authStatus: 'signed-out',
+      isAuthenticated: false,
+    });
+    expect(useUiStore.getState().chordDisplayMode).toBe('letter');
   });
 });
 
 describe('useAuth auth action failures', () => {
+  it('marks the auth gate as checking-session after sign-in succeeds', async () => {
+    const mounted = renderHarness();
+    mountedRoot = mounted.root;
+    mountedContainer = mounted.container;
+
+    await act(async () => {
+      await hookValue!.signIn('ash@example.com', 'secret-1');
+    });
+
+    expect(useAuthStore.getState()).toMatchObject({
+      authStatus: 'checking-session',
+      signedOutReason: null,
+      isLoading: true,
+      isAuthenticated: false,
+    });
+  });
+
   it('preserves sign-in failures from Supabase', async () => {
     const failure = new Error('Invalid email or password');
     supabaseMock.auth.signInWithPassword.mockResolvedValue({ error: failure });
@@ -257,6 +317,7 @@ describe('useAuth session bootstrap truth', () => {
     });
 
     expect(useAuthStore.getState().isLoading).toBe(true);
+    expect(useAuthStore.getState().authStatus).toBe('checking-session');
 
     await act(async () => {
       await flushAsyncWork();
@@ -264,6 +325,8 @@ describe('useAuth session bootstrap truth', () => {
 
     expect(useAuthStore.getState()).toMatchObject({
       user: { id: 'user-1', email: 'ash@example.com' },
+      authStatus: 'authenticated',
+      signedOutReason: null,
       isAuthenticated: true,
       isLoading: false,
     });
@@ -307,6 +370,8 @@ describe('useAuth session bootstrap truth', () => {
     expect(useAuthStore.getState()).toMatchObject({
       user: null,
       profile: null,
+      authStatus: 'signed-out',
+      signedOutReason: 'missing-profile',
       isAuthenticated: false,
       isLoading: false,
     });
@@ -331,8 +396,61 @@ describe('useAuth session bootstrap truth', () => {
     expect(useAuthStore.getState()).toMatchObject({
       user: null,
       profile: null,
+      authStatus: 'signed-out',
+      signedOutReason: 'session-lookup-failed',
       isAuthenticated: false,
       isLoading: false,
+    });
+  });
+
+  it('keeps the auth gate closed until a signed-in profile finishes hydrating', async () => {
+    const profileRequest = createDeferred<ProfileQueryResult>();
+    profileQueryResult = profileRequest.promise;
+    supabaseMock.auth.getSession.mockImplementation(() => new Promise(() => {}));
+
+    const mounted = renderHarness();
+    mountedRoot = mounted.root;
+    mountedContainer = mounted.container;
+
+    act(() => {
+      hookValue!.initAuth();
+    });
+
+    await act(async () => {
+      authStateChangeHandler?.('SIGNED_IN', {
+        user: { id: 'user-1', email: 'ash@example.com' },
+      });
+      await Promise.resolve();
+    });
+
+    expect(useAuthStore.getState()).toMatchObject({
+      authStatus: 'checking-session',
+      signedOutReason: null,
+      isLoading: true,
+      isAuthenticated: false,
+    });
+
+    await act(async () => {
+      profileRequest.resolve?.({
+        data: {
+          id: 'user-1',
+          display_name: 'Ashlyn',
+          chord_display_mode: 'roman',
+          default_genre: 'Pop',
+          created_at: '2026-03-29T00:00:00Z',
+          updated_at: '2026-03-29T01:00:00Z',
+        },
+        error: null,
+      });
+      await flushAsyncWork();
+    });
+
+    expect(useAuthStore.getState()).toMatchObject({
+      user: { id: 'user-1', email: 'ash@example.com' },
+      authStatus: 'authenticated',
+      signedOutReason: null,
+      isLoading: false,
+      isAuthenticated: true,
     });
   });
 
@@ -366,7 +484,7 @@ describe('useAuth session bootstrap truth', () => {
     });
 
     act(() => {
-      useAuthStore.getState().setLoading(true);
+      useAuthStore.getState().beginSessionCheck();
       useUiStore.getState().setChordDisplayMode('roman');
       authStateChangeHandler?.('SIGNED_OUT', null);
     });
@@ -374,6 +492,8 @@ describe('useAuth session bootstrap truth', () => {
     expect(useAuthStore.getState()).toMatchObject({
       user: null,
       profile: null,
+      authStatus: 'signed-out',
+      signedOutReason: 'signed-out',
       isAuthenticated: false,
       isLoading: false,
     });
@@ -402,6 +522,8 @@ describe('useAuth signOut', () => {
         createdAt: '2026-03-29T00:00:00Z',
         updatedAt: '2026-03-29T01:00:00Z',
       },
+      authStatus: 'authenticated',
+      signedOutReason: null,
       isAuthenticated: true,
       isLoading: false,
     });
@@ -427,6 +549,8 @@ describe('useAuth signOut', () => {
     expect(useAuthStore.getState()).toMatchObject({
       user: null,
       profile: null,
+      authStatus: 'signed-out',
+      signedOutReason: 'signed-out',
       isAuthenticated: false,
       isLoading: false,
     });

@@ -97,6 +97,8 @@ beforeEach(() => {
   useAuthStore.setState({
     user: null,
     profile: null,
+    authStatus: 'signed-out',
+    signedOutReason: 'no-session',
     isLoading: false,
     isAuthenticated: false,
   });
@@ -132,6 +134,8 @@ describe('App protected route recovery truth', () => {
 
   it('shows the loading gate without flashing login or protected content during bootstrap', () => {
     useAuthStore.setState({
+      authStatus: 'checking-session',
+      signedOutReason: null,
       isLoading: true,
       isAuthenticated: false,
     });
@@ -149,6 +153,8 @@ describe('App protected route recovery truth', () => {
   it('keeps authenticated users on the requested protected route', async () => {
     useAuthStore.setState({
       user: { id: 'user-1', email: 'ash@example.com' },
+      authStatus: 'authenticated',
+      signedOutReason: null,
       isAuthenticated: true,
       isLoading: false,
     });
@@ -169,6 +175,8 @@ describe('App protected route recovery truth', () => {
   it('removes protected content immediately after auth state is cleared', async () => {
     useAuthStore.setState({
       user: { id: 'user-1', email: 'ash@example.com' },
+      authStatus: 'authenticated',
+      signedOutReason: null,
       isAuthenticated: true,
       isLoading: false,
     });
@@ -180,7 +188,7 @@ describe('App protected route recovery truth', () => {
     expect(mounted.container.querySelector('[data-testid="settings-page"]')).not.toBeNull();
 
     act(() => {
-      useAuthStore.getState().signOut();
+      useAuthStore.getState().setSignedOut('signed-out');
     });
 
     await act(async () => {

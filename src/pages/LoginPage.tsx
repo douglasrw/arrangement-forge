@@ -1,6 +1,7 @@
 import { useState, useEffect, FormEvent } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
+import type { AuthStatus, SignedOutReason } from '@/store/auth-store';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -42,10 +43,10 @@ function describeRecoveryDestination(path: string) {
 }
 
 function AuthLoadingScreen({
-  isAuthenticated,
+  authStatus,
   recoveryPath,
 }: {
-  isAuthenticated: boolean;
+  authStatus: AuthStatus;
   recoveryPath: string;
 }) {
   const recoveryDestination = describeRecoveryDestination(recoveryPath);
@@ -61,7 +62,7 @@ function AuthLoadingScreen({
           <div className="space-y-1">
             <h1 className="text-base font-semibold text-foreground">Waiting on authentication</h1>
             <p className="text-sm text-muted-foreground">
-              {isAuthenticated
+              {authStatus === 'authenticated'
                 ? `Your session is ready. Returning you to ${recoveryDestination}.`
                 : `Checking for an existing session before showing the form. If one is found, you will continue to ${recoveryDestination}.`}
             </p>
@@ -83,14 +84,46 @@ function getFailureTitle(path: 'signin' | 'signup' | 'google') {
   }
 }
 
+function getSignedOutNotice(reason: SignedOutReason | null, recoveryDestination: string) {
+  switch (reason) {
+    case 'signed-out':
+      return {
+        title: 'You have been signed out',
+        description: `Sign in again to return to ${recoveryDestination}.`,
+      };
+    case 'missing-profile':
+      return {
+        title: 'Profile setup is incomplete',
+        description: `Arrangement Forge could not reopen the session because no saved profile was found. Sign in again after your profile is ready, and it will return you to ${recoveryDestination}.`,
+      };
+    case 'profile-load-failed':
+      return {
+        title: 'Profile could not be restored',
+        description: `Arrangement Forge could not load your saved profile. Sign in again to retry, and it will return you to ${recoveryDestination}.`,
+      };
+    case 'session-lookup-failed':
+      return {
+        title: 'Session could not be restored',
+        description: `Arrangement Forge could not confirm your previous session. Sign in again to continue to ${recoveryDestination}.`,
+      };
+    default:
+      return {
+        title: 'Authentication blocked',
+        description: `Sign in with email, create an account, or continue with Google to unblock access. After authentication, Arrangement Forge will return you to ${recoveryDestination}.`,
+      };
+  }
+}
+
 function AuthStatusNotice({
   activeSubmissionPath,
   error,
   recoveryPath,
+  signedOutReason,
 }: {
   activeSubmissionPath: 'signin' | 'signup' | 'google' | null;
   error: { path: 'signin' | 'signup' | 'google'; message: string } | null;
   recoveryPath: string;
+  signedOutReason: SignedOutReason | null;
 }) {
   const recoveryDestination = describeRecoveryDestination(recoveryPath);
 
@@ -124,13 +157,12 @@ function AuthStatusNotice({
     );
   }
 
+  const signedOutNotice = getSignedOutNotice(signedOutReason, recoveryDestination);
+
   return (
     <Alert data-testid="auth-status-notice">
-      <AlertTitle>Authentication blocked</AlertTitle>
-      <AlertDescription>
-        Sign in with email, create an account, or continue with Google to unblock access.
-        After authentication, Arrangement Forge will return you to {recoveryDestination}.
-      </AlertDescription>
+      <AlertTitle>{signedOutNotice.title}</AlertTitle>
+      <AlertDescription>{signedOutNotice.description}</AlertDescription>
     </Alert>
   );
 }
@@ -139,8 +171,8 @@ export default function LoginPage() {
   const navigate = useNavigate();
   const location = useLocation();
   const {
-    isAuthenticated,
-    isLoading,
+    authStatus,
+    signedOutReason,
     signIn,
     signUp,
     signInWithGoogle,
@@ -153,12 +185,14 @@ export default function LoginPage() {
   const [error, setError] = useState<{ path: 'signin' | 'signup' | 'google'; message: string } | null>(null);
   const recoveryPath = resolveRecoveryPath(location.state);
   const isSubmitting = activeSubmissionPath !== null;
+  const isCheckingSession = authStatus === 'checking-session';
+  const hasAuthenticatedSession = authStatus === 'authenticated';
 
   useEffect(() => {
-    if (!isLoading && isAuthenticated) {
+    if (hasAuthenticatedSession) {
       navigate(recoveryPath, { replace: true });
     }
-  }, [isAuthenticated, isLoading, navigate, recoveryPath]);
+  }, [hasAuthenticatedSession, navigate, recoveryPath]);
 
   async function handleSubmit(e: FormEvent) {
     e.preventDefault();
@@ -197,8 +231,8 @@ export default function LoginPage() {
     }
   }
 
-  if (isLoading || isAuthenticated) {
-    return <AuthLoadingScreen isAuthenticated={isAuthenticated} recoveryPath={recoveryPath} />;
+  if (isCheckingSession || hasAuthenticatedSession) {
+    return <AuthLoadingScreen authStatus={authStatus} recoveryPath={recoveryPath} />;
   }
 
   return (
@@ -219,6 +253,7 @@ export default function LoginPage() {
             activeSubmissionPath={activeSubmissionPath}
             error={error}
             recoveryPath={recoveryPath}
+            signedOutReason={signedOutReason}
           />
 
           {/* Mode toggle */}

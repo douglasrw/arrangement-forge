@@ -4,14 +4,15 @@ import { useCallback } from 'react';
 import type { User } from '@supabase/supabase-js';
 import { supabase } from '@/lib/supabase';
 import { rowToProfile } from '@/lib/profile';
+import type { SignedOutReason } from '@/store/auth-store';
 import { useAuthStore } from '@/store/auth-store';
 import { useUiStore } from '@/store/ui-store';
 
 export function useAuth() {
   const authStore = useAuthStore();
 
-  const clearSessionState = useCallback(() => {
-    useAuthStore.getState().signOut();
+  const clearSessionState = useCallback((reason: SignedOutReason) => {
+    useAuthStore.getState().setSignedOut(reason);
     useUiStore.getState().setChordDisplayMode('letter');
   }, []);
 
@@ -37,23 +38,36 @@ export function useAuth() {
     if (!data) return null;
 
     const profile = rowToProfile(data as Record<string, unknown>);
-    useAuthStore.getState().setProfile(profile);
-    useUiStore.getState().setChordDisplayMode(profile.chordDisplayMode);
     return profile;
   }, []);
 
   const hydrateSession = useCallback(async (user: User) => {
-    const profile = await loadProfile(user.id);
+    try {
+      const profile = await loadProfile(user.id);
 
-    if (!profile) {
-      throw new Error('Authenticated session is missing a persisted profile.');
+      if (!profile) {
+        return {
+          ok: false as const,
+          reason: 'missing-profile' as const,
+        };
+      }
+
+      useAuthStore.getState().completeAuthenticatedSession({ user, profile });
+      useUiStore.getState().setChordDisplayMode(profile.chordDisplayMode);
+
+      return {
+        ok: true as const,
+      };
+    } catch {
+      return {
+        ok: false as const,
+        reason: 'profile-load-failed' as const,
+      };
     }
-
-    useAuthStore.getState().setUser(user);
   }, [loadProfile]);
 
   const initAuth = useCallback(() => {
-    useAuthStore.getState().setLoading(true);
+    useAuthStore.getState().beginSessionCheck();
     let isActive = true;
 
     void supabase.auth.getSession()
@@ -61,25 +75,17 @@ export function useAuth() {
         if (!isActive) return;
 
         if (session?.user) {
-          try {
-            await hydrateSession(session.user);
-          } catch {
-            if (isActive) {
-              clearSessionState();
-            }
+          const hydrationResult = await hydrateSession(session.user);
+          if (isActive && !hydrationResult.ok) {
+            clearSessionState(hydrationResult.reason);
           }
         } else {
-          clearSessionState();
+          clearSessionState('no-session');
         }
       })
       .catch(() => {
         if (isActive) {
-          clearSessionState();
-        }
-      })
-      .finally(() => {
-        if (isActive) {
-          useAuthStore.getState().setLoading(false);
+          clearSessionState('session-lookup-failed');
         }
       });
 
@@ -87,16 +93,14 @@ export function useAuth() {
       data: { subscription },
     } = supabase.auth.onAuthStateChange((event, session) => {
       if (event === 'SIGNED_IN' && session?.user) {
-        useAuthStore.getState().setUser(session.user);
-        void loadProfile(session.user.id).then((profile) => {
-          if (!profile) {
-            clearSessionState();
+        useAuthStore.getState().beginSessionCheck();
+        void hydrateSession(session.user).then((hydrationResult) => {
+          if (!hydrationResult.ok) {
+            clearSessionState(hydrationResult.reason);
           }
-        }).catch(() => {
-          clearSessionState();
         });
       } else if (event === 'SIGNED_OUT') {
-        clearSessionState();
+        clearSessionState('signed-out');
       }
     });
 
@@ -107,13 +111,19 @@ export function useAuth() {
   }, [clearSessionState, hydrateSession, loadProfile]);
 
   const signIn = useCallback(async (email: string, password: string) => {
-    const { error } = await supabase.auth.signInWithPassword({ email, password });
+    const { data, error } = await supabase.auth.signInWithPassword({ email, password });
     if (error) throw error;
+    if (data.session?.user) {
+      useAuthStore.getState().beginSessionCheck();
+    }
   }, []);
 
   const signUp = useCallback(async (email: string, password: string) => {
-    const { error } = await supabase.auth.signUp({ email, password });
+    const { data, error } = await supabase.auth.signUp({ email, password });
     if (error) throw error;
+    if (data.session?.user) {
+      useAuthStore.getState().beginSessionCheck();
+    }
   }, []);
 
   const signInWithGoogle = useCallback(async () => {
@@ -123,7 +133,7 @@ export function useAuth() {
 
   const signOut = useCallback(async () => {
     await supabase.auth.signOut();
-    clearSessionState();
+    clearSessionState('signed-out');
     window.location.href = '/login';
   }, [clearSessionState]);
 

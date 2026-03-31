@@ -6,8 +6,8 @@ import { createRoot, type Root } from 'react-dom/client';
 import LoginPage from './LoginPage';
 
 const authApi = vi.hoisted(() => ({
-  isAuthenticated: false,
-  isLoading: false,
+  authStatus: 'signed-out',
+  signedOutReason: 'no-session',
   signIn: vi.fn<(email: string, password: string) => Promise<void>>(),
   signUp: vi.fn<(email: string, password: string) => Promise<void>>(),
   signInWithGoogle: vi.fn<() => Promise<void>>(),
@@ -111,8 +111,8 @@ beforeEach(() => {
   authApi.signIn.mockReset();
   authApi.signUp.mockReset();
   authApi.signInWithGoogle.mockReset();
-  authApi.isAuthenticated = false;
-  authApi.isLoading = false;
+  authApi.authStatus = 'signed-out';
+  authApi.signedOutReason = 'no-session';
   navigateMock.mockReset();
   locationMock.pathname = '/login';
   locationMock.search = '';
@@ -190,6 +190,21 @@ describe('LoginPage failure truth', () => {
     expect(mounted.container.textContent).toContain('Authentication blocked');
     expect(mounted.container.textContent).toContain('return you to your project');
     expect(mounted.container.querySelector('form')).not.toBeNull();
+  });
+
+  it('shows why the login form is blocked when the prior session lost its saved profile', () => {
+    authApi.signedOutReason = 'missing-profile';
+    locationMock.state = {
+      redirectTo: '/settings',
+    };
+
+    const mounted = renderLoginPage();
+    mountedRoot = mounted.root;
+    mountedContainer = mounted.container;
+
+    expect(mounted.container.textContent).toContain('Profile setup is incomplete');
+    expect(mounted.container.textContent).toContain('no saved profile was found');
+    expect(mounted.container.textContent).toContain('return you to settings');
   });
 
   it('surfaces sign-in failures without navigating away', async () => {
@@ -340,7 +355,7 @@ describe('LoginPage failure truth', () => {
   });
 
   it('keeps the waiting state explicit while session bootstrap is still running', () => {
-    authApi.isLoading = true;
+    authApi.authStatus = 'checking-session';
     locationMock.state = {
       redirectTo: '/settings',
     };
@@ -356,7 +371,7 @@ describe('LoginPage failure truth', () => {
   });
 
   it('holds authenticated sessions off the login form and recovers them forward', async () => {
-    authApi.isAuthenticated = true;
+    authApi.authStatus = 'authenticated';
     locationMock.state = {
       redirectTo: '/settings',
     };

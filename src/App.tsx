@@ -19,11 +19,11 @@ function LoadingScreen() {
 }
 
 export function AuthGuard({ children }: { children: React.ReactNode }) {
-  const { isAuthenticated, isLoading } = useAuthStore();
+  const { authStatus } = useAuthStore();
   const location = useLocation();
 
-  if (isLoading) return <LoadingScreen />;
-  if (!isAuthenticated) {
+  if (authStatus === 'checking-session') return <LoadingScreen />;
+  if (authStatus !== 'authenticated') {
     return (
       <Navigate
         to="/login"
