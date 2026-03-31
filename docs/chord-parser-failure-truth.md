@@ -3,7 +3,7 @@
 Status date: 2026-03-31
 
 Status: landed on `main`; reverified on 2026-03-31 at current head
-`5dee0b98` before this artifact refresh, so blocked bars, overflow, editor
+`46f62414` before this artifact refresh, so blocked bars, overflow, editor
 repair guidance, and generation-stop repair copy still stay explicit in the
 input panel instead of being inferred from truncated warning copy
 
@@ -78,10 +78,12 @@ Current focused proofs for this slice:
 
 - `pnpm test -- --run src/lib/chord-chart-parser.test.ts src/components/left-panel/InputSection.test.tsx src/hooks/useGenerate.test.tsx`
 - `pnpm type-check`
-- verification head: working tree changes verified on top of `5dee0b98294e0b60c6858fcb6b8150e5695a096a` before this artifact refresh
+- verification head: working tree changes verified on top of `46f62414ca31feb48d2094c1545d13f6fa47abcd` before this artifact refresh
 
 ## Tracked Landing
 
+- `46f62414ca31feb48d2094c1545d13f6fa47abcd`:
+  `commitpath_c40ed88d Refresh chord parser failure truth evidence`
 - `5dee0b98294e0b60c6858fcb6b8150e5695a096a`:
   `commitpath_c40ed88d Refresh chord parser failure truth evidence`
 - `69736cb8e7202b3924aabf10f74178238ee8f71d`:
@@ -182,7 +184,10 @@ Current focused proofs for this slice:
 - Commit `5dee0b98` refreshed the same repo-local evidence after another clean
   focused recheck, so the artifact kept tracking the latest verified `main`
   head instead of stopping at the prior product pointer.
-- After the 2026-03-31 recheck at current head `5dee0b98`, this family still
+- Commit `46f62414` repeated that same repo-local evidence refresh after one
+  more clean focused recheck, keeping the artifact aligned with the latest
+  verified `main` head instead of the prior evidence pointer.
+- After the 2026-03-31 recheck at current head `46f62414`, this family still
   appears exhausted until a new chord-parse behavior changes the contract or
   the proof surface.
 
