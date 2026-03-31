@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/lib/supabase';
 import { rowToProfile } from '@/lib/profile';
 import { cn } from '@/lib/utils';
-import { useAuthStore } from '@/store/auth-store';
+import { getAuthTruth, useAuthStore } from '@/store/auth-store';
 import { useUiStore } from '@/store/ui-store';
 import { GENRES } from '@/lib/genre-config';
 import type { Profile } from '@/types';
@@ -12,7 +12,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
-import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
 
 type SettingsField = 'displayName' | 'chordMode' | 'defaultGenre';
@@ -136,9 +136,72 @@ function formatSettingsFieldList(fields: SettingsField[]): string {
   return `${labels.slice(0, -1).join(', ')}, and ${labels[labels.length - 1]}`;
 }
 
+type SettingsSaveTruth = {
+  badgeLabel: string;
+  badgeVariant: 'secondary' | 'outline' | 'destructive';
+  canSubmit: boolean;
+  detail: string;
+  status: 'blocked' | 'clear' | 'ready' | 'saving';
+  title: string;
+};
+
+export function getSettingsSaveTruth({
+  authTruth,
+  pendingFields,
+  saving,
+}: {
+  authTruth: ReturnType<typeof getAuthTruth>;
+  pendingFields: SettingsField[];
+  saving: boolean;
+}): SettingsSaveTruth {
+  if (saving) {
+    return {
+      badgeLabel: 'Saving',
+      badgeVariant: 'outline',
+      canSubmit: false,
+      detail: `${pendingFields.length} setting change${pendingFields.length === 1 ? ' is' : 's are'} being applied now.`,
+      status: 'saving',
+      title: 'Saving now',
+    };
+  }
+
+  if (pendingFields.length === 0) {
+    return {
+      badgeLabel: 'Clear',
+      badgeVariant: 'secondary',
+      canSubmit: false,
+      detail: 'This page already matches your saved profile settings.',
+      status: 'clear',
+      title: 'Nothing to save',
+    };
+  }
+
+  if (authTruth.access !== 'granted') {
+    return {
+      badgeLabel: 'Blocked',
+      badgeVariant: 'destructive',
+      canSubmit: false,
+      detail: `${authTruth.nextStepDetail} Pending changes stay local until saving is unblocked.`,
+      status: 'blocked',
+      title: 'Save is blocked',
+    };
+  }
+
+  const pendingSettingsLabel = formatSettingsFieldList(pendingFields);
+
+  return {
+    badgeLabel: `${pendingFields.length} waiting`,
+    badgeVariant: 'outline',
+    canSubmit: true,
+    detail: `${pendingSettingsLabel} ${pendingFields.length === 1 ? 'is' : 'are'} still waiting until you save.`,
+    status: 'ready',
+    title: 'Save is ready',
+  };
+}
+
 export default function SettingsPage() {
   const navigate = useNavigate();
-  const { user, profile, setProfile } = useAuthStore();
+  const { user, profile, setProfile, authStatus, signedOutReason } = useAuthStore();
   const { setChordDisplayMode } = useUiStore();
 
   const [draft, setDraft] = useState<SettingsDraft>(() => createSettingsDraft(profile));
@@ -205,23 +268,34 @@ export default function SettingsPage() {
 
   const sectionHeadingClasses = 'text-lg font-semibold text-foreground';
   const pendingFields = getPendingSettingsFields(draft, profile);
+  const authTruth = getAuthTruth({
+    user,
+    profile,
+    authStatus,
+    signedOutReason,
+  });
+  const saveTruth = getSettingsSaveTruth({
+    authTruth,
+    pendingFields,
+    saving,
+  });
   const hasPendingChanges = pendingFields.length > 0;
   const savedSettingsCount = profile ? EDITABLE_SETTINGS.length - pendingFields.length : 0;
   const pendingSettingsLabel = formatSettingsFieldList(pendingFields);
   const saveButtonLabel = saving
     ? 'Saving...'
-    : hasPendingChanges
-      ? 'Save Pending Changes'
-      : profile
-        ? 'All Changes Saved'
-        : 'No Changes to Save';
-  const saveCaption = saving
-    ? `${pendingFields.length} setting change${pendingFields.length === 1 ? ' is' : 's are'} being applied now.`
-    : hasPendingChanges
-      ? `${pendingSettingsLabel} ${pendingFields.length === 1 ? 'is' : 'are'} still waiting until you save.`
-      : profile
-        ? 'This page already matches your saved profile settings.'
-        : 'Change a setting here to create saved profile preferences.';
+    : saveTruth.status === 'blocked'
+      ? 'Save Blocked'
+      : hasPendingChanges
+        ? 'Save Pending Changes'
+        : profile
+          ? 'All Changes Saved'
+          : 'No Changes to Save';
+  const saveCaption = hasPendingChanges || saveTruth.status === 'saving'
+    ? saveTruth.detail
+    : profile
+      ? 'This page already matches your saved profile settings.'
+      : 'Change a setting here to create saved profile preferences.';
 
   return (
     <div className="min-h-screen bg-background">
@@ -500,11 +574,30 @@ export default function SettingsPage() {
             </Alert>
           )}
 
+          {saveTruth.status !== 'clear' && (
+            <Alert
+              data-testid="settings-save-readiness"
+              className={cn(
+                saveTruth.status === 'blocked' && 'border-destructive/50',
+                saveTruth.status === 'ready' && 'border-status-unsaved/50'
+              )}
+            >
+              <div className="flex items-center justify-between gap-3">
+                <AlertTitle>{saveTruth.title}</AlertTitle>
+                <Badge variant={saveTruth.badgeVariant}>{saveTruth.badgeLabel}</Badge>
+              </div>
+              <AlertDescription>
+                {saveTruth.status === 'blocked' ? `${authTruth.currentState} ` : ''}
+                {saveTruth.detail}
+              </AlertDescription>
+            </Alert>
+          )}
+
           {/* Save button */}
           <div className="flex items-center gap-3">
             <Button
               type="submit"
-              disabled={saving || !hasPendingChanges}
+              disabled={!saveTruth.canSubmit}
               className="px-4 py-2"
             >
               {saving ? (

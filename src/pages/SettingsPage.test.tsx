@@ -618,4 +618,51 @@ describe('SettingsPage truth surface', () => {
     expect(saveButton?.disabled).toBe(false);
     expect(saveButton?.textContent).toBe('Save Pending Changes');
   });
+
+  it('shows when pending settings are blocked by sign-in state instead of pretending save can run', () => {
+    setAuthStoreFixture({
+      user: null,
+      profile: null,
+      authStatus: 'signed-out',
+      signedOutReason: 'no-session',
+    });
+
+    const mounted = renderSettingsPage();
+    mountedRoot = mounted.root;
+    mountedContainer = mounted.container;
+
+    const displayNameInput = mounted.container.querySelector(
+      '#settings-display-name'
+    ) as HTMLInputElement | null;
+    const saveButton = mounted.container.querySelector(
+      'button[type="submit"]'
+    ) as HTMLButtonElement | null;
+    const saveCaption = mounted.container.querySelector(
+      '[data-testid="settings-save-caption"]'
+    ) as HTMLSpanElement | null;
+
+    act(() => {
+      if (!displayNameInput) {
+        throw new Error('Expected display name input');
+      }
+
+      setInputValue(displayNameInput, 'Ashlyn');
+    });
+
+    const saveReadiness = mounted.container.querySelector(
+      '[data-testid="settings-save-readiness"]'
+    ) as HTMLDivElement | null;
+
+    expect(saveReadiness?.textContent).toContain('Save is blocked');
+    expect(saveReadiness?.textContent).toContain('Blocked');
+    expect(saveReadiness?.textContent).toContain('No saved session was found.');
+    expect(saveReadiness?.textContent).toContain(
+      'Sign in to reopen the app. Pending changes stay local until saving is unblocked.'
+    );
+    expect(saveButton?.disabled).toBe(true);
+    expect(saveButton?.textContent).toBe('Save Blocked');
+    expect(saveCaption?.textContent).toBe(
+      'Sign in to reopen the app. Pending changes stay local until saving is unblocked.'
+    );
+  });
 });
