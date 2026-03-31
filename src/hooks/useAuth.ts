@@ -6,6 +6,7 @@ import { supabase } from '@/lib/supabase';
 import { rowToProfile } from '@/lib/profile';
 import type { SignedOutReason } from '@/store/auth-store';
 import { selectAuthGateTruth } from '@/store/auth-store';
+import { selectAuthTruth } from '@/store/auth-store';
 import { useAuthStore } from '@/store/auth-store';
 import { useUiStore } from '@/store/ui-store';
 
@@ -19,6 +20,7 @@ type HydrationResult =
 export function useAuth() {
   const authStore = useAuthStore();
   const authGate = useAuthStore(selectAuthGateTruth);
+  const authTruth = useAuthStore(selectAuthTruth);
   const authTransitionIdRef = useRef(0);
 
   const beginSessionCheck = useCallback(() => {
@@ -186,6 +188,7 @@ export function useAuth() {
   return {
     ...authStore,
     authGate,
+    authTruth,
     initAuth,
     signIn,
     signUp,

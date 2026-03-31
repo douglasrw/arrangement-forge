@@ -4,6 +4,7 @@ import { act, createElement } from 'react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { createRoot, type Root } from 'react-dom/client';
 import { useAuth } from './useAuth';
+import { getAuthTruth } from '@/store/auth-store';
 import { getAuthGateTruth } from '@/store/auth-store';
 import { useAuthStore } from '@/store/auth-store';
 import { useUiStore } from '@/store/ui-store';
@@ -358,6 +359,42 @@ describe('useAuth auth action failures', () => {
       nextStep: 'complete-profile',
       signedOutReason: 'missing-profile',
     });
+    expect(hookValue!.authTruth).toEqual({
+      status: 'signed-out',
+      access: 'blocked',
+      nextStep: 'complete-profile',
+      signedOutReason: 'missing-profile',
+    });
+  });
+
+  it('exposes one auth truth surface with both the current state and next step', async () => {
+    const mounted = renderHarness();
+    mountedRoot = mounted.root;
+    mountedContainer = mounted.container;
+
+    await act(async () => {
+      useAuthStore.setState({
+        user: null,
+        profile: null,
+        authStatus: 'signed-out',
+        signedOutReason: 'session-lookup-failed',
+        isLoading: false,
+        isAuthenticated: false,
+        authGate: {
+          access: 'granted',
+          nextStep: 'open-app',
+          signedOutReason: null,
+        },
+      });
+      await Promise.resolve();
+    });
+
+    expect(hookValue!.authTruth).toEqual(
+      getAuthTruth({
+        authStatus: 'signed-out',
+        signedOutReason: 'session-lookup-failed',
+      })
+    );
   });
 
   it('preserves Google auth failures from Supabase', async () => {

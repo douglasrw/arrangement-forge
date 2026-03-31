@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it } from 'vitest';
-import { useAuthStore } from './auth-store';
+import { getAuthTruth, useAuthStore } from './auth-store';
 
 describe('auth-store gate truth', () => {
   beforeEach(() => {
@@ -18,6 +18,22 @@ describe('auth-store gate truth', () => {
     useAuthStore.getState().setSignedOut('missing-profile');
 
     expect(useAuthStore.getState().authGate).toEqual({
+      access: 'blocked',
+      nextStep: 'complete-profile',
+      signedOutReason: 'missing-profile',
+    });
+  });
+
+  it('combines the current auth status and next step in one explicit truth surface', () => {
+    useAuthStore.getState().setSignedOut('missing-profile');
+
+    expect(
+      getAuthTruth({
+        authStatus: useAuthStore.getState().authStatus,
+        signedOutReason: useAuthStore.getState().signedOutReason,
+      })
+    ).toEqual({
+      status: 'signed-out',
       access: 'blocked',
       nextStep: 'complete-profile',
       signedOutReason: 'missing-profile',

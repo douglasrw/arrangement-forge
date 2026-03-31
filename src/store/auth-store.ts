@@ -30,6 +30,10 @@ export interface AuthGateTruth {
   signedOutReason: SignedOutReason | null;
 }
 
+export interface AuthTruth extends AuthGateTruth {
+  status: AuthStatus;
+}
+
 const CHECKING_SESSION_AUTH_GATE: AuthGateTruth = {
   access: 'pending',
   nextStep: 'wait-for-session',
@@ -81,6 +85,48 @@ const SIGNED_OUT_WITHOUT_REASON_AUTH_GATE: AuthGateTruth = {
   signedOutReason: null,
 };
 
+const CHECKING_SESSION_AUTH_TRUTH: AuthTruth = {
+  status: 'checking-session',
+  ...CHECKING_SESSION_AUTH_GATE,
+};
+
+const AUTHENTICATED_AUTH_TRUTH: AuthTruth = {
+  status: 'authenticated',
+  ...AUTHENTICATED_AUTH_GATE,
+};
+
+const SIGNED_OUT_AUTH_TRUTHS: Record<SignedOutReason, AuthTruth> = {
+  'no-session': {
+    status: 'signed-out',
+    ...SIGNED_OUT_AUTH_GATES['no-session'],
+  },
+  'signed-out': {
+    status: 'signed-out',
+    ...SIGNED_OUT_AUTH_GATES['signed-out'],
+  },
+  'email-confirmation-required': {
+    status: 'signed-out',
+    ...SIGNED_OUT_AUTH_GATES['email-confirmation-required'],
+  },
+  'missing-profile': {
+    status: 'signed-out',
+    ...SIGNED_OUT_AUTH_GATES['missing-profile'],
+  },
+  'profile-load-failed': {
+    status: 'signed-out',
+    ...SIGNED_OUT_AUTH_GATES['profile-load-failed'],
+  },
+  'session-lookup-failed': {
+    status: 'signed-out',
+    ...SIGNED_OUT_AUTH_GATES['session-lookup-failed'],
+  },
+};
+
+const SIGNED_OUT_WITHOUT_REASON_AUTH_TRUTH: AuthTruth = {
+  status: 'signed-out',
+  ...SIGNED_OUT_WITHOUT_REASON_AUTH_GATE,
+};
+
 type AuthStoreState = {
   user: User | null;
   profile: Profile | null;
@@ -127,6 +173,27 @@ export function selectAuthGateTruth(
   state: Pick<AuthStoreState, 'authStatus' | 'signedOutReason'>
 ): AuthGateTruth {
   return getAuthGateTruth(state);
+}
+
+export function getAuthTruth(
+  state: Pick<AuthStoreState, 'authStatus' | 'signedOutReason'>
+): AuthTruth {
+  switch (state.authStatus) {
+    case 'checking-session':
+      return CHECKING_SESSION_AUTH_TRUTH;
+    case 'authenticated':
+      return AUTHENTICATED_AUTH_TRUTH;
+    default:
+      return state.signedOutReason
+        ? SIGNED_OUT_AUTH_TRUTHS[state.signedOutReason]
+        : SIGNED_OUT_WITHOUT_REASON_AUTH_TRUTH;
+  }
+}
+
+export function selectAuthTruth(
+  state: Pick<AuthStoreState, 'authStatus' | 'signedOutReason'>
+): AuthTruth {
+  return getAuthTruth(state);
 }
 
 function createAuthStoreState(
