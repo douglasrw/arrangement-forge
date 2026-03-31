@@ -2,9 +2,9 @@
 
 Status date: 2026-03-31
 
-Status: landed on `main`; reverified on 2026-03-31 at product head `f25a1957`
-after the docs refresh follow-up landed, and no remaining product delta is
-visible in this family beyond this evidence refresh
+Status: landed on `main`; reverified on 2026-03-31 at product head `c18e9f62`
+after the latest evidence refresh follow-up landed, and no remaining product
+delta is visible in this family beyond this evidence refresh
 
 Purpose: preserve the current chord parser failure contract and its landing
 proof in one repo-local place so future work does not have to reconstruct it
@@ -62,9 +62,10 @@ from `src/lib/chord-chart-parser.ts`, `src/components/left-panel/InputSection.ts
 
 Current focused proofs for this slice:
 
-- `pnpm test -- --run src/lib/chord-chart-parser.test.ts src/components/left-panel/InputSection.test.tsx src/hooks/useGenerate.test.tsx`
+- `pnpm exec vitest run src/lib/chord-chart-parser.test.ts src/components/left-panel/InputSection.test.tsx`
+- `pnpm exec vitest run src/hooks/useGenerate.test.tsx`
 - `pnpm run type-check`
-- verification head: `f25a195792e2ff7438c5ae23866e8343843ea392`
+- verification head: `c18e9f62cbf2b1f43ca88f77cab4956c9539d7fd`
 
 ## Tracked Landing
 
@@ -78,7 +79,9 @@ Current focused proofs for this slice:
   `commitpath_c40ed88d Harden chord parse block truth in generation`
 - `f25a195792e2ff7438c5ae23866e8343843ea392`:
   `commitpath_c40ed88d Refresh chord parser failure truth docs`
-- The current product head at `f25a1957` still preserves the chord parser
+- `c18e9f62cbf2b1f43ca88f77cab4956c9539d7fd`:
+  `commitpath_c40ed88d Refresh chord parser failure truth evidence`
+- The current product head at `c18e9f62` still preserves the chord parser
   failure truth contract, and the focused parser/input/generation proofs passed
   again on 2026-03-31 before this follow-up doc-only evidence refresh updated
   the repo-local artifact.
@@ -92,9 +95,11 @@ Current focused proofs for this slice:
   proceeding with blocked input.
 - Commit `5a101df7` hardened that same generation-block path so it still emits
   the intended repair instruction even when the parser result is partial.
-- Commit `f25a1957` refreshed the repo-local evidence artifact so future review
+- Commit `f25a1957` refreshed the repo-local truth artifact so future review
   does not have to reconstruct the current proof boundary from commit
   archaeology.
+- Commit `c18e9f62` refreshed the same repo-local evidence after another clean
+  focused recheck at the current product head.
 - After the 2026-03-31 recheck, this family appears exhausted until a new
   chord-parse behavior changes the contract or the proof surface.
 
