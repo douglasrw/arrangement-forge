@@ -236,6 +236,25 @@ function formatImportedNotesFeedback(
   return `Imported ${fileName} and updated Description with ${noteCount} note ${noteCount === 1 ? "line" : "lines"}.`
 }
 
+function formatImportedChordChartFeedback(
+  fileName: string,
+  generationHints: string,
+  existingGenerationHints: string,
+  parseTruth: ReturnType<typeof parseChordChart>["truth"]
+) {
+  const baseMessage = formatImportedNotesFeedback(fileName, generationHints, existingGenerationHints)
+
+  if (parseTruth.state !== "blocked") {
+    return baseMessage
+  }
+
+  return [
+    baseMessage,
+    `Chart is blocked: ${parseTruth.currentState}`,
+    parseTruth.nextStep ? `Next step: ${parseTruth.nextStep}` : null,
+  ].filter(Boolean).join(" ")
+}
+
 export function InputSection() {
   const [activeTab, setActiveTab] = useState<InputTab>("Chord")
   const [isImporting, setIsImporting] = useState(false)
@@ -341,12 +360,14 @@ export function InputSection() {
           ? { generationHints: importedUpload.generationHints }
           : {}),
       })
+      const importedParseTruth = parseChordChart(importedUpload.chordChartRaw, project?.key ?? "C").truth
       setUploadFeedback({
         tone: "success",
-        message: formatImportedNotesFeedback(
+        message: formatImportedChordChartFeedback(
           file.name,
           importedUpload.generationHints,
-          existingGenerationHints
+          existingGenerationHints,
+          importedParseTruth
         ),
       })
     } catch (error) {

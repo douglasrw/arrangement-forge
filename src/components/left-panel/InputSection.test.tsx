@@ -712,6 +712,12 @@ describe('InputSection upload tab', () => {
     expect(mounted.container.textContent).toContain(
       'Imported broken-bars.txt into the current chord chart. Existing Description was kept.'
     );
+    expect(mounted.container.textContent).toContain(
+      'Chart is blocked: Bars 2 and 3 currently parse as N.C., so Generate stays blocked until the chart is fixed.'
+    );
+    expect(mounted.container.textContent).toContain(
+      'Next step: Replace the flagged repeat bars with explicit chords or fix the bar before them.'
+    );
     expect(mounted.container.textContent).toContain('Chord chart has parse issues');
     expect(mounted.container.textContent).toContain(
       'Bars 2 and 3 currently parse as N.C., so Generate stays blocked until the chart is fixed.'
@@ -746,10 +752,53 @@ describe('InputSection upload tab', () => {
     expect(mounted.container.textContent).toContain(
       'Imported broken-spaces.txt into the current chord chart. Existing Description was kept.'
     );
+    expect(mounted.container.textContent).toContain(
+      'Chart is blocked: Bars 2 and 3 currently parse as N.C., so Generate stays blocked until the chart is fixed.'
+    );
+    expect(mounted.container.textContent).toContain(
+      'Next step: Replace the flagged repeat bars with explicit chords or fix the bar before them.'
+    );
     expect(mounted.container.textContent).toContain('Chord chart has parse issues');
     expect(mounted.container.textContent).toContain(
       'Bars 2 and 3 currently parse as N.C., so Generate stays blocked until the chart is fixed.'
     );
+    expect(getGenerateButton(mounted.container).disabled).toBe(true);
+  });
+
+  it('surfaces blocked upload feedback when an imported chart has no playable bars yet', async () => {
+    useProjectStore.setState({
+      project: makeProject({
+        chordChartRaw: 'Cmaj7 | Fmaj7 | G7 | Cmaj7',
+        generationHints: 'Keep the brushes light',
+      }),
+    });
+
+    const mounted = renderSection();
+    mountedRoot = mounted.root;
+    mountedContainer = mounted.container;
+
+    openUploadTab(mounted.container);
+    const fileInput = getUploadFileInput(mounted.container);
+
+    const file = new File(['placeholder'], 'headers-only.txt', { type: 'text/plain' });
+    vi.spyOn(file, 'text').mockResolvedValue('[Verse]\n\nChorus:');
+
+    await importFile(fileInput, file);
+
+    expect(useProjectStore.getState().project).toMatchObject({
+      chordChartRaw: '[Verse]\n\n[Chorus]',
+      generationHints: 'Keep the brushes light',
+    });
+    expect(mounted.container.textContent).toContain(
+      'Imported headers-only.txt into the current chord chart. Existing Description was kept.'
+    );
+    expect(mounted.container.textContent).toContain(
+      'Chart is blocked: No playable chord bars are present yet, so Generate stays blocked until the chart includes at least one chord bar.'
+    );
+    expect(mounted.container.textContent).toContain(
+      'Next step: Add at least one chord bar such as Cmaj7 | Fmaj7 | G7 | Cmaj7.'
+    );
+    expect(mounted.container.textContent).toContain('Chord chart needs chord bars');
     expect(getGenerateButton(mounted.container).disabled).toBe(true);
   });
 
