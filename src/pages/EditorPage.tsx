@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { useParams } from 'react-router-dom';
+import { Link, useParams } from 'react-router-dom';
 import { AppShell } from '@/components/layout/AppShell';
 import type { LoadProjectResult } from '@/hooks/useProject';
 import { useProject } from '@/hooks/useProject';
@@ -8,18 +8,27 @@ import { useProjectStore } from '@/store/project-store';
 function EditorShellState({
   title,
   message,
+  nextStep,
   testId,
   tone = 'loading',
+  actionHref,
+  actionLabel,
+  routeStatus,
 }: {
   title: string;
   message: string;
+  nextStep: string;
   testId: string;
   tone?: 'loading' | 'error';
+  actionHref?: string;
+  actionLabel?: string;
+  routeStatus: EditorRouteState['status'];
 }) {
   return (
     <div
       className="flex max-w-sm flex-col items-center gap-4 text-center"
       data-testid={testId}
+      data-editor-route-state={routeStatus}
     >
       {tone === 'loading' ? (
         <div
@@ -37,7 +46,16 @@ function EditorShellState({
       <div className="space-y-1">
         <p className="text-sm font-medium text-foreground">{title}</p>
         <p className="text-xs text-muted-foreground">{message}</p>
+        <p className="text-xs text-foreground/80">Next step: {nextStep}</p>
       </div>
+      {actionHref && actionLabel ? (
+        <Link
+          to={actionHref}
+          className="inline-flex items-center rounded-md border border-border px-3 py-1.5 text-xs font-medium text-foreground transition-colors hover:bg-muted"
+        >
+          {actionLabel}
+        </Link>
+      ) : null}
     </div>
   );
 }
@@ -47,6 +65,12 @@ type EditorRouteState =
   | { status: 'missing-project'; message: string }
   | { status: 'error'; message: string }
   | { status: 'ready' };
+
+function getLoadingMessage(projectId: string | undefined) {
+  return projectId
+    ? `Opening project ${projectId} in the editor.`
+    : 'Opening the requested project route in the editor.';
+}
 
 export default function EditorPage() {
   const { id } = useParams<{ id: string }>();
@@ -88,9 +112,11 @@ export default function EditorPage() {
         shellStatus="loading-project"
         shellBody={
           <EditorShellState
-            title="Loading project..."
-            message="Preparing the editor for this arrangement."
+            title="Loading project route"
+            message={getLoadingMessage(id)}
+            nextStep="Wait for the current route load to finish before editing this arrangement."
             testId="editor-shell-loading-state"
+            routeStatus="loading"
           />
         }
       />
@@ -104,9 +130,17 @@ export default function EditorPage() {
         shellBody={
           <EditorShellState
             title="Project not found"
-            message={routeState.message}
+            message={
+              id
+                ? `Project ${id} is not available, so the editor cannot open this route. ${routeState.message}`
+                : routeState.message
+            }
+            nextStep="Return to the library and open a different project."
             testId="editor-shell-missing-project-state"
             tone="error"
+            actionHref="/library"
+            actionLabel="Back to library"
+            routeStatus="missing-project"
           />
         }
       />
@@ -120,9 +154,17 @@ export default function EditorPage() {
         shellBody={
           <EditorShellState
             title="Unable to open project"
-            message={routeState.message}
+            message={
+              id
+                ? `Project ${id} could not be loaded for this editor route. ${routeState.message}`
+                : routeState.message
+            }
+            nextStep="Return to the library, then retry this project after the load failure is resolved."
             testId="editor-shell-error-state"
             tone="error"
+            actionHref="/library"
+            actionLabel="Back to library"
+            routeStatus="error"
           />
         }
       />

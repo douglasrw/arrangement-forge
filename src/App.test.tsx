@@ -172,6 +172,24 @@ describe('App protected route recovery truth', () => {
     expect(mounted.container.querySelector('[data-testid="settings-page"]')).toBeNull();
   });
 
+  it('names the requested editor destination during auth bootstrap', () => {
+    setAuthStoreFixture({
+      authStatus: 'checking-session',
+      signedOutReason: null,
+      user: null,
+      profile: null,
+    });
+
+    const mounted = renderRoute('/project/project-1?tab=arrangement#bridge');
+    mountedRoot = mounted.root;
+    mountedContainer = mounted.container;
+
+    expect(mounted.container.querySelector('[data-testid="auth-loading-screen"]')).not.toBeNull();
+    expect(mounted.container.textContent).toContain('continue to project project-1 in the editor');
+    expect(mounted.container.querySelector('[data-testid="login-page"]')).toBeNull();
+    expect(mounted.container.querySelector('[data-testid="editor-page"]')).toBeNull();
+  });
+
   it('keeps authenticated users on the requested protected route', async () => {
     setAuthStoreFixture({
       user: { id: 'user-1', email: 'ash@example.com' },

@@ -61,6 +61,15 @@ vi.mock('@/hooks/useProject', async () => {
 });
 
 vi.mock('react-router-dom', () => ({
+  Link: ({
+    children,
+    to,
+    ...props
+  }: React.AnchorHTMLAttributes<HTMLAnchorElement> & { to: string }) => (
+    <a href={to} {...props}>
+      {children}
+    </a>
+  ),
   useParams: () => ({ id: routeProjectId }),
 }));
 
@@ -117,6 +126,10 @@ function queryAppShell() {
 
 function queryErrorState() {
   return document.querySelector('[data-testid="editor-shell-error-state"]');
+}
+
+function queryBackToLibraryLink() {
+  return document.querySelector('a[href="/library"]');
 }
 
 function querySelectionSurface() {
@@ -196,6 +209,10 @@ describe('EditorPage route loading gate', () => {
     expect(queryAppShell()).not.toBeNull();
     expect(querySelectionSurface()).toBeNull();
     expect(getStatusBarText()).toContain('Loading project');
+    expect(document.body.textContent).toContain('Opening project project-b in the editor.');
+    expect(document.body.textContent).toContain(
+      'Next step: Wait for the current route load to finish before editing this arrangement.'
+    );
 
     await act(async () => {
       resolveLoad?.();
@@ -299,7 +316,13 @@ describe('EditorPage route loading gate', () => {
     expect(queryMissingProjectState()).not.toBeNull();
     expect(querySelectionSurface()).toBeNull();
     expect(getStatusBarText()).toContain('Error: Project not found');
-    expect(document.body.textContent).toContain('Project not found');
+    expect(document.body.textContent).toContain(
+      'Project missing-project is not available, so the editor cannot open this route. Project not found'
+    );
+    expect(document.body.textContent).toContain(
+      'Next step: Return to the library and open a different project.'
+    );
+    expect(queryBackToLibraryLink()).not.toBeNull();
   });
 
   it('shows a route error when the requested project load fails unexpectedly', async () => {
@@ -325,7 +348,13 @@ describe('EditorPage route loading gate', () => {
 
     expect(queryErrorState()).not.toBeNull();
     expect(querySelectionSurface()).toBeNull();
-    expect(document.body.textContent).toContain('Backend unavailable');
+    expect(document.body.textContent).toContain(
+      'Project project-a could not be loaded for this editor route. Backend unavailable'
+    );
+    expect(document.body.textContent).toContain(
+      'Next step: Return to the library, then retry this project after the load failure is resolved.'
+    );
+    expect(queryBackToLibraryLink()).not.toBeNull();
   });
 
   it('keeps export wired into the editor shell alongside project, tempo, and selection surfaces', async () => {

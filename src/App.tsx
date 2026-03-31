@@ -10,15 +10,18 @@ import LibraryPage from '@/pages/LibraryPage';
 import SettingsPage from '@/pages/SettingsPage';
 
 function describeProtectedDestination(path: string) {
-  if (path.startsWith('/project/')) {
-    return 'your project';
+  const routePath = path.split(/[?#]/, 1)[0] ?? path;
+
+  if (routePath.startsWith('/project/')) {
+    const [, , projectId] = routePath.split('/');
+    return projectId ? `project ${projectId} in the editor` : 'the requested project in the editor';
   }
 
-  if (path.startsWith('/settings')) {
+  if (routePath.startsWith('/settings')) {
     return 'settings';
   }
 
-  if (path.startsWith('/library')) {
+  if (routePath.startsWith('/library')) {
     return 'the library';
   }
 
