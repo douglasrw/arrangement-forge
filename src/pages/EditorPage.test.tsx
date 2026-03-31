@@ -220,6 +220,9 @@ describe('EditorPage route loading gate', () => {
     expect(getStatusBarText()).toContain('Loading project');
     expect(document.body.textContent).toContain('Opening project project-b in the editor.');
     expect(document.body.textContent).toContain(
+      'Route truth: /project/project-b is still resolving before the editor becomes ready.'
+    );
+    expect(document.body.textContent).toContain(
       'Next step: Wait for the current route load to finish before editing this arrangement.'
     );
 
@@ -267,6 +270,9 @@ describe('EditorPage route loading gate', () => {
     expect(document.body.textContent).toContain('Editor route ready for project project-a.');
     expect(document.body.textContent).toContain(
       'Current state: the requested project is loaded in this workspace. Next step: edit this arrangement or return to the library to open a different project.'
+    );
+    expect(document.body.textContent).toContain(
+      'Route truth: /project/project-a is loaded in this workspace, and /project remains the fallback route when no project id is selected.'
     );
   });
 
@@ -334,6 +340,9 @@ describe('EditorPage route loading gate', () => {
       'Project missing-project is not available, so the editor cannot open this route. Project not found'
     );
     expect(document.body.textContent).toContain(
+      'Route truth: /project/missing-project cannot open because the requested project is unavailable.'
+    );
+    expect(document.body.textContent).toContain(
       'Next step: Return to the library and open a different project.'
     );
     expect(queryBackToLibraryLink()).not.toBeNull();
@@ -364,6 +373,9 @@ describe('EditorPage route loading gate', () => {
     expect(querySelectionSurface()).toBeNull();
     expect(document.body.textContent).toContain(
       'Project project-a could not be loaded for this editor route. Backend unavailable'
+    );
+    expect(document.body.textContent).toContain(
+      'Route truth: /project/project-a is blocked until Arrangement Forge can load the requested project.'
     );
     expect(document.body.textContent).toContain(
       'Next step: Return to the library, then retry this project after the load failure is resolved.'
@@ -456,6 +468,9 @@ describe('EditorPage route loading gate', () => {
     expect(querySelectionSurface()).toBeNull();
     expect(document.body.textContent).toContain(
       'The /project editor route is open, but no project has been selected yet.'
+    );
+    expect(document.body.textContent).toContain(
+      'Route truth: /project is the editor fallback route, and it stays parked here until you choose a project from the library.'
     );
     expect(document.body.textContent).toContain(
       'Next step: Return to the library, then open an existing project or create a new one to finish this editor route.'
