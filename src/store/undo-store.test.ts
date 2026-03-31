@@ -153,6 +153,17 @@ describe('undoStore', () => {
     });
   });
 
+  it('leaves the undo stack unchanged while generation keeps the boundary paused', () => {
+    useUndoStore.getState().pushUndo('Split block', {
+      undo: makeSnapshot('before'),
+      redo: makeSnapshot('after'),
+    });
+
+    expect(useUndoStore.getState().undo('generating')).toBeNull();
+    expect(useUndoStore.getState().undoStack).toHaveLength(1);
+    expect(useUndoStore.getState().redoStack).toHaveLength(0);
+  });
+
   it('does not advertise undo when the top undo boundary is not restorable', () => {
     useUndoStore.getState().pushUndo('Broken action', {
       undo: 'not json',
@@ -205,6 +216,23 @@ describe('undoStore', () => {
       label: 'Redo: Split block',
       currentState: 'Redo is ready to restore the arrangement captured after Split block.',
       nextStep: 'Use Redo to restore the arrangement captured after Split block.',
+    });
+  });
+
+  it('leaves the redo stack unchanged while generation keeps the redo boundary paused', () => {
+    useUndoStore.getState().pushUndo('Split block', {
+      undo: makeSnapshot('before'),
+      redo: makeSnapshot('after'),
+    });
+
+    expect(useUndoStore.getState().undo()).not.toBeNull();
+    expect(useUndoStore.getState().redo('generating')).toBeNull();
+    expect(useUndoStore.getState().undoStack).toHaveLength(0);
+    expect(useUndoStore.getState().redoStack).toHaveLength(1);
+    expect(useUndoStore.getState().getRedoBoundaryTruth('generating')).toMatchObject({
+      boundary: 'redo',
+      status: 'paused',
+      statusLabel: 'Redo paused',
     });
   });
 

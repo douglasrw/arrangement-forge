@@ -314,4 +314,45 @@ describe('useKeyboardShortcuts undo boundary truth', () => {
     expect(useUndoStore.getState().undoStack).toHaveLength(1);
     expect(useUndoStore.getState().redoStack).toHaveLength(0);
   });
+
+  it('leaves the arrangement unchanged while generation keeps redo paused', () => {
+    const before = makeArrangement('before');
+    const after = makeArrangement('after');
+
+    useProjectStore.getState().setArrangement(after);
+    useUndoStore.getState().pushUndo(
+      'Boundary test',
+      {
+        undo: JSON.stringify(before),
+        redo: JSON.stringify(after),
+      }
+    );
+
+    const mounted = renderHarness();
+    mountedRoot = mounted.root;
+    mountedContainer = mounted.container;
+
+    dispatchShortcut('z');
+    expect(useProjectStore.getState().blocks).toMatchObject([
+      { id: 'blk-before', stemId: 'st-before', sectionId: 'sec-before' },
+    ]);
+
+    act(() => {
+      useUiStore.setState({
+        generationState: 'generating',
+      });
+    });
+
+    dispatchShortcut('z', { shiftKey: true });
+
+    expect(useProjectStore.getState().blocks).toMatchObject([
+      { id: 'blk-before', stemId: 'st-before', sectionId: 'sec-before' },
+    ]);
+    expect(useUndoStore.getState().undoStack).toHaveLength(0);
+    expect(useUndoStore.getState().redoStack).toHaveLength(1);
+    expect(useUndoStore.getState().getRedoBoundaryTruth('generating')).toMatchObject({
+      status: 'paused',
+      statusLabel: 'Redo paused',
+    });
+  });
 });

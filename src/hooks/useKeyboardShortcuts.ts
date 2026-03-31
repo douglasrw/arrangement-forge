@@ -24,7 +24,7 @@ export function useKeyboardShortcuts() {
   const { clearSelection, selectNextBlock, selectPrevBlock, selectBlockAbove, selectBlockBelow } = useSelectionStore();
   const { blockId } = useSelectionStore();
   const { deleteBlock, duplicateBlock } = useProjectStore();
-  const { undo, redo, getUndoBoundaryTruth, getRedoBoundaryTruth } = useUndoStore();
+  const { undo, redo } = useUndoStore();
   const { saveProject } = useProject();
 
   useEffect(() => {
@@ -39,11 +39,9 @@ export function useKeyboardShortcuts() {
       // Cmd+Z — undo
       if (isMod(e) && !e.shiftKey && e.key === 'z') {
         e.preventDefault();
-        if (getUndoBoundaryTruth(generationState).status === 'available') {
-          const transition = undo();
-          if (transition?.restoreSnapshot) {
-            useProjectStore.getState().setArrangement(transition.restoreSnapshot);
-          }
+        const transition = undo(generationState);
+        if (transition?.restoreSnapshot) {
+          useProjectStore.getState().setArrangement(transition.restoreSnapshot);
         }
         return;
       }
@@ -51,11 +49,9 @@ export function useKeyboardShortcuts() {
       // Cmd+Shift+Z — redo
       if (isMod(e) && e.shiftKey && e.key === 'z') {
         e.preventDefault();
-        if (getRedoBoundaryTruth(generationState).status === 'available') {
-          const transition = redo();
-          if (transition?.restoreSnapshot) {
-            useProjectStore.getState().setArrangement(transition.restoreSnapshot);
-          }
+        const transition = redo(generationState);
+        if (transition?.restoreSnapshot) {
+          useProjectStore.getState().setArrangement(transition.restoreSnapshot);
         }
         return;
       }
@@ -128,7 +124,7 @@ export function useKeyboardShortcuts() {
   }, [
     setToolMode, toggleMixer, zoomIn, zoomOut, zoomFitAll,
     clearSelection, selectNextBlock, selectPrevBlock, selectBlockAbove, selectBlockBelow,
-    deleteBlock, duplicateBlock, blockId, undo, redo, getUndoBoundaryTruth, getRedoBoundaryTruth,
+    deleteBlock, duplicateBlock, blockId, undo, redo,
     saveProject, generationState,
   ]);
 }
