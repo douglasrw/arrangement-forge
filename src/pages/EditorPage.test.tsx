@@ -339,6 +339,9 @@ describe('EditorPage route loading gate', () => {
     expect(document.body.textContent).toContain(
       'Current state: the requested project is loaded in this workspace. Next step: edit this arrangement or return to the library to open a different project.'
     );
+    expect(document.body.textContent).toContain(
+      'Route readiness: /project/project-a is ready in this workspace.'
+    );
     expect(document.body.textContent).toContain('Current route: /project/project-a');
     expect(document.body.textContent).toContain('Editor fallback route: /project');
     expect(document.body.textContent).toContain(
@@ -374,6 +377,9 @@ describe('EditorPage route loading gate', () => {
       await Promise.resolve();
     });
 
+    expect(document.body.textContent).toContain(
+      'Route readiness: /project/project-a is ready in this workspace.'
+    );
     expect(document.body.textContent).toContain(
       'Current route: /project/project-a?tab=arrangement#bridge'
     );

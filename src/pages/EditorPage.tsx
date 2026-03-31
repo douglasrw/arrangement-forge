@@ -266,11 +266,13 @@ function EditorRouteReadyBanner({
   projectId,
   currentRoute,
   fallbackRoute,
+  routeReadiness,
   routeTruth,
 }: {
   projectId: string;
   currentRoute: string;
   fallbackRoute: string;
+  routeReadiness: string;
   routeTruth: string;
 }) {
   return (
@@ -284,6 +286,7 @@ function EditorRouteReadyBanner({
         Current state: the requested project is loaded in this workspace. Next step: edit this
         arrangement or return to the library to open a different project.
       </p>
+      <p className="text-[11px] text-foreground/80">Route readiness: {routeReadiness}</p>
       <p className="text-[11px] text-foreground/80">Current route: {currentRoute}</p>
       <p className="text-[11px] text-foreground/80">Editor fallback route: {fallbackRoute}</p>
       <p className="text-[11px] text-foreground/80">{routeTruth}</p>
@@ -482,6 +485,7 @@ export default function EditorPage({
           projectId={id}
           currentRoute={currentRoute}
           fallbackRoute={fallbackRoute}
+          routeReadiness={routeReadiness}
           routeTruth={routeTruth}
         />
       }
