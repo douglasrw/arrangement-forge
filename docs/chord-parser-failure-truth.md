@@ -2,11 +2,12 @@
 
 Status date: 2026-03-31
 
-Status: landed on `main`; reverified on 2026-03-31 at current head
-`606e1bdd`, after `efc2e1e2` promoted the family, `e9a0db10` kept invalid
-uploaded chord rows visible, and `606e1bdd` refreshed the same evidence
-without changing the blocked-state proof surface, so this repo-local truth
-artifact now points at the latest verified state
+Status: landed on `main`; reverified on 2026-03-31 against product head
+`810b10cd`, after `efc2e1e2` promoted the family, `e9a0db10` kept invalid
+uploaded chord rows visible, `1d9f1d5a` refreshed the same evidence, and
+`810b10cd` changed editor fallback redirect truth without changing the chord
+parser blocked-state proof surface, so this repo-local truth artifact now
+points at the latest verified product state
 
 Purpose: preserve the current chord parser failure contract and its landing
 proof in one repo-local place so future work does not have to reconstruct it
@@ -90,10 +91,12 @@ Current focused proofs for this slice:
 
 - `pnpm test -- --run src/lib/chord-chart-parser.test.ts src/components/left-panel/InputSection.test.tsx src/hooks/useGenerate.test.tsx`
 - `pnpm type-check`
-- verification head: `606e1bdda046da7cf90fa8927c1eaf51fe42ea34`
+- verification head: `810b10cdc1880850586dd9b31f874e2d40a40900`
 
 ## Tracked Landing
 
+- `1d9f1d5a7c8414e5733014eca55041821a88423d`:
+  `commitpath_c40ed88d Refresh chord parser failure truth evidence`
 - `606e1bdda046da7cf90fa8927c1eaf51fe42ea34`:
   `commitpath_c40ed88d Refresh chord parser failure truth evidence`
 - `e9a0db101579c9f5442213c58792c42d4a526974`:
@@ -233,9 +236,12 @@ Current focused proofs for this slice:
 - Commit `e9a0db10` kept invalid uploaded chord rows visible in the current
   product head, and the same focused proofs still passed without exposing a
   new parser-truth gap.
-- After the 2026-03-31 recheck at head `606e1bdd`, this family again appears
-  exhausted unless a new chord-parse behavior changes the contract or the
-  proof surface.
+- Commit `1d9f1d5a` repeated that same repo-local evidence refresh after
+  another clean focused recheck, keeping the artifact aligned with the latest
+  verified product head instead of stopping at the prior evidence pointer.
+- After the 2026-03-31 recheck at product head `810b10cd`, this family again
+  appears exhausted unless a new chord-parse behavior changes the contract or
+  the proof surface.
 
 The tests cover:
 
