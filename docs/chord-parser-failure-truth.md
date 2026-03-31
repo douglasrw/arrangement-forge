@@ -3,8 +3,8 @@
 Status date: 2026-03-31
 
 Status: landed on `main`; reverified again on 2026-03-31 with the focused
-parser, input-surface, generation, and type-check proofs passing at the
-current `main` head `f0073d0e`, and no remaining bounded product delta is
+parser, input-surface, and type-check proofs passing at the current `main`
+head `cdabe563`, and no remaining bounded product delta is
 visible in this family
 
 Purpose: preserve the current chord parser failure contract and its landing
@@ -148,11 +148,11 @@ truth:
 
 Current focused proofs for this slice:
 
-- `pnpm test -- --run src/lib/chord-chart-parser.test.ts src/components/left-panel/InputSection.test.tsx src/hooks/useGenerate.test.tsx`
-- `pnpm type-check`
-- the current proof set still matches the same bounded parser, input-surface,
-  and generation contract after the 2026-03-31 recheck at verified repo head
-  `f0073d0e`
+- `pnpm exec vitest run src/lib/chord-chart-parser.test.ts src/components/left-panel/InputSection.test.tsx`
+- `pnpm exec tsc --noEmit`
+- the current proof set still matches the same bounded parser and
+  input-surface contract after the 2026-03-31 recheck at verified repo head
+  `cdabe563`
 
 ## Tracked Landing
 
