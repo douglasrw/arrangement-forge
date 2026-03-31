@@ -2,8 +2,8 @@
 
 Status date: 2026-03-31
 
-Status: landed on `main`; reverified on 2026-03-31 at repo head `52a02392`
-after the latest input-surface truth tighten landed, and no remaining product
+Status: landed on `main`; reverified on 2026-03-31 at repo head `890b5e8d`
+after the latest blocker-copy tighten landed, and no remaining product
 delta is visible in this family beyond keeping this artifact aligned with the
 verified head
 
@@ -73,7 +73,7 @@ Current focused proofs for this slice:
 - `pnpm exec vitest run src/lib/chord-chart-parser.test.ts src/components/left-panel/InputSection.test.tsx`
 - `pnpm exec vitest run src/hooks/useGenerate.test.tsx`
 - `pnpm run type-check`
-- verification head: `52a02392ef56ee4ca68b435f218b0bc82353c631`
+- verification head: `890b5e8de57d4d3ce210591496451e8f855344e9`
 
 ## Tracked Landing
 
@@ -99,7 +99,9 @@ Current focused proofs for this slice:
   `commitpath_c40ed88d Refresh chord parser failure truth evidence`
 - `52a02392ef56ee4ca68b435f218b0bc82353c631`:
   `Expose chord parser blocked next step`
-- The current product head at `52a02392` still preserves the chord parser
+- `890b5e8de57d4d3ce210591496451e8f855344e9`:
+  `Make chord parse blocker explicit`
+- The current product head at `890b5e8d` still preserves the chord parser
   failure truth contract, and the focused parser/input/generation/type-check
   proofs passed again on 2026-03-31 before this follow-up doc-only evidence
   refresh updated the repo-local artifact.
@@ -135,6 +137,9 @@ Current focused proofs for this slice:
   Generate remains blocked until the chart is fixed, and kept the parse banner
   focused on summary, next step, and flagged bars instead of collapsing those
   surfaces back into one sentence.
+- Commit `890b5e8d` kept the same family honest at current `main` by making
+  the parser blocker copy more explicit without changing the proof boundary for
+  this queue family.
 - After the 2026-03-31 recheck, this family appears exhausted until a new
   chord-parse behavior changes the contract or the proof surface.
 
