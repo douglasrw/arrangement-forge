@@ -3,7 +3,7 @@
 Status date: 2026-03-31
 
 Status: landed on `main`; reverified on 2026-03-31 against product head
-`fffb1c64` with no remaining bounded product delta visible in this family
+`f280d7d7` with no remaining bounded product delta visible in this family
 
 Purpose: preserve the current chord parser failure contract and its landing
 proof in one repo-local place so future work does not have to reconstruct it
@@ -132,10 +132,12 @@ Current focused proofs for this slice:
 
 - `pnpm test -- --run src/lib/chord-chart-parser.test.ts src/components/left-panel/InputSection.test.tsx src/components/left-panel/AiAssistantSection.test.tsx src/components/left-panel/LeftPanel.test.tsx src/hooks/useGenerate.test.tsx`
 - `pnpm run type-check`
-- verification head: `fffb1c64ceb02eebe9f6769780da2b07c04fa462`
+- verification head: `f280d7d7db09ee3018bf429163f22d195d5e5998`
 
 ## Tracked Landing
 
+- `f280d7d7db09ee3018bf429163f22d195d5e5998`:
+  `commitpath_c40ed88d Refresh chord parser failure truth evidence`
 - `fffb1c64ceb02eebe9f6769780da2b07c04fa462`:
   `commitpath_c40ed88d Lock no-chord upload blocked truth`
 - `63b905c3fc0b4fad9cf259366d5d35db095dfd58`:
