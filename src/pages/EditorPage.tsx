@@ -86,7 +86,7 @@ function describeEditorRoute(routeMode: EditorRouteMode, projectId: string | und
     return '/project';
   }
 
-  return projectId ? `/project/${projectId}` : '/project/:id';
+  return projectId ? `/project/${projectId}` : '/project/:id (missing project id)';
 }
 
 function getEditorRouteTruth({
@@ -106,6 +106,10 @@ function getEditorRouteTruth({
 
   if (routeState === 'missing-project') {
     return `Route truth: ${routeLabel} cannot open because the requested project is unavailable.`;
+  }
+
+  if (routeState === 'error' && routeMode === 'project-id' && !projectId) {
+    return 'Route truth: /project/:id cannot open because the route is missing a project id.';
   }
 
   if (routeState === 'error') {
@@ -139,6 +143,10 @@ function getEditorRouteCurrentState({
   }
 
   if (routeState === 'error') {
+    if (routeMode === 'project-id' && !projectId) {
+      return 'The requested editor route is malformed because no project id was provided.';
+    }
+
     return projectId
       ? `The requested project route for ${projectId} is blocked by a load failure.`
       : 'The requested project route is blocked by a load failure.';
@@ -224,7 +232,7 @@ export default function EditorPage({
         message:
           routeMode === 'project-selection'
             ? 'The /project editor route is open, but no project has been selected yet.'
-            : 'The requested project route is missing an id.',
+            : 'The /project/:id editor route is missing a project id, so Arrangement Forge cannot load a project here.',
       });
       return;
     }
@@ -328,7 +336,11 @@ export default function EditorPage({
             }
             currentState={currentState}
             routeTruth={routeTruth}
-            nextStep="Return to the library, then retry this project after the load failure is resolved."
+            nextStep={
+              routeMode === 'project-id' && !id
+                ? 'Return to the library, then open a project to replace this malformed editor route.'
+                : 'Return to the library, then retry this project after the load failure is resolved.'
+            }
             testId="editor-shell-error-state"
             tone="error"
             actionHref="/library"

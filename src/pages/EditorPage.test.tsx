@@ -398,6 +398,50 @@ describe('EditorPage route loading gate', () => {
     expect(queryBackToLibraryLink()).not.toBeNull();
   });
 
+  it('makes a malformed /project/:id route explicit when no project id is present', async () => {
+    useProjectStore.setState({
+      project: makeProject('stale-project'),
+      stems: [],
+      sections: [],
+      blocks: [],
+      chords: [],
+      chatMessages: [],
+    });
+
+    const mounted = renderEditor(undefined);
+    mountedRoot = mounted.root;
+    mountedContainer = mounted.container;
+
+    await act(async () => {
+      await Promise.resolve();
+    });
+
+    expect(loadProjectMock).not.toHaveBeenCalled();
+    expect(queryErrorState()).not.toBeNull();
+    expect(querySelectionSurface()).toBeNull();
+    expect(document.body.textContent).toContain(
+      'The /project/:id editor route is missing a project id, so Arrangement Forge cannot load a project here.'
+    );
+    expect(document.body.textContent).toContain(
+      'Current state: The requested editor route is malformed because no project id was provided.'
+    );
+    expect(document.body.textContent).toContain(
+      'Route truth: /project/:id cannot open because the route is missing a project id.'
+    );
+    expect(document.body.textContent).toContain(
+      'Next step: Return to the library, then open a project to replace this malformed editor route.'
+    );
+    expect(queryBackToLibraryLink()).not.toBeNull();
+    expect(useProjectStore.getState()).toMatchObject({
+      project: null,
+      stems: [],
+      sections: [],
+      blocks: [],
+      chords: [],
+      chatMessages: [],
+    });
+  });
+
   it('shows an explicit no-project-selected state for the /project fallback route', async () => {
     useProjectStore.setState({
       project: {
