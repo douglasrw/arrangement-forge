@@ -222,8 +222,9 @@ export function formatChord(chord: Chord, key: string, mode: 'letter' | 'roman')
   return result;
 }
 
-// Regex to detect Roman numeral input (with optional b/# prefix)
-const ROMAN_NUMERAL_RE = /^[b#]?(I{1,3}|I?V|VI{0,3}|i{1,3}|i?v|vi{0,3})(.*)/;
+// Regex to detect Roman numeral input (with optional b/# prefix).
+// Order longest numerals first so "vi" does not mis-parse as "v" + "i".
+const ROMAN_NUMERAL_RE = /^([b#]?(?:VII|III|VI|IV|II|V|I|vii|iii|vi|iv|ii|v|i))(.*)$/;
 
 // Quality suffix extraction from letter-name chord input
 // Matches optional accidental + quality
@@ -264,7 +265,7 @@ export function parseChordInput(
       }
     }
 
-    const canonical = QUALITY_MAP[suffix.trim()] ?? (suffix.trim() || null);
+    const canonical = canonicalizeRomanQuality(degreeRaw, suffix.trim());
     return {
       degree: degreeRaw,
       quality: canonical || null,
@@ -301,4 +302,29 @@ export function parseChordInput(
   }
 
   return null;
+}
+
+function canonicalizeRomanQuality(degree: string, suffix: string): string | null {
+  if (!suffix) {
+    return null;
+  }
+
+  if (suffix === '7') {
+    return isLowercaseRomanDegree(degree) ? 'min7' : 'dom7';
+  }
+
+  if (suffix === '9') {
+    return isLowercaseRomanDegree(degree) ? 'min9' : '9';
+  }
+
+  if (suffix === '6') {
+    return isLowercaseRomanDegree(degree) ? 'min6' : '6';
+  }
+
+  return QUALITY_MAP[suffix] ?? suffix;
+}
+
+function isLowercaseRomanDegree(degree: string) {
+  const numeral = degree.replace(/^[b#]/, '');
+  return numeral === numeral.toLowerCase();
 }

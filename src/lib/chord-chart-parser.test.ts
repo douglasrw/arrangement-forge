@@ -347,4 +347,14 @@ describe('parseChordChart', () => {
     expect(chords[1].degree).toBe('ii');
     expect(chords[2].degree).toBe('V');
   });
+
+  it('keeps shorthand Roman degrees and inferred seventh qualities truthful', () => {
+    const { chords } = parseChordChart('vi | bVII | ii7 | V7', 'C');
+
+    expect(chords).toHaveLength(4);
+    expect(chords[0]).toMatchObject({ degree: 'vi', quality: null });
+    expect(chords[1]).toMatchObject({ degree: 'bVII', quality: null });
+    expect(chords[2]).toMatchObject({ degree: 'ii', quality: 'min7' });
+    expect(chords[3]).toMatchObject({ degree: 'V', quality: 'dom7' });
+  });
 });

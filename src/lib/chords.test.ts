@@ -111,11 +111,19 @@ describe('parseChordInput', () => {
   it('parses Roman numeral ii7 directly', () => {
     const result = parseChordInput('ii7', 'C');
     expect(result?.degree).toBe('ii');
-    expect(result?.quality).toBe('dom7');
+    expect(result?.quality).toBe('min7');
   });
 
   it('parses Imaj7 as I maj7', () => {
     expect(parseChordInput('Imaj7', 'C')).toEqual({ degree: 'I', quality: 'maj7', bassDegree: null });
+  });
+
+  it('parses plain lowercase Roman numerals without splitting the degree', () => {
+    expect(parseChordInput('vi', 'C')).toEqual({ degree: 'vi', quality: null, bassDegree: null });
+  });
+
+  it('keeps accidental Roman degrees intact', () => {
+    expect(parseChordInput('bVII', 'C')).toEqual({ degree: 'bVII', quality: null, bassDegree: null });
   });
 
   it('parses slash chord G7/B in key of C', () => {
