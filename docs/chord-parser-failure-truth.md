@@ -3,9 +3,10 @@
 Status date: 2026-03-31
 
 Status: landed on `main`; reverified on 2026-03-31 at current head
-`46f62414` before this artifact refresh, so blocked bars, overflow, editor
-repair guidance, and generation-stop repair copy still stay explicit in the
-input panel instead of being inferred from truncated warning copy
+`cb527b72` after plain text section labels like `Verse:` stopped masquerading
+as invalid chord bars, so blocked bars, overflow, editor repair guidance, and
+generation-stop repair copy still stay explicit in the input panel instead of
+being inferred from truncated warning copy
 
 Purpose: preserve the current chord parser failure contract and its landing
 proof in one repo-local place so future work does not have to reconstruct it
@@ -20,6 +21,8 @@ from `src/lib/chord-chart-parser.ts`, `src/components/left-panel/InputSection.ts
   of pretending a previous chord exists.
 - Repeat markers that follow an unresolved bar produce their own explicit issue
   instead of inheriting a broken bar state.
+- Plain text section labels like `Verse:` and `Chorus 2:` are treated as
+  section headers instead of being miscounted as invalid chord bars.
 - Unresolved bars still fall back to `N.C.` for generation, but the parser
   preserves why each bar was blocked.
 - The input surface summarizes both the current blocked state and the next
@@ -39,6 +42,9 @@ from `src/lib/chord-chart-parser.ts`, `src/components/left-panel/InputSection.ts
   explicit instead of copying broken state forward.
 - `invalid_token` keeps unrecognized chord bars explicit even though generation
   still receives an `N.C.` placeholder for that bar.
+- Unbracketed section headers now follow the same acceptance path as imported
+  chord charts, so direct text entry does not shift bar numbers or surface a
+  false parse blocker just because the label was written as `Verse:`.
 
 `src/components/left-panel/InputSection.tsx` owns the input-surface truth:
 
@@ -78,10 +84,12 @@ Current focused proofs for this slice:
 
 - `pnpm test -- --run src/lib/chord-chart-parser.test.ts src/components/left-panel/InputSection.test.tsx src/hooks/useGenerate.test.tsx`
 - `pnpm type-check`
-- verification head: working tree changes verified on top of `46f62414ca31feb48d2094c1545d13f6fa47abcd` before this artifact refresh
+- verification head: working tree changes verified on top of `cb527b72ec4fe308ca8e8e601c455812c4ecded2` before this artifact refresh
 
 ## Tracked Landing
 
+- `cb527b72ec4fe308ca8e8e601c455812c4ecded2`:
+  `commitpath_c40ed88d Accept plain section labels in chord parser`
 - `46f62414ca31feb48d2094c1545d13f6fa47abcd`:
   `commitpath_c40ed88d Refresh chord parser failure truth evidence`
 - `5dee0b98294e0b60c6858fcb6b8150e5695a096a`:
@@ -187,8 +195,11 @@ Current focused proofs for this slice:
 - Commit `46f62414` repeated that same repo-local evidence refresh after one
   more clean focused recheck, keeping the artifact aligned with the latest
   verified `main` head instead of the prior evidence pointer.
-- After the 2026-03-31 recheck at current head `46f62414`, this family still
-  appears exhausted until a new chord-parse behavior changes the contract or
+- Commit `cb527b72` made direct text-entry section labels follow the same
+  parser path as imported chord charts, so `Verse:` no longer creates a false
+  blocked bar or shifts subsequent bar numbers.
+- After the 2026-03-31 recheck at current head `cb527b72`, this family again
+  appears exhausted unless a new chord-parse behavior changes the contract or
   the proof surface.
 
 The tests cover:
@@ -196,6 +207,7 @@ The tests cover:
 - explicit invalid-token issue capture
 - repeat markers without a previous chord
 - repeat markers that follow unresolved bars
+- unbracketed section header lines that should not become false blocked bars
 - explicit overflow count when blocked-bar highlights are truncated
 - input-surface summary and next-step copy for blocked bars
 - visible warning snippets for invalid bars and unresolved repeat markers
