@@ -70,6 +70,7 @@ export function parseChordChart(raw: string, key: string): ChordChartParseResult
   let barNumber = 0;
   let prevChord: ChordEntry | null = null;
   let prevBarState: ParsedBarState | null = null;
+  let hasPlayableBars = false;
 
   for (const [lineIndex, rawLine] of lines.entries()) {
     const line = rawLine.trim();
@@ -104,6 +105,9 @@ export function parseChordChart(raw: string, key: string): ChordChartParseResult
         chords.push(entry);
         prevChord = entry;
         prevBarState = state;
+        if (state === 'chord') {
+          hasPlayableBars = true;
+        }
       }
     }
   }
@@ -112,7 +116,7 @@ export function parseChordChart(raw: string, key: string): ChordChartParseResult
     chords,
     warnings,
     issues,
-    truth: buildParseTruth(issues, warnings, true, chords.length > 0),
+    truth: buildParseTruth(issues, warnings, true, hasPlayableBars),
   };
 }
 

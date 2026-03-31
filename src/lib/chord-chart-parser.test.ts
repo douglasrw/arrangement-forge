@@ -77,6 +77,25 @@ describe('parseChordChart', () => {
     });
   });
 
+  it('keeps no-chord-only charts blocked until at least one playable bar exists', () => {
+    const { chords, issues, truth } = parseChordChart('N.C. | - | nc', 'C');
+
+    expect(chords).toHaveLength(3);
+    expect(chords.every((chord) => chord.degree === null)).toBe(true);
+    expect(issues).toHaveLength(0);
+    expect(truth).toEqual({
+      state: 'blocked',
+      title: 'Chord chart needs chord bars',
+      currentState:
+        'No playable chord bars are present yet, so Generate stays blocked until the chart includes at least one chord bar.',
+      summary: 'Section labels and blank lines do not create playable bars on their own.',
+      nextStep: 'Add at least one chord bar such as Cmaj7 | Fmaj7 | G7 | Cmaj7.',
+      blockedBars: [],
+      issueHighlights: [],
+      remainingIssueCount: 0,
+    });
+  });
+
   it('repeat marker copies previous chord', () => {
     const { chords, warnings } = parseChordChart('C | %', 'C');
     expect(chords).toHaveLength(2);

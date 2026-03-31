@@ -325,6 +325,48 @@ describe('useGenerate assistant prompt flow', () => {
     });
   });
 
+  it('blocks generation when the chart only contains no-chord bars', async () => {
+    parseChordChartMock.mockReturnValue({
+      chords: [
+        { bar_number: 1, degree: null, quality: null, bass_degree: null },
+        { bar_number: 2, degree: null, quality: null, bass_degree: null },
+      ],
+      warnings: [],
+      issues: [],
+      truth: {
+        state: 'blocked',
+        currentState:
+          'No playable chord bars are present yet, so Generate stays blocked until the chart includes at least one chord bar.',
+        nextStep: 'Add at least one chord bar such as Cmaj7 | Fmaj7 | G7 | Cmaj7.',
+      },
+    });
+
+    const mounted = renderHarness();
+    mountedRoot = mounted.root;
+    mountedContainer = mounted.container;
+
+    await act(async () => {
+      await hookValue!.runGeneration();
+      await Promise.resolve();
+    });
+
+    expect(generateMock).not.toHaveBeenCalled();
+    expect(saveArrangementMock).not.toHaveBeenCalled();
+    expect(useUiStore.getState()).toMatchObject({
+      generationState: 'idle',
+      systemStatus: 'error',
+      errorMessage:
+        'No playable chord bars are present yet, so Generate stays blocked until the chart includes at least one chord bar. Next step: Add at least one chord bar such as Cmaj7 | Fmaj7 | G7 | Cmaj7.',
+    });
+    expect(saveProjectMock).toHaveBeenCalledTimes(1);
+    expect(useProjectStore.getState().chatMessages[0]).toMatchObject({
+      role: 'assistant',
+      scope: 'setup',
+      content:
+        'Generation failed: No playable chord bars are present yet, so Generate stays blocked until the chart includes at least one chord bar. Next step: Add at least one chord bar such as Cmaj7 | Fmaj7 | G7 | Cmaj7.',
+    });
+  });
+
   it('turns an assistant prompt into generation, project changes, and chat history', async () => {
     const persistedFlagsSeenBeforeSave: boolean[] = [];
 
