@@ -2,11 +2,10 @@
 
 Status date: 2026-03-31
 
-Status: landed on `main`; reverified on 2026-03-31 after product head
-`ac957eae`, then refreshed in same-day evidence commits so the repo-local
-truth artifact still points at the latest verified state after uploaded
-bar-delimited rows with invalid chord tokens stayed in the chord chart instead
-of being silently dropped before the parser could surface blocked-state truth
+Status: landed on `main`; reverified on 2026-03-31 at product head
+`e9a0db10`, after `efc2e1e2` promoted the family and `e9a0db10` kept invalid
+uploaded chord rows visible without changing the blocked-state proof surface,
+so this repo-local truth artifact now points at the latest verified state
 
 Purpose: preserve the current chord parser failure contract and its landing
 proof in one repo-local place so future work does not have to reconstruct it
@@ -90,10 +89,14 @@ Current focused proofs for this slice:
 
 - `pnpm test -- --run src/lib/chord-chart-parser.test.ts src/components/left-panel/InputSection.test.tsx src/hooks/useGenerate.test.tsx`
 - `pnpm type-check`
-- verification head: working tree changes verified on top of `ac957eaeb7047a5579a9716c8909960925ab0c71` before this artifact refresh
+- verification head: working tree changes verified on top of `e9a0db101579c9f5442213c58792c42d4a526974` before this artifact refresh
 
 ## Tracked Landing
 
+- `e9a0db101579c9f5442213c58792c42d4a526974`:
+  `Keep invalid uploaded chord rows visible`
+- `efc2e1e20e7408573d0f7bd050977b09556f0858`:
+  `Promote to main: Arrangement Forge chord parser failure truth slice`
 - `ac957eaeb7047a5579a9716c8909960925ab0c71`:
   `commitpath_c40ed88d Keep uploaded parser failures visible`
 - `85ea925d264dd75c792c91ef3463b0edb8f3f772`:
@@ -222,10 +225,14 @@ Current focused proofs for this slice:
   making the raw chord-chart field hint carry the same flagged-bar and overflow
   truth as the blocked banner, so the repair guidance remains local even when
   the banner is not the operator's current focal surface.
-- After the 2026-03-31 product recheck at head `ac957eae` and the same-day
-  evidence refresh commits that preserved the verified truth artifact, this
-  family again appears exhausted unless a new chord-parse behavior changes the
-  contract or the proof surface.
+- Commit `efc2e1e2` promoted the already-landed parser-failure truth family to
+  `main` without changing the bounded proof contract.
+- Commit `e9a0db10` kept invalid uploaded chord rows visible in the current
+  product head, and the same focused proofs still passed without exposing a
+  new parser-truth gap.
+- After the 2026-03-31 product recheck at head `e9a0db10`, this family again
+  appears exhausted unless a new chord-parse behavior changes the contract or
+  the proof surface.
 
 The tests cover:
 
