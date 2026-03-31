@@ -30,6 +30,16 @@ export interface AuthGateTruth {
   signedOutReason: SignedOutReason | null;
 }
 
+type AuthStoreState = {
+  user: User | null;
+  profile: Profile | null;
+  authStatus: AuthStatus;
+  signedOutReason: SignedOutReason | null;
+  isLoading: boolean;
+  isAuthenticated: boolean;
+  authGate: AuthGateTruth;
+};
+
 interface AuthStore {
   user: User | null;
   profile: Profile | null;
@@ -37,6 +47,7 @@ interface AuthStore {
   signedOutReason: SignedOutReason | null;
   isLoading: boolean;
   isAuthenticated: boolean;
+  authGate: AuthGateTruth;
 
   beginSessionCheck: () => void;
   completeAuthenticatedSession: (session: { user: User; profile: Profile }) => void;
@@ -48,7 +59,7 @@ interface AuthStore {
 export function getAuthGateTruth({
   authStatus,
   signedOutReason,
-}: Pick<AuthStore, 'authStatus' | 'signedOutReason'>): AuthGateTruth {
+}: Pick<AuthStoreState, 'authStatus' | 'signedOutReason'>): AuthGateTruth {
   switch (authStatus) {
     case 'checking-session':
       return {
@@ -71,6 +82,12 @@ export function getAuthGateTruth({
   }
 }
 
+export function selectAuthGateTruth(
+  state: Pick<AuthStoreState, 'authGate'>
+): AuthGateTruth {
+  return state.authGate;
+}
+
 function resolveSignedOutNextStep(reason: SignedOutReason | null): AuthGateNextStep {
   switch (reason) {
     case 'email-confirmation-required':
@@ -86,40 +103,57 @@ function resolveSignedOutNextStep(reason: SignedOutReason | null): AuthGateNextS
   }
 }
 
+function createAuthStoreState(
+  overrides: Omit<AuthStoreState, 'authGate'>
+): AuthStoreState {
+  return {
+    ...overrides,
+    authGate: getAuthGateTruth(overrides),
+  };
+}
+
 export const useAuthStore = create<AuthStore>()((set) => ({
-  user: null,
-  profile: null,
-  authStatus: 'checking-session',
-  signedOutReason: null,
-  isLoading: true,
-  isAuthenticated: false,
+  ...createAuthStoreState({
+    user: null,
+    profile: null,
+    authStatus: 'checking-session',
+    signedOutReason: null,
+    isLoading: true,
+    isAuthenticated: false,
+  }),
 
   beginSessionCheck: () =>
-    set({
-      user: null,
-      profile: null,
-      authStatus: 'checking-session',
-      signedOutReason: null,
-      isLoading: true,
-      isAuthenticated: false,
-    }),
+    set(
+      createAuthStoreState({
+        user: null,
+        profile: null,
+        authStatus: 'checking-session',
+        signedOutReason: null,
+        isLoading: true,
+        isAuthenticated: false,
+      })
+    ),
   completeAuthenticatedSession: ({ user, profile }) =>
-    set({
-      user,
-      profile,
-      authStatus: 'authenticated',
-      signedOutReason: null,
-      isLoading: false,
-      isAuthenticated: true,
-    }),
+    set(
+      createAuthStoreState({
+        user,
+        profile,
+        authStatus: 'authenticated',
+        signedOutReason: null,
+        isLoading: false,
+        isAuthenticated: true,
+      })
+    ),
   setProfile: (profile) => set({ profile }),
   setSignedOut: (reason) =>
-    set({
-      user: null,
-      profile: null,
-      authStatus: 'signed-out',
-      signedOutReason: reason,
-      isLoading: false,
-      isAuthenticated: false,
-    }),
+    set(
+      createAuthStoreState({
+        user: null,
+        profile: null,
+        authStatus: 'signed-out',
+        signedOutReason: reason,
+        isLoading: false,
+        isAuthenticated: false,
+      })
+    ),
 }));

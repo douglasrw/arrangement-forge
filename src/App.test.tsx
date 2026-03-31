@@ -5,6 +5,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { createRoot, type Root } from 'react-dom/client';
 import { MemoryRouter, Route, Routes, useLocation } from 'react-router-dom';
 import { AuthGuard } from './App';
+import { getAuthGateTruth } from '@/store/auth-store';
 import { useAuthStore } from '@/store/auth-store';
 
 vi.mock('@/pages/LoginPage', () => ({
@@ -89,12 +90,24 @@ function renderRoute(initialEntry: string) {
   return { container, root };
 }
 
+function setAuthStoreFixture(
+  state: Pick<
+    ReturnType<typeof useAuthStore.getState>,
+    'user' | 'profile' | 'authStatus' | 'signedOutReason' | 'isLoading' | 'isAuthenticated'
+  >
+) {
+  useAuthStore.setState({
+    ...state,
+    authGate: getAuthGateTruth(state),
+  });
+}
+
 let mountedRoot: Root | null = null;
 let mountedContainer: HTMLDivElement | null = null;
 
 beforeEach(() => {
   reactActEnv.IS_REACT_ACT_ENVIRONMENT = true;
-  useAuthStore.setState({
+  setAuthStoreFixture({
     user: null,
     profile: null,
     authStatus: 'signed-out',
@@ -133,11 +146,13 @@ describe('App protected route recovery truth', () => {
   });
 
   it('shows the loading gate without flashing login or protected content during bootstrap', () => {
-    useAuthStore.setState({
+    setAuthStoreFixture({
       authStatus: 'checking-session',
       signedOutReason: null,
       isLoading: true,
       isAuthenticated: false,
+      user: null,
+      profile: null,
     });
 
     const mounted = renderRoute('/settings');
@@ -151,8 +166,9 @@ describe('App protected route recovery truth', () => {
   });
 
   it('keeps authenticated users on the requested protected route', async () => {
-    useAuthStore.setState({
+    setAuthStoreFixture({
       user: { id: 'user-1', email: 'ash@example.com' },
+      profile: null,
       authStatus: 'authenticated',
       signedOutReason: null,
       isAuthenticated: true,
@@ -173,8 +189,9 @@ describe('App protected route recovery truth', () => {
   });
 
   it('removes protected content immediately after auth state is cleared', async () => {
-    useAuthStore.setState({
+    setAuthStoreFixture({
       user: { id: 'user-1', email: 'ash@example.com' },
+      profile: null,
       authStatus: 'authenticated',
       signedOutReason: null,
       isAuthenticated: true,
