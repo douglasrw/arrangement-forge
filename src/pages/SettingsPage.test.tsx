@@ -447,7 +447,7 @@ describe('SettingsPage truth surface', () => {
     });
 
     expect(mounted.container.textContent).toContain(
-      'Invalid profile chord display mode: solfege'
+      'Invalid profile chord display mode: solfege. Supported modes: letter or roman.'
     );
     expect(useAuthStore.getState().profile?.displayName).toBe('Doug');
     expect(saveButton?.disabled).toBe(false);

@@ -72,7 +72,7 @@ describe('rowToProfile', () => {
         created_at: '2026-03-28T00:00:00Z',
         updated_at: '2026-03-28T01:00:00Z',
       })
-    ).toThrow('Invalid profile chord display mode: solfege');
+    ).toThrow('Invalid profile chord display mode: solfege. Supported modes: letter or roman.');
   });
 
   it('rejects unsupported default genres instead of treating them as saved truth', () => {
@@ -85,7 +85,9 @@ describe('rowToProfile', () => {
         created_at: '2026-03-28T00:00:00Z',
         updated_at: '2026-03-28T01:00:00Z',
       })
-    ).toThrow('Invalid profile default genre: Trap Metal');
+    ).toThrow(
+      'Invalid profile default genre: Trap Metal. Supported genres: Jazz, Blues, Rock, Funk, Country, Gospel, R&B, Latin, or Pop.'
+    );
   });
 
   it('rejects malformed required profile fields instead of coercing them into saved truth', () => {

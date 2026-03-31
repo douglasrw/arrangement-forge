@@ -3,6 +3,19 @@ import { GENRES } from '@/lib/genre-config';
 
 const VALID_CHORD_DISPLAY_MODES = new Set<Profile['chordDisplayMode']>(['letter', 'roman']);
 const VALID_GENRES = new Set(GENRES);
+const SUPPORTED_CHORD_DISPLAY_MODES = ['letter', 'roman'] as const;
+
+function formatSupportedValues(values: readonly string[]): string {
+  if (values.length <= 1) {
+    return values[0] ?? '';
+  }
+
+  if (values.length === 2) {
+    return `${values[0]} or ${values[1]}`;
+  }
+
+  return `${values.slice(0, -1).join(', ')}, or ${values[values.length - 1]}`;
+}
 
 function parseRequiredString(
   value: unknown,
@@ -25,7 +38,9 @@ function parseChordDisplayMode(value: unknown): Profile['chordDisplayMode'] {
     return value as Profile['chordDisplayMode'];
   }
 
-  throw new Error(`Invalid profile chord display mode: ${String(value)}`);
+  throw new Error(
+    `Invalid profile chord display mode: ${String(value)}. Supported modes: ${formatSupportedValues(SUPPORTED_CHORD_DISPLAY_MODES)}.`
+  );
 }
 
 function parseDefaultGenre(value: unknown): string | null {
@@ -37,7 +52,9 @@ function parseDefaultGenre(value: unknown): string | null {
     return value;
   }
 
-  throw new Error(`Invalid profile default genre: ${String(value)}`);
+  throw new Error(
+    `Invalid profile default genre: ${String(value)}. Supported genres: ${formatSupportedValues(GENRES)}.`
+  );
 }
 
 export function rowToProfile(row: Record<string, unknown>): Profile {
