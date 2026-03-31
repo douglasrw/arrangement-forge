@@ -232,6 +232,53 @@ describe('useAuth loadProfile', () => {
     });
     expect(useUiStore.getState().chordDisplayMode).toBe('letter');
   });
+
+  it('fails profile hydration when persisted settings fall outside the supported settings truth', async () => {
+    profileRow = {
+      id: 'user-1',
+      display_name: 'Ashlyn',
+      chord_display_mode: 'solfege',
+      default_genre: 'Pop',
+      created_at: '2026-03-29T00:00:00Z',
+      updated_at: '2026-03-29T01:00:00Z',
+    };
+    supabaseMock.auth.getSession.mockResolvedValue({
+      data: {
+        session: {
+          user: { id: 'user-1', email: 'ash@example.com' },
+        },
+      },
+    });
+
+    const mounted = renderHarness();
+    mountedRoot = mounted.root;
+    mountedContainer = mounted.container;
+
+    act(() => {
+      hookValue!.initAuth();
+    });
+
+    await act(async () => {
+      await flushAsyncWork();
+    });
+
+    expect(useAuthStore.getState()).toMatchObject({
+      user: null,
+      profile: null,
+      authStatus: 'signed-out',
+      signedOutReason: 'profile-load-failed',
+    });
+    expect(hookValue!.authTruth).toMatchObject({
+      status: 'signed-out',
+      access: 'blocked',
+      currentState: 'The saved profile could not be loaded.',
+      nextStep: 'retry-profile-load',
+      nextStepLabel: 'Retry the profile load',
+      nextStepDetail: 'Retry the profile load by signing in again.',
+      signedOutReason: 'profile-load-failed',
+    });
+    expect(useUiStore.getState().chordDisplayMode).toBe('letter');
+  });
 });
 
 describe('useAuth auth action failures', () => {

@@ -41,4 +41,50 @@ describe('rowToProfile', () => {
       updatedAt: '2026-03-28T01:00:00Z',
     });
   });
+
+  it('normalizes blank default genre to null', () => {
+    expect(
+      rowToProfile({
+        id: 'profile-3',
+        display_name: 'Ashlyn',
+        chord_display_mode: 'letter',
+        default_genre: '',
+        created_at: '2026-03-28T00:00:00Z',
+        updated_at: '2026-03-28T01:00:00Z',
+      })
+    ).toEqual({
+      id: 'profile-3',
+      displayName: 'Ashlyn',
+      chordDisplayMode: 'letter',
+      defaultGenre: null,
+      createdAt: '2026-03-28T00:00:00Z',
+      updatedAt: '2026-03-28T01:00:00Z',
+    });
+  });
+
+  it('rejects unsupported chord display modes instead of inventing a saved setting', () => {
+    expect(() =>
+      rowToProfile({
+        id: 'profile-4',
+        display_name: 'Ashlyn',
+        chord_display_mode: 'solfege',
+        default_genre: 'Pop',
+        created_at: '2026-03-28T00:00:00Z',
+        updated_at: '2026-03-28T01:00:00Z',
+      })
+    ).toThrow('Invalid profile chord display mode: solfege');
+  });
+
+  it('rejects unsupported default genres instead of treating them as saved truth', () => {
+    expect(() =>
+      rowToProfile({
+        id: 'profile-5',
+        display_name: 'Ashlyn',
+        chord_display_mode: 'letter',
+        default_genre: 'Trap Metal',
+        created_at: '2026-03-28T00:00:00Z',
+        updated_at: '2026-03-28T01:00:00Z',
+      })
+    ).toThrow('Invalid profile default genre: Trap Metal');
+  });
 });
