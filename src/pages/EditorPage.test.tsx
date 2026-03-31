@@ -145,6 +145,10 @@ function queryReadyBanner() {
   return document.querySelector('[data-testid="editor-route-ready-banner"]');
 }
 
+function queryReadyBannerLink(href: string) {
+  return document.querySelector(`[data-testid="editor-route-ready-banner"] a[href="${href}"]`);
+}
+
 function getStatusBarText(): string {
   return document.querySelector('[data-testid="status-bar"]')?.textContent ?? '';
 }
@@ -272,8 +276,10 @@ describe('EditorPage route loading gate', () => {
       'Current state: the requested project is loaded in this workspace. Next step: edit this arrangement or return to the library to open a different project.'
     );
     expect(document.body.textContent).toContain(
-      'Route truth: /project/project-a is loaded in this workspace, and /project remains the fallback route when no project id is selected.'
+      'Route truth: /project/project-a is loaded in this workspace. If you leave this project route, /project is the editor fallback route until you choose another project from the library.'
     );
+    expect(queryReadyBannerLink('/project')).not.toBeNull();
+    expect(queryReadyBannerLink('/library')).not.toBeNull();
   });
 
   it('removes the stale workspace immediately when the route switches to another project', async () => {

@@ -110,7 +110,7 @@ function getEditorRouteTruth({
   }
 
   if (routeState === 'ready') {
-    return `Route truth: ${routeLabel} is loaded in this workspace, and /project remains the fallback route when no project id is selected.`;
+    return `Route truth: ${routeLabel} is loaded in this workspace. If you leave this project route, /project is the editor fallback route until you choose another project from the library.`;
   }
 
   return `Route truth: ${routeLabel} is still resolving before the editor becomes ready.`;
@@ -135,6 +135,20 @@ function EditorRouteReadyBanner({
         arrangement or return to the library to open a different project.
       </p>
       <p className="text-[11px] text-foreground/80">{routeTruth}</p>
+      <div className="flex flex-wrap gap-2 pt-1">
+        <Link
+          to="/project"
+          className="inline-flex items-center rounded-md border border-border px-3 py-1.5 text-[11px] font-medium text-foreground transition-colors hover:bg-muted"
+        >
+          Open editor fallback
+        </Link>
+        <Link
+          to="/library"
+          className="inline-flex items-center rounded-md border border-border px-3 py-1.5 text-[11px] font-medium text-foreground transition-colors hover:bg-muted"
+        >
+          Back to library
+        </Link>
+      </div>
     </div>
   );
 }
