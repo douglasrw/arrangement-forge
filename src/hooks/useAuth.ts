@@ -11,14 +11,27 @@ import { useAuthStore } from '@/store/auth-store';
 import { useUiStore } from '@/store/ui-store';
 
 export type SignUpResult = { status: 'session-pending' } | { status: 'confirmation-required' };
+export type UseAuthResult = {
+  user: User | null;
+  profile: ReturnType<typeof useAuthStore.getState>['profile'];
+  authTruth: ReturnType<typeof selectAuthTruth>;
+  authGate: ReturnType<typeof selectAuthGateTruth>;
+  initAuth: () => () => void;
+  signIn: (email: string, password: string) => Promise<void>;
+  signUp: (email: string, password: string) => Promise<SignUpResult>;
+  signInWithGoogle: () => Promise<void>;
+  signOut: () => Promise<void>;
+  loadProfile: (userId?: string) => Promise<ReturnType<typeof rowToProfile> | null>;
+};
 
 type HydrationResult =
   | { status: 'authenticated' }
   | { status: 'signed-out'; reason: SignedOutReason }
   | { status: 'stale' };
 
-export function useAuth() {
-  const authStore = useAuthStore();
+export function useAuth(): UseAuthResult {
+  const user = useAuthStore((state) => state.user);
+  const profile = useAuthStore((state) => state.profile);
   const authTruth = useAuthStore(selectAuthTruth);
   const authGate = useAuthStore(selectAuthGateTruth);
   const authTransitionIdRef = useRef(0);
@@ -186,7 +199,8 @@ export function useAuth() {
   }, [clearSessionState]);
 
   return {
-    ...authStore,
+    user,
+    profile,
     authGate,
     authTruth,
     initAuth,

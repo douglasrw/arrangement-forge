@@ -243,6 +243,32 @@ describe('useAuth loadProfile', () => {
 });
 
 describe('useAuth auth action failures', () => {
+  it('returns the explicit auth truth surface instead of legacy auth status booleans', () => {
+    const mounted = renderHarness();
+    mountedRoot = mounted.root;
+    mountedContainer = mounted.container;
+
+    expect(hookValue).toMatchObject({
+      user: null,
+      profile: null,
+      authTruth: {
+        status: 'signed-out',
+        access: 'blocked',
+        nextStep: 'sign-in',
+        signedOutReason: 'no-session',
+      },
+      authGate: {
+        access: 'blocked',
+        nextStep: 'sign-in',
+        signedOutReason: 'no-session',
+      },
+    });
+    expect('authStatus' in hookValue!).toBe(false);
+    expect('isLoading' in hookValue!).toBe(false);
+    expect('isAuthenticated' in hookValue!).toBe(false);
+    expect('signedOutReason' in hookValue!).toBe(false);
+  });
+
   it('marks the auth gate as checking-session after sign-in succeeds', async () => {
     const mounted = renderHarness();
     mountedRoot = mounted.root;
