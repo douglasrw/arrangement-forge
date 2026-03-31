@@ -54,6 +54,20 @@ function describeProtectedRecoveryTruth(path: string) {
   return 'Route truth: this protected workspace route stays reserved until authentication finishes.';
 }
 
+function describeProtectedRouteLabel(path: string) {
+  return path || '/';
+}
+
+function describeProtectedFallbackRoute(path: string) {
+  const routePath = path.split(/[?#]/, 1)[0] ?? path;
+
+  if (routePath === '/project' || routePath.startsWith('/project/')) {
+    return '/project';
+  }
+
+  return null;
+}
+
 function LoadingScreen({
   authTruth,
   recoveryPath,
@@ -63,6 +77,8 @@ function LoadingScreen({
 }) {
   const recoveryDestination = describeProtectedDestination(recoveryPath);
   const recoveryTruth = describeProtectedRecoveryTruth(recoveryPath);
+  const currentRoute = describeProtectedRouteLabel(recoveryPath);
+  const fallbackRoute = describeProtectedFallbackRoute(recoveryPath);
 
   return (
     <div
@@ -79,6 +95,10 @@ function LoadingScreen({
               {authTruth.nextStepDetail} If a session is restored, Arrangement Forge will continue
               to {recoveryDestination}.
             </p>
+            <p className="text-xs text-foreground/80">Current route: {currentRoute}</p>
+            {fallbackRoute ? (
+              <p className="text-xs text-foreground/80">Editor fallback route: {fallbackRoute}</p>
+            ) : null}
             <p className="text-xs text-foreground/80">{recoveryTruth}</p>
           </div>
         </div>

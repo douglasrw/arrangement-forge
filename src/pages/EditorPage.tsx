@@ -11,6 +11,8 @@ function EditorShellState({
   title,
   message,
   currentState,
+  currentRoute,
+  fallbackRoute,
   routeTruth,
   nextStep,
   testId,
@@ -22,6 +24,8 @@ function EditorShellState({
   title: string;
   message: string;
   currentState: string;
+  currentRoute: string;
+  fallbackRoute?: string;
   routeTruth: string;
   nextStep: string;
   testId: string;
@@ -53,6 +57,10 @@ function EditorShellState({
         <p className="text-sm font-medium text-foreground">{title}</p>
         <p className="text-xs text-muted-foreground">{message}</p>
         <p className="text-xs text-foreground/80">Current state: {currentState}</p>
+        <p className="text-xs text-foreground/80">Current route: {currentRoute}</p>
+        {fallbackRoute ? (
+          <p className="text-xs text-foreground/80">Editor fallback route: {fallbackRoute}</p>
+        ) : null}
         <p className="text-xs text-foreground/80">{routeTruth}</p>
         <p className="text-xs text-foreground/80">Next step: {nextStep}</p>
       </div>
@@ -107,6 +115,10 @@ function describeEditorRoute(routeMode: EditorRouteMode, projectId: string | und
   }
 
   return projectId ? `/project/${projectId}` : '/project/:id (missing project id)';
+}
+
+function getEditorFallbackRoute() {
+  return '/project';
 }
 
 function getEditorRouteTruth({
@@ -189,9 +201,13 @@ function getEditorRouteCurrentState({
 
 function EditorRouteReadyBanner({
   projectId,
+  currentRoute,
+  fallbackRoute,
   routeTruth,
 }: {
   projectId: string;
+  currentRoute: string;
+  fallbackRoute: string;
   routeTruth: string;
 }) {
   return (
@@ -205,6 +221,8 @@ function EditorRouteReadyBanner({
         Current state: the requested project is loaded in this workspace. Next step: edit this
         arrangement or return to the library to open a different project.
       </p>
+      <p className="text-[11px] text-foreground/80">Current route: {currentRoute}</p>
+      <p className="text-[11px] text-foreground/80">Editor fallback route: {fallbackRoute}</p>
       <p className="text-[11px] text-foreground/80">{routeTruth}</p>
       <div className="flex flex-wrap gap-2 pt-1">
         <Link
@@ -240,6 +258,8 @@ export default function EditorPage({
     routeState: routeState.status,
     projectId: id,
   });
+  const currentRoute = describeEditorRoute(routeMode, id);
+  const fallbackRoute = getEditorFallbackRoute();
   const currentState = getEditorRouteCurrentState({
     routeMode,
     routeState: routeState.status,
@@ -281,6 +301,8 @@ export default function EditorPage({
             title="Loading project route"
             message={getLoadingMessage(id)}
             currentState={currentState}
+            currentRoute={currentRoute}
+            fallbackRoute={fallbackRoute}
             routeTruth={routeTruth}
             nextStep="Wait for the current route load to finish before editing this arrangement."
             testId="editor-shell-loading-state"
@@ -300,6 +322,8 @@ export default function EditorPage({
             title="Choose a project to open the editor"
             message={routeState.message}
             currentState={currentState}
+            currentRoute={currentRoute}
+            fallbackRoute={fallbackRoute}
             routeTruth={routeTruth}
             nextStep="Return to the library, then open an existing project or create a new one to finish this editor route."
             testId="editor-shell-no-project-state"
@@ -325,6 +349,8 @@ export default function EditorPage({
                 : routeState.message
             }
             currentState={currentState}
+            currentRoute={currentRoute}
+            fallbackRoute={fallbackRoute}
             routeTruth={routeTruth}
             nextStep="Return to the library and open a different project."
             testId="editor-shell-missing-project-state"
@@ -351,6 +377,8 @@ export default function EditorPage({
                 : routeState.message
             }
             currentState={currentState}
+            currentRoute={currentRoute}
+            fallbackRoute={fallbackRoute}
             routeTruth={routeTruth}
             nextStep={
               routeMode === 'project-id' && !id
@@ -368,5 +396,16 @@ export default function EditorPage({
     );
   }
 
-  return <AppShell workspaceBanner={<EditorRouteReadyBanner projectId={id} routeTruth={routeTruth} />} />;
+  return (
+    <AppShell
+      workspaceBanner={
+        <EditorRouteReadyBanner
+          projectId={id}
+          currentRoute={currentRoute}
+          fallbackRoute={fallbackRoute}
+          routeTruth={routeTruth}
+        />
+      }
+    />
+  );
 }
