@@ -4,10 +4,11 @@ Status date: 2026-04-01
 
 Status: landed on local `main`; reverified again on 2026-04-01 with the
 focused parser, input-surface, generation-block, and type-check proofs passing
-against the current local `main` head `3a615579`, no remaining bounded product
-delta visible in this family beyond keeping this repo-local truth artifact
-aligned with the latest verified state, and this refresh still does not claim
-any fresh product promotion beyond the already-verified local `main` state
+against the then-current verified local `main` head `3a615579`, no remaining
+bounded product delta visible in this family beyond keeping this repo-local
+truth artifact aligned with the latest verified state, and this refresh still
+does not claim any fresh product promotion beyond the already-verified local
+`main` state
 
 Purpose: preserve the current chord parser failure contract and its landing
 proof in one repo-local place so future work does not have to reconstruct it
@@ -162,8 +163,8 @@ Current focused proofs for this slice:
 - `pnpm exec tsc --noEmit`
 - the current proof set still matches the same bounded parser, input-surface,
   and generation-block contract after the 2026-04-01 recheck against the
-  current local `main` head `3a615579`
-- this artifact proves the current local `main` worktree state at that head;
+  then-current verified local `main` head `3a615579`
+- this artifact proves the verified local `main` worktree state at that head;
   it does not claim any fresh product promotion happened during this refresh
 
 ## Tracked Landing
@@ -191,6 +192,8 @@ Current focused proofs for this slice:
 - `b4cb7ed9112a21c16627878c435ae2c1779f01cc`:
   `commitpath_c40ed88d Refresh chord parser truth evidence`
 - `3a6155799ee2ce8521b8dca08f9c85e4d57c181f`:
+  `commitpath_c40ed88d Refresh chord parser truth evidence`
+- `592280246c14cdc6036e7298e0838e5b96375816`:
   `commitpath_c40ed88d Refresh chord parser truth evidence`
 - `808ce22e2c1cb91568b584dca34b67fbc4b85323`:
   `commitpath_c40ed88d Refresh chord parser failure truth evidence`
