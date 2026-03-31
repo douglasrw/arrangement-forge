@@ -96,6 +96,7 @@ export function StatusBar({ status = 'saved', className }: StatusBarProps) {
   const generationState = useUiStore((state) => state.generationState);
   const undoStore = useUndoStore();
   const historyTruth = undoStore.getHistoryTruth(generationState);
+  const historyNextStep = historyTruth.activeBoundaryTruth?.nextStep ?? historyTruth.nextStep;
   const { project, stems, sections, blocks, chords } = useProjectStore();
   const arrangementTruth = getProjectArrangementTruth({
     project,
@@ -147,9 +148,13 @@ export function StatusBar({ status = 'saved', className }: StatusBarProps) {
         </span>
       </div>
 
-      {/* Center: branding */}
-      <span className="flex-1 text-center text-[10px] text-zinc-600">
-        Arrangement Forge
+      {/* Center: actionable history guidance */}
+      <span
+        data-testid="status-bar-history-next-step"
+        className="min-w-0 flex-1 px-3 text-center text-[10px] text-zinc-600 truncate"
+        title={historyTruth.tooltip}
+      >
+        {historyNextStep}
       </span>
 
       {/* Right: history truth */}

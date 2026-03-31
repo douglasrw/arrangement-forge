@@ -369,8 +369,14 @@ describe('StatusBar', () => {
     const history = container.querySelector(
       '[data-testid="status-bar-history"]'
     ) as HTMLSpanElement | null;
+    const nextStep = container.querySelector(
+      '[data-testid="status-bar-history-next-step"]'
+    ) as HTMLSpanElement | null;
 
     expect(history?.textContent).toBe('Undo: Split block');
+    expect(nextStep?.textContent).toBe(
+      'Use Undo to restore the arrangement captured before Split block.'
+    );
     expect(history?.title).toBe(
       'Undo is ready to restore the arrangement captured before Split block. Use Undo to restore the arrangement captured before Split block.'
     );
@@ -694,8 +700,14 @@ describe('StatusBar', () => {
     const history = container.querySelector(
       '[data-testid="status-bar-history"]'
     ) as HTMLSpanElement | null;
+    const nextStep = container.querySelector(
+      '[data-testid="status-bar-history-next-step"]'
+    ) as HTMLSpanElement | null;
 
     expect(history?.textContent).toBe('Undo: Split block · Redo: Merge blocks');
+    expect(nextStep?.textContent).toBe(
+      'Use Undo to restore the arrangement captured before Split block.'
+    );
     expect(history?.title).toBe(
       'Undo is ready to restore the arrangement captured before Split block. ' +
       'Redo is ready to restore the arrangement captured after Merge blocks. ' +
