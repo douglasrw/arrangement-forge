@@ -537,6 +537,8 @@ describe('EditorPage route loading gate', () => {
     expect(document.body.textContent).toContain(
       'Next step: Return to the library, then open an existing project or create a new one to finish this editor route.'
     );
+    expect(getStatusBarText()).toContain('No project selected');
+    expect(getStatusBarText()).not.toContain('Saved');
     expect(queryBackToLibraryLink()).not.toBeNull();
     expect(queryNoProjectState()?.getAttribute('data-editor-route-state')).toBe('no-project-selected');
     expect(mounted.container.textContent).not.toContain('Night Train');

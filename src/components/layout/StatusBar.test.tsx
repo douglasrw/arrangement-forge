@@ -321,6 +321,13 @@ describe('StatusBar', () => {
     expect(container.textContent).not.toContain('Saved');
   });
 
+  it('renders no-project-selected as a distinct editor fallback status', () => {
+    const container = renderStatusBar('no-project-selected');
+
+    expect(container.textContent).toContain('No project selected');
+    expect(container.textContent).not.toContain('Saved');
+  });
+
   it('renders sample loading as a distinct visible status', () => {
     const container = renderStatusBar('loading-samples');
 

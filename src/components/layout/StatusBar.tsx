@@ -12,6 +12,7 @@ export type AppStatus =
   | 'saving'
   | 'generating'
   | 'loading-project'
+  | 'no-project-selected'
   | 'loading-samples'
   | 'offline'
   | 'error';
@@ -71,6 +72,10 @@ const STATUS_CONFIG: Record<
   'loading-project': {
     dot: 'bg-status-saving animate-pulse',
     label: 'Loading project…',
+  },
+  'no-project-selected': {
+    dot: 'bg-muted-foreground',
+    label: 'No project selected',
   },
   'loading-samples': {
     dot: 'bg-status-saving animate-pulse',

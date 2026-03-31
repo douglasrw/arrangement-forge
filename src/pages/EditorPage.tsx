@@ -278,7 +278,7 @@ export default function EditorPage({
   if (routeState.status === 'no-project-selected') {
     return (
       <AppShell
-        shellStatus="saved"
+        shellStatus="no-project-selected"
         shellBody={
           <EditorShellState
             title="Choose a project to open the editor"
