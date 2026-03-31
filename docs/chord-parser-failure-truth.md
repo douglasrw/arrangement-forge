@@ -72,9 +72,9 @@ from `src/lib/chord-chart-parser.ts`, `src/components/left-panel/InputSection.ts
 
 Current focused proofs for this slice:
 
-- `pnpm exec vitest run src/lib/chord-chart-parser.test.ts src/components/left-panel/InputSection.test.tsx`
-- `pnpm run type-check`
-- verification head: working tree changes verified on top of `b3c81a91ce6f2bdda0c57cb9ea01b438f50963bb` before this artifact refresh
+- `npm run test -- --run src/lib/chord-chart-parser.test.ts src/components/left-panel/InputSection.test.tsx src/hooks/useGenerate.test.tsx`
+- `npm run type-check`
+- verification head: working tree changes verified on top of `dca1b46e77fe13278146c4d43a3b3419ed034444` before this artifact refresh
 
 ## Tracked Landing
 
@@ -107,6 +107,8 @@ Current focused proofs for this slice:
 - `0df706e50e929f4e7a908dbc285b71f662a55b1a`:
   `commitpath_c40ed88d Keep chord parse overflow truth explicit`
 - `b3c81a91ce6f2bdda0c57cb9ea01b438f50963bb`:
+  `commitpath_c40ed88d Refresh chord parser failure truth evidence`
+- `dca1b46e77fe13278146c4d43a3b3419ed034444`:
   `commitpath_c40ed88d Refresh chord parser failure truth evidence`
 - Commit `9150d7d0` introduced explicit issue tracking and input-surface copy
   for invalid bars, first-bar repeat markers, and repeat markers that follow
@@ -152,7 +154,10 @@ Current focused proofs for this slice:
 - Commit `b3c81a91` refreshed the same repo-local evidence after another clean
   focused recheck so the artifact kept tracking the latest verified `main`
   head instead of stopping at the previous product-pointer refresh.
-- After the 2026-03-31 recheck at current head `b3c81a91`, this family appears
+- Commit `dca1b46e` repeated that repo-local evidence refresh so the artifact
+  kept pace with the current verified `main` head instead of stopping one
+  checked proof behind.
+- After the 2026-03-31 recheck at current head `dca1b46e`, this family appears
   exhausted again until a new chord-parse behavior changes the contract or the
   proof surface.
 
