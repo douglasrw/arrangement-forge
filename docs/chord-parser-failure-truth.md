@@ -2,9 +2,9 @@
 
 Status date: 2026-03-31
 
-Status: landed on `main`; reverified on 2026-03-31 at proof head `105261ac`,
-with later docs-only refreshes preserving the same parser, input surface, and
-generation block contract without inventing a new product delta
+Status: landed on `main`; reverified on 2026-03-31 at proof head `a63700d1`,
+with the same parser, input surface, and generation block contract still
+holding at the current repo head without a new product delta
 
 Purpose: preserve the current chord parser failure contract and its landing
 proof in one repo-local place so future work does not have to reconstruct it
@@ -88,12 +88,18 @@ Current focused proofs for this slice:
 
 - `pnpm test -- --run src/lib/chord-chart-parser.test.ts src/components/left-panel/InputSection.test.tsx src/hooks/useGenerate.test.tsx`
 - `pnpm type-check`
-- verification head: `105261ac62b635b7c2db3cf8ca710bc7c53357b0`
+- verification head: `a63700d1dd26ca18ee3230ef9a9a24f629aeed12`
 
 ## Tracked Landing
 
 - `3aa4743cb13d3762e704fe99f859a11b02c7c2ee`:
   `commitpath_c40ed88d Refresh chord parser failure truth evidence`
+- `105261ac62b635b7c2db3cf8ca710bc7c53357b0`:
+  `commitpath_c40ed88d Fix chord parser truth head pointer again`
+- `3f152e7da6be525beb882f09758855f831653304`:
+  `commitpath_c40ed88d Keep chord parser truth head current`
+- `a63700d1dd26ca18ee3230ef9a9a24f629aeed12`:
+  `commitpath_c40ed88d Stabilize chord parser truth proof head wording`
 - `b5ced43a4740996caccdc29f3e2701d4624a19af`:
   `Promote to main: Arrangement Forge chord parser failure truth slice`
 - `ab75242f879e4dc47afb0e875bf4aa8dbbfae649`:
@@ -270,15 +276,15 @@ Current focused proofs for this slice:
   more clean focused recheck at current repo head, so the artifact now points
   at the latest verified state instead of stopping at the previous promoted
   head.
-- Later docs-only refreshes preserved that same verified contract without
-  changing the bounded proof surface.
-- After the 2026-03-31 recheck at proof head `105261ac`, this family again
+- Later docs-only head-pointer refreshes preserved that same verified contract
+  without changing the bounded proof surface.
+- After the 2026-03-31 recheck at proof head `a63700d1`, this family again
   appeared exhausted unless a new chord-parse behavior changed the contract or
   the proof surface.
-- The 2026-03-31 recheck at verified proof head `105261ac` produced the same
-  focused proof results with no product-file delta in this family since that
-  earlier verification, so the honest next move here was a repo-local evidence
-  refresh rather than another parser or input-surface patch.
+- The 2026-03-31 recheck at verified proof head `a63700d1` produced the same
+  focused proof results with no product-file delta in this family, so the
+  honest move remained a repo-local evidence refresh rather than another
+  parser or input-surface patch.
 
 The tests cover:
 
