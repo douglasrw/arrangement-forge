@@ -87,4 +87,28 @@ describe('rowToProfile', () => {
       })
     ).toThrow('Invalid profile default genre: Trap Metal');
   });
+
+  it('rejects malformed required profile fields instead of coercing them into saved truth', () => {
+    expect(() =>
+      rowToProfile({
+        id: '',
+        display_name: 'Ashlyn',
+        chord_display_mode: 'letter',
+        default_genre: 'Pop',
+        created_at: '2026-03-28T00:00:00Z',
+        updated_at: '2026-03-28T01:00:00Z',
+      })
+    ).toThrow('Invalid profile id: ');
+
+    expect(() =>
+      rowToProfile({
+        id: 'profile-6',
+        display_name: 'Ashlyn',
+        chord_display_mode: 'letter',
+        default_genre: 'Pop',
+        created_at: null,
+        updated_at: '2026-03-28T01:00:00Z',
+      })
+    ).toThrow('Invalid profile created at: null');
+  });
 });
