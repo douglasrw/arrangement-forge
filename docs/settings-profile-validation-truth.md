@@ -2,12 +2,9 @@
 
 Status date: 2026-03-31
 
-Status: landed on `main`; reverified on 2026-03-31 at head `cde96b4929b8`
-after the promoted settings-profile validation truth copy landed beside the
-earlier blocked-save truth, persisted profile validation, save-failure truth,
-supported-values copy, default-genre regression coverage, and explicit saved
-display-name truth, and no remaining product delta is visible in this family
-beyond this evidence refresh
+Status: landed on `main`; reverified on 2026-03-31 with focused settings
+proofs and no remaining product delta visible in this family beyond this
+evidence refresh
 
 Purpose: preserve the current settings and persisted profile validation
 contract in one repo-local place so future work does not have to reconstruct it
@@ -66,7 +63,6 @@ Current focused proofs for this slice:
 
 - `pnpm test -- --run src/pages/SettingsPage.test.tsx`
 - `pnpm run type-check`
-- verification head: `cde96b4929b8c75c0b1a8d1ae1cbc6d49f901ba4`
 
 ## Tracked Landing
 
@@ -74,7 +70,11 @@ Current focused proofs for this slice:
   `Promote settings profile validation truth`
 - `dbc5b968a2884c82c50d02654fdad3866e44dca2`:
   `commitpath_c40ed88d Clarify saved display name profile truth`
-- `cde96b4929b8c75c0b1a8d1ae1cbc6d49f901ba4`:
+- `be18e010438ee11e3b1a03cff666f9ed154c6adb`:
+  `commitpath_c40ed88d Refresh settings profile validation truth evidence`
+- `cde96b49ab0d092a144d9ce6e25f26afdbe5d8b9`:
+  `commitpath_c40ed88d Refresh settings profile validation truth evidence`
+- `5e7670fb697976ae731a1ade3d1120e9f5f85e9e`:
   `commitpath_c40ed88d Refresh settings profile validation truth evidence`
 - `7c7511db6e87769d0394b534169c8d4595dd4053`:
   `commitpath_c40ed88d Refresh settings profile validation truth evidence`
@@ -105,10 +105,10 @@ Current focused proofs for this slice:
 - The landing made saved, pending, unavailable, blocked-save, invalid, and
   failed-save states explicit on the settings surface instead of relying on
   hidden surrounding context.
-- The current `main` head at `cde96b4929b8` preserves that contract, now with
+- The current `main` head still preserves that contract, including the
   explicit saved display-name truth in the Profile card, and the focused
-  settings proofs passed again on 2026-03-31 before this doc-only evidence
-  refresh updated the repo-local artifact.
+  settings proofs passed again on 2026-03-31 without additional product
+  changes to the settings or persisted-profile surfaces.
 - After the 2026-03-31 recheck, this family appears exhausted until a new
   settings or persisted-profile behavior changes the contract or the proof
   surface.
