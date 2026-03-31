@@ -11,6 +11,7 @@ function EditorShellState({
   title,
   message,
   currentState,
+  routeReadiness,
   currentRoute,
   fallbackRoute,
   routeTruth,
@@ -24,6 +25,7 @@ function EditorShellState({
   title: string;
   message: string;
   currentState: string;
+  routeReadiness: string;
   currentRoute: string;
   fallbackRoute?: string;
   routeTruth: string;
@@ -57,6 +59,7 @@ function EditorShellState({
         <p className="text-sm font-medium text-foreground">{title}</p>
         <p className="text-xs text-muted-foreground">{message}</p>
         <p className="text-xs text-foreground/80">Current state: {currentState}</p>
+        <p className="text-xs text-foreground/80">Route readiness: {routeReadiness}</p>
         <p className="text-xs text-foreground/80">Current route: {currentRoute}</p>
         {fallbackRoute ? (
           <p className="text-xs text-foreground/80">Editor fallback route: {fallbackRoute}</p>
@@ -219,6 +222,46 @@ function getEditorRouteCurrentState({
     : 'Arrangement Forge is still loading the requested project route.';
 }
 
+function getEditorRouteReadiness({
+  routeMode,
+  routeState,
+  projectId,
+}: {
+  routeMode: EditorRouteMode;
+  routeState: EditorRouteState['status'];
+  projectId: string | undefined;
+}) {
+  if (routeState === 'no-project-selected') {
+    return '/project is parked as the editor fallback route until you choose a project from the library.';
+  }
+
+  if (routeState === 'missing-project') {
+    return projectId
+      ? `/project/${projectId} is blocked because that project is unavailable.`
+      : 'The requested editor route is blocked because that project is unavailable.';
+  }
+
+  if (routeState === 'error') {
+    if (routeMode === 'project-id' && !projectId) {
+      return '/project/:id is blocked because the route is missing a project id.';
+    }
+
+    return projectId
+      ? `/project/${projectId} is blocked until the load failure is resolved.`
+      : 'The requested editor route is blocked until the load failure is resolved.';
+  }
+
+  if (routeState === 'ready') {
+    return projectId
+      ? `/project/${projectId} is ready in this workspace.`
+      : 'The requested editor route is ready in this workspace.';
+  }
+
+  return projectId
+    ? `/project/${projectId} is still loading before the editor becomes interactive.`
+    : 'The requested editor route is still loading before the editor becomes interactive.';
+}
+
 function EditorRouteReadyBanner({
   projectId,
   currentRoute,
@@ -292,6 +335,11 @@ export default function EditorPage({
     routeState: routeState.status,
     projectId: id,
   });
+  const routeReadiness = getEditorRouteReadiness({
+    routeMode,
+    routeState: routeState.status,
+    projectId: id,
+  });
 
   useEffect(() => {
     if (!id) {
@@ -328,6 +376,7 @@ export default function EditorPage({
             title="Loading project route"
             message={getLoadingMessage(id)}
             currentState={currentState}
+            routeReadiness={routeReadiness}
             currentRoute={currentRoute}
             fallbackRoute={fallbackRoute}
             routeTruth={routeTruth}
@@ -349,6 +398,7 @@ export default function EditorPage({
             title="Choose a project to open the editor"
             message={routeState.message}
             currentState={currentState}
+            routeReadiness={routeReadiness}
             currentRoute={currentRoute}
             fallbackRoute={fallbackRoute}
             routeTruth={routeTruth}
@@ -376,6 +426,7 @@ export default function EditorPage({
                 : routeState.message
             }
             currentState={currentState}
+            routeReadiness={routeReadiness}
             currentRoute={currentRoute}
             fallbackRoute={fallbackRoute}
             routeTruth={routeTruth}
@@ -404,6 +455,7 @@ export default function EditorPage({
                 : routeState.message
             }
             currentState={currentState}
+            routeReadiness={routeReadiness}
             currentRoute={currentRoute}
             fallbackRoute={fallbackRoute}
             routeTruth={routeTruth}

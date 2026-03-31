@@ -68,6 +68,28 @@ function describeProtectedFallbackRoute(path: string) {
   return null;
 }
 
+function describeProtectedRouteReadiness(path: string) {
+  const routePath = path.split(/[?#]/, 1)[0] ?? path;
+
+  if (routePath === '/project') {
+    return '/project is reserved as the editor fallback route until authentication finishes.';
+  }
+
+  if (routePath.startsWith('/project/')) {
+    return 'The requested editor project route is reserved until authentication finishes.';
+  }
+
+  if (routePath.startsWith('/settings')) {
+    return 'The settings route is reserved until authentication finishes.';
+  }
+
+  if (routePath.startsWith('/library')) {
+    return 'The library route is reserved until authentication finishes.';
+  }
+
+  return 'This protected workspace route is reserved until authentication finishes.';
+}
+
 function LoadingScreen({
   authTruth,
   recoveryPath,
@@ -77,6 +99,7 @@ function LoadingScreen({
 }) {
   const recoveryDestination = describeProtectedDestination(recoveryPath);
   const recoveryTruth = describeProtectedRecoveryTruth(recoveryPath);
+  const routeReadiness = describeProtectedRouteReadiness(recoveryPath);
   const currentRoute = describeProtectedRouteLabel(recoveryPath);
   const fallbackRoute = describeProtectedFallbackRoute(recoveryPath);
 
@@ -95,6 +118,7 @@ function LoadingScreen({
               {authTruth.nextStepDetail} If a session is restored, Arrangement Forge will continue
               to {recoveryDestination}.
             </p>
+            <p className="text-xs text-foreground/80">Route readiness: {routeReadiness}</p>
             <p className="text-xs text-foreground/80">Current route: {currentRoute}</p>
             {fallbackRoute ? (
               <p className="text-xs text-foreground/80">Editor fallback route: {fallbackRoute}</p>

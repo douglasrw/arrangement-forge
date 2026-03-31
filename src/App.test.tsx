@@ -203,6 +203,9 @@ describe('App protected route recovery truth', () => {
     expect(mounted.container.querySelector('[data-testid="auth-loading-screen"]')).not.toBeNull();
     expect(mounted.container.textContent).toContain('continue to project project-1 in the editor');
     expect(mounted.container.textContent).toContain(
+      'Route readiness: The requested editor project route is reserved until authentication finishes.'
+    );
+    expect(mounted.container.textContent).toContain(
       'Current route: /project/project-1?tab=arrangement#bridge'
     );
     expect(mounted.container.textContent).toContain('Editor fallback route: /project');
@@ -227,6 +230,9 @@ describe('App protected route recovery truth', () => {
 
     expect(mounted.container.querySelector('[data-testid="auth-loading-screen"]')).not.toBeNull();
     expect(mounted.container.textContent).toContain('continue to project selection in the editor');
+    expect(mounted.container.textContent).toContain(
+      'Route readiness: /project is reserved as the editor fallback route until authentication finishes.'
+    );
     expect(mounted.container.textContent).toContain('Current route: /project');
     expect(mounted.container.textContent).toContain('Editor fallback route: /project');
     expect(mounted.container.textContent).toContain(

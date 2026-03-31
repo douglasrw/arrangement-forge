@@ -249,6 +249,9 @@ describe('EditorPage route loading gate', () => {
     expect(document.body.textContent).toContain(
       'Current state: Arrangement Forge is still loading the requested project route for project-b.'
     );
+    expect(document.body.textContent).toContain(
+      'Route readiness: /project/project-b is still loading before the editor becomes interactive.'
+    );
     expect(document.body.textContent).toContain('Current route: /project/project-b');
     expect(document.body.textContent).toContain('Editor fallback route: /project');
     expect(document.body.textContent).toContain(
@@ -442,6 +445,9 @@ describe('EditorPage route loading gate', () => {
     expect(document.body.textContent).toContain(
       'Current state: The requested project route for missing-project did not resolve to an available project.'
     );
+    expect(document.body.textContent).toContain(
+      'Route readiness: /project/missing-project is blocked because that project is unavailable.'
+    );
     expect(document.body.textContent).toContain('Current route: /project/missing-project');
     expect(document.body.textContent).toContain('Editor fallback route: /project');
     expect(document.body.textContent).toContain(
@@ -482,6 +488,9 @@ describe('EditorPage route loading gate', () => {
     expect(document.body.textContent).toContain(
       'Current state: The requested project route for project-a is blocked by a load failure.'
     );
+    expect(document.body.textContent).toContain(
+      'Route readiness: /project/project-a is blocked until the load failure is resolved.'
+    );
     expect(document.body.textContent).toContain('Current route: /project/project-a');
     expect(document.body.textContent).toContain('Editor fallback route: /project');
     expect(document.body.textContent).toContain(
@@ -519,6 +528,9 @@ describe('EditorPage route loading gate', () => {
     );
     expect(document.body.textContent).toContain(
       'Current state: The requested editor route is malformed because no project id was provided.'
+    );
+    expect(document.body.textContent).toContain(
+      'Route readiness: /project/:id is blocked because the route is missing a project id.'
     );
     expect(document.body.textContent).toContain('Current route: /project/:id (missing project id)');
     expect(document.body.textContent).toContain('Editor fallback route: /project');
@@ -630,6 +642,9 @@ describe('EditorPage route loading gate', () => {
     );
     expect(document.body.textContent).toContain(
       'Current state: The editor fallback route is open with no active project in this workspace.'
+    );
+    expect(document.body.textContent).toContain(
+      'Route readiness: /project is parked as the editor fallback route until you choose a project from the library.'
     );
     expect(document.body.textContent).toContain('Current route: /project');
     expect(document.body.textContent).toContain('Editor fallback route: /project');
