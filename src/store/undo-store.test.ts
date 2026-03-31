@@ -234,6 +234,16 @@ describe('undoStore', () => {
     expect(useUndoStore.getState().getHistoryTruth()).toMatchObject({
       status: 'available',
       boundary: 'undo',
+      activeBoundaryTruth: {
+        boundary: 'undo',
+        status: 'available',
+        statusLabel: 'Undo: Split block',
+      },
+      companionBoundaryTruth: {
+        boundary: 'redo',
+        status: 'available',
+        statusLabel: 'Redo: Merge blocks',
+      },
       label: 'Undo: Split block · Redo: Merge blocks',
       currentState:
         'Undo is ready to restore the arrangement captured before Split block. ' +
@@ -258,6 +268,16 @@ describe('undoStore', () => {
     expect(useUndoStore.getState().getHistoryTruth()).toMatchObject({
       status: 'available',
       boundary: 'undo',
+      activeBoundaryTruth: {
+        boundary: 'undo',
+        status: 'available',
+        statusLabel: 'Undo: Split block',
+      },
+      companionBoundaryTruth: {
+        boundary: 'redo',
+        status: 'blocked',
+        statusLabel: 'Redo blocked: Broken redo',
+      },
       label: 'Undo: Split block · Redo blocked: Broken redo',
       currentState:
         'Undo is ready to restore the arrangement captured before Split block. ' +

@@ -237,6 +237,8 @@ describe('createUndoHistoryTruth', () => {
     ).toEqual({
       status: 'idle',
       boundary: null,
+      activeBoundaryTruth: null,
+      companionBoundaryTruth: null,
       label: 'Nothing to undo or redo',
       currentState:
         'No undo boundary is available right now, and no redo boundary exists because nothing has been undone yet.',
@@ -249,31 +251,34 @@ describe('createUndoHistoryTruth', () => {
   });
 
   it('surfaces the redo boundary when it is the next restorable history step', () => {
+    const redoBoundary = createUndoBoundaryTruth(
+      {
+        undoSnapshot: JSON.stringify({
+          stems: [{ id: 'undo-stem' }],
+          sections: [],
+          blocks: [],
+          chords: [],
+        }),
+        redoSnapshot: JSON.stringify({
+          stems: [{ id: 'redo-stem' }],
+          sections: [],
+          blocks: [],
+          chords: [],
+        }),
+      },
+      'redo',
+      'Split block'
+    );
     const historyTruth = createUndoHistoryTruth(
       createUndoBoundaryTruth(null, 'undo'),
-      createUndoBoundaryTruth(
-        {
-          undoSnapshot: JSON.stringify({
-            stems: [{ id: 'undo-stem' }],
-            sections: [],
-            blocks: [],
-            chords: [],
-          }),
-          redoSnapshot: JSON.stringify({
-            stems: [{ id: 'redo-stem' }],
-            sections: [],
-            blocks: [],
-            chords: [],
-          }),
-        },
-        'redo',
-        'Split block'
-      )
+      redoBoundary
     );
 
     expect(historyTruth).toEqual({
       status: 'available',
       boundary: 'redo',
+      activeBoundaryTruth: redoBoundary,
+      companionBoundaryTruth: null,
       label: 'Redo: Split block',
       currentState: 'Redo is ready to restore the arrangement captured after Split block.',
       nextStep: 'Use Redo to restore the arrangement captured after Split block.',
@@ -283,48 +288,52 @@ describe('createUndoHistoryTruth', () => {
   });
 
   it('surfaces both undo and redo boundary truth when both stack edges are still restorable', () => {
+    const undoBoundary = createUndoBoundaryTruth(
+      {
+        undoSnapshot: JSON.stringify({
+          stems: [{ id: 'undo-stem' }],
+          sections: [],
+          blocks: [],
+          chords: [],
+        }),
+        redoSnapshot: JSON.stringify({
+          stems: [{ id: 'undo-redo-stem' }],
+          sections: [],
+          blocks: [],
+          chords: [],
+        }),
+      },
+      'undo',
+      'Split block'
+    );
+    const redoBoundary = createUndoBoundaryTruth(
+      {
+        undoSnapshot: JSON.stringify({
+          stems: [{ id: 'redo-undo-stem' }],
+          sections: [],
+          blocks: [],
+          chords: [],
+        }),
+        redoSnapshot: JSON.stringify({
+          stems: [{ id: 'redo-stem' }],
+          sections: [],
+          blocks: [],
+          chords: [],
+        }),
+      },
+      'redo',
+      'Merge blocks'
+    );
     const historyTruth = createUndoHistoryTruth(
-      createUndoBoundaryTruth(
-        {
-          undoSnapshot: JSON.stringify({
-            stems: [{ id: 'undo-stem' }],
-            sections: [],
-            blocks: [],
-            chords: [],
-          }),
-          redoSnapshot: JSON.stringify({
-            stems: [{ id: 'undo-redo-stem' }],
-            sections: [],
-            blocks: [],
-            chords: [],
-          }),
-        },
-        'undo',
-        'Split block'
-      ),
-      createUndoBoundaryTruth(
-        {
-          undoSnapshot: JSON.stringify({
-            stems: [{ id: 'redo-undo-stem' }],
-            sections: [],
-            blocks: [],
-            chords: [],
-          }),
-          redoSnapshot: JSON.stringify({
-            stems: [{ id: 'redo-stem' }],
-            sections: [],
-            blocks: [],
-            chords: [],
-          }),
-        },
-        'redo',
-        'Merge blocks'
-      )
+      undoBoundary,
+      redoBoundary
     );
 
     expect(historyTruth).toEqual({
       status: 'available',
       boundary: 'undo',
+      activeBoundaryTruth: undoBoundary,
+      companionBoundaryTruth: redoBoundary,
       label: 'Undo: Split block · Redo: Merge blocks',
       currentState:
         'Undo is ready to restore the arrangement captured before Split block. ' +
@@ -341,7 +350,64 @@ describe('createUndoHistoryTruth', () => {
   });
 
   it('keeps the actionable undo boundary ahead of a blocked redo companion', () => {
+    const undoBoundary = createUndoBoundaryTruth(
+      {
+        undoSnapshot: JSON.stringify({
+          stems: [{ id: 'undo-stem' }],
+          sections: [],
+          blocks: [],
+          chords: [],
+        }),
+        redoSnapshot: JSON.stringify({
+          stems: [{ id: 'undo-redo-stem' }],
+          sections: [],
+          blocks: [],
+          chords: [],
+        }),
+      },
+      'undo',
+      'Split block'
+    );
+    const redoBoundary = createUndoBoundaryTruth(
+      {
+        undoSnapshot: JSON.stringify({
+          stems: [{ id: 'redo-undo-stem' }],
+          sections: [],
+          blocks: [],
+          chords: [],
+        }),
+        redoSnapshot: 'not json',
+      },
+      'redo',
+      'Broken redo'
+    );
     const historyTruth = createUndoHistoryTruth(
+      undoBoundary,
+      redoBoundary
+    );
+
+    expect(historyTruth).toEqual({
+      status: 'available',
+      boundary: 'undo',
+      activeBoundaryTruth: undoBoundary,
+      companionBoundaryTruth: redoBoundary,
+      label: 'Undo: Split block · Redo blocked: Broken redo',
+      currentState:
+        'Undo is ready to restore the arrangement captured before Split block. ' +
+        'The latest redo boundary is still on the stack, but the arrangement captured after Broken redo cannot be read.',
+      nextStep:
+        'Use Undo to restore the arrangement captured before Split block. ' +
+        'Do not offer Redo for the arrangement captured after Broken redo until a valid restore snapshot is stored.',
+      tooltip:
+        'Undo is ready to restore the arrangement captured before Split block. ' +
+        'The latest redo boundary is still on the stack, but the arrangement captured after Broken redo cannot be read. ' +
+        'Use Undo to restore the arrangement captured before Split block. ' +
+        'Do not offer Redo for the arrangement captured after Broken redo until a valid restore snapshot is stored.',
+    });
+  });
+
+  it('keeps the paused undo boundary ahead of a blocked redo companion', () => {
+    const undoBoundary = createUndoBoundaryExecutionTruth(
       createUndoBoundaryTruth(
         {
           undoSnapshot: JSON.stringify({
@@ -360,80 +426,31 @@ describe('createUndoHistoryTruth', () => {
         'undo',
         'Split block'
       ),
-      createUndoBoundaryTruth(
-        {
-          undoSnapshot: JSON.stringify({
-            stems: [{ id: 'redo-undo-stem' }],
-            sections: [],
-            blocks: [],
-            chords: [],
-          }),
-          redoSnapshot: 'not json',
-        },
-        'redo',
-        'Broken redo'
-      )
+      'generating'
     );
-
-    expect(historyTruth).toEqual({
-      status: 'available',
-      boundary: 'undo',
-      label: 'Undo: Split block · Redo blocked: Broken redo',
-      currentState:
-        'Undo is ready to restore the arrangement captured before Split block. ' +
-        'The latest redo boundary is still on the stack, but the arrangement captured after Broken redo cannot be read.',
-      nextStep:
-        'Use Undo to restore the arrangement captured before Split block. ' +
-        'Do not offer Redo for the arrangement captured after Broken redo until a valid restore snapshot is stored.',
-      tooltip:
-        'Undo is ready to restore the arrangement captured before Split block. ' +
-        'The latest redo boundary is still on the stack, but the arrangement captured after Broken redo cannot be read. ' +
-        'Use Undo to restore the arrangement captured before Split block. ' +
-        'Do not offer Redo for the arrangement captured after Broken redo until a valid restore snapshot is stored.',
-    });
-  });
-
-  it('keeps the paused undo boundary ahead of a blocked redo companion', () => {
+    const redoBoundary = createUndoBoundaryTruth(
+      {
+        undoSnapshot: JSON.stringify({
+          stems: [{ id: 'redo-undo-stem' }],
+          sections: [],
+          blocks: [],
+          chords: [],
+        }),
+        redoSnapshot: 'not json',
+      },
+      'redo',
+      'Broken redo'
+    );
     const historyTruth = createUndoHistoryTruth(
-      createUndoBoundaryExecutionTruth(
-        createUndoBoundaryTruth(
-          {
-            undoSnapshot: JSON.stringify({
-              stems: [{ id: 'undo-stem' }],
-              sections: [],
-              blocks: [],
-              chords: [],
-            }),
-            redoSnapshot: JSON.stringify({
-              stems: [{ id: 'undo-redo-stem' }],
-              sections: [],
-              blocks: [],
-              chords: [],
-            }),
-          },
-          'undo',
-          'Split block'
-        ),
-        'generating'
-      ),
-      createUndoBoundaryTruth(
-        {
-          undoSnapshot: JSON.stringify({
-            stems: [{ id: 'redo-undo-stem' }],
-            sections: [],
-            blocks: [],
-            chords: [],
-          }),
-          redoSnapshot: 'not json',
-        },
-        'redo',
-        'Broken redo'
-      )
+      undoBoundary,
+      redoBoundary
     );
 
     expect(historyTruth).toEqual({
       status: 'paused',
       boundary: 'undo',
+      activeBoundaryTruth: undoBoundary,
+      companionBoundaryTruth: redoBoundary,
       label: 'Undo paused: Split block · Redo blocked: Broken redo',
       currentState:
         'Generation is still running, so Undo is temporarily paused even though the arrangement captured before Split block is still preserved on the stack. ' +

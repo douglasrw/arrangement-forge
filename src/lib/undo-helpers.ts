@@ -42,6 +42,8 @@ export interface UndoBoundaryTruth {
 export interface UndoHistoryTruth {
   status: 'idle' | 'available' | 'blocked' | 'paused';
   boundary: UndoBoundary | null;
+  activeBoundaryTruth: UndoBoundaryTruth | null;
+  companionBoundaryTruth: UndoBoundaryTruth | null;
   label: string;
   currentState: string;
   nextStep: string;
@@ -270,6 +272,8 @@ export function createUndoHistoryTruth(
     return {
       status: 'idle',
       boundary: null,
+      activeBoundaryTruth: null,
+      companionBoundaryTruth: null,
       label: 'Nothing to undo or redo',
       currentState,
       nextStep,
@@ -295,6 +299,8 @@ export function createUndoHistoryTruth(
   return {
     status: activeBoundary.status,
     boundary: activeBoundary.boundary,
+    activeBoundaryTruth: activeBoundary,
+    companionBoundaryTruth: companionBoundary,
     label,
     currentState,
     nextStep,
