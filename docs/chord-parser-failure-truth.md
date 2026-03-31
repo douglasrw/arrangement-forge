@@ -3,11 +3,11 @@
 Status date: 2026-03-31
 
 Status: landed on `main`; reverified on 2026-03-31 against product head
-`810b10cd`, after `efc2e1e2` promoted the family, `e9a0db10` kept invalid
-uploaded chord rows visible, `1d9f1d5a` refreshed the same evidence, and
-`810b10cd` changed editor fallback redirect truth without changing the chord
-parser blocked-state proof surface, so this repo-local truth artifact now
-points at the latest verified product state
+`1423ef30`, after `efc2e1e2` promoted the family, `e9a0db10` kept invalid
+uploaded chord rows visible, `1d9f1d5a` refreshed the same evidence, and the
+current `main` head still leaves the parser, input surface, and generation
+block contract unchanged, so this repo-local truth artifact now points at the
+latest verified product state without inventing a new product delta
 
 Purpose: preserve the current chord parser failure contract and its landing
 proof in one repo-local place so future work does not have to reconstruct it
@@ -91,7 +91,7 @@ Current focused proofs for this slice:
 
 - `pnpm test -- --run src/lib/chord-chart-parser.test.ts src/components/left-panel/InputSection.test.tsx src/hooks/useGenerate.test.tsx`
 - `pnpm type-check`
-- verification head: `810b10cdc1880850586dd9b31f874e2d40a40900`
+- verification head: `1423ef30ea60f43c8f97f7535bca613b44a854b2`
 
 ## Tracked Landing
 
@@ -240,8 +240,12 @@ Current focused proofs for this slice:
   another clean focused recheck, keeping the artifact aligned with the latest
   verified product head instead of stopping at the prior evidence pointer.
 - After the 2026-03-31 recheck at product head `810b10cd`, this family again
-  appears exhausted unless a new chord-parse behavior changes the contract or
+  appeared exhausted unless a new chord-parse behavior changed the contract or
   the proof surface.
+- The 2026-03-31 recheck at current product head `1423ef30` produced the same
+  focused proof results with no product-file delta in this family since that
+  earlier verification, so the honest next move here was a repo-local evidence
+  refresh rather than another parser or input-surface patch.
 
 The tests cover:
 
