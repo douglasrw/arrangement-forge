@@ -2,7 +2,7 @@
 
 Status date: 2026-03-31
 
-Status: landed on `main`; reverified on 2026-03-31 at proof head `3db73757`
+Status: landed on `main`; reverified on 2026-03-31 at proof head `e7cbe50b`
 with generation parse-blocker detail truth preserved, and no remaining bounded
 product delta is visible in this family
 
@@ -76,6 +76,9 @@ and scattered tests.
   blocked-state sentence into the same field
 - the next-step copy stays explicit about whether the operator needs to replace
   flagged repeat bars or fix flagged chord bars before generation
+- first-bar repeat failures now keep the narrower recovery step `Replace bar 1
+  with explicit chords before using repeat markers.` instead of implying a
+  missing prior bar could be repaired in place
 - the text-editor hint now reuses the same blocked-state and next-step truth as
   the status banner, so the operator does not need to switch back to the
   summary card to understand what must be repaired
@@ -138,7 +141,7 @@ Current focused proofs for this slice:
 
 - `pnpm test -- --run src/lib/chord-chart-parser.test.ts src/components/left-panel/InputSection.test.tsx src/hooks/useGenerate.test.tsx`
 - `pnpm type-check`
-- verification head for this recheck: `3db73757d1a955ff8dceff03eacb396557c13eab`
+- verification head for this recheck: `e7cbe50bbb583bf5489f0eac0cf220e1ad5ffef7`
 
 ## Tracked Landing
 
@@ -195,6 +198,10 @@ Current focused proofs for this slice:
 - `b778baa4a8f71f4e57ec8b88d64041b1510c99cc`:
   `commitpath_c40ed88d Surface blocked import feedback truth`
 - `6e70db04de4e570b8462286ac9412c77d86c4368`:
+  `commitpath_c40ed88d Refresh chord parser failure truth evidence`
+- `9ab1222d863736be05344934184fe5729737c129`:
+  `commitpath_c40ed88d Clarify leading repeat recovery truth`
+- `e7cbe50bbb583bf5489f0eac0cf220e1ad5ffef7`:
   `commitpath_c40ed88d Refresh chord parser failure truth evidence`
 - `f353b811f5d2968dc5d98159a8396d6a1dd5e5b2`:
   `commitpath_c40ed88d Surface upload parser locations`
@@ -317,6 +324,10 @@ Current focused proofs for this slice:
 - Commit `890b5e8d` kept the same family honest at current `main` by making
   the parser blocker copy more explicit without changing the proof boundary for
   this queue family.
+- Commit `9ab1222d` narrowed the first-bar repeat recovery step so the surface
+  tells the operator to replace the leading repeat with an explicit chord
+  before using repeat markers, instead of implying a nonexistent previous bar
+  can be fixed.
 - Commit `94a92965` refreshed the repo-local evidence again after another clean
   focused recheck so the artifact kept pace with the latest verified `main`
   head instead of stopping at the prior doc-only pointer.
