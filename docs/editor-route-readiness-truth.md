@@ -158,7 +158,7 @@ Current focused proofs for this slice:
   truth helper and ready banner so loading, fallback, blocked, and ready
   surfaces all report the same explicit next action from one contract.
 - The focused route proofs passed again on 2026-03-31 from pre-refresh head
-  `5d306288` before this doc-only evidence refresh updated the local artifact.
+  `26728535` before this doc-only evidence refresh updated the local artifact.
 - After the 2026-03-31 recheck, this family appears exhausted until a new
   editor-route behavior changes the contract or the proof surface.
 
