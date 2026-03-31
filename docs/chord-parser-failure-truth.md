@@ -3,7 +3,7 @@
 Status date: 2026-03-31
 
 Status: landed on `main`; reverified on 2026-03-31 against product head
-`426bbfb7` with no remaining bounded product delta visible in this family
+`007d0012` with no remaining bounded product delta visible in this family
 
 Purpose: preserve the current chord parser failure contract and its landing
 proof in one repo-local place so future work does not have to reconstruct it
@@ -20,6 +20,11 @@ from `src/lib/chord-chart-parser.ts`, `src/components/left-panel/InputSection.ts
   instead of inheriting a broken bar state.
 - Plain text section labels like `Verse:` and `Chorus 2:` are treated as
   section headers instead of being miscounted as invalid chord bars.
+- Header-only charts stay blocked until at least one playable chord bar is
+  present, instead of reading as ready just because the text looks structured.
+- Charts made only of `N.C.` and other no-chord markers stay blocked until at
+  least one playable chord bar is present, instead of reading as ready because
+  they tokenized cleanly.
 - Unresolved bars still fall back to `N.C.` for generation, but the parser
   preserves why each bar was blocked.
 - Parser issue line numbers stay aligned with the original chart text even when
@@ -45,6 +50,11 @@ from `src/lib/chord-chart-parser.ts`, `src/components/left-panel/InputSection.ts
 - Unbracketed section headers now follow the same acceptance path as imported
   chord charts, so direct text entry does not shift bar numbers or surface a
   false parse blocker just because the label was written as `Verse:`.
+- Header-only charts now surface explicit blocked truth with a concrete next
+  step instead of quietly reading as parse-ready with zero playable bars.
+- No-chord-only charts like `N.C. | - | nc` now surface the same blocked truth
+  and repair step instead of quietly reading as parse-ready because every token
+  mapped to a neutral bar.
 - Blank lines no longer compress parser issue locations onto earlier line
   numbers, so highlighted repairs still point at the exact line the operator
   needs to fix in the raw chart.
@@ -93,10 +103,16 @@ Current focused proofs for this slice:
 
 - `pnpm test -- --run src/lib/chord-chart-parser.test.ts src/components/left-panel/InputSection.test.tsx src/hooks/useGenerate.test.tsx`
 - `pnpm type-check`
-- verification head: `426bbfb783a536d9e4d8898d452db2b2de0efba1`
+- verification head: `007d0012babec55c445d097fd511a5df8708eb87`
 
 ## Tracked Landing
 
+- `007d0012babec55c445d097fd511a5df8708eb87`:
+  `Preserve parse issue truth for all-invalid charts`
+- `a50e4cf67e3f5cab9b187febade991c55692d567`:
+  `commitpath_c40ed88d Block no-chord-only charts from generation`
+- `b0ea4c1c7692735811474dc38057dba5f141e26c`:
+  `Keep header-only chord charts blocked`
 - `426bbfb783a536d9e4d8898d452db2b2de0efba1`:
   `commitpath_c40ed88d Refresh chord parser failure truth evidence`
 - `8b025e3c3827dd8ee97bf2f8494ba610ac6a527f`:
@@ -314,18 +330,27 @@ Current focused proofs for this slice:
   the same focused proof results again with no product-file delta in this
   family, so the honest move remained a repo-local evidence refresh instead of
   another speculative parser or input-surface edit.
-- The latest 2026-03-31 recheck at verified product head `426bbfb7` produced
-  the same focused proof results again with no product-file delta in this
-  family, so this family remains exhausted for now and the honest move was
-  another repo-local evidence refresh instead of another speculative parser or
-  input-surface edit.
+- The later 2026-03-31 product commits `b0ea4c1c`, `a50e4cf6`, and
+  `007d0012` tightened the same family by keeping header-only charts blocked,
+  keeping no-chord-only charts blocked, and preserving parse-issue truth for
+  all-invalid charts instead of collapsing them into the generic missing-bar
+  path.
+- The latest 2026-03-31 recheck at verified product head `007d0012` produced
+  the focused proof results above with no remaining bounded product-file delta
+  in this family, so this family is exhausted again for now and the honest
+  move was a repo-local evidence refresh instead of another speculative parser
+  or input-surface edit.
 
 The tests cover:
 
 - explicit invalid-token issue capture
+- all-invalid charts staying on the parse-issue path instead of collapsing into
+  generic missing-bar truth
 - repeat markers without a previous chord
 - repeat markers that follow unresolved bars
 - unbracketed section header lines that should not become false blocked bars
+- header-only charts staying blocked until a playable bar exists
+- no-chord-only charts staying blocked until a playable bar exists
 - explicit overflow count when blocked-bar highlights are truncated
 - input-surface summary and next-step copy for blocked bars
 - visible warning snippets for invalid bars and unresolved repeat markers
