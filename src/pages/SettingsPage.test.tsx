@@ -339,7 +339,13 @@ describe('SettingsPage truth surface', () => {
       'Saved profile validation only accepts chord modes letter or roman and default genres from the supported list below.'
     );
     expect(mounted.container.textContent).toContain(
-      'Pre-selected when creating a new project. Saved profile truth accepts Jazz, Blues, Rock, Funk, Country, Gospel, R&B, Latin, or Pop.'
+      'Saved now as "Doug". Edit this field to change the saved display name.'
+    );
+    expect(mounted.container.textContent).toContain(
+      'Saved now as Letter names. Choose a different option here to update the saved chord display mode.'
+    );
+    expect(mounted.container.textContent).toContain(
+      'Pre-selected when creating a new project. Saved profile truth accepts Jazz, Blues, Rock, Funk, Country, Gospel, R&B, Latin, or Pop. Saved now as Jazz. Choose a different genre here to update the saved project default.'
     );
   });
 
@@ -394,6 +400,9 @@ describe('SettingsPage truth surface', () => {
     expect(pendingState?.textContent).toContain('1 waiting');
     expect(pendingState?.textContent).toContain('1 setting change is waiting to be applied.');
     expect(pendingState?.textContent).toContain('Display Name is still local until you save.');
+    expect(mounted.container.textContent).toContain(
+      'Saved now as "Doug". Next save will store "Ashlyn" as the display name.'
+    );
     expect(saveButton?.disabled).toBe(false);
     expect(saveButton?.textContent).toBe('Save Pending Changes');
     expect(saveCaption?.textContent).toBe('Display Name is still waiting until you save.');

@@ -1,7 +1,16 @@
 import { describe, expect, it } from 'vitest';
-import { describeSupportedProfileSettingsTruth, rowToProfile } from './profile';
+import {
+  describeSupportedProfileSettingsTruth,
+  formatChordDisplayModeLabel,
+  rowToProfile,
+} from './profile';
 
 describe('rowToProfile', () => {
+  it('formats saved chord display mode labels for settings truth surfaces', () => {
+    expect(formatChordDisplayModeLabel('letter')).toBe('Letter names');
+    expect(formatChordDisplayModeLabel('roman')).toBe('Roman numerals');
+  });
+
   it('describes the current saved profile settings truth for each editable field', () => {
     expect(describeSupportedProfileSettingsTruth()).toEqual({
       displayName: 'Display names may be left blank and save exactly as entered.',

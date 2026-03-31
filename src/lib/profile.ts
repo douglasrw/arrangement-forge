@@ -5,6 +5,10 @@ const VALID_CHORD_DISPLAY_MODES = new Set<Profile['chordDisplayMode']>(['letter'
 const VALID_GENRES = new Set(GENRES);
 export const SUPPORTED_CHORD_DISPLAY_MODES = ['letter', 'roman'] as const;
 
+export function formatChordDisplayModeLabel(mode: Profile['chordDisplayMode']): string {
+  return mode === 'roman' ? 'Roman numerals' : 'Letter names';
+}
+
 function formatSupportedValues(values: readonly string[]): string {
   if (values.length <= 1) {
     return values[0] ?? '';

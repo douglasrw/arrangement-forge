@@ -1,7 +1,11 @@
 import { useState, useEffect, FormEvent } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/lib/supabase';
-import { describeSupportedProfileSettingsTruth, rowToProfile } from '@/lib/profile';
+import {
+  describeSupportedProfileSettingsTruth,
+  formatChordDisplayModeLabel,
+  rowToProfile,
+} from '@/lib/profile';
 import { cn } from '@/lib/utils';
 import { getAuthTruth, useAuthStore } from '@/store/auth-store';
 import { useUiStore } from '@/store/ui-store';
@@ -98,6 +102,71 @@ export function applySavedProfile(
   profile: Profile
 ): SettingsDraft {
   return createSettingsDraft(profile);
+}
+
+function formatDisplayNameValue(value: string): string {
+  return value.length > 0 ? `"${value}"` : 'blank';
+}
+
+function formatDefaultGenreValue(value: string | null): string {
+  return value ? value : 'no default genre';
+}
+
+type SettingsFieldTruth = {
+  currentState: string;
+  nextStep: string;
+};
+
+function getDisplayNameTruth(
+  draft: SettingsDraft,
+  profile: Profile | null
+): SettingsFieldTruth {
+  const savedDisplayName = profile?.displayName ?? null;
+  const hasPendingChange = draft.displayName !== (savedDisplayName ?? '');
+
+  return {
+    currentState: profile
+      ? `Saved now as ${formatDisplayNameValue(savedDisplayName)}.`
+      : 'No saved display name exists yet.',
+    nextStep: hasPendingChange
+      ? `Next save will store ${formatDisplayNameValue(draft.displayName)} as the display name.`
+      : 'Edit this field to change the saved display name.',
+  };
+}
+
+function getChordModeTruth(
+  draft: SettingsDraft,
+  profile: Profile | null
+): SettingsFieldTruth {
+  const savedChordMode = profile?.chordDisplayMode ?? null;
+  const hasPendingChange = draft.chordMode !== (savedChordMode ?? 'letter');
+
+  return {
+    currentState: profile
+      ? `Saved now as ${formatChordDisplayModeLabel(savedChordMode)}.`
+      : 'No saved chord display mode exists yet.',
+    nextStep: hasPendingChange
+      ? `Next save will switch the saved chord display mode to ${formatChordDisplayModeLabel(draft.chordMode)}.`
+      : 'Choose a different option here to update the saved chord display mode.',
+  };
+}
+
+function getDefaultGenreTruth(
+  draft: SettingsDraft,
+  profile: Profile | null
+): SettingsFieldTruth {
+  const savedDefaultGenre = profile?.defaultGenre ?? null;
+  const draftDefaultGenre = draft.defaultGenre || null;
+  const hasPendingChange = draftDefaultGenre !== savedDefaultGenre;
+
+  return {
+    currentState: profile
+      ? `Saved now as ${formatDefaultGenreValue(savedDefaultGenre)}.`
+      : 'No saved default genre exists yet.',
+    nextStep: hasPendingChange
+      ? `Next save will store ${formatDefaultGenreValue(draftDefaultGenre)} for new projects.`
+      : 'Choose a different genre here to update the saved project default.',
+  };
 }
 
 function getPendingSettingsFields(
@@ -280,6 +349,9 @@ export default function SettingsPage() {
     saving,
   });
   const supportedProfileSettingsTruth = describeSupportedProfileSettingsTruth();
+  const displayNameTruth = getDisplayNameTruth(draft, profile);
+  const chordModeTruth = getChordModeTruth(draft, profile);
+  const defaultGenreTruth = getDefaultGenreTruth(draft, profile);
   const hasPendingChanges = pendingFields.length > 0;
   const savedSettingsCount = profile ? EDITABLE_SETTINGS.length - pendingFields.length : 0;
   const pendingSettingsLabel = formatSettingsFieldList(pendingFields);
@@ -434,6 +506,11 @@ export default function SettingsPage() {
                   <Label htmlFor="settings-display-name">
                     Display Name
                   </Label>
+                  <span className="text-xs text-muted-foreground">
+                    {displayNameTruth.currentState}
+                    {' '}
+                    {displayNameTruth.nextStep}
+                  </span>
                   <Input
                     id="settings-display-name"
                     type="text"
@@ -474,7 +551,11 @@ export default function SettingsPage() {
                 {/* Chord Display Mode */}
                 <div className="flex flex-col gap-1.5">
                   <span className="text-sm font-medium text-foreground">Chord Display Mode</span>
-                  <span className="text-xs text-muted-foreground">How chords appear in the editor</span>
+                  <span className="text-xs text-muted-foreground">
+                    {chordModeTruth.currentState}
+                    {' '}
+                    {chordModeTruth.nextStep}
+                  </span>
                   <div className="flex gap-4 mt-1">
                     <Label htmlFor="settings-chord-letter" className="flex items-center gap-2 cursor-pointer">
                       <input
@@ -530,7 +611,7 @@ export default function SettingsPage() {
                     Pre-selected when creating a new project. Saved profile truth accepts
                     {' '}
                     {supportedProfileSettingsTruth.defaultGenres}
-                    .
+                    . {defaultGenreTruth.currentState} {defaultGenreTruth.nextStep}
                   </span>
                   <select
                     id="settings-genre"
