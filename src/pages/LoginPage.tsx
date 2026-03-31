@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { getProtectedRouteTruth } from '@/lib/editor-route-truth';
 
 function resolveRecoveryPath(state: unknown) {
   if (state && typeof state === 'object' && 'redirectTo' in state) {
@@ -27,23 +28,7 @@ function resolveRecoveryPath(state: unknown) {
 }
 
 function describeRecoveryDestination(path: string) {
-  if (path === '/project') {
-    return 'project selection in the editor';
-  }
-
-  if (path.startsWith('/project/')) {
-    return 'your project';
-  }
-
-  if (path.startsWith('/settings')) {
-    return 'settings';
-  }
-
-  if (path.startsWith('/library')) {
-    return 'the library';
-  }
-
-  return 'your workspace';
+  return getProtectedRouteTruth(path).recoveryDestination;
 }
 
 function AuthLoadingScreen({

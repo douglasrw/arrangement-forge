@@ -296,7 +296,7 @@ describe('LoginPage failure truth', () => {
     expect(navigateMock).toHaveBeenCalledWith('/library', { replace: true });
   });
 
-  it('keeps the blocked state and recovery target visible before authentication begins', () => {
+  it('keeps the blocked state and exact editor recovery target visible before authentication begins', () => {
     locationMock.state = {
       redirectTo: '/project/project-1?tab=arrangement',
     };
@@ -306,7 +306,7 @@ describe('LoginPage failure truth', () => {
     mountedContainer = mounted.container;
 
     expect(mounted.container.textContent).toContain('Authentication blocked');
-    expect(mounted.container.textContent).toContain('return you to your project');
+    expect(mounted.container.textContent).toContain('return you to project project-1 in the editor');
     expect(mounted.container.querySelector('form')).not.toBeNull();
   });
 
