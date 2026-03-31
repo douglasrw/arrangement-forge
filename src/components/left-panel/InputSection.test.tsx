@@ -587,6 +587,40 @@ describe('InputSection upload tab', () => {
     expect(getGenerateButton(mounted.container).disabled).toBe(true);
   });
 
+  it('keeps uploaded invalid space-delimited chord rows in the chart so parse failure truth stays visible', async () => {
+    useProjectStore.setState({
+      project: makeProject({
+        chordChartRaw: 'Cmaj7 | Fmaj7 | G7 | Cmaj7',
+        generationHints: 'Keep the brushes light',
+      }),
+    });
+
+    const mounted = renderSection();
+    mountedRoot = mounted.root;
+    mountedContainer = mounted.container;
+
+    openUploadTab(mounted.container);
+    const fileInput = getUploadFileInput(mounted.container);
+
+    const file = new File(['placeholder'], 'broken-spaces.txt', { type: 'text/plain' });
+    vi.spyOn(file, 'text').mockResolvedValue('[Verse]\nCmaj7 xyz?? % Cmaj7');
+
+    await importFile(fileInput, file);
+
+    expect(useProjectStore.getState().project).toMatchObject({
+      chordChartRaw: '[Verse]\nCmaj7 xyz?? % Cmaj7',
+      generationHints: 'Keep the brushes light',
+    });
+    expect(mounted.container.textContent).toContain(
+      'Imported broken-spaces.txt into the current chord chart. Existing Description was kept.'
+    );
+    expect(mounted.container.textContent).toContain('Chord chart has parse issues');
+    expect(mounted.container.textContent).toContain(
+      'Bars 2 and 3 will become N.C. during generation, so Generate stays blocked until the chart is fixed.'
+    );
+    expect(getGenerateButton(mounted.container).disabled).toBe(true);
+  });
+
   it('surfaces an explicit error for unreadable uploads', async () => {
     useProjectStore.setState({
       project: makeProject({

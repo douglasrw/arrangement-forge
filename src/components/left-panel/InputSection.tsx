@@ -55,6 +55,23 @@ function isChordToken(token: string, key: string) {
     trimmed.toLowerCase() === "n.c." || parseChordInput(trimmed, key) !== null
 }
 
+function looksLikeLooseChordToken(token: string) {
+  const trimmed = token.trim()
+
+  if (!trimmed) {
+    return false
+  }
+
+  if (trimmed === "%" || trimmed === "/" || trimmed === "-" || trimmed.toLowerCase() === "nc" ||
+    trimmed.toLowerCase() === "n.c.") {
+    return true
+  }
+
+  return /^[A-G](?:#|b)?(?:maj|min|m|dim|aug|sus|add|M)?[0-9a-zA-Z#b/+()-]*$/.test(trimmed) ||
+    /^[ivIV]+[0-9a-zA-Z#b/+()-]*$/.test(trimmed) ||
+    (/[^A-Za-z]/.test(trimmed) && /^[A-Za-z0-9#b/+()%?.-]{1,16}$/.test(trimmed))
+}
+
 function isChordChartLine(line: string, key: string) {
   const trimmed = line.trim()
 
@@ -91,6 +108,47 @@ function isChordChartLine(line: string, key: string) {
 
 function isBarDelimitedChordChartLine(line: string) {
   return line.includes("|")
+}
+
+function isLooselyChordChartLine(line: string, key: string) {
+  const trimmed = line.trim()
+
+  if (!trimmed) {
+    return false
+  }
+
+  if (isSectionHeaderLine(trimmed)) {
+    return true
+  }
+
+  const segments = trimmed.includes("|") ? trimmed.split("|") : [trimmed]
+  let sawChordLikeToken = false
+
+  for (const segment of segments) {
+    const tokens = segment
+      .trim()
+      .split(/\s+/)
+      .filter(Boolean)
+
+    if (tokens.length === 0) {
+      continue
+    }
+
+    for (const token of tokens) {
+      if (isChordToken(token, key)) {
+        sawChordLikeToken = true
+        continue
+      }
+
+      if (!looksLikeLooseChordToken(token)) {
+        return false
+      }
+
+      sawChordLikeToken = true
+    }
+  }
+
+  return sawChordLikeToken
 }
 
 function trimEmptyChartLines(lines: string[]) {
@@ -134,16 +192,16 @@ function parseImportedChordChartUpload(text: string, key: string): ImportedChord
       continue
     }
 
-    if (inHintBlock && !isChordChartLine(trimmed, key)) {
+    if (inHintBlock && !isChordChartLine(trimmed, key) && !isLooselyChordChartLine(trimmed, key)) {
       hintLines.push(trimmed)
       continue
     }
 
     inHintBlock = false
 
-    // Keep bar-delimited rows in the chart even when some bars are invalid so
+    // Keep likely chord rows in the chart even when some bars are invalid so
     // the parser can surface blocked-state truth instead of silently dropping them.
-    if (isChordChartLine(trimmed, key) || isBarDelimitedChordChartLine(trimmed)) {
+    if (isChordChartLine(trimmed, key) || isBarDelimitedChordChartLine(trimmed) || isLooselyChordChartLine(trimmed, key)) {
       chartLines.push(normalizeSectionHeader(trimmed))
       continue
     }
