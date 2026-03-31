@@ -124,8 +124,6 @@ type AuthStoreState = {
   profile: Profile | null;
   authStatus: AuthStatus;
   signedOutReason: SignedOutReason | null;
-  isLoading: boolean;
-  isAuthenticated: boolean;
 };
 
 interface AuthStore {
@@ -133,8 +131,6 @@ interface AuthStore {
   profile: Profile | null;
   authStatus: AuthStatus;
   signedOutReason: SignedOutReason | null;
-  isLoading: boolean;
-  isAuthenticated: boolean;
 
   beginSessionCheck: () => void;
   completeAuthenticatedSession: (session: { user: User; profile: Profile }) => void;
@@ -311,8 +307,6 @@ export const useAuthStore = create<AuthStore>()((set) => ({
     profile: null,
     authStatus: 'checking-session',
     signedOutReason: null,
-    isLoading: true,
-    isAuthenticated: false,
   }),
 
   beginSessionCheck: () =>
@@ -322,8 +316,6 @@ export const useAuthStore = create<AuthStore>()((set) => ({
         profile: null,
         authStatus: 'checking-session',
         signedOutReason: null,
-        isLoading: true,
-        isAuthenticated: false,
       })
     ),
   completeAuthenticatedSession: ({ user, profile }) =>
@@ -333,8 +325,6 @@ export const useAuthStore = create<AuthStore>()((set) => ({
         profile,
         authStatus: 'authenticated',
         signedOutReason: null,
-        isLoading: false,
-        isAuthenticated: true,
       })
     ),
   setProfile: (profile) => set({ profile }),
@@ -345,8 +335,6 @@ export const useAuthStore = create<AuthStore>()((set) => ({
         profile: null,
         authStatus: 'signed-out',
         signedOutReason: reason,
-        isLoading: false,
-        isAuthenticated: false,
       })
     ),
 }));

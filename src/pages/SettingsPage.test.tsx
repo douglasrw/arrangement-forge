@@ -117,8 +117,6 @@ beforeEach(() => {
     profile: makeProfile(),
     authStatus: 'authenticated',
     signedOutReason: null,
-    isLoading: false,
-    isAuthenticated: true,
   });
   useUiStore.setState({
     generationState: 'idle',

@@ -92,7 +92,7 @@ function renderRoute(initialEntry: string) {
 function setAuthStoreFixture(
   state: Pick<
     ReturnType<typeof useAuthStore.getState>,
-    'user' | 'profile' | 'authStatus' | 'signedOutReason' | 'isLoading' | 'isAuthenticated'
+    'user' | 'profile' | 'authStatus' | 'signedOutReason'
   >
 ) {
   useAuthStore.setState(state);
@@ -108,8 +108,6 @@ beforeEach(() => {
     profile: null,
     authStatus: 'signed-out',
     signedOutReason: 'no-session',
-    isLoading: false,
-    isAuthenticated: false,
   });
 });
 
@@ -145,8 +143,6 @@ describe('App protected route recovery truth', () => {
     setAuthStoreFixture({
       authStatus: 'checking-session',
       signedOutReason: null,
-      isLoading: true,
-      isAuthenticated: false,
       user: null,
       profile: null,
     });
@@ -171,8 +167,6 @@ describe('App protected route recovery truth', () => {
       profile: null,
       authStatus: 'authenticated',
       signedOutReason: null,
-      isAuthenticated: true,
-      isLoading: false,
     });
 
     const mounted = renderRoute('/project/project-1');
@@ -194,8 +188,6 @@ describe('App protected route recovery truth', () => {
       profile: null,
       authStatus: 'authenticated',
       signedOutReason: null,
-      isAuthenticated: true,
-      isLoading: false,
     });
 
     const mounted = renderRoute('/settings');

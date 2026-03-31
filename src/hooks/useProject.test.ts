@@ -304,8 +304,6 @@ beforeEach(() => {
     profile: null,
     authStatus: 'signed-out',
     signedOutReason: 'no-session',
-    isLoading: false,
-    isAuthenticated: false,
   });
 });
 

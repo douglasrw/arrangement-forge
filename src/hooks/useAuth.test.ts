@@ -102,7 +102,7 @@ function renderHarness() {
 function setAuthStoreFixture(
   state: Pick<
     ReturnType<typeof useAuthStore.getState>,
-    'user' | 'profile' | 'authStatus' | 'signedOutReason' | 'isLoading' | 'isAuthenticated'
+    'user' | 'profile' | 'authStatus' | 'signedOutReason'
   >
 ) {
   useAuthStore.setState(state);
@@ -176,8 +176,6 @@ beforeEach(() => {
     profile: null,
     authStatus: 'signed-out',
     signedOutReason: 'no-session',
-    isLoading: false,
-    isAuthenticated: false,
   });
   useUiStore.setState({
     chordDisplayMode: 'letter',
@@ -231,7 +229,6 @@ describe('useAuth loadProfile', () => {
     expect(useAuthStore.getState()).toMatchObject({
       profile: null,
       authStatus: 'signed-out',
-      isAuthenticated: false,
     });
     expect(useUiStore.getState().chordDisplayMode).toBe('letter');
   });
@@ -309,8 +306,6 @@ describe('useAuth auth action failures', () => {
     expect(useAuthStore.getState()).toMatchObject({
       authStatus: 'checking-session',
       signedOutReason: null,
-      isLoading: true,
-      isAuthenticated: false,
     });
     expect(hookValue!.authTruth).toMatchObject({
       status: 'checking-session',
@@ -380,8 +375,6 @@ describe('useAuth auth action failures', () => {
       profile: null,
       authStatus: 'signed-out',
       signedOutReason: 'email-confirmation-required',
-      isLoading: false,
-      isAuthenticated: false,
     });
     expect(hookValue!.authTruth).toEqual({
       status: 'signed-out',
@@ -406,8 +399,6 @@ describe('useAuth auth action failures', () => {
         profile: null,
         authStatus: 'signed-out',
         signedOutReason: 'missing-profile',
-        isLoading: false,
-        isAuthenticated: false,
       });
       await Promise.resolve();
     });
@@ -434,8 +425,6 @@ describe('useAuth auth action failures', () => {
         profile: null,
         authStatus: 'signed-out',
         signedOutReason: 'session-lookup-failed',
-        isLoading: false,
-        isAuthenticated: false,
       });
       await Promise.resolve();
     });
@@ -466,8 +455,6 @@ describe('useAuth auth action failures', () => {
         },
         authStatus: 'authenticated',
         signedOutReason: null,
-        isLoading: false,
-        isAuthenticated: true,
       });
       await Promise.resolve();
     });
@@ -537,7 +524,6 @@ describe('useAuth session bootstrap truth', () => {
       cleanup = hookValue!.initAuth();
     });
 
-    expect(useAuthStore.getState().isLoading).toBe(true);
     expect(useAuthStore.getState().authStatus).toBe('checking-session');
 
     await act(async () => {
@@ -548,8 +534,6 @@ describe('useAuth session bootstrap truth', () => {
       user: { id: 'user-1', email: 'ash@example.com' },
       authStatus: 'authenticated',
       signedOutReason: null,
-      isAuthenticated: true,
-      isLoading: false,
     });
     expect(useAuthStore.getState().profile).toEqual({
       id: 'user-1',
@@ -593,8 +577,6 @@ describe('useAuth session bootstrap truth', () => {
       profile: null,
       authStatus: 'signed-out',
       signedOutReason: 'missing-profile',
-      isAuthenticated: false,
-      isLoading: false,
     });
     expect(useUiStore.getState().chordDisplayMode).toBe('letter');
   });
@@ -651,8 +633,6 @@ describe('useAuth session bootstrap truth', () => {
       profile: null,
       authStatus: 'signed-out',
       signedOutReason: 'session-lookup-failed',
-      isAuthenticated: false,
-      isLoading: false,
     });
   });
 
@@ -674,8 +654,6 @@ describe('useAuth session bootstrap truth', () => {
       profile: null,
       authStatus: 'signed-out',
       signedOutReason: 'no-session',
-      isAuthenticated: false,
-      isLoading: false,
     });
 
     act(() => {
@@ -687,8 +665,6 @@ describe('useAuth session bootstrap truth', () => {
       profile: null,
       authStatus: 'signed-out',
       signedOutReason: 'no-session',
-      isAuthenticated: false,
-      isLoading: false,
     });
     expect(hookValue!.authTruth).toMatchObject({
       status: 'signed-out',
@@ -724,8 +700,6 @@ describe('useAuth session bootstrap truth', () => {
     expect(useAuthStore.getState()).toMatchObject({
       authStatus: 'checking-session',
       signedOutReason: null,
-      isLoading: true,
-      isAuthenticated: false,
     });
 
     await act(async () => {
@@ -747,8 +721,6 @@ describe('useAuth session bootstrap truth', () => {
       user: { id: 'user-1', email: 'ash@example.com' },
       authStatus: 'authenticated',
       signedOutReason: null,
-      isLoading: false,
-      isAuthenticated: true,
     });
   });
 
@@ -778,8 +750,6 @@ describe('useAuth session bootstrap truth', () => {
     expect(useAuthStore.getState()).toMatchObject({
       authStatus: 'checking-session',
       signedOutReason: null,
-      isLoading: true,
-      isAuthenticated: false,
     });
 
     act(() => {
@@ -791,8 +761,6 @@ describe('useAuth session bootstrap truth', () => {
       profile: null,
       authStatus: 'signed-out',
       signedOutReason: 'signed-out',
-      isLoading: false,
-      isAuthenticated: false,
     });
 
     await act(async () => {
@@ -815,8 +783,6 @@ describe('useAuth session bootstrap truth', () => {
       profile: null,
       authStatus: 'signed-out',
       signedOutReason: 'signed-out',
-      isLoading: false,
-      isAuthenticated: false,
     });
     expect(useUiStore.getState().chordDisplayMode).toBe('letter');
   });
@@ -861,8 +827,6 @@ describe('useAuth session bootstrap truth', () => {
       profile: null,
       authStatus: 'signed-out',
       signedOutReason: 'signed-out',
-      isAuthenticated: false,
-      isLoading: false,
     });
     expect(useUiStore.getState().chordDisplayMode).toBe('letter');
   });
@@ -891,8 +855,6 @@ describe('useAuth signOut', () => {
       },
       authStatus: 'authenticated',
       signedOutReason: null,
-      isAuthenticated: true,
-      isLoading: false,
     });
     useUiStore.getState().setChordDisplayMode('roman');
 
@@ -918,8 +880,6 @@ describe('useAuth signOut', () => {
       profile: null,
       authStatus: 'signed-out',
       signedOutReason: 'signed-out',
-      isAuthenticated: false,
-      isLoading: false,
     });
     expect(useUiStore.getState().chordDisplayMode).toBe('letter');
     expect(redirectHref).toBe('/login');
@@ -949,8 +909,6 @@ describe('useAuth signOut', () => {
       },
       authStatus: 'authenticated',
       signedOutReason: null,
-      isAuthenticated: true,
-      isLoading: false,
     });
     useUiStore.getState().setChordDisplayMode('roman');
 
@@ -980,8 +938,6 @@ describe('useAuth signOut', () => {
       },
       authStatus: 'authenticated',
       signedOutReason: null,
-      isAuthenticated: true,
-      isLoading: false,
     });
     expect(useUiStore.getState().chordDisplayMode).toBe('roman');
     expect(fakeLocation.href).toBe('/library');
