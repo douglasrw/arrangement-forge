@@ -152,7 +152,9 @@ export function useGenerate() {
 
       if (parseIssues.length > 0) {
         throw new Error(
-          `Fix ${parseIssues.length === 1 ? 'the flagged chord bar' : `${parseIssues.length} flagged chord bars`} before generating.`
+          [parseResult.truth.summary, parseResult.truth.nextStep]
+            .filter(Boolean)
+            .join(' ')
         );
       }
 

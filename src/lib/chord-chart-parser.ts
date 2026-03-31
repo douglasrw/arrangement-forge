@@ -15,6 +15,16 @@ export interface ChordChartParseResult {
   chords: ChordEntry[];
   warnings: string[];
   issues: ChordChartParseIssue[];
+  truth: ChordChartParseTruth;
+}
+
+export interface ChordChartParseTruth {
+  state: 'ready' | 'blocked';
+  title: string;
+  summary: string;
+  nextStep: string | null;
+  blockedBars: number[];
+  issueHighlights: string[];
 }
 
 const REPEAT_MARKERS = new Set(['%', '/']);
@@ -27,7 +37,14 @@ type ParsedBarState = 'chord' | 'no_chord' | 'issue';
  * repeat markers (% and /), and N.C. entries.
  */
 export function parseChordChart(raw: string, key: string): ChordChartParseResult {
-  if (!raw.trim()) return { chords: [], warnings: [], issues: [] };
+  if (!raw.trim()) {
+    return {
+      chords: [],
+      warnings: [],
+      issues: [],
+      truth: buildParseTruth([], []),
+    };
+  }
 
   const warnings: string[] = [];
   const issues: ChordChartParseIssue[] = [];
@@ -75,7 +92,80 @@ export function parseChordChart(raw: string, key: string): ChordChartParseResult
     }
   }
 
-  return { chords, warnings, issues };
+  return { chords, warnings, issues, truth: buildParseTruth(issues, warnings) };
+}
+
+function buildParseTruth(
+  issues: ChordChartParseIssue[],
+  warnings: string[]
+): ChordChartParseTruth {
+  if (issues.length === 0) {
+    return {
+      state: 'ready',
+      title: 'Chord chart parsed',
+      summary: 'All chord bars resolved cleanly.',
+      nextStep: null,
+      blockedBars: [],
+      issueHighlights: [],
+    };
+  }
+
+  const invalidTokenCount = issues.filter((issue) => issue.reason === 'invalid_token').length;
+  const repeatWithoutPreviousCount = issues.filter(
+    (issue) => issue.reason === 'repeat_without_previous'
+  ).length;
+  const repeatWithoutResolvedChordCount = issues.filter(
+    (issue) => issue.reason === 'repeat_without_resolved_chord'
+  ).length;
+  const blockedBars = issues.map((issue) => issue.barNumber);
+  const barLabel = formatBarList(blockedBars);
+  const summaryParts = [
+    `${barLabel} ${blockedBars.length === 1 ? 'will become' : 'will become'} N.C. during generation.`,
+  ];
+
+  if (invalidTokenCount > 0) {
+    summaryParts.push(
+      `${invalidTokenCount} ${invalidTokenCount === 1 ? 'bar has' : 'bars have'} an unrecognized chord token.`
+    );
+  }
+
+  if (repeatWithoutPreviousCount > 0) {
+    summaryParts.push(
+      `${repeatWithoutPreviousCount} ${repeatWithoutPreviousCount === 1 ? 'repeat marker starts' : 'repeat markers start'} before any chord.`
+    );
+  }
+
+  if (repeatWithoutResolvedChordCount > 0) {
+    summaryParts.push(
+      `${repeatWithoutResolvedChordCount} ${repeatWithoutResolvedChordCount === 1 ? 'repeat marker follows' : 'repeat markers follow'} an unresolved bar.`
+    );
+  }
+
+  return {
+    state: 'blocked',
+    title: blockedBars.length === 1 ? 'Chord chart needs attention' : 'Chord chart has parse issues',
+    summary: summaryParts.join(' '),
+    nextStep:
+      repeatWithoutPreviousCount > 0 || repeatWithoutResolvedChordCount > 0
+        ? 'Replace the flagged repeat bars with explicit chords or fix the bar before them.'
+        : 'Fix or replace the flagged chord bars before generating.',
+    blockedBars,
+    issueHighlights: warnings
+      .slice(0, 3)
+      .map((warning) => warning.replace(/, treated as N\.C\.$/, '')),
+  };
+}
+
+function formatBarList(barNumbers: number[]) {
+  if (barNumbers.length === 1) {
+    return `Bar ${barNumbers[0]}`;
+  }
+
+  if (barNumbers.length === 2) {
+    return `Bars ${barNumbers[0]} and ${barNumbers[1]}`;
+  }
+
+  return `Bars ${barNumbers.slice(0, -1).join(', ')}, and ${barNumbers.at(-1)}`;
 }
 
 function parseBarToken(

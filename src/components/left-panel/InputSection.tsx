@@ -172,53 +172,6 @@ function formatImportedNotesFeedback(
   return `Imported ${fileName} and updated Description with ${noteCount} note ${noteCount === 1 ? "line" : "lines"}.`
 }
 
-function formatParseIssueList(rawWarnings: string[]) {
-  return rawWarnings
-    .slice(0, 3)
-    .map((warning) => warning.replace(/, treated as N\.C\.$/, ""))
-    .join(" ")
-}
-
-function summarizeParseIssues(parseResult: NonNullable<ReturnType<typeof parseChordChart>>) {
-  const invalidTokenCount = parseResult.issues.filter((issue) => issue.reason === "invalid_token").length
-  const repeatWithoutPreviousCount = parseResult.issues.filter(
-    (issue) => issue.reason === "repeat_without_previous"
-  ).length
-  const repeatWithoutResolvedChordCount = parseResult.issues.filter(
-    (issue) => issue.reason === "repeat_without_resolved_chord"
-  ).length
-  const unresolvedBarCount = invalidTokenCount + repeatWithoutPreviousCount + repeatWithoutResolvedChordCount
-  const summaryParts = [
-    `${unresolvedBarCount} ${unresolvedBarCount === 1 ? "bar becomes" : "bars become"} N.C. during generation.`,
-  ]
-
-  if (invalidTokenCount > 0) {
-    summaryParts.push(
-      `${invalidTokenCount} ${invalidTokenCount === 1 ? "bar has" : "bars have"} an unrecognized chord token.`
-    )
-  }
-
-  if (repeatWithoutPreviousCount > 0) {
-    summaryParts.push(
-      `${repeatWithoutPreviousCount} ${repeatWithoutPreviousCount === 1 ? "repeat marker starts" : "repeat markers start"} before any chord.`
-    )
-  }
-
-  if (repeatWithoutResolvedChordCount > 0) {
-    summaryParts.push(
-      `${repeatWithoutResolvedChordCount} ${repeatWithoutResolvedChordCount === 1 ? "repeat marker follows" : "repeat markers follow"} an unresolved bar.`
-    )
-  }
-
-  const nextStep = repeatWithoutPreviousCount > 0 || repeatWithoutResolvedChordCount > 0
-    ? "Replace the flagged repeat bars with explicit chords or fix the bar before them."
-    : "Fix or replace the flagged chord bars before generating."
-
-  summaryParts.push(nextStep)
-
-  return summaryParts.join(" ")
-}
-
 export function InputSection() {
   const [activeTab, setActiveTab] = useState<InputTab>("Chord")
   const [isImporting, setIsImporting] = useState(false)
@@ -266,7 +219,11 @@ export function InputSection() {
     ? "Chord chart needs attention"
     : "Chord chart has parse issues"
   const parseFeedbackDetail = hasParseIssues
-    ? `${summarizeParseIssues(parseResult)} ${formatParseIssueList(parseResult?.warnings ?? [])}`
+    ? [
+      parseResult?.truth.summary,
+      parseResult?.truth.nextStep,
+      parseResult?.truth.issueHighlights.join(" "),
+    ].filter(Boolean).join(" ")
     : null
 
   async function handleUploadChange(event: ChangeEvent<HTMLInputElement>) {
@@ -387,7 +344,7 @@ export function InputSection() {
             <span className="rounded-full bg-amber-500/10 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.18em] text-amber-300">
               Attention
             </span>
-            <span className="font-medium text-foreground">{parseFeedbackTitle}</span>
+            <span className="font-medium text-foreground">{parseResult?.truth.title ?? parseFeedbackTitle}</span>
           </div>
           <p className="mt-1 text-muted-foreground">{parseFeedbackDetail}</p>
         </div>

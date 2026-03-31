@@ -3,9 +3,17 @@ import { parseChordChart } from './chord-chart-parser';
 
 describe('parseChordChart', () => {
   it('returns empty array for empty input', () => {
-    const { chords, warnings } = parseChordChart('', 'C');
+    const { chords, warnings, truth } = parseChordChart('', 'C');
     expect(chords).toHaveLength(0);
     expect(warnings).toHaveLength(0);
+    expect(truth).toEqual({
+      state: 'ready',
+      title: 'Chord chart parsed',
+      summary: 'All chord bars resolved cleanly.',
+      nextStep: null,
+      blockedBars: [],
+      issueHighlights: [],
+    });
   });
 
   it('parses pipe-separated chord names', () => {
@@ -66,7 +74,7 @@ describe('parseChordChart', () => {
   });
 
   it('unparseable token produces N.C. and a warning', () => {
-    const { chords, warnings, issues } = parseChordChart('C | xyz??', 'C');
+    const { chords, warnings, issues, truth } = parseChordChart('C | xyz??', 'C');
     expect(chords[1].degree).toBeNull();
     expect(warnings.length).toBeGreaterThan(0);
     expect(warnings[0]).toContain('xyz??');
@@ -77,6 +85,14 @@ describe('parseChordChart', () => {
         reason: 'invalid_token',
       }),
     ]);
+    expect(truth).toMatchObject({
+      state: 'blocked',
+      title: 'Chord chart needs attention',
+      summary: 'Bar 2 will become N.C. during generation. 1 bar has an unrecognized chord token.',
+      nextStep: 'Fix or replace the flagged chord bars before generating.',
+      blockedBars: [2],
+      issueHighlights: ['Bar 2: could not parse "xyz??"'],
+    });
   });
 
   it('captures repeat markers that do not have a previous chord', () => {
@@ -92,7 +108,7 @@ describe('parseChordChart', () => {
   });
 
   it('captures repeat markers that follow an unresolved bar', () => {
-    const { chords, issues, warnings } = parseChordChart('xyz?? | % | C', 'C');
+    const { chords, issues, warnings, truth } = parseChordChart('xyz?? | % | C', 'C');
     expect(chords[0].degree).toBeNull();
     expect(chords[1].degree).toBeNull();
     expect(issues).toEqual([
@@ -108,6 +124,18 @@ describe('parseChordChart', () => {
       }),
     ]);
     expect(warnings[1]).toContain('follows a bar that could not be resolved');
+    expect(truth).toMatchObject({
+      state: 'blocked',
+      title: 'Chord chart has parse issues',
+      summary:
+        'Bars 1 and 2 will become N.C. during generation. 1 bar has an unrecognized chord token. 1 repeat marker follows an unresolved bar.',
+      nextStep: 'Replace the flagged repeat bars with explicit chords or fix the bar before them.',
+      blockedBars: [1, 2],
+      issueHighlights: [
+        'Bar 1: could not parse "xyz??"',
+        'Bar 2: repeat marker "%" follows a bar that could not be resolved',
+      ],
+    });
   });
 
   it('handles slash chords', () => {

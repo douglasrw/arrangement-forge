@@ -201,7 +201,7 @@ describe('InputSection upload tab', () => {
       'Flagged bars would resolve to N.C. during generation. Fix the chart before generating.'
     );
     expect(mounted.container.textContent).toContain('Chord chart has parse issues');
-    expect(mounted.container.textContent).toContain('2 bars become N.C. during generation.');
+    expect(mounted.container.textContent).toContain('Bars 2 and 3 will become N.C. during generation.');
     expect(mounted.container.textContent).toContain('1 bar has an unrecognized chord token.');
     expect(mounted.container.textContent).toContain('1 repeat marker follows an unresolved bar.');
     expect(mounted.container.textContent).toContain(
@@ -225,7 +225,7 @@ describe('InputSection upload tab', () => {
     mountedRoot = mounted.root;
     mountedContainer = mounted.container;
 
-    expect(mounted.container.textContent).toContain('1 bar becomes N.C. during generation.');
+    expect(mounted.container.textContent).toContain('Bar 1 will become N.C. during generation.');
     expect(mounted.container.textContent).toContain('1 repeat marker starts before any chord.');
     expect(mounted.container.textContent).toContain(
       'Replace the flagged repeat bars with explicit chords or fix the bar before them.'
