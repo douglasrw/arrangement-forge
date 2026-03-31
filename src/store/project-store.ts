@@ -1,11 +1,20 @@
 import { create } from 'zustand';
-import type { Project, Stem, Section, Block, Chord, AiChatMessage } from '@/types';
+import type {
+  Project,
+  Stem,
+  Section,
+  Block,
+  Chord,
+  AiChatMessage,
+  InstrumentType,
+} from '@/types';
 import { useUndoStore } from './undo-store';
 import { useUiStore } from './ui-store';
 import { useSelectionStore } from './selection-store';
 import { snapshotArrangement } from '@/lib/undo-helpers';
 import { formatChord } from '@/lib/chords';
 import { generateMidiForBlock } from '@/lib/midi-generator';
+import { INSTRUMENT_STYLE_OPTIONS } from '@/lib/genre-config';
 import { resolveStyle } from '@/lib/style-cascade';
 
 const genId = () => crypto.randomUUID();
@@ -256,6 +265,46 @@ function describeBlockUndoTarget(
   const sectionTarget = sectionName ? ` in ${sectionName}` : '';
 
   return `${action} ${blockLabel}${sectionTarget} (bars ${block.startBar}-${block.endBar})`;
+}
+
+function getStyleLabel(styleId: string, instrument: InstrumentType | null): string {
+  const styleLabel = instrument
+    ? INSTRUMENT_STYLE_OPTIONS[instrument]?.find((option) => option.id === styleId)?.label
+    : null;
+
+  if (styleLabel) {
+    return styleLabel;
+  }
+
+  return styleId
+    .split('_')
+    .map((segment) => segment.charAt(0).toUpperCase() + segment.slice(1))
+    .join(' ');
+}
+
+function describeBlockUpdateUndoTarget(
+  currentBlock: Block | undefined,
+  nextBlock: Block | undefined,
+  sections: Section[],
+  stems: Stem[]
+): string {
+  if (currentBlock && nextBlock && currentBlock.style !== nextBlock.style) {
+    const sectionName = getSectionDisplayName(
+      sections.find((section) => section.id === nextBlock.sectionId)
+    );
+    const instrument =
+      stems.find((stem) => stem.id === nextBlock.stemId)?.instrument ?? null;
+    const blockLabel = instrument ? `${instrument} block` : 'block';
+    const sectionTarget = sectionName ? ` in ${sectionName}` : '';
+
+    return (
+      `Change ${blockLabel} pattern${sectionTarget} ` +
+      `(bars ${nextBlock.startBar}-${nextBlock.endBar}): ` +
+      `${getStyleLabel(currentBlock.style, instrument)} -> ${getStyleLabel(nextBlock.style, instrument)}`
+    );
+  }
+
+  return describeBlockUndoTarget('Update', nextBlock, sections, stems);
 }
 
 function describeSplitBlockUndoTarget(
@@ -978,7 +1027,7 @@ export const useProjectStore = create<ProjectStore>()((set, get) => ({
     }));
     const after = snapshotArrangement(get());
     useUndoStore.getState().pushUndo(
-      describeBlockUndoTarget('Update', nextBlock, state.sections, state.stems),
+      describeBlockUpdateUndoTarget(currentBlock, nextBlock, state.sections, state.stems),
       { undo: before, redo: after }
     );
     useUiStore.getState().markDirty();

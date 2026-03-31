@@ -1139,6 +1139,21 @@ describe('undo push coverage', () => {
     expect(hasSnapshotKeys(stack[0].redoSnapshot)).toBe(true);
   });
 
+  it('names block pattern changes in undo entries with before-and-after style labels', () => {
+    useProjectStore.getState().setArrangement({
+      stems: [makeStem({ instrument: 'piano' })],
+      sections: [makeSection({ name: 'Verse', barCount: 4 })],
+      blocks: [makeBlock({ style: 'jazz_comp', startBar: 1, endBar: 4 })],
+      chords: [],
+    });
+
+    useProjectStore.getState().updateBlock('b1', { style: 'arpeggiated' });
+
+    expect(useUndoStore.getState().undoStack[0]?.description).toBe(
+      'Change piano block pattern in Verse (bars 1-4): Jazz Comping -> Arpeggiated'
+    );
+  });
+
   it('duplicateBlock pushes undo entry with unified snapshot format', () => {
     useProjectStore.getState().setArrangement({
       stems: [makeStem()], sections: [makeSection()],

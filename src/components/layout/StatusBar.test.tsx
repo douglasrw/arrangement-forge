@@ -379,10 +379,12 @@ describe('StatusBar', () => {
       '[data-testid="status-bar-history"]'
     ) as HTMLSpanElement | null;
 
-    expect(history?.textContent).toBe('Undo: Update piano block in Verse (bars 1-4)');
+    expect(history?.textContent).toBe(
+      'Undo: Change piano block pattern in Verse (bars 1-4): Jazz Comping -> Arpeggiated'
+    );
     expect(history?.title).toBe(
-      'Undo is ready to restore the arrangement captured before Update piano block in Verse (bars 1-4). ' +
-      'Use Undo to restore the arrangement captured before Update piano block in Verse (bars 1-4).'
+      'Undo is ready to restore the arrangement captured before Change piano block pattern in Verse (bars 1-4): Jazz Comping -> Arpeggiated. ' +
+      'Use Undo to restore the arrangement captured before Change piano block pattern in Verse (bars 1-4): Jazz Comping -> Arpeggiated.'
     );
   });
 
