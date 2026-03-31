@@ -159,12 +159,12 @@ function selectUndoHistoryBoundaryTruth(
   undoBoundary: UndoBoundaryTruth,
   redoBoundary: UndoBoundaryTruth
 ): UndoBoundaryTruth | null {
-  if (undoBoundary.status === 'blocked') return undoBoundary;
-  if (redoBoundary.status === 'blocked') return redoBoundary;
-  if (undoBoundary.status === 'paused') return undoBoundary;
-  if (redoBoundary.status === 'paused') return redoBoundary;
   if (undoBoundary.status === 'available') return undoBoundary;
   if (redoBoundary.status === 'available') return redoBoundary;
+  if (undoBoundary.status === 'paused') return undoBoundary;
+  if (redoBoundary.status === 'paused') return redoBoundary;
+  if (undoBoundary.status === 'blocked') return undoBoundary;
+  if (redoBoundary.status === 'blocked') return redoBoundary;
   return null;
 }
 

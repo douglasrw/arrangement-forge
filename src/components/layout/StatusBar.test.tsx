@@ -472,6 +472,31 @@ describe('StatusBar', () => {
     );
   });
 
+  it('keeps the actionable undo boundary visible before a blocked redo companion', () => {
+    useUndoStore.getState().pushUndo('Split block', {
+      undo: makeSnapshot('split-before'),
+      redo: makeSnapshot('split-after'),
+    });
+    useUndoStore.getState().pushUndo('Broken redo', {
+      undo: makeSnapshot('broken-before'),
+      redo: 'not json',
+    });
+    expect(useUndoStore.getState().undo()).not.toBeNull();
+
+    const container = renderStatusBar('saved');
+    const history = container.querySelector(
+      '[data-testid="status-bar-history"]'
+    ) as HTMLSpanElement | null;
+
+    expect(history?.textContent).toBe('Undo: Split block · Redo blocked');
+    expect(history?.title).toBe(
+      'Undo is ready to restore the arrangement captured before Split block. ' +
+      'The latest redo boundary is still on the stack, but its restore snapshot cannot be read. ' +
+      'Use Undo to restore the arrangement captured before Split block. ' +
+      'Do not offer Redo for this boundary until a valid restore snapshot is stored.'
+    );
+  });
+
   it('renders paused undo history while generation temporarily locks the stack', () => {
     useUiStore.setState({
       generationState: 'generating',

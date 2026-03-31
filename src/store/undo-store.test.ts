@@ -243,6 +243,30 @@ describe('undoStore', () => {
     });
   });
 
+  it('keeps the actionable undo history truth ahead of a blocked redo companion', () => {
+    useUndoStore.getState().pushUndo('Split block', {
+      undo: makeSnapshot('split-before'),
+      redo: makeSnapshot('split-after'),
+    });
+    useUndoStore.getState().pushUndo('Broken redo', {
+      undo: makeSnapshot('broken-before'),
+      redo: 'not json',
+    });
+
+    expect(useUndoStore.getState().undo()).not.toBeNull();
+    expect(useUndoStore.getState().getHistoryTruth()).toMatchObject({
+      status: 'available',
+      boundary: 'undo',
+      label: 'Undo: Split block · Redo blocked',
+      currentState:
+        'Undo is ready to restore the arrangement captured before Split block. ' +
+        'The latest redo boundary is still on the stack, but its restore snapshot cannot be read.',
+      nextStep:
+        'Use Undo to restore the arrangement captured before Split block. ' +
+        'Do not offer Redo for this boundary until a valid restore snapshot is stored.',
+    });
+  });
+
   it('leaves the redo stack unchanged while generation keeps the redo boundary paused', () => {
     useUndoStore.getState().pushUndo('Split block', {
       undo: makeSnapshot('before'),

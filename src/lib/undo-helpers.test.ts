@@ -336,6 +336,115 @@ describe('createUndoHistoryTruth', () => {
         'Use Redo to restore the arrangement captured after Merge blocks.',
     });
   });
+
+  it('keeps the actionable undo boundary ahead of a blocked redo companion', () => {
+    const historyTruth = createUndoHistoryTruth(
+      createUndoBoundaryTruth(
+        {
+          undoSnapshot: JSON.stringify({
+            stems: [{ id: 'undo-stem' }],
+            sections: [],
+            blocks: [],
+            chords: [],
+          }),
+          redoSnapshot: JSON.stringify({
+            stems: [{ id: 'undo-redo-stem' }],
+            sections: [],
+            blocks: [],
+            chords: [],
+          }),
+        },
+        'undo',
+        'Split block'
+      ),
+      createUndoBoundaryTruth(
+        {
+          undoSnapshot: JSON.stringify({
+            stems: [{ id: 'redo-undo-stem' }],
+            sections: [],
+            blocks: [],
+            chords: [],
+          }),
+          redoSnapshot: 'not json',
+        },
+        'redo',
+        'Broken redo'
+      )
+    );
+
+    expect(historyTruth).toEqual({
+      status: 'available',
+      boundary: 'undo',
+      label: 'Undo: Split block · Redo blocked',
+      currentState:
+        'Undo is ready to restore the arrangement captured before Split block. ' +
+        'The latest redo boundary is still on the stack, but its restore snapshot cannot be read.',
+      nextStep:
+        'Use Undo to restore the arrangement captured before Split block. ' +
+        'Do not offer Redo for this boundary until a valid restore snapshot is stored.',
+      tooltip:
+        'Undo is ready to restore the arrangement captured before Split block. ' +
+        'The latest redo boundary is still on the stack, but its restore snapshot cannot be read. ' +
+        'Use Undo to restore the arrangement captured before Split block. ' +
+        'Do not offer Redo for this boundary until a valid restore snapshot is stored.',
+    });
+  });
+
+  it('keeps the paused undo boundary ahead of a blocked redo companion', () => {
+    const historyTruth = createUndoHistoryTruth(
+      createUndoBoundaryExecutionTruth(
+        createUndoBoundaryTruth(
+          {
+            undoSnapshot: JSON.stringify({
+              stems: [{ id: 'undo-stem' }],
+              sections: [],
+              blocks: [],
+              chords: [],
+            }),
+            redoSnapshot: JSON.stringify({
+              stems: [{ id: 'undo-redo-stem' }],
+              sections: [],
+              blocks: [],
+              chords: [],
+            }),
+          },
+          'undo',
+          'Split block'
+        ),
+        'generating'
+      ),
+      createUndoBoundaryTruth(
+        {
+          undoSnapshot: JSON.stringify({
+            stems: [{ id: 'redo-undo-stem' }],
+            sections: [],
+            blocks: [],
+            chords: [],
+          }),
+          redoSnapshot: 'not json',
+        },
+        'redo',
+        'Broken redo'
+      )
+    );
+
+    expect(historyTruth).toEqual({
+      status: 'paused',
+      boundary: 'undo',
+      label: 'Undo paused · Redo blocked',
+      currentState:
+        'Generation is still running, so Undo is temporarily paused even though the arrangement captured before Split block is still preserved on the stack. ' +
+        'The latest redo boundary is still on the stack, but its restore snapshot cannot be read.',
+      nextStep:
+        'Wait for generation to finish, then use Undo to restore the arrangement captured before Split block. ' +
+        'Do not offer Redo for this boundary until a valid restore snapshot is stored.',
+      tooltip:
+        'Generation is still running, so Undo is temporarily paused even though the arrangement captured before Split block is still preserved on the stack. ' +
+        'The latest redo boundary is still on the stack, but its restore snapshot cannot be read. ' +
+        'Wait for generation to finish, then use Undo to restore the arrangement captured before Split block. ' +
+        'Do not offer Redo for this boundary until a valid restore snapshot is stored.',
+    });
+  });
 });
 
 describe('parseUndoSnapshot', () => {
