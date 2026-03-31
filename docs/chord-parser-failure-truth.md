@@ -4,10 +4,10 @@ Status date: 2026-03-31
 
 Status: landed on local `main`; reverified again on 2026-03-31 with the
 focused parser, input-surface, generation-block, and type-check proofs passing
-against current local `main` head `5abd387c`, no remaining bounded product
-delta visible in this family beyond keeping this repo-local truth artifact
-aligned with the latest verified state, and no upstream push proof captured
-from this worktree
+against the pre-refresh local `main` head `76f9ee58`, no remaining bounded
+product delta visible in this family beyond keeping this repo-local truth
+artifact aligned with the latest verified state, and no upstream push proof
+captured from this worktree
 
 Purpose: preserve the current chord parser failure contract and its landing
 proof in one repo-local place so future work does not have to reconstruct it
@@ -160,8 +160,8 @@ Current focused proofs for this slice:
 - `pnpm exec vitest run src/hooks/useGenerate.test.tsx`
 - `pnpm exec tsc --noEmit`
 - the current proof set still matches the same bounded parser, input-surface,
-  and generation-block contract after the 2026-03-31 recheck against current
-  local `main` head `5abd387c`
+  and generation-block contract after the 2026-03-31 recheck against the
+  pre-refresh local `main` head `76f9ee58`
 - this artifact only proves the current local `main` worktree state; it does
   not claim that `origin/main` received a fresh promotion during this refresh
 
