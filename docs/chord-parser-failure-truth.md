@@ -3,11 +3,12 @@
 Status date: 2026-03-31
 
 Status: landed on `main`; reverified on 2026-03-31 against product head
-`6ef4d8f1`, after `efc2e1e2` promoted the family, `e9a0db10` kept invalid
-uploaded chord rows visible, `1423ef30` refreshed the same evidence, and the
-rechecked product head still leaves the parser, input surface, and generation
-block contract unchanged, so this repo-local truth artifact now points at the
-latest verified product state without inventing a new product delta
+`b039c28d`, after `efc2e1e2` promoted the family, `e9a0db10` kept invalid
+uploaded chord rows visible, `6ef4d8f1` refreshed the same evidence, and the
+latest rechecked product head still leaves the parser, input surface, and
+generation block contract unchanged, so this repo-local truth artifact now
+points at the latest verified product state without inventing a new product
+delta
 
 Purpose: preserve the current chord parser failure contract and its landing
 proof in one repo-local place so future work does not have to reconstruct it
@@ -91,10 +92,12 @@ Current focused proofs for this slice:
 
 - `pnpm test -- --run src/lib/chord-chart-parser.test.ts src/components/left-panel/InputSection.test.tsx src/hooks/useGenerate.test.tsx`
 - `pnpm type-check`
-- verification head: `6ef4d8f1c02457132942ad198926def2fca69a6e`
+- verification head: `b039c28d5d8baaca719c3efbec0f57e2249ca042`
 
 ## Tracked Landing
 
+- `b039c28d5d8baaca719c3efbec0f57e2249ca042`:
+  `commitpath_c40ed88d Refresh chord parser failure truth evidence`
 - `6ef4d8f1c02457132942ad198926def2fca69a6e`:
   `commitpath_c40ed88d Refresh chord parser failure truth evidence`
 - `1d9f1d5a7c8414e5733014eca55041821a88423d`:
@@ -245,10 +248,14 @@ Current focused proofs for this slice:
   more clean focused recheck at the latest verified product head, so the
   artifact now points at that checked state instead of stopping at the prior
   evidence refresh.
-- After the 2026-03-31 recheck at product head `6ef4d8f1`, this family again
+- Commit `b039c28d` repeated that same repo-local evidence refresh after one
+  more clean focused recheck at the latest verified product head, so the
+  artifact now points at that checked state instead of stopping at the prior
+  evidence refresh.
+- After the 2026-03-31 recheck at product head `b039c28d`, this family again
   appeared exhausted unless a new chord-parse behavior changed the contract or
   the proof surface.
-- The 2026-03-31 recheck at verified product head `6ef4d8f1` produced the same
+- The 2026-03-31 recheck at verified product head `b039c28d` produced the same
   focused proof results with no product-file delta in this family since that
   earlier verification, so the honest next move here was a repo-local evidence
   refresh rather than another parser or input-surface patch.
