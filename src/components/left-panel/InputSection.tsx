@@ -249,11 +249,12 @@ export function InputSection() {
   const inputReadiness = getInputReadinessTruth({
     hasProject,
     hasChordChart,
+    hasParseIssues,
     generationState,
     isImporting,
   })
   const uploadBlocked = !hasProject || isGenerating || isImporting
-  const canGenerate = hasProject && hasChordChart && !isGenerating && !isImporting
+  const canGenerate = hasProject && hasChordChart && !hasParseIssues && !isGenerating && !isImporting
   const uploadStatusMessage = !hasProject
     ? "Load a project to enable chord chart imports."
     : isGenerating
@@ -336,7 +337,9 @@ export function InputSection() {
             ? "border-emerald-500/30 bg-emerald-500/10 text-foreground"
             : inputReadiness.state === "empty"
               ? "border-border bg-secondary/40 text-foreground"
-              : "border-amber-500/30 bg-amber-500/10 text-foreground"
+              : inputReadiness.state === "blocked"
+                ? "border-destructive/30 bg-destructive/10 text-foreground"
+                : "border-amber-500/30 bg-amber-500/10 text-foreground"
         )}
       >
         <span
@@ -346,7 +349,9 @@ export function InputSection() {
               ? "bg-emerald-300"
               : inputReadiness.state === "empty"
                 ? "bg-muted-foreground"
-                : "bg-amber-300"
+                : inputReadiness.state === "blocked"
+                  ? "bg-destructive"
+                  : "bg-amber-300"
           )}
         />
         <div className="min-w-0">
@@ -358,7 +363,9 @@ export function InputSection() {
                   ? "bg-emerald-500/10 text-emerald-300"
                   : inputReadiness.state === "empty"
                     ? "bg-card text-muted-foreground"
-                    : "bg-amber-500/10 text-amber-300"
+                    : inputReadiness.state === "blocked"
+                      ? "bg-destructive/10 text-destructive"
+                      : "bg-amber-500/10 text-amber-300"
               )}
             >
               {inputReadiness.badge}

@@ -237,6 +237,48 @@ describe('useGenerate assistant prompt flow', () => {
     expect(saveProjectMock).not.toHaveBeenCalled();
   });
 
+  it('blocks generation when chord parsing still has unresolved bars', async () => {
+    parseChordChartMock.mockReturnValue({
+      chords: [
+        { bar_number: 1, degree: 'I', quality: 'maj7', bass_degree: null },
+        { bar_number: 2, degree: null, quality: null, bass_degree: null },
+      ],
+      warnings: ['Bar 2: could not parse "xyz??", treated as N.C.'],
+      issues: [
+        {
+          barNumber: 2,
+          token: 'xyz??',
+          reason: 'invalid_token',
+          message: 'Bar 2: could not parse "xyz??", treated as N.C.',
+        },
+      ],
+    });
+
+    const mounted = renderHarness();
+    mountedRoot = mounted.root;
+    mountedContainer = mounted.container;
+
+    await act(async () => {
+      await hookValue!.runGeneration();
+      await Promise.resolve();
+    });
+
+    expect(generateMock).not.toHaveBeenCalled();
+    expect(saveArrangementMock).not.toHaveBeenCalled();
+    expect(useUiStore.getState()).toMatchObject({
+      generationState: 'idle',
+      systemStatus: 'error',
+      errorMessage: 'Fix the flagged chord bar before generating.',
+    });
+    expect(saveProjectMock).toHaveBeenCalledTimes(1);
+    expect(useProjectStore.getState().chatMessages).toHaveLength(1);
+    expect(useProjectStore.getState().chatMessages[0]).toMatchObject({
+      role: 'assistant',
+      scope: 'setup',
+      content: 'Generation failed: Fix the flagged chord bar before generating.',
+    });
+  });
+
   it('turns an assistant prompt into generation, project changes, and chat history', async () => {
     const persistedFlagsSeenBeforeSave: boolean[] = [];
 

@@ -5,11 +5,12 @@ export type LeftPanelTruthTone = "ready" | "attention" | "neutral"
 type LeftPanelReadinessInputs = {
   hasProject: boolean
   hasChordChart: boolean
+  hasParseIssues?: boolean
   generationState: GenerationState
   isImporting?: boolean
 }
 
-export type InputReadinessState = "waiting" | "empty" | "ready"
+export type InputReadinessState = "waiting" | "empty" | "blocked" | "ready"
 
 export type InputReadinessTruth = {
   state: InputReadinessState
@@ -55,6 +56,7 @@ export type LeftPanelCoordinationTruth = {
 export function getInputReadinessTruth({
   hasProject,
   hasChordChart,
+  hasParseIssues = false,
   generationState,
   isImporting = false,
 }: LeftPanelReadinessInputs): InputReadinessTruth {
@@ -91,6 +93,15 @@ export function getInputReadinessTruth({
       badge: "Empty",
       title: "Chord chart needed",
       detail: "Enter chords, paste chart text, or import a plain-text file to enable generation.",
+    }
+  }
+
+  if (hasParseIssues) {
+    return {
+      state: "blocked",
+      badge: "Blocked",
+      title: "Chord chart needs fixes",
+      detail: "Flagged bars would resolve to N.C. during generation. Fix the chart before generating.",
     }
   }
 

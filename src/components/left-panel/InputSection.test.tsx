@@ -192,8 +192,14 @@ describe('InputSection upload tab', () => {
     const parseTruth = mounted.container.querySelector(
       '[data-chord-chart-parse-state]'
     ) as HTMLDivElement | null;
+    const readiness = mounted.container.querySelector('[data-input-readiness]') as HTMLDivElement | null;
 
     expect(parseTruth?.getAttribute('data-chord-chart-parse-state')).toBe('attention');
+    expect(readiness?.getAttribute('data-input-readiness')).toBe('blocked');
+    expect(mounted.container.textContent).toContain('Chord chart needs fixes');
+    expect(mounted.container.textContent).toContain(
+      'Flagged bars would resolve to N.C. during generation. Fix the chart before generating.'
+    );
     expect(mounted.container.textContent).toContain('Chord chart has parse issues');
     expect(mounted.container.textContent).toContain('2 bars become N.C. during generation.');
     expect(mounted.container.textContent).toContain('1 bar has an unrecognized chord token.');
@@ -205,7 +211,7 @@ describe('InputSection upload tab', () => {
     expect(mounted.container.textContent).toContain(
       'Bar 3: repeat marker "%" follows a bar that could not be resolved'
     );
-    expect(getGenerateButton(mounted.container).disabled).toBe(false);
+    expect(getGenerateButton(mounted.container).disabled).toBe(true);
   });
 
   it('surfaces the next step when a repeat marker starts before any chord', () => {

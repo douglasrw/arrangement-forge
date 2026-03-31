@@ -147,7 +147,16 @@ export function useGenerate() {
 
     try {
       // Parse chord chart
-      const { chords: parsedChords } = parseChordChart(project.chordChartRaw, project.key);
+      const parseResult = parseChordChart(project.chordChartRaw, project.key);
+      const parseIssues = parseResult.issues ?? [];
+
+      if (parseIssues.length > 0) {
+        throw new Error(
+          `Fix ${parseIssues.length === 1 ? 'the flagged chord bar' : `${parseIssues.length} flagged chord bars`} before generating.`
+        );
+      }
+
+      const parsedChords = parseResult.chords;
 
       const request: GenerationRequest = {
         project_id: project.id,
