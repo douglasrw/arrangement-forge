@@ -3,9 +3,14 @@ import { Link, useLocation, useParams } from 'react-router-dom';
 import { AppShell } from '@/components/layout/AppShell';
 import type { LoadProjectResult } from '@/hooks/useProject';
 import { useProject } from '@/hooks/useProject';
+import {
+  getEditorRouteTruth,
+  type EditorRouteMode,
+  type EditorRouteStatus,
+} from '@/lib/editor-route-truth';
 import { useProjectStore } from '@/store/project-store';
 
-export type EditorRouteMode = 'project-selection' | 'project-id';
+export type { EditorRouteMode } from '@/lib/editor-route-truth';
 
 function EditorShellState({
   title,
@@ -115,174 +120,6 @@ function getLoadingMessage(projectId: string | undefined) {
     : 'Opening the requested project route in the editor.';
 }
 
-function describeEditorRoute(routeMode: EditorRouteMode, projectId: string | undefined) {
-  if (routeMode === 'project-selection') {
-    return '/project';
-  }
-
-  return projectId ? `/project/${projectId}` : '/project/:id (missing project id)';
-}
-
-function getCurrentEditorRoute({
-  pathname,
-  search,
-  hash,
-  routeMode,
-  projectId,
-}: {
-  pathname: string;
-  search: string;
-  hash: string;
-  routeMode: EditorRouteMode;
-  projectId: string | undefined;
-}) {
-  const describedRoute = describeEditorRoute(routeMode, projectId);
-  const currentPath =
-    routeMode === 'project-id' && !projectId ? describedRoute : pathname || describedRoute;
-
-  return `${currentPath}${search}${hash}`;
-}
-
-function getEditorFallbackRoute() {
-  return '/project';
-}
-
-function getEditorRouteModeLabel({
-  routeMode,
-  routeState,
-}: {
-  routeMode: EditorRouteMode;
-  routeState: EditorRouteState['status'];
-}) {
-  if (routeMode === 'project-selection') {
-    return 'editor fallback route';
-  }
-
-  if (routeState === 'ready') {
-    return 'active project route';
-  }
-
-  return 'requested project route';
-}
-
-function getEditorRouteTruth({
-  routeMode,
-  routeState,
-  projectId,
-}: {
-  routeMode: EditorRouteMode;
-  routeState: EditorRouteState['status'];
-  projectId: string | undefined;
-}) {
-  const routeLabel = describeEditorRoute(routeMode, projectId);
-
-  if (routeState === 'no-project-selected') {
-    return 'Route truth: /project is the editor fallback route, and it stays parked here until you choose a project from the library.';
-  }
-
-  if (routeState === 'missing-project') {
-    return `Route truth: ${routeLabel} cannot open because the requested project is unavailable.`;
-  }
-
-  if (routeState === 'error' && routeMode === 'project-id' && !projectId) {
-    return 'Route truth: /project/:id cannot open because the route is missing a project id.';
-  }
-
-  if (routeState === 'error') {
-    return `Route truth: ${routeLabel} is blocked until Arrangement Forge can load the requested project.`;
-  }
-
-  if (routeState === 'ready') {
-    return `Route truth: ${routeLabel} is loaded in this workspace. If you leave this project route, /project is the editor fallback route until you choose another project from the library.`;
-  }
-
-  return `Route truth: ${routeLabel} is still resolving before the editor becomes ready.`;
-}
-
-function getEditorRouteCurrentState({
-  routeMode,
-  routeState,
-  projectId,
-}: {
-  routeMode: EditorRouteMode;
-  routeState: EditorRouteState['status'];
-  projectId: string | undefined;
-}) {
-  if (routeState === 'no-project-selected') {
-    return 'The editor fallback route is open with no active project in this workspace.';
-  }
-
-  if (routeState === 'missing-project') {
-    return projectId
-      ? `The requested project route for ${projectId} did not resolve to an available project.`
-      : 'The requested project route did not resolve to an available project.';
-  }
-
-  if (routeState === 'error') {
-    if (routeMode === 'project-id' && !projectId) {
-      return 'The requested editor route is malformed because no project id was provided.';
-    }
-
-    return projectId
-      ? `The requested project route for ${projectId} is blocked by a load failure.`
-      : 'The requested project route is blocked by a load failure.';
-  }
-
-  if (routeState === 'ready') {
-    return projectId
-      ? `The requested project route for ${projectId} is loaded in this workspace.`
-      : 'The requested project route is loaded in this workspace.';
-  }
-
-  if (routeMode === 'project-selection') {
-    return 'Arrangement Forge is resolving whether the editor fallback route should stay parked or move into a project.';
-  }
-
-  return projectId
-    ? `Arrangement Forge is still loading the requested project route for ${projectId}.`
-    : 'Arrangement Forge is still loading the requested project route.';
-}
-
-function getEditorRouteReadiness({
-  routeMode,
-  routeState,
-  projectId,
-}: {
-  routeMode: EditorRouteMode;
-  routeState: EditorRouteState['status'];
-  projectId: string | undefined;
-}) {
-  if (routeState === 'no-project-selected') {
-    return '/project is parked as the editor fallback route until you choose a project from the library.';
-  }
-
-  if (routeState === 'missing-project') {
-    return projectId
-      ? `/project/${projectId} is blocked because that project is unavailable.`
-      : 'The requested editor route is blocked because that project is unavailable.';
-  }
-
-  if (routeState === 'error') {
-    if (routeMode === 'project-id' && !projectId) {
-      return '/project/:id is blocked because the route is missing a project id.';
-    }
-
-    return projectId
-      ? `/project/${projectId} is blocked until the load failure is resolved.`
-      : 'The requested editor route is blocked until the load failure is resolved.';
-  }
-
-  if (routeState === 'ready') {
-    return projectId
-      ? `/project/${projectId} is ready in this workspace.`
-      : 'The requested editor route is ready in this workspace.';
-  }
-
-  return projectId
-    ? `/project/${projectId} is still loading before the editor becomes interactive.`
-    : 'The requested editor route is still loading before the editor becomes interactive.';
-}
-
 function EditorRouteReadyBanner({
   projectId,
   currentRoute,
@@ -350,31 +187,12 @@ export default function EditorPage({
     getInitialEditorRouteState(routeMode, id)
   );
   const routeTruth = getEditorRouteTruth({
-    routeMode,
-    routeState: routeState.status,
-    projectId: id,
-  });
-  const currentRoute = getCurrentEditorRoute({
     pathname: location.pathname,
     search: location.search,
     hash: location.hash,
     routeMode,
+    routeStatus: routeState.status as Exclude<EditorRouteStatus, 'auth-reserved'>,
     projectId: id,
-  });
-  const fallbackRoute = getEditorFallbackRoute();
-  const currentState = getEditorRouteCurrentState({
-    routeMode,
-    routeState: routeState.status,
-    projectId: id,
-  });
-  const routeReadiness = getEditorRouteReadiness({
-    routeMode,
-    routeState: routeState.status,
-    projectId: id,
-  });
-  const routeModeLabel = getEditorRouteModeLabel({
-    routeMode,
-    routeState: routeState.status,
   });
 
   useEffect(() => {
@@ -411,12 +229,12 @@ export default function EditorPage({
           <EditorShellState
             title="Loading project route"
             message={getLoadingMessage(id)}
-            currentState={currentState}
-            routeModeLabel={routeModeLabel}
-            routeReadiness={routeReadiness}
-            currentRoute={currentRoute}
-            fallbackRoute={fallbackRoute}
-            routeTruth={routeTruth}
+            currentState={routeTruth.currentState}
+            routeModeLabel={routeTruth.routeModeLabel}
+            routeReadiness={routeTruth.routeReadiness}
+            currentRoute={routeTruth.currentRoute}
+            fallbackRoute={routeTruth.fallbackRoute ?? undefined}
+            routeTruth={routeTruth.routeTruth}
             nextStep="Wait for the current route load to finish before editing this arrangement."
             testId="editor-shell-loading-state"
             routeStatus="loading"
@@ -434,12 +252,12 @@ export default function EditorPage({
           <EditorShellState
             title="Choose a project to open the editor"
             message={routeState.message}
-            currentState={currentState}
-            routeModeLabel={routeModeLabel}
-            routeReadiness={routeReadiness}
-            currentRoute={currentRoute}
-            fallbackRoute={fallbackRoute}
-            routeTruth={routeTruth}
+            currentState={routeTruth.currentState}
+            routeModeLabel={routeTruth.routeModeLabel}
+            routeReadiness={routeTruth.routeReadiness}
+            currentRoute={routeTruth.currentRoute}
+            fallbackRoute={routeTruth.fallbackRoute ?? undefined}
+            routeTruth={routeTruth.routeTruth}
             nextStep="Return to the library, then open an existing project or create a new one to finish this editor route."
             testId="editor-shell-no-project-state"
             actionHref="/library"
@@ -463,12 +281,12 @@ export default function EditorPage({
                 ? `Project ${id} is not available, so the editor cannot open this route. ${routeState.message}`
                 : routeState.message
             }
-            currentState={currentState}
-            routeModeLabel={routeModeLabel}
-            routeReadiness={routeReadiness}
-            currentRoute={currentRoute}
-            fallbackRoute={fallbackRoute}
-            routeTruth={routeTruth}
+            currentState={routeTruth.currentState}
+            routeModeLabel={routeTruth.routeModeLabel}
+            routeReadiness={routeTruth.routeReadiness}
+            currentRoute={routeTruth.currentRoute}
+            fallbackRoute={routeTruth.fallbackRoute ?? undefined}
+            routeTruth={routeTruth.routeTruth}
             nextStep="Return to the library and open a different project."
             testId="editor-shell-missing-project-state"
             tone="error"
@@ -493,12 +311,12 @@ export default function EditorPage({
                 ? `Project ${id} could not be loaded for this editor route. ${routeState.message}`
                 : routeState.message
             }
-            currentState={currentState}
-            routeModeLabel={routeModeLabel}
-            routeReadiness={routeReadiness}
-            currentRoute={currentRoute}
-            fallbackRoute={fallbackRoute}
-            routeTruth={routeTruth}
+            currentState={routeTruth.currentState}
+            routeModeLabel={routeTruth.routeModeLabel}
+            routeReadiness={routeTruth.routeReadiness}
+            currentRoute={routeTruth.currentRoute}
+            fallbackRoute={routeTruth.fallbackRoute ?? undefined}
+            routeTruth={routeTruth.routeTruth}
             nextStep={
               routeMode === 'project-id' && !id
                 ? 'Return to the library, then open a project to replace this malformed editor route.'
@@ -520,11 +338,11 @@ export default function EditorPage({
       workspaceBanner={
         <EditorRouteReadyBanner
           projectId={id}
-          currentRoute={currentRoute}
-          fallbackRoute={fallbackRoute}
-          routeModeLabel={routeModeLabel}
-          routeReadiness={routeReadiness}
-          routeTruth={routeTruth}
+          currentRoute={routeTruth.currentRoute}
+          fallbackRoute={routeTruth.fallbackRoute ?? '/project'}
+          routeModeLabel={routeTruth.routeModeLabel}
+          routeReadiness={routeTruth.routeReadiness}
+          routeTruth={routeTruth.routeTruth}
         />
       }
     />

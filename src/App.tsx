@@ -1,6 +1,7 @@
 import { useEffect } from 'react';
 import { createBrowserRouter, RouterProvider, Navigate, useLocation } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
+import { getProtectedRouteTruth } from '@/lib/editor-route-truth';
 import type { AuthTruth } from '@/store/auth-store';
 import { selectAuthTruth } from '@/store/auth-store';
 import { useAuthStore } from '@/store/auth-store';
@@ -9,109 +10,6 @@ import LoginPage from '@/pages/LoginPage';
 import LibraryPage from '@/pages/LibraryPage';
 import SettingsPage from '@/pages/SettingsPage';
 
-function describeProtectedDestination(path: string) {
-  const routePath = path.split(/[?#]/, 1)[0] ?? path;
-
-  if (routePath === '/project') {
-    return 'project selection in the editor';
-  }
-
-  if (routePath.startsWith('/project/')) {
-    const [, , projectId] = routePath.split('/');
-    return projectId ? `project ${projectId} in the editor` : 'the requested project in the editor';
-  }
-
-  if (routePath.startsWith('/settings')) {
-    return 'settings';
-  }
-
-  if (routePath.startsWith('/library')) {
-    return 'the library';
-  }
-
-  return 'your workspace';
-}
-
-function describeProtectedRecoveryTruth(path: string) {
-  const routePath = path.split(/[?#]/, 1)[0] ?? path;
-
-  if (routePath === '/project') {
-    return 'Route truth: /project is the editor fallback route, and it stays reserved until authentication finishes and you can choose a project.';
-  }
-
-  if (routePath.startsWith('/project/')) {
-    return `Route truth: ${routePath} stays reserved during authentication, and /project remains the editor fallback route if you need to choose a different project after recovery.`;
-  }
-
-  if (routePath.startsWith('/settings')) {
-    return `Route truth: ${routePath} stays reserved until authentication finishes.`;
-  }
-
-  if (routePath.startsWith('/library')) {
-    return `Route truth: ${routePath} stays reserved until authentication finishes.`;
-  }
-
-  return `Route truth: ${routePath || '/'} stays reserved until authentication finishes.`;
-}
-
-function describeProtectedRouteLabel(path: string) {
-  return path || '/';
-}
-
-function describeProtectedFallbackRoute(path: string) {
-  const routePath = path.split(/[?#]/, 1)[0] ?? path;
-
-  if (routePath === '/project' || routePath.startsWith('/project/')) {
-    return '/project';
-  }
-
-  return null;
-}
-
-function describeProtectedRouteReadiness(path: string) {
-  const routePath = path.split(/[?#]/, 1)[0] ?? path;
-
-  if (routePath === '/project') {
-    return '/project is reserved as the editor fallback route until authentication finishes.';
-  }
-
-  if (routePath.startsWith('/project/')) {
-    return `${routePath} is reserved until authentication finishes.`;
-  }
-
-  if (routePath.startsWith('/settings')) {
-    return `${routePath} is reserved until authentication finishes.`;
-  }
-
-  if (routePath.startsWith('/library')) {
-    return `${routePath} is reserved until authentication finishes.`;
-  }
-
-  return `${routePath || '/'} is reserved until authentication finishes.`;
-}
-
-function describeProtectedRouteMode(path: string) {
-  const routePath = path.split(/[?#]/, 1)[0] ?? path;
-
-  if (routePath === '/project') {
-    return 'editor fallback route';
-  }
-
-  if (routePath.startsWith('/project/')) {
-    return 'requested project route';
-  }
-
-  if (routePath.startsWith('/settings')) {
-    return 'protected settings route';
-  }
-
-  if (routePath.startsWith('/library')) {
-    return 'protected library route';
-  }
-
-  return 'protected route';
-}
-
 function LoadingScreen({
   authTruth,
   recoveryPath,
@@ -119,12 +17,7 @@ function LoadingScreen({
   authTruth: AuthTruth;
   recoveryPath: string;
 }) {
-  const recoveryDestination = describeProtectedDestination(recoveryPath);
-  const recoveryTruth = describeProtectedRecoveryTruth(recoveryPath);
-  const routeReadiness = describeProtectedRouteReadiness(recoveryPath);
-  const currentRoute = describeProtectedRouteLabel(recoveryPath);
-  const fallbackRoute = describeProtectedFallbackRoute(recoveryPath);
-  const routeMode = describeProtectedRouteMode(recoveryPath);
+  const protectedRouteTruth = getProtectedRouteTruth(recoveryPath);
 
   return (
     <div
@@ -137,19 +30,28 @@ function LoadingScreen({
           <div className="space-y-1">
             <h1 className="text-base font-semibold text-foreground">Waiting on authentication</h1>
             <p className="text-sm text-muted-foreground">
-              If a session is restored, Arrangement Forge will continue to {recoveryDestination}.
+              If a session is restored, Arrangement Forge will continue to{' '}
+              {protectedRouteTruth.recoveryDestination}.
             </p>
             <p className="text-xs text-foreground/80">Current state: {authTruth.currentState}</p>
             <p className="text-xs text-foreground/80">
               Next step: {authTruth.nextStepLabel}. {authTruth.nextStepDetail}
             </p>
-            <p className="text-xs text-foreground/80">Route mode: {routeMode}</p>
-            <p className="text-xs text-foreground/80">Route readiness: {routeReadiness}</p>
-            <p className="text-xs text-foreground/80">Current route: {currentRoute}</p>
-            {fallbackRoute ? (
-              <p className="text-xs text-foreground/80">Editor fallback route: {fallbackRoute}</p>
+            <p className="text-xs text-foreground/80">
+              Route mode: {protectedRouteTruth.routeModeLabel}
+            </p>
+            <p className="text-xs text-foreground/80">
+              Route readiness: {protectedRouteTruth.routeReadiness}
+            </p>
+            <p className="text-xs text-foreground/80">
+              Current route: {protectedRouteTruth.currentRoute}
+            </p>
+            {protectedRouteTruth.fallbackRoute ? (
+              <p className="text-xs text-foreground/80">
+                Editor fallback route: {protectedRouteTruth.fallbackRoute}
+              </p>
             ) : null}
-            <p className="text-xs text-foreground/80">{recoveryTruth}</p>
+            <p className="text-xs text-foreground/80">{protectedRouteTruth.routeTruth}</p>
           </div>
         </div>
       </div>
