@@ -205,6 +205,8 @@ describe('ArrangementView empty-state truth', () => {
     expect(
       mounted.container.querySelector('button[aria-label="drums block, bars 1-4"]')
     ).not.toBeNull();
+    expect(mounted.container.textContent).toContain('Pattern ready');
+    expect(mounted.container.textContent).toContain('Steady Groove');
 
     expect(
       mounted.container.querySelector('div[data-lane-instrument="piano"][data-lane-state="empty"]')
@@ -225,5 +227,26 @@ describe('ArrangementView empty-state truth', () => {
       mounted.container.querySelector('[data-chord-lane-state="empty"]')
     ).not.toBeNull();
     expect(mounted.container.textContent).toContain('No chord bars loaded yet.');
+  });
+
+  it('surfaces missing block pattern truth instead of a fake default label', () => {
+    useProjectStore.setState({
+      blocks: [
+        makeBlock({
+          id: 'block-drums',
+          stemId: 'stem-drums',
+          sectionId: 'section-1',
+          style: '   ',
+        }),
+      ],
+    });
+
+    const mounted = renderArrangementView();
+    mountedRoot = mounted.root;
+    mountedContainer = mounted.container;
+
+    expect(mounted.container.textContent).toContain('Pattern missing');
+    expect(mounted.container.textContent).toContain('Choose a pattern');
+    expect(mounted.container.textContent).not.toContain('Default');
   });
 });

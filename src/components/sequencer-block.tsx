@@ -1,4 +1,5 @@
 import { cn } from "@/lib/utils"
+import { INSTRUMENT_STYLE_OPTIONS } from "@/lib/genre-config"
 
 export type Instrument = "drums" | "bass" | "piano" | "guitar" | "strings"
 
@@ -30,8 +31,39 @@ interface SequencerBlockProps {
   "aria-label"?: string
 }
 
+function toTitleCase(value: string): string {
+  return value
+    .split(/[_\s-]+/)
+    .filter(Boolean)
+    .map((segment) => segment.charAt(0).toUpperCase() + segment.slice(1))
+    .join(" ")
+}
+
+function getBlockPatternTruth(instrument: Instrument, styleName?: string) {
+  const normalizedStyleName = styleName?.trim() ?? ""
+
+  if (!normalizedStyleName) {
+    return {
+      title: "Pattern missing",
+      detail: "Choose a pattern",
+      isMissing: true,
+    }
+  }
+
+  const option = INSTRUMENT_STYLE_OPTIONS[instrument].find(
+    (candidate) => candidate.id === normalizedStyleName,
+  )
+
+  return {
+    title: option?.label ?? toTitleCase(normalizedStyleName),
+    detail: "Pattern ready",
+    isMissing: false,
+  }
+}
+
 export function SequencerBlock({
   instrument,
+  styleName,
   state = "default",
   dimmed = false,
   onClick,
@@ -40,6 +72,7 @@ export function SequencerBlock({
 }: SequencerBlockProps) {
   const color = INSTRUMENT_COLORS[instrument]
   const isSelected = state === "selected"
+  const blockTruth = getBlockPatternTruth(instrument, styleName)
 
   return (
     <button
@@ -80,6 +113,24 @@ export function SequencerBlock({
         }
       }}
     >
+      <span className="flex min-w-0 flex-col gap-1">
+        <span
+          className={cn(
+            "truncate text-xs font-semibold uppercase tracking-[0.16em]",
+            blockTruth.isMissing ? "text-warning" : "text-foreground",
+          )}
+        >
+          {blockTruth.title}
+        </span>
+        <span
+          className={cn(
+            "truncate text-[10px] leading-tight",
+            blockTruth.isMissing ? "text-warning/80" : "text-muted-foreground",
+          )}
+        >
+          {blockTruth.detail}
+        </span>
+      </span>
     </button>
   )
 }
