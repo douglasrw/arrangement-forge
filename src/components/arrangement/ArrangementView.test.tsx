@@ -3,7 +3,7 @@
 import { act } from 'react';
 import { createRoot, type Root } from 'react-dom/client';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import type { Block, Project, Section, Stem, TransportState } from '@/types';
+import type { Block, PlaybackReadiness, PlaybackTruth, Project, Section, Stem, TransportState } from '@/types';
 import { useProjectStore } from '@/store/project-store';
 import { useSelectionStore } from '@/store/selection-store';
 import { useUiStore } from '@/store/ui-store';
@@ -18,6 +18,15 @@ const useAudioState = vi.hoisted(() => ({
     totalSeconds: 0,
     isCountingIn: false,
   } as TransportState,
+  playbackReadiness: 'ready' as PlaybackReadiness,
+  playbackTruth: {
+    status: 'ready',
+    action: 'play',
+    reason: 'ready',
+    summary: 'Ready',
+    detail: 'Arrangement audio is loaded into the engine.',
+    nextStep: 'Play, scrub, or adjust the transport.',
+  } as PlaybackTruth,
   seek: vi.fn(),
 }));
 
@@ -26,6 +35,8 @@ const runGenerationMock = vi.hoisted(() => vi.fn());
 vi.mock('@/hooks/useAudio', () => ({
   useAudio: () => ({
     transportState: useAudioState.transportState,
+    playbackReadiness: useAudioState.playbackReadiness,
+    playbackTruth: useAudioState.playbackTruth,
     seek: useAudioState.seek,
   }),
 }));
@@ -148,6 +159,15 @@ beforeEach(() => {
 
   runGenerationMock.mockReset();
   useAudioState.seek.mockReset();
+  useAudioState.playbackReadiness = 'ready';
+  useAudioState.playbackTruth = {
+    status: 'ready',
+    action: 'play',
+    reason: 'ready',
+    summary: 'Ready',
+    detail: 'Arrangement audio is loaded into the engine.',
+    nextStep: 'Play, scrub, or adjust the transport.',
+  };
 
   useProjectStore.setState({
     project: makeProject(),
@@ -248,5 +268,50 @@ describe('ArrangementView empty-state truth', () => {
     expect(mounted.container.textContent).toContain('Pattern missing');
     expect(mounted.container.textContent).toContain('Choose a pattern');
     expect(mounted.container.textContent).not.toContain('Default');
+  });
+
+  it('surfaces idle playhead truth inside the arrangement when transport is ready', () => {
+    const mounted = renderArrangementView();
+    mountedRoot = mounted.root;
+    mountedContainer = mounted.container;
+
+    const playheadBadge = mounted.container.querySelector(
+      '[data-arrangement-playhead-state="idle"]'
+    );
+    const playheadLine = mounted.container.querySelector(
+      '[data-arrangement-playhead-line="idle"]'
+    );
+
+    expect(playheadBadge?.textContent).toContain('Idle');
+    expect(playheadBadge?.textContent).toContain('Bar 1 Beat 1');
+    expect(playheadLine).not.toBeNull();
+  });
+
+  it('keeps blocked playhead truth explicit when arrangement rows exist but playback is unavailable', () => {
+    useAudioState.playbackReadiness = 'unavailable';
+    useAudioState.playbackTruth = {
+      status: 'unavailable',
+      action: 'retry-play',
+      reason: 'load-failed',
+      summary: 'Audio engine blocked',
+      detail: 'The audio engine could not start: no output device is available.',
+      nextStep: 'Resolve the audio engine start error, then press play again.',
+    };
+
+    const mounted = renderArrangementView();
+    mountedRoot = mounted.root;
+    mountedContainer = mounted.container;
+
+    const playheadBadge = mounted.container.querySelector(
+      '[data-arrangement-playhead-state="unavailable"]'
+    );
+
+    expect(playheadBadge?.textContent).toContain('Audio engine blocked');
+    expect(playheadBadge?.textContent).toContain(
+      'The audio engine could not start: no output device is available.'
+    );
+    expect(
+      mounted.container.querySelector('[data-arrangement-playhead-line]')
+    ).toBeNull();
   });
 });

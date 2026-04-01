@@ -30,6 +30,52 @@ const ARRANGEMENT_LANE_LABELS: Record<Instrument, string> = {
   strings: "STRINGS",
 }
 
+function getArrangementPlayheadTruth({
+  transportReady,
+  isPlaying,
+  summary,
+  detail,
+  nextStep,
+  currentBar,
+  currentBeat,
+  totalBars,
+}: {
+  transportReady: boolean
+  isPlaying: boolean
+  summary: string
+  detail: string
+  nextStep: string
+  currentBar: number
+  currentBeat: number
+  totalBars: number
+}) {
+  if (!transportReady) {
+    return {
+      state: "unavailable" as const,
+      badgeLabel: summary,
+      statusText: detail,
+      title: `${detail} ${nextStep}`.trim(),
+      playheadBar: 1,
+      playheadBeat: 1,
+      showOverlay: false,
+    }
+  }
+
+  const playheadBar = Math.max(1, Math.min(currentBar, totalBars || 1))
+  const playheadBeat = Math.max(1, currentBeat)
+  const badgeLabel = isPlaying ? "Playing" : "Idle"
+
+  return {
+    state: isPlaying ? "active" as const : "idle" as const,
+    badgeLabel,
+    statusText: `Bar ${playheadBar} Beat ${playheadBeat}`,
+    title: `${badgeLabel} at bar ${playheadBar} beat ${playheadBeat}`,
+    playheadBar,
+    playheadBeat,
+    showOverlay: true,
+  }
+}
+
 function getArrangementLaneTruth(instrument: Instrument, hasStem: boolean, blockCount: number) {
   const instrumentLabel = ARRANGEMENT_LANE_LABELS[instrument]
   const lowerLabel = instrumentLabel.toLowerCase()
@@ -129,7 +175,7 @@ export function ArrangementView({
   )
   const { generationState } = useUiStore()
   const { sectionId: selectedSectionId, blockId: selectedBlockId, selectSection, selectBlock, selectSong } = useSelectionStore()
-  const { transportState, seek } = useAudio()
+  const { transportState, playbackReadiness, playbackTruth, seek } = useAudio()
   const { runGeneration } = useGenerate()
   const hasAnyBlockSelected = selectedBlockId !== null
 
@@ -204,8 +250,17 @@ export function ArrangementView({
     : BAR_W
   const GRID_W = totalBars * effectiveBarW
 
-  /* Playhead position from audio engine — clamp to song bounds */
-  const playheadBar = Math.max(1, Math.min(transportState.currentBar, totalBars || 1))
+  const transportReady = totalBars > 0 && playbackReadiness === "ready"
+  const arrangementPlayheadTruth = getArrangementPlayheadTruth({
+    transportReady,
+    isPlaying: transportState.playbackState === "playing",
+    summary: playbackTruth.summary,
+    detail: playbackTruth.detail,
+    nextStep: playbackTruth.nextStep,
+    currentBar: transportState.currentBar,
+    currentBeat: transportState.currentBeat,
+    totalBars,
+  })
 
   return (
     <div
@@ -359,7 +414,7 @@ export function ArrangementView({
 
           {/* == Bar ruler row == */}
           <div
-            className="flex shrink-0 cursor-pointer bg-card/80"
+            className="relative flex shrink-0 cursor-pointer bg-card/80"
             style={{ height: RULER_H }}
             onClick={(e) => {
               const rect = e.currentTarget.getBoundingClientRect()
@@ -405,6 +460,25 @@ export function ArrangementView({
                 </div>
               )
             })}
+            <div className="pointer-events-none absolute right-2 top-1/2 -translate-y-1/2">
+              <div
+                className={cn(
+                  "inline-flex items-center gap-2 rounded-full border px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.16em]",
+                  arrangementPlayheadTruth.state === "active"
+                    ? "border-playhead/40 bg-playhead/10 text-playhead-light"
+                    : arrangementPlayheadTruth.state === "idle"
+                      ? "border-sky-400/40 bg-sky-500/10 text-sky-300"
+                      : "border-border/70 bg-secondary/70 text-muted-foreground"
+                )}
+                data-arrangement-playhead-state={arrangementPlayheadTruth.state}
+                title={arrangementPlayheadTruth.title}
+              >
+                <span>{arrangementPlayheadTruth.badgeLabel}</span>
+                <span className="text-[9px] normal-case tracking-normal opacity-80">
+                  {arrangementPlayheadTruth.statusText}
+                </span>
+              </div>
+            </div>
           </div>
 
           {/* == Stem lane rows (fixed height) == */}
@@ -511,31 +585,35 @@ export function ArrangementView({
           <ChordLane barWidth={effectiveBarW} />
 
           {/* == Playhead (spans full height as overlay) == */}
-          <div
-            className="pointer-events-none absolute inset-y-0 z-20"
-            style={{
-              left: (playheadBar - 1) * effectiveBarW,
-            }}
-          >
-            {/* Triangle handle */}
+          {arrangementPlayheadTruth.showOverlay ? (
             <div
-              className="absolute -left-[5px] top-0"
-              style={{ width: 0, height: 0 }}
+              className="pointer-events-none absolute inset-y-0 z-20"
+              style={{
+                left: (arrangementPlayheadTruth.playheadBar - 1) * effectiveBarW,
+              }}
+              data-arrangement-playhead-line={arrangementPlayheadTruth.state}
+              aria-label={arrangementPlayheadTruth.title}
             >
-              <svg width="12" height="8" viewBox="0 0 12 8">
-                <polygon
-                  points="0,0 12,0 6,8"
-                  fill="var(--playhead)"
-                  fillOpacity={0.9}
-                />
-              </svg>
+              {/* Triangle handle */}
+              <div
+                className="absolute -left-[5px] top-0"
+                style={{ width: 0, height: 0 }}
+              >
+                <svg width="12" height="8" viewBox="0 0 12 8">
+                  <polygon
+                    points="0,0 12,0 6,8"
+                    fill="var(--playhead)"
+                    fillOpacity={0.9}
+                  />
+                </svg>
+              </div>
+              {/* Line */}
+              <div
+                className="absolute left-[5px] top-0 h-full w-[2px] bg-playhead/80"
+                style={{ marginLeft: -1 }}
+              />
             </div>
-            {/* Line */}
-            <div
-              className="absolute left-[5px] top-0 h-full w-[2px] bg-playhead/80"
-              style={{ marginLeft: -1 }}
-            />
-          </div>
+          ) : null}
         </div>
       </div>
     </div>
