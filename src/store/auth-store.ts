@@ -7,6 +7,7 @@ import type { Profile } from '@/types';
 export type AuthStatus = 'checking-session' | 'authenticated' | 'signed-out';
 export type AuthGateAccess = 'pending' | 'granted' | 'blocked';
 export type AuthReadiness = 'waiting' | 'ready' | 'blocked';
+export type AuthBlockingState = 'none' | 'signed-out' | 'error';
 
 export type SignedOutReason =
   | 'no-session'
@@ -28,6 +29,7 @@ export type AuthGateNextStep =
 export interface AuthGateTruth {
   readiness: AuthReadiness;
   access: AuthGateAccess;
+  blockingState: AuthBlockingState;
   currentState: string;
   nextStep: AuthGateNextStep;
   nextStepLabel: string;
@@ -60,6 +62,7 @@ type AuthGateDefinition = Omit<AuthGateTruth, 'signedOutReason'>;
 const CHECKING_SESSION_AUTH_GATE: AuthGateDefinition = {
   readiness: 'waiting',
   access: 'pending',
+  blockingState: 'none',
   currentState: 'Checking for an existing session.',
   nextStep: 'wait-for-session',
   nextStepLabel: 'Wait for session bootstrap',
@@ -69,6 +72,7 @@ const CHECKING_SESSION_AUTH_GATE: AuthGateDefinition = {
 const AUTHENTICATED_AUTH_GATE: AuthGateDefinition = {
   readiness: 'ready',
   access: 'granted',
+  blockingState: 'none',
   currentState: 'An authenticated session is ready.',
   nextStep: 'open-app',
   nextStepLabel: 'Open the app',
@@ -78,6 +82,7 @@ const AUTHENTICATED_AUTH_GATE: AuthGateDefinition = {
 const INCOMPLETE_AUTHENTICATED_AUTH_GATE: AuthGateDefinition = {
   readiness: 'blocked',
   access: 'blocked',
+  blockingState: 'error',
   currentState: 'The saved session is incomplete, so access is still blocked.',
   nextStep: 'sign-in',
   nextStepLabel: 'Sign in again',
@@ -88,6 +93,7 @@ const SIGNED_OUT_AUTH_GATES: Record<SignedOutReason, AuthGateDefinition> = {
   'no-session': {
     readiness: 'blocked',
     access: 'blocked',
+    blockingState: 'signed-out',
     currentState: 'No saved session was found.',
     nextStep: 'sign-in',
     nextStepLabel: 'Sign in',
@@ -96,6 +102,7 @@ const SIGNED_OUT_AUTH_GATES: Record<SignedOutReason, AuthGateDefinition> = {
   'signed-out': {
     readiness: 'blocked',
     access: 'blocked',
+    blockingState: 'signed-out',
     currentState: 'The previous session has been signed out.',
     nextStep: 'sign-in',
     nextStepLabel: 'Sign in again',
@@ -104,6 +111,7 @@ const SIGNED_OUT_AUTH_GATES: Record<SignedOutReason, AuthGateDefinition> = {
   'email-confirmation-required': {
     readiness: 'blocked',
     access: 'blocked',
+    blockingState: 'signed-out',
     currentState: 'Email confirmation is still required before a session can start.',
     nextStep: 'confirm-email',
     nextStepLabel: 'Confirm your email',
@@ -112,6 +120,7 @@ const SIGNED_OUT_AUTH_GATES: Record<SignedOutReason, AuthGateDefinition> = {
   'missing-profile': {
     readiness: 'blocked',
     access: 'blocked',
+    blockingState: 'error',
     currentState: 'The saved profile is missing, so the session cannot reopen yet.',
     nextStep: 'complete-profile',
     nextStepLabel: 'Complete the profile',
@@ -120,6 +129,7 @@ const SIGNED_OUT_AUTH_GATES: Record<SignedOutReason, AuthGateDefinition> = {
   'profile-load-failed': {
     readiness: 'blocked',
     access: 'blocked',
+    blockingState: 'error',
     currentState: 'The saved profile could not be loaded.',
     nextStep: 'retry-profile-load',
     nextStepLabel: 'Retry the profile load',
@@ -128,6 +138,7 @@ const SIGNED_OUT_AUTH_GATES: Record<SignedOutReason, AuthGateDefinition> = {
   'session-lookup-failed': {
     readiness: 'blocked',
     access: 'blocked',
+    blockingState: 'error',
     currentState: 'The previous session could not be restored.',
     nextStep: 'retry-session',
     nextStepLabel: 'Retry session restore',
@@ -138,6 +149,7 @@ const SIGNED_OUT_AUTH_GATES: Record<SignedOutReason, AuthGateDefinition> = {
 const SIGNED_OUT_WITHOUT_REASON_AUTH_GATE: AuthGateDefinition = {
   readiness: 'blocked',
   access: 'blocked',
+  blockingState: 'signed-out',
   currentState: 'Authentication is blocked until a new session starts.',
   nextStep: 'sign-in',
   nextStepLabel: 'Sign in',

@@ -18,6 +18,7 @@ const authApi = vi.hoisted(() => ({
         status: 'checking-session',
         readiness: 'waiting',
         access: 'pending',
+        blockingState: 'none',
         currentState: 'Checking for an existing session.',
         nextStep: 'wait-for-session',
         nextStepLabel: 'Wait for session bootstrap',
@@ -31,6 +32,7 @@ const authApi = vi.hoisted(() => ({
         status: 'authenticated',
         readiness: 'ready',
         access: 'granted',
+        blockingState: 'none',
         currentState: 'An authenticated session is ready.',
         nextStep: 'open-app',
         nextStepLabel: 'Open the app',
@@ -43,6 +45,12 @@ const authApi = vi.hoisted(() => ({
       status: 'signed-out',
       readiness: 'blocked',
       access: 'blocked',
+      blockingState:
+        this.signedOutReason === 'missing-profile'
+        || this.signedOutReason === 'profile-load-failed'
+        || this.signedOutReason === 'session-lookup-failed'
+          ? 'error'
+          : 'signed-out',
       currentState:
         this.signedOutReason === 'email-confirmation-required'
           ? 'Email confirmation is still required before a session can start.'
@@ -340,7 +348,7 @@ describe('LoginPage failure truth', () => {
     mountedRoot = mounted.root;
     mountedContainer = mounted.container;
 
-    expect(mounted.container.textContent).toContain('Authentication blocked');
+    expect(mounted.container.textContent).toContain('Authentication failed');
     expect(mounted.container.textContent).toContain(
       'The saved profile is missing, so the session cannot reopen yet.'
     );

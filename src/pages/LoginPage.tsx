@@ -122,7 +122,9 @@ function AuthStatusNotice({
 
   return (
     <Alert data-testid="auth-status-notice">
-      <AlertTitle>Authentication blocked</AlertTitle>
+      <AlertTitle>
+        {authTruth.blockingState === 'error' ? 'Authentication failed' : 'Authentication blocked'}
+      </AlertTitle>
       <AlertDescription>
         <p>{authTruth.currentState}</p>
         <p>

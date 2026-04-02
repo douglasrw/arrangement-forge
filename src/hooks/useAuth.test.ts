@@ -272,6 +272,7 @@ describe('useAuth loadProfile', () => {
       status: 'signed-out',
       readiness: 'blocked',
       access: 'blocked',
+      blockingState: 'error',
       currentState: 'The saved profile could not be loaded.',
       nextStep: 'retry-profile-load',
       nextStepLabel: 'Retry the profile load',
@@ -298,6 +299,7 @@ describe('useAuth auth action failures', () => {
           status: 'signed-out',
           readiness: 'blocked',
           access: 'blocked',
+          blockingState: 'signed-out',
           currentState: 'No saved session was found.',
           nextStep: 'sign-in',
           nextStepLabel: 'Sign in',
@@ -309,6 +311,7 @@ describe('useAuth auth action failures', () => {
         status: 'signed-out',
         readiness: 'blocked',
         access: 'blocked',
+        blockingState: 'signed-out',
         currentState: 'No saved session was found.',
         nextStep: 'sign-in',
         nextStepLabel: 'Sign in',
@@ -336,6 +339,7 @@ describe('useAuth auth action failures', () => {
         status: 'signed-out',
         readiness: 'blocked',
         access: 'blocked',
+        blockingState: 'signed-out',
         currentState: 'No saved session was found.',
         nextStep: 'sign-in',
         nextStepLabel: 'Sign in',
@@ -362,6 +366,7 @@ describe('useAuth auth action failures', () => {
       status: 'checking-session',
       readiness: 'waiting',
       access: 'pending',
+      blockingState: 'none',
       currentState: 'Checking for an existing session.',
       nextStep: 'wait-for-session',
       nextStepLabel: 'Wait for session bootstrap',
@@ -430,6 +435,8 @@ describe('useAuth auth action failures', () => {
     });
     expect(hookValue!.authTruth).toEqual({
       status: 'signed-out',
+      readiness: 'blocked',
+      blockingState: 'signed-out',
       access: 'blocked',
       currentState: 'Email confirmation is still required before a session can start.',
       nextStep: 'confirm-email',
@@ -457,6 +464,8 @@ describe('useAuth auth action failures', () => {
 
     expect(hookValue!.authTruth).toEqual({
       status: 'signed-out',
+      readiness: 'blocked',
+      blockingState: 'error',
       access: 'blocked',
       currentState: 'The saved profile is missing, so the session cannot reopen yet.',
       nextStep: 'complete-profile',
@@ -527,6 +536,7 @@ describe('useAuth auth action failures', () => {
         status: 'authenticated',
         readiness: 'ready',
         access: 'granted',
+        blockingState: 'none',
         currentState: 'An authenticated session is ready.',
         nextStep: 'open-app',
         nextStepLabel: 'Open the app',
@@ -659,6 +669,7 @@ describe('useAuth session bootstrap truth', () => {
 
     expect(hookValue!.authTruth).toMatchObject({
       status: 'signed-out',
+      blockingState: 'error',
       access: 'blocked',
       currentState: 'The saved profile is missing, so the session cannot reopen yet.',
       nextStep: 'complete-profile',
@@ -723,6 +734,7 @@ describe('useAuth session bootstrap truth', () => {
     });
     expect(hookValue!.authTruth).toMatchObject({
       status: 'signed-out',
+      blockingState: 'signed-out',
       access: 'blocked',
       currentState: 'No saved session was found.',
       nextStep: 'sign-in',
@@ -772,6 +784,7 @@ describe('useAuth session bootstrap truth', () => {
     });
     expect(hookValue!.authTruth).toMatchObject({
       status: 'signed-out',
+      blockingState: 'error',
       access: 'blocked',
       currentState: 'The saved profile is missing, so the session cannot reopen yet.',
       nextStep: 'complete-profile',
@@ -825,6 +838,7 @@ describe('useAuth session bootstrap truth', () => {
     });
     expect(hookValue!.authTruth).toMatchObject({
       status: 'signed-out',
+      blockingState: 'error',
       access: 'blocked',
       currentState: 'The saved profile could not be loaded.',
       nextStep: 'retry-profile-load',
@@ -868,6 +882,7 @@ describe('useAuth session bootstrap truth', () => {
     });
     expect(hookValue!.authTruth).toMatchObject({
       status: 'signed-out',
+      blockingState: 'error',
       access: 'blocked',
       currentState: 'The previous session could not be restored.',
       nextStep: 'retry-session',
