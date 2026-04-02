@@ -152,6 +152,16 @@ describe('undoStore', () => {
     expect(useUndoStore.getState().getHistoryTruth('generating')).toMatchObject({
       status: 'paused',
       boundary: 'undo',
+      undoBoundaryTruth: {
+        boundary: 'undo',
+        status: 'paused',
+        statusLabel: 'Undo paused: Split block',
+      },
+      redoBoundaryTruth: {
+        boundary: 'redo',
+        status: 'empty',
+        statusLabel: 'Redo waiting',
+      },
       label: 'Undo paused: Split block',
     });
   });
@@ -160,6 +170,16 @@ describe('undoStore', () => {
     expect(useUndoStore.getState().getHistoryTruth()).toMatchObject({
       status: 'waiting',
       boundary: null,
+      undoBoundaryTruth: {
+        boundary: 'undo',
+        status: 'empty',
+        statusLabel: 'Undo waiting',
+      },
+      redoBoundaryTruth: {
+        boundary: 'redo',
+        status: 'empty',
+        statusLabel: 'Redo waiting',
+      },
       label: 'Undo waiting · Redo waiting',
       currentState:
         'Undo is waiting for the first restorable arrangement change, and Redo is waiting for an undo step before it can reopen.',
@@ -255,6 +275,16 @@ describe('undoStore', () => {
     expect(useUndoStore.getState().getHistoryTruth()).toMatchObject({
       status: 'available',
       boundary: 'redo',
+      undoBoundaryTruth: {
+        boundary: 'undo',
+        status: 'empty',
+        statusLabel: 'Undo waiting',
+      },
+      redoBoundaryTruth: {
+        boundary: 'redo',
+        status: 'available',
+        statusLabel: 'Redo ready: Split block',
+      },
       label: 'Redo ready: Split block',
       currentState: 'Redo is ready to restore the arrangement captured after Split block.',
       nextStep: 'Use Redo to restore the arrangement captured after Split block.',
@@ -275,6 +305,16 @@ describe('undoStore', () => {
     expect(useUndoStore.getState().getHistoryTruth()).toMatchObject({
       status: 'available',
       boundary: 'undo',
+      undoBoundaryTruth: {
+        boundary: 'undo',
+        status: 'available',
+        statusLabel: 'Undo ready: Split block',
+      },
+      redoBoundaryTruth: {
+        boundary: 'redo',
+        status: 'available',
+        statusLabel: 'Redo ready: Merge blocks',
+      },
       activeBoundaryTruth: {
         boundary: 'undo',
         status: 'available',
@@ -309,6 +349,16 @@ describe('undoStore', () => {
     expect(useUndoStore.getState().getHistoryTruth()).toMatchObject({
       status: 'available',
       boundary: 'undo',
+      undoBoundaryTruth: {
+        boundary: 'undo',
+        status: 'available',
+        statusLabel: 'Undo ready: Split block',
+      },
+      redoBoundaryTruth: {
+        boundary: 'redo',
+        status: 'blocked',
+        statusLabel: 'Redo blocked: Broken redo',
+      },
       activeBoundaryTruth: {
         boundary: 'undo',
         status: 'available',

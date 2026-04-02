@@ -250,6 +250,8 @@ describe('createUndoHistoryTruth', () => {
     ).toEqual({
       status: 'waiting',
       boundary: null,
+      undoBoundaryTruth: createUndoBoundaryTruth(null, 'undo'),
+      redoBoundaryTruth: createUndoBoundaryTruth(null, 'redo'),
       activeBoundaryTruth: null,
       companionBoundaryTruth: null,
       label: 'Undo waiting · Redo waiting',
@@ -290,6 +292,8 @@ describe('createUndoHistoryTruth', () => {
     expect(historyTruth).toEqual({
       status: 'available',
       boundary: 'redo',
+      undoBoundaryTruth: createUndoBoundaryTruth(null, 'undo'),
+      redoBoundaryTruth: redoBoundary,
       activeBoundaryTruth: redoBoundary,
       companionBoundaryTruth: null,
       label: 'Redo ready: Split block',
@@ -345,6 +349,8 @@ describe('createUndoHistoryTruth', () => {
     expect(historyTruth).toEqual({
       status: 'available',
       boundary: 'undo',
+      undoBoundaryTruth: undoBoundary,
+      redoBoundaryTruth: redoBoundary,
       activeBoundaryTruth: undoBoundary,
       companionBoundaryTruth: redoBoundary,
       label: 'Undo ready: Split block · Redo ready: Merge blocks',
@@ -402,6 +408,8 @@ describe('createUndoHistoryTruth', () => {
     expect(historyTruth).toEqual({
       status: 'available',
       boundary: 'undo',
+      undoBoundaryTruth: undoBoundary,
+      redoBoundaryTruth: redoBoundary,
       activeBoundaryTruth: undoBoundary,
       companionBoundaryTruth: redoBoundary,
       label: 'Undo ready: Split block · Redo blocked: Broken redo',
@@ -462,6 +470,8 @@ describe('createUndoHistoryTruth', () => {
     expect(historyTruth).toEqual({
       status: 'paused',
       boundary: 'undo',
+      undoBoundaryTruth: undoBoundary,
+      redoBoundaryTruth: redoBoundary,
       activeBoundaryTruth: undoBoundary,
       companionBoundaryTruth: redoBoundary,
       label: 'Undo paused: Split block · Redo blocked: Broken redo',

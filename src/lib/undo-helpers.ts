@@ -43,6 +43,8 @@ export interface UndoBoundaryTruth {
 export interface UndoHistoryTruth {
   status: 'waiting' | 'available' | 'blocked' | 'paused';
   boundary: UndoBoundary | null;
+  undoBoundaryTruth: UndoBoundaryTruth;
+  redoBoundaryTruth: UndoBoundaryTruth;
   activeBoundaryTruth: UndoBoundaryTruth | null;
   companionBoundaryTruth: UndoBoundaryTruth | null;
   label: string;
@@ -358,6 +360,8 @@ export function createUndoHistoryTruth(
     return {
       status: 'waiting',
       boundary: null,
+      undoBoundaryTruth: undoBoundary,
+      redoBoundaryTruth: redoBoundary,
       activeBoundaryTruth: null,
       companionBoundaryTruth: null,
       label: 'Undo waiting · Redo waiting',
@@ -385,6 +389,8 @@ export function createUndoHistoryTruth(
   return {
     status: activeBoundary.status,
     boundary: activeBoundary.boundary,
+    undoBoundaryTruth: undoBoundary,
+    redoBoundaryTruth: redoBoundary,
     activeBoundaryTruth: activeBoundary,
     companionBoundaryTruth: companionBoundary,
     label,
