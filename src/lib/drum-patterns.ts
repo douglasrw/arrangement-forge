@@ -32,12 +32,21 @@ export interface DrumFill {
   hits: DrumHit[];        // Hits for a 1-bar fill (time 0-3 in 4/4)
 }
 
+export interface DrumPatternResolution {
+  requestedPatternId: string;
+  resolvedPatternId: string;
+  usedFallback: boolean;
+  pattern: DrumPattern;
+}
+
 // ---------- Valid GM drum note names (used in tests) ----------
 
 export const VALID_DRUM_NOTES = new Set([
   'C2', 'C#2', 'D2', 'F2', 'F#2', 'G#2', 'A2', 'A#2',
   'C#3', 'D3', 'D#3', 'F3',
 ]);
+
+export const DEFAULT_DRUM_PATTERN_ID = 'rock_straight';
 
 // ---------- Deterministic Hash ----------
 
@@ -900,9 +909,26 @@ export function applyFeel(
 
 // ---------- Builder Function ----------
 
-/** Resolve a pattern from a pattern ID, with fallback to rock_straight */
-function getPattern(patternId: string): DrumPattern {
-  return PATTERNS.get(patternId) ?? PATTERNS.get('rock_straight')!;
+/** Make the default fallback explicit so callers can inspect what actually resolved. */
+export function resolveDrumPattern(patternId: string): DrumPatternResolution {
+  const requestedPatternId = patternId.trim();
+  const pattern = PATTERNS.get(requestedPatternId);
+
+  if (pattern) {
+    return {
+      requestedPatternId,
+      resolvedPatternId: requestedPatternId,
+      usedFallback: false,
+      pattern,
+    };
+  }
+
+  return {
+    requestedPatternId,
+    resolvedPatternId: DEFAULT_DRUM_PATTERN_ID,
+    usedFallback: true,
+    pattern: PATTERNS.get(DEFAULT_DRUM_PATTERN_ID)!,
+  };
 }
 
 /** Select a fill based on energy bracket and deterministic hash */
@@ -949,8 +975,7 @@ export function buildDrumMidi(params: {
   totalBarsInSection: number;
 }): MidiNoteData[] {
   const patternId = params.patternIdOverride ?? getDrumPatternId(params.genre, params.substyle);
-
-  const pattern = getPattern(patternId);
+  const { pattern } = resolveDrumPattern(patternId);
 
   // Determine if this bar should be a fill
   const isLastBarOfSection =

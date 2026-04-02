@@ -8,8 +8,10 @@ import {
   applyFeel,
   knuthHash,
   VALID_DRUM_NOTES,
+  DEFAULT_DRUM_PATTERN_ID,
   PATTERNS,
   FILLS,
+  resolveDrumPattern,
 } from './drum-patterns';
 import type { MidiNoteData } from '@/types';
 
@@ -240,6 +242,26 @@ describe('drum-patterns', () => {
       expect(first[i].time).toBe(second[i].time);
       expect(first[i].velocity).toBe(second[i].velocity);
     }
+  });
+
+  it('makes unknown pattern overrides fall back to rock_straight explicitly', () => {
+    const resolution = resolveDrumPattern('missing-pattern-id');
+
+    expect(resolution.requestedPatternId).toBe('missing-pattern-id');
+    expect(resolution.resolvedPatternId).toBe(DEFAULT_DRUM_PATTERN_ID);
+    expect(resolution.usedFallback).toBe(true);
+    expect(resolution.pattern.id).toBe(DEFAULT_DRUM_PATTERN_ID);
+
+    const fallbackNotes = buildDrumMidi(makeParams({
+      patternIdOverride: DEFAULT_DRUM_PATTERN_ID,
+      barNumberGlobal: 12,
+    }));
+    const missingOverrideNotes = buildDrumMidi(makeParams({
+      patternIdOverride: 'missing-pattern-id',
+      barNumberGlobal: 12,
+    }));
+
+    expect(missingOverrideNotes).toEqual(fallbackNotes);
   });
 
   // ---- Bar Variation ----
