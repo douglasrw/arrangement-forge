@@ -1,8 +1,8 @@
 # Editor Route Readiness Truth
 
-Status date: 2026-03-31
+Status date: 2026-04-02
 
-Status: landed on `main`; reverified on 2026-03-31 at head `b0b0e0b7` after shared route-truth, fallback-handling truth, explicit next-step truth, and later evidence corrections landed, and no remaining product delta is visible in this family beyond this evidence refresh
+Status: landed on `main`; reverified on 2026-04-02 at head `cbac0de1` after shared route-truth, fallback-handling truth, explicit next-step truth, and later evidence refreshes landed, and no remaining product delta is visible in this family beyond keeping the local proof artifact honest
 
 Purpose: preserve the current editor route contract and its landing proof in
 one repo-local place so future work does not have to reconstruct it from
@@ -80,7 +80,7 @@ Current focused proofs for this slice:
 
 - `pnpm exec vitest run src/lib/editor-route-truth.test.ts src/App.test.tsx src/pages/EditorPage.test.tsx`
 - `pnpm run type-check`
-- verification head: `b0b0e0b742f81cb9ae06a4b727e97284db4b2c25`
+- verification head: `cbac0de100525491e0dad1a25ec8a3dae5c468b0`
 
 ## Tracked Landing
 
@@ -141,10 +141,10 @@ Current focused proofs for this slice:
 - The landing made current route, fallback route, and route readiness explicit
   across auth bootstrap, route loading, malformed-route handling, missing or
   unavailable project states, and ready-state recovery.
-- The current `main` head at `b0b0e0b7` still preserves that contract. After
+- The current `main` head at `cbac0de1` still preserves that contract. After
   the last product change in this family at `26728535`, later doc-only commits
-  `5237aabb` and `b0b0e0b7` refreshed the local evidence so the tracked
-  verification head stayed honest.
+  `5237aabb`, `b0b0e0b7`, and `9c5abdbf` refreshed the local evidence so the
+  tracked verification head stayed honest until this recheck.
 - Commit `f35da822` tightened the guarded router proof so `/project/:id`
   remains wired into the editor surface as the requested project route instead
   of regressing toward a detached or mislabeled path.
@@ -161,9 +161,9 @@ Current focused proofs for this slice:
 - Commit `5d306288` moved route-level next-step copy fully into the shared
   truth helper and ready banner so loading, fallback, blocked, and ready
   surfaces all report the same explicit next action from one contract.
-- The focused route proofs passed again on 2026-03-31 at head `b0b0e0b7`
+- The focused route proofs passed again on 2026-04-02 at head `cbac0de1`
   before this doc-only evidence refresh updated the local artifact.
-- After the 2026-03-31 recheck, this family appears exhausted until a new
+- After the 2026-04-02 recheck, this family appears exhausted until a new
   editor-route behavior changes the contract or the proof surface.
 
 The tests cover:
