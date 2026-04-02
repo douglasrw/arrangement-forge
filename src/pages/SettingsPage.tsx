@@ -2,6 +2,7 @@ import { useState, useEffect, FormEvent } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/lib/supabase';
 import {
+  describeSettingsProfileFailureTruth,
   describeSavedProfilePresenceTruth,
   describeSupportedProfileSettingsTruth,
   formatChordDisplayModeLabel,
@@ -234,9 +235,15 @@ type SettingsPageReadinessTruth = {
   badgeLabel: string;
   badgeVariant: 'secondary' | 'outline' | 'destructive';
   detail: string;
-  status: 'blocked' | 'ready' | 'waiting';
+  status: 'blocked' | 'error' | 'ready' | 'waiting';
   title: string;
 };
+
+type SettingsPageFailureTruth = {
+  currentState: string;
+  nextStep: string;
+  title: string;
+} | null;
 
 export function getSettingsSaveTruth({
   authTruth,
@@ -294,11 +301,13 @@ export function getSettingsSaveTruth({
 
 export function getSettingsPageReadinessTruth({
   authTruth,
+  failureTruth,
   pendingFields,
   profile,
   saving,
 }: {
   authTruth: ReturnType<typeof getAuthTruth>;
+  failureTruth: SettingsPageFailureTruth;
   pendingFields: SettingsField[];
   profile: Profile | null;
   saving: boolean;
@@ -320,6 +329,16 @@ export function getSettingsPageReadinessTruth({
       detail: `${authTruth.currentState} Next step: ${authTruth.nextStepLabel}. ${authTruth.nextStepDetail}`,
       status: 'blocked',
       title: 'Settings are blocked',
+    };
+  }
+
+  if (failureTruth) {
+    return {
+      badgeLabel: 'Error',
+      badgeVariant: 'destructive',
+      detail: `${failureTruth.currentState} Next step: ${failureTruth.nextStep}`,
+      status: 'error',
+      title: failureTruth.title,
     };
   }
 
@@ -353,7 +372,7 @@ export default function SettingsPage() {
 
   const [draft, setDraft] = useState<SettingsDraft>(() => createSettingsDraft(profile));
   const [saving, setSaving] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [failureTruth, setFailureTruth] = useState<SettingsPageFailureTruth>(null);
 
   // Sync from profile when the same surface rerenders. Untouched fields should
   // absorb fresh props while locally edited fields preserve draft wins.
@@ -368,7 +387,7 @@ export default function SettingsPage() {
     if (!user || pendingFields.length === 0) return;
 
     setSaving(true);
-    setError(null);
+    setFailureTruth(null);
 
     const { data, error: err } = await supabase
       .from('profiles')
@@ -385,9 +404,19 @@ export default function SettingsPage() {
     setSaving(false);
 
     if (err) {
-      setError(err.message);
+      setFailureTruth(
+        describeSettingsProfileFailureTruth({
+          detail: err.message,
+          kind: 'save-rejected',
+        })
+      );
     } else if (!data) {
-      setError('Profile save succeeded but no persisted profile row was returned.');
+      setFailureTruth(
+        describeSettingsProfileFailureTruth({
+          detail: 'Profile save succeeded but no persisted profile row was returned.',
+          kind: 'missing-saved-row',
+        })
+      );
     } else {
       try {
         const savedProfile = rowToProfile(data as Record<string, unknown>);
@@ -395,10 +424,14 @@ export default function SettingsPage() {
         setChordDisplayMode(savedProfile.chordDisplayMode);
         setDraft((currentDraft) => applySavedProfile(currentDraft, savedProfile));
       } catch (profileError) {
-        setError(
-          profileError instanceof Error
-            ? profileError.message
-            : 'The saved profile row was invalid.'
+        setFailureTruth(
+          describeSettingsProfileFailureTruth({
+            detail:
+              profileError instanceof Error
+                ? profileError.message
+                : 'The saved profile row was invalid.',
+            kind: 'invalid-saved-row',
+          })
         );
       }
     }
@@ -428,6 +461,7 @@ export default function SettingsPage() {
   });
   const pageReadinessTruth = getSettingsPageReadinessTruth({
     authTruth,
+    failureTruth,
     pendingFields,
     profile,
     saving,
@@ -475,6 +509,7 @@ export default function SettingsPage() {
             data-settings-page-readiness={pageReadinessTruth.status}
             className={cn(
               pageReadinessTruth.status === 'blocked' && 'border-destructive/50',
+              pageReadinessTruth.status === 'error' && 'border-destructive/50',
               pageReadinessTruth.status === 'waiting' && 'border-status-saving/50',
               pageReadinessTruth.status === 'ready' && 'border-status-ready/50'
             )}
@@ -772,9 +807,12 @@ export default function SettingsPage() {
           </Card>
 
           {/* Error */}
-          {error && (
-            <Alert variant="destructive">
-              <AlertDescription>{error}</AlertDescription>
+          {failureTruth && (
+            <Alert data-testid="settings-failure-truth" variant="destructive">
+              <AlertTitle>{failureTruth.title}</AlertTitle>
+              <AlertDescription>
+                {failureTruth.currentState} Next step: {failureTruth.nextStep}
+              </AlertDescription>
             </Alert>
           )}
 

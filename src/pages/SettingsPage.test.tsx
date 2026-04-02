@@ -278,6 +278,7 @@ describe('SettingsPage truth surface', () => {
         authStatus: 'authenticated',
         signedOutReason: null,
       }),
+      failureTruth: null,
       pendingFields: [],
       profile: makeProfile(),
       saving: false,
@@ -299,6 +300,7 @@ describe('SettingsPage truth surface', () => {
         authStatus: 'checking-session',
         signedOutReason: null,
       }),
+      failureTruth: null,
       pendingFields: [],
       profile: null,
       saving: false,
@@ -319,6 +321,7 @@ describe('SettingsPage truth surface', () => {
         authStatus: 'signed-out',
         signedOutReason: 'no-session',
       }),
+      failureTruth: null,
       pendingFields: [],
       profile: null,
       saving: false,
@@ -330,6 +333,34 @@ describe('SettingsPage truth surface', () => {
       detail: 'No saved session was found. Next step: Sign in. Sign in to reopen the app.',
       status: 'blocked',
       title: 'Settings are blocked',
+    });
+  });
+
+  it('promotes settings page readiness into an explicit error state when save truth fails', () => {
+    const errorTruth = getSettingsPageReadinessTruth({
+      authTruth: getAuthTruth({
+        user: { id: 'user-1', email: 'ash@example.com' } as User,
+        profile: makeProfile(),
+        authStatus: 'authenticated',
+        signedOutReason: null,
+      }),
+      failureTruth: {
+        title: 'Settings save failed',
+        currentState: 'The profile save request failed: generator offline',
+        nextStep: 'Fix the save failure, then try saving these settings again.',
+      },
+      pendingFields: ['displayName'],
+      profile: makeProfile(),
+      saving: false,
+    });
+
+    expect(errorTruth).toEqual({
+      badgeLabel: 'Error',
+      badgeVariant: 'destructive',
+      detail:
+        'The profile save request failed: generator offline Next step: Fix the save failure, then try saving these settings again.',
+      status: 'error',
+      title: 'Settings save failed',
     });
   });
 
@@ -649,6 +680,9 @@ describe('SettingsPage truth surface', () => {
     const saveButton = mounted.container.querySelector(
       'button[type="submit"]'
     ) as HTMLButtonElement | null;
+    const pageReadiness = mounted.container.querySelector(
+      '[data-testid="settings-page-readiness"]'
+    ) as HTMLDivElement | null;
     const form = mounted.container.querySelector('form') as HTMLFormElement | null;
 
     act(() => {
@@ -674,6 +708,12 @@ describe('SettingsPage truth surface', () => {
     expect(mounted.container.textContent).toContain(
       'new row violates row-level security policy for table "profiles"'
     );
+    expect(pageReadiness?.getAttribute('data-settings-page-readiness')).toBe('error');
+    expect(pageReadiness?.textContent).toContain('Settings save failed');
+    expect(pageReadiness?.textContent).toContain('Error');
+    expect(pageReadiness?.textContent).toContain(
+      'Fix the save failure, then try saving these settings again.'
+    );
     expect(useAuthStore.getState().profile?.displayName).toBe('Doug');
     expect(saveButton?.disabled).toBe(false);
     expect(saveButton?.textContent).toBe('Save Pending Changes');
@@ -690,6 +730,9 @@ describe('SettingsPage truth surface', () => {
     const saveButton = mounted.container.querySelector(
       'button[type="submit"]'
     ) as HTMLButtonElement | null;
+    const pageReadiness = mounted.container.querySelector(
+      '[data-testid="settings-page-readiness"]'
+    ) as HTMLDivElement | null;
     const form = mounted.container.querySelector('form') as HTMLFormElement | null;
 
     act(() => {
@@ -712,6 +755,11 @@ describe('SettingsPage truth surface', () => {
 
     expect(mounted.container.textContent).toContain(
       'Profile save succeeded but no persisted profile row was returned.'
+    );
+    expect(pageReadiness?.getAttribute('data-settings-page-readiness')).toBe('error');
+    expect(pageReadiness?.textContent).toContain('Saved profile could not be confirmed');
+    expect(pageReadiness?.textContent).toContain(
+      'Retry the save until the persisted profile row comes back for validation.'
     );
     expect(useAuthStore.getState().profile?.displayName).toBe('Doug');
     expect(saveButton?.disabled).toBe(false);

@@ -53,6 +53,45 @@ export function describeSavedProfilePresenceTruth(profile: Profile | null): {
   };
 }
 
+export type SettingsProfileFailureKind =
+  | 'save-rejected'
+  | 'missing-saved-row'
+  | 'invalid-saved-row';
+
+export function describeSettingsProfileFailureTruth({
+  detail,
+  kind,
+}: {
+  detail: string;
+  kind: SettingsProfileFailureKind;
+}): {
+  currentState: string;
+  nextStep: string;
+  title: string;
+} {
+  if (kind === 'save-rejected') {
+    return {
+      title: 'Settings save failed',
+      currentState: `The profile save request failed: ${detail}`,
+      nextStep: 'Fix the save failure, then try saving these settings again.',
+    };
+  }
+
+  if (kind === 'missing-saved-row') {
+    return {
+      title: 'Saved profile could not be confirmed',
+      currentState: detail,
+      nextStep: 'Retry the save until the persisted profile row comes back for validation.',
+    };
+  }
+
+  return {
+    title: 'Saved profile row was invalid',
+    currentState: detail,
+    nextStep: 'Fix the returned profile data, then save again so Settings can load confirmed saved values.',
+  };
+}
+
 function parseRequiredString(
   value: unknown,
   fieldName: string,
