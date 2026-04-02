@@ -29,7 +29,7 @@ interface ChannelState {
 }
 
 interface MixerReadinessTruth {
-  status: "ready" | "loading" | "unavailable"
+  status: "ready" | "loading" | "unavailable" | "error"
   badge: string
   message: string | null
   tone: "ready" | "loading" | "default" | "error"
@@ -141,7 +141,7 @@ function getMixerReadinessTruth({
       || playbackTruth.reason === "instrument-update-failed"
 
     return {
-      status: "unavailable",
+      status: playbackFailureTone ? "error" : "unavailable",
       badge: playbackTruth.summary,
       message: `${playbackTruth.detail} ${playbackTruth.nextStep}`.trim(),
       tone: playbackFailureTone ? "error" : "default",

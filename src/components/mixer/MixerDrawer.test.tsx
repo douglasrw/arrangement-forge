@@ -599,7 +599,7 @@ describe('MixerDrawer', () => {
     ) as HTMLDivElement | null;
 
     expect(mixerReadiness?.textContent).toBe('Audio load failed');
-    expect(mixerReadiness?.getAttribute('data-mixer-readiness')).toBe('unavailable');
+    expect(mixerReadiness?.getAttribute('data-mixer-readiness')).toBe('error');
     expect(mounted.container.textContent).toContain(
       'Audio failed to load: Salamander drum samples missing Fix the sample error, then press play to try again.'
     );
