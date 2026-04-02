@@ -4,6 +4,7 @@
 import type { MidiNoteData } from '@/types';
 import { getChordTones } from './midi-generator';
 import { knuthHash } from './drum-patterns';
+import { getInstrumentStyleSelectionTruth } from './genre-config';
 
 // ---------- Types ----------
 
@@ -93,11 +94,94 @@ const PATTERNS: Record<string, PianoPattern> = {
   arpeggiated: ARPEGGIATED,
 };
 
+export interface PianoPatternSelectionTruth {
+  requestedStyleId: string | null;
+  usedDefaultStyle: boolean;
+  defaultStyleId: string;
+  defaultStyleLabel: string;
+  selectedStyleId: string;
+  selectedStyleLabel: string;
+  selectedPattern: PianoPattern;
+  supportedStyleIds: string[];
+  supportedStyleLabels: string[];
+  fallbackApplied: boolean;
+  summary: string;
+  currentState: string;
+  nextStep: string;
+}
+
 // ---------- Lookup ----------
 
 /** Returns the piano pattern for the given style. Falls back to block_chords if unknown. */
 export function getPianoPattern(style: string): PianoPattern {
-  return PATTERNS[style] ?? PATTERNS['block_chords'];
+  return getPianoPatternSelectionTruth(style).selectedPattern;
+}
+
+export function getPianoPatternSelectionTruth(style: string | null | undefined): PianoPatternSelectionTruth {
+  const styleTruth = getInstrumentStyleSelectionTruth('piano', style);
+  const supportedStyleIds = styleTruth.supportedStyleIds.join(', ');
+  const supportedStyleLabels = styleTruth.supportedStyleLabels.join(', ');
+
+  if (styleTruth.requestedStyleId === null) {
+    const selectedPattern = PATTERNS[styleTruth.selectedStyleId] ?? PATTERNS['block_chords'];
+
+    return {
+      requestedStyleId: styleTruth.requestedStyleId,
+      usedDefaultStyle: styleTruth.usedDefaultStyle,
+      defaultStyleId: styleTruth.defaultStyleId,
+      defaultStyleLabel: styleTruth.defaultStyleLabel,
+      selectedStyleId: styleTruth.selectedStyleId,
+      selectedStyleLabel: styleTruth.selectedStyleLabel,
+      selectedPattern,
+      supportedStyleIds: styleTruth.supportedStyleIds,
+      supportedStyleLabels: styleTruth.supportedStyleLabels,
+      fallbackApplied: false,
+      summary: `No piano style was requested, so the default ${styleTruth.selectedStyleLabel} pattern ${selectedPattern.id} is active.`,
+      currentState: `Piano is using the default ${styleTruth.selectedStyleLabel} style with pattern ${selectedPattern.id} because no explicit style was requested.`,
+      nextStep: `Keep the default ${styleTruth.selectedStyleLabel} style, or switch to one of the supported piano styles: ${supportedStyleLabels} (${supportedStyleIds}).`,
+    };
+  }
+
+  if (!styleTruth.fallbackApplied) {
+    const selectedPattern = PATTERNS[styleTruth.selectedStyleId] ?? PATTERNS['block_chords'];
+
+    return {
+      requestedStyleId: styleTruth.requestedStyleId,
+      usedDefaultStyle: styleTruth.usedDefaultStyle,
+      defaultStyleId: styleTruth.defaultStyleId,
+      defaultStyleLabel: styleTruth.defaultStyleLabel,
+      selectedStyleId: styleTruth.selectedStyleId,
+      selectedStyleLabel: styleTruth.selectedStyleLabel,
+      selectedPattern,
+      supportedStyleIds: styleTruth.supportedStyleIds,
+      supportedStyleLabels: styleTruth.supportedStyleLabels,
+      fallbackApplied: false,
+      summary: `${styleTruth.selectedStyleLabel} uses piano pattern ${selectedPattern.id}.`,
+      currentState: `Piano style ${styleTruth.selectedStyleLabel} is active with pattern ${selectedPattern.id}. No fallback was needed.`,
+      nextStep: `Keep ${styleTruth.selectedStyleLabel}, or switch to one of the supported piano styles: ${supportedStyleLabels} (${supportedStyleIds}).`,
+    };
+  }
+
+  const selectedPattern = PATTERNS['block_chords'];
+
+  return {
+    requestedStyleId: styleTruth.requestedStyleId,
+    usedDefaultStyle: false,
+    defaultStyleId: styleTruth.defaultStyleId,
+    defaultStyleLabel: styleTruth.defaultStyleLabel,
+    selectedStyleId: selectedPattern.style,
+    selectedStyleLabel:
+      styleTruth.supportedStyleLabels[
+        styleTruth.supportedStyleIds.findIndex((supportedStyleId) => supportedStyleId === selectedPattern.style)
+      ] ?? 'Block Chords',
+    selectedPattern,
+    supportedStyleIds: styleTruth.supportedStyleIds,
+    supportedStyleLabels: styleTruth.supportedStyleLabels,
+    fallbackApplied: true,
+    summary: `Requested piano style ${styleTruth.requestedStyleId ?? 'default'} falls back to Block Chords with pattern ${selectedPattern.id}.`,
+    currentState: `Requested piano style "${styleTruth.requestedStyleId}" is unavailable, so piano style Block Chords is active with fallback pattern ${selectedPattern.id}.`,
+    nextStep: `Choose one of the supported piano styles: ${supportedStyleLabels} (${supportedStyleIds}).`,
+  };
 }
 
 // ---------- Degree-to-chord-index mapping ----------

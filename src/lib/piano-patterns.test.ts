@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { getPianoPattern, buildPianoFromPattern } from './piano-patterns';
+import { getPianoPattern, getPianoPatternSelectionTruth, buildPianoFromPattern } from './piano-patterns';
 
 describe('getPianoPattern', () => {
   it('returns jazz_comp pattern', () => {
@@ -21,6 +21,64 @@ describe('getPianoPattern', () => {
   it('falls back to block_chords for unknown style', () => {
     const pattern = getPianoPattern('unknown');
     expect(pattern.style).toBe('block_chords');
+  });
+});
+
+describe('getPianoPatternSelectionTruth', () => {
+  it('keeps the selected piano pattern visible when the style is supported', () => {
+    const selection = getPianoPatternSelectionTruth('arpeggiated');
+
+    expect(selection).toMatchObject({
+      requestedStyleId: 'arpeggiated',
+      usedDefaultStyle: false,
+      defaultStyleId: 'jazz_comp',
+      defaultStyleLabel: 'Jazz Comping',
+      selectedStyleId: 'arpeggiated',
+      selectedStyleLabel: 'Arpeggiated',
+      fallbackApplied: false,
+      supportedStyleIds: ['jazz_comp', 'block_chords', 'arpeggiated'],
+      supportedStyleLabels: ['Jazz Comping', 'Block Chords', 'Arpeggiated'],
+      summary: 'Arpeggiated uses piano pattern arpeggiated_01.',
+      currentState: 'Piano style Arpeggiated is active with pattern arpeggiated_01. No fallback was needed.',
+      nextStep: 'Keep Arpeggiated, or switch to one of the supported piano styles: Jazz Comping, Block Chords, Arpeggiated (jazz_comp, block_chords, arpeggiated).',
+    });
+    expect(selection.selectedPattern.id).toBe('arpeggiated_01');
+  });
+
+  it('makes the default piano pattern explicit when the request is blank', () => {
+    const selection = getPianoPatternSelectionTruth('   ');
+
+    expect(selection).toMatchObject({
+      requestedStyleId: null,
+      usedDefaultStyle: true,
+      defaultStyleId: 'jazz_comp',
+      defaultStyleLabel: 'Jazz Comping',
+      selectedStyleId: 'jazz_comp',
+      selectedStyleLabel: 'Jazz Comping',
+      fallbackApplied: false,
+      summary: 'No piano style was requested, so the default Jazz Comping pattern jazz_comp_01 is active.',
+      currentState: 'Piano is using the default Jazz Comping style with pattern jazz_comp_01 because no explicit style was requested.',
+      nextStep: 'Keep the default Jazz Comping style, or switch to one of the supported piano styles: Jazz Comping, Block Chords, Arpeggiated (jazz_comp, block_chords, arpeggiated).',
+    });
+    expect(selection.selectedPattern.id).toBe('jazz_comp_01');
+  });
+
+  it('reports fallback piano truth when the requested style is unsupported', () => {
+    const selection = getPianoPatternSelectionTruth('stride');
+
+    expect(selection).toMatchObject({
+      requestedStyleId: 'stride',
+      usedDefaultStyle: false,
+      defaultStyleId: 'jazz_comp',
+      defaultStyleLabel: 'Jazz Comping',
+      selectedStyleId: 'block_chords',
+      selectedStyleLabel: 'Block Chords',
+      fallbackApplied: true,
+      summary: 'Requested piano style stride falls back to Block Chords with pattern block_chords_01.',
+      currentState: 'Requested piano style "stride" is unavailable, so piano style Block Chords is active with fallback pattern block_chords_01.',
+      nextStep: 'Choose one of the supported piano styles: Jazz Comping, Block Chords, Arpeggiated (jazz_comp, block_chords, arpeggiated).',
+    });
+    expect(selection.selectedPattern.id).toBe('block_chords_01');
   });
 });
 
