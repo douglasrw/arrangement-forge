@@ -1,5 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
+  describeChordModeSelectionTruth,
+  describeDefaultGenreSelectionTruth,
   describeSettingsProfileFailureTruth,
   describeSavedProfilePresenceTruth,
   describeSupportedProfileSettingsTruth,
@@ -39,6 +41,62 @@ describe('rowToProfile', () => {
     expect(describeSavedProfilePresenceTruth(null)).toEqual({
       currentState: 'No saved profile settings exist yet.',
       nextStep: 'Your first save here will create profile settings for future sessions.',
+    });
+  });
+
+  it('describes whether chord mode is saved, pending, or just the unsaved default selection', () => {
+    expect(
+      describeChordModeSelectionTruth('letter', null)
+    ).toEqual({
+      badgeLabel: 'Default now',
+      badgeVariant: 'outline',
+      detail: 'Letter names is selected on this page as the default chord display mode until you save a profile.',
+    });
+
+    expect(
+      describeChordModeSelectionTruth(
+        'roman',
+        {
+          id: 'profile-1',
+          displayName: 'Doug',
+          chordDisplayMode: 'letter',
+          defaultGenre: 'Jazz',
+          createdAt: '2026-03-28T00:00:00Z',
+          updatedAt: '2026-03-28T01:00:00Z',
+        }
+      )
+    ).toEqual({
+      badgeLabel: 'Pending selection',
+      badgeVariant: 'outline',
+      detail: 'Roman numerals is selected locally. Letter names stays saved until you save.',
+    });
+  });
+
+  it('describes whether default genre is saved, pending, or still unset', () => {
+    expect(
+      describeDefaultGenreSelectionTruth('', null)
+    ).toEqual({
+      badgeLabel: 'No default',
+      badgeVariant: 'outline',
+      detail: 'No default genre is selected yet, so new projects stay unset until you choose one and save.',
+    });
+
+    expect(
+      describeDefaultGenreSelectionTruth(
+        '',
+        {
+          id: 'profile-1',
+          displayName: 'Doug',
+          chordDisplayMode: 'letter',
+          defaultGenre: 'Jazz',
+          createdAt: '2026-03-28T00:00:00Z',
+          updatedAt: '2026-03-28T01:00:00Z',
+        }
+      )
+    ).toEqual({
+      badgeLabel: 'Pending selection',
+      badgeVariant: 'outline',
+      detail: 'No default genre is selected locally. Jazz stays saved until you save.',
     });
   });
 

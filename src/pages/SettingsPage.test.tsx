@@ -437,6 +437,13 @@ describe('SettingsPage truth surface', () => {
     mountedRoot = mounted.root;
     mountedContainer = mounted.container;
 
+    const chordSelectionTruth = mounted.container.querySelector(
+      '[data-testid="settings-chord-selection-truth"]'
+    ) as HTMLDivElement | null;
+    const genreSelectionTruth = mounted.container.querySelector(
+      '[data-testid="settings-genre-selection-truth"]'
+    ) as HTMLDivElement | null;
+
     expect(mounted.container.textContent).toContain(
       'Saved profile truth for this field stays simple: Display names may be left blank and save exactly as entered.'
     );
@@ -449,8 +456,16 @@ describe('SettingsPage truth surface', () => {
     expect(mounted.container.textContent).toContain(
       'Saved now as Letter names. Choose a different option here to update the saved chord display mode.'
     );
+    expect(chordSelectionTruth?.textContent).toContain('Saved selection');
+    expect(chordSelectionTruth?.textContent).toContain(
+      'Letter names is the saved chord display mode currently selected on this page.'
+    );
     expect(mounted.container.textContent).toContain(
       'Pre-selected when creating a new project. Saved profile truth accepts Jazz, Blues, Rock, Funk, Country, Gospel, R&B, Latin, or Pop. Saved now as Jazz. Choose a different genre here to update the saved project default.'
+    );
+    expect(genreSelectionTruth?.textContent).toContain('Saved selection');
+    expect(genreSelectionTruth?.textContent).toContain(
+      'Jazz is the saved default genre currently selected on this page.'
     );
   });
 
@@ -536,6 +551,35 @@ describe('SettingsPage truth surface', () => {
     expect(saveButton?.disabled).toBe(true);
     expect(saveButton?.textContent).toBe('All Changes Saved');
     expect(saveCaption?.textContent).toBe('This page already matches your saved profile settings.');
+  });
+
+  it('states when a selected control value is still the unsaved default instead of a saved profile choice', () => {
+    setAuthStoreFixture({
+      user: { id: 'user-1', email: 'ash@example.com' } as User,
+      profile: null,
+      authStatus: 'authenticated',
+      signedOutReason: null,
+    });
+
+    const mounted = renderSettingsPage();
+    mountedRoot = mounted.root;
+    mountedContainer = mounted.container;
+
+    const chordSelectionTruth = mounted.container.querySelector(
+      '[data-testid="settings-chord-selection-truth"]'
+    ) as HTMLDivElement | null;
+    const genreSelectionTruth = mounted.container.querySelector(
+      '[data-testid="settings-genre-selection-truth"]'
+    ) as HTMLDivElement | null;
+
+    expect(chordSelectionTruth?.textContent).toContain('Default now');
+    expect(chordSelectionTruth?.textContent).toContain(
+      'Letter names is selected on this page as the default chord display mode until you save a profile.'
+    );
+    expect(genreSelectionTruth?.textContent).toContain('No default');
+    expect(genreSelectionTruth?.textContent).toContain(
+      'No default genre is selected yet, so new projects stay unset until you choose one and save.'
+    );
   });
 
   it('shows an explicit error when the saved profile row comes back with invalid settings truth', async () => {

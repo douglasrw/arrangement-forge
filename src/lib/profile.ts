@@ -7,6 +7,13 @@ export const SUPPORTED_CHORD_DISPLAY_MODES = ['letter', 'roman'] as const;
 const CHORD_DISPLAY_MODE_VALIDATION_TRUTH = SUPPORTED_CHORD_DISPLAY_MODES.map(
   (mode) => `${mode} (${formatChordDisplayModeLabel(mode)})`
 );
+const DEFAULT_CHORD_DISPLAY_MODE: Profile['chordDisplayMode'] = 'letter';
+
+export type SettingsSelectionTruth = {
+  badgeLabel: string;
+  badgeVariant: 'outline' | 'secondary';
+  detail: string;
+};
 
 export function formatChordDisplayModeLabel(mode: Profile['chordDisplayMode']): string {
   return mode === 'roman' ? 'Roman numerals' : 'Letter names';
@@ -34,6 +41,103 @@ export function describeSupportedProfileSettingsTruth(): {
     chordDisplayModes: formatSupportedValues(CHORD_DISPLAY_MODE_VALIDATION_TRUTH),
     defaultGenres: formatSupportedValues(GENRES),
   };
+}
+
+function getSelectionTruth({
+  draftValue,
+  formatValue,
+  profile,
+  savedValue,
+  valueNoun,
+}: {
+  draftValue: string | null;
+  formatValue: (value: string | null) => string;
+  profile: Profile | null;
+  savedValue: string | null;
+  valueNoun: string;
+}): SettingsSelectionTruth {
+  const formattedDraftValue = formatValue(draftValue);
+  const formattedSavedValue = formatValue(savedValue);
+
+  if (draftValue === savedValue) {
+    return {
+      badgeLabel: 'Saved selection',
+      badgeVariant: 'secondary',
+      detail: `${formattedSavedValue} is the saved ${valueNoun} currently selected on this page.`,
+    };
+  }
+
+  return {
+    badgeLabel: 'Pending selection',
+    badgeVariant: 'outline',
+    detail: `${formattedDraftValue} is selected locally. ${formattedSavedValue} stays saved until you save.`,
+  };
+}
+
+export function describeChordModeSelectionTruth(
+  draftChordMode: Profile['chordDisplayMode'],
+  profile: Profile | null
+): SettingsSelectionTruth {
+  if (!profile && draftChordMode === DEFAULT_CHORD_DISPLAY_MODE) {
+    return {
+      badgeLabel: 'Default now',
+      badgeVariant: 'outline',
+      detail: 'Letter names is selected on this page as the default chord display mode until you save a profile.',
+    };
+  }
+
+  if (!profile) {
+    return {
+      badgeLabel: 'Pending first save',
+      badgeVariant: 'outline',
+      detail: `${formatChordDisplayModeLabel(draftChordMode)} is selected locally and will become the saved chord display mode after your first save.`,
+    };
+  }
+
+  return getSelectionTruth({
+    draftValue: draftChordMode,
+    formatValue: (value) => formatChordDisplayModeLabel((value as Profile['chordDisplayMode']) ?? DEFAULT_CHORD_DISPLAY_MODE),
+    profile,
+    savedValue: profile?.chordDisplayMode ?? null,
+    valueNoun: 'chord display mode',
+  });
+}
+
+export function describeDefaultGenreSelectionTruth(
+  draftDefaultGenre: string,
+  profile: Profile | null
+): SettingsSelectionTruth {
+  if (!profile && draftDefaultGenre.length === 0) {
+    return {
+      badgeLabel: 'No default',
+      badgeVariant: 'outline',
+      detail: 'No default genre is selected yet, so new projects stay unset until you choose one and save.',
+    };
+  }
+
+  if (!profile) {
+    return {
+      badgeLabel: 'Pending first save',
+      badgeVariant: 'outline',
+      detail: `${draftDefaultGenre} is selected locally and will become the saved default genre after your first save.`,
+    };
+  }
+
+  if (!profile.defaultGenre && draftDefaultGenre.length === 0) {
+    return {
+      badgeLabel: 'No default',
+      badgeVariant: 'secondary',
+      detail: 'No default genre is saved, and this page still has no default selected.',
+    };
+  }
+
+  return getSelectionTruth({
+    draftValue: draftDefaultGenre || null,
+    formatValue: (value) => value ?? 'No default genre',
+    profile,
+    savedValue: profile?.defaultGenre ?? null,
+    valueNoun: 'default genre',
+  });
 }
 
 export function describeSavedProfilePresenceTruth(profile: Profile | null): {

@@ -2,6 +2,8 @@ import { useState, useEffect, FormEvent } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/lib/supabase';
 import {
+  describeChordModeSelectionTruth,
+  describeDefaultGenreSelectionTruth,
   describeSettingsProfileFailureTruth,
   describeSavedProfilePresenceTruth,
   describeSupportedProfileSettingsTruth,
@@ -469,7 +471,9 @@ export default function SettingsPage() {
   const supportedProfileSettingsTruth = describeSupportedProfileSettingsTruth();
   const displayNameTruth = getDisplayNameTruth(draft, profile);
   const chordModeTruth = getChordModeTruth(draft, profile);
+  const chordModeSelectionTruth = describeChordModeSelectionTruth(draft.chordMode, profile);
   const defaultGenreTruth = getDefaultGenreTruth(draft, profile);
+  const defaultGenreSelectionTruth = describeDefaultGenreSelectionTruth(draft.defaultGenre, profile);
   const hasPendingChanges = pendingFields.length > 0;
   const savedSettingsCount = profile ? EDITABLE_SETTINGS.length - pendingFields.length : 0;
   const pendingSettingsLabel = formatSettingsFieldList(pendingFields);
@@ -687,6 +691,15 @@ export default function SettingsPage() {
                 {/* Chord Display Mode */}
                 <div className="flex flex-col gap-1.5">
                   <span className="text-sm font-medium text-foreground">Chord Display Mode</span>
+                  <div
+                    data-testid="settings-chord-selection-truth"
+                    className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground"
+                  >
+                    <Badge variant={chordModeSelectionTruth.badgeVariant}>
+                      {chordModeSelectionTruth.badgeLabel}
+                    </Badge>
+                    <span>{chordModeSelectionTruth.detail}</span>
+                  </div>
                   <span className="text-xs text-muted-foreground">
                     {chordModeTruth.currentState}
                     {' '}
@@ -743,6 +756,15 @@ export default function SettingsPage() {
                   <Label htmlFor="settings-genre">
                     Default Genre
                   </Label>
+                  <div
+                    data-testid="settings-genre-selection-truth"
+                    className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground"
+                  >
+                    <Badge variant={defaultGenreSelectionTruth.badgeVariant}>
+                      {defaultGenreSelectionTruth.badgeLabel}
+                    </Badge>
+                    <span>{defaultGenreSelectionTruth.detail}</span>
+                  </div>
                   <span className="text-xs text-muted-foreground">
                     Pre-selected when creating a new project. Saved profile truth accepts
                     {' '}
