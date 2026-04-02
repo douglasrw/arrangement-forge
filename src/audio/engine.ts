@@ -7,6 +7,7 @@ import type {
   AudioEngineConfig,
   AudioEngineFailureStage,
   AudioEngineReadinessSnapshot,
+  AudioEngineSelectionTruth,
   Block,
   Stem,
   Section,
@@ -50,6 +51,7 @@ export class AudioEngine {
   private _failureMessage: string | null = null;
   private activeLoadPromise: Promise<void> | null = null;
   private arrangementEndEventId: number | null = null;
+  private loadedInstrumentSelection: InstrumentType[] = [];
   private audioConfig: AudioEngineConfig = {
     metronomeEnabled: false,
     countIn: 'off',
@@ -100,6 +102,7 @@ export class AudioEngine {
     this.stemVolumes.clear();
     this.stemMuted.clear();
     this.stemSoloed.clear();
+    this.loadedInstrumentSelection = [];
     this._initialized = false;
   }
 
@@ -209,6 +212,25 @@ export class AudioEngine {
     };
   }
 
+  getSelectionTruth(): AudioEngineSelectionTruth {
+    if (this.loadedInstrumentSelection.length === 0) {
+      return {
+        selectedInstruments: [],
+        selectionSource: 'default',
+        summary: 'No instruments loaded',
+        detail: 'The audio engine defaults to no loaded instruments until arrangement playback selects stems.',
+      };
+    }
+
+    const instrumentList = formatInstrumentList(this.loadedInstrumentSelection);
+    return {
+      selectedInstruments: [...this.loadedInstrumentSelection],
+      selectionSource: 'loaded',
+      summary: `Loaded ${instrumentList}`,
+      detail: `The audio engine has loaded ${instrumentList} from the current arrangement.`,
+    };
+  }
+
   loadArrangement(
     blocks: Block[],
     stems: Stem[],
@@ -238,6 +260,7 @@ export class AudioEngine {
         this.channelGains.clear();
         this.channelPanners.clear();
         this.stemVolumes.clear();
+        this.loadedInstrumentSelection = [];
 
         // Load samplers (cached after first load — returns instantly on subsequent calls)
         for (const stem of stems) {
@@ -255,6 +278,9 @@ export class AudioEngine {
           this.stemMuted.set(stem.instrument, stem.isMuted);
           this.stemSoloed.set(stem.instrument, stem.isSolo);
         }
+        this.loadedInstrumentSelection = Array.from(
+          new Set(stems.map((stem) => stem.instrument))
+        );
 
         this.applyMixState();
 
@@ -468,4 +494,8 @@ export class AudioEngine {
       gain.gain.value = configuredVolume;
     });
   }
+}
+
+function formatInstrumentList(instruments: InstrumentType[]): string {
+  return instruments.join(', ');
 }

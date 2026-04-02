@@ -9,6 +9,7 @@ import { useUiStore } from '@/store/ui-store';
 import type {
   AudioEngineConfig,
   AudioEngineFailureStage,
+  AudioEngineSelectionTruth,
   Block,
   Project,
   Section,
@@ -56,6 +57,12 @@ const getReadinessSnapshotMock = vi.hoisted(() => vi.fn(() => ({
   failureStage: engineState.failureStage,
   failureMessage: engineState.failureMessage,
 })));
+const getSelectionTruthMock = vi.hoisted(() => vi.fn<() => AudioEngineSelectionTruth>(() => ({
+  selectedInstruments: [],
+  selectionSource: 'default',
+  summary: 'No instruments loaded',
+  detail: 'The audio engine defaults to no loaded instruments until arrangement playback selects stems.',
+})));
 const setMetronomeEnabledMock = vi.hoisted(() => vi.fn((enabled: boolean) => {
   engineState.audioConfig.metronomeEnabled = enabled;
 }));
@@ -85,6 +92,7 @@ const AudioEngineMock = vi.hoisted(() => vi.fn(() => ({
   getTransportState: getTransportStateMock,
   getAudioConfig: getAudioConfigMock,
   getReadinessSnapshot: getReadinessSnapshotMock,
+  getSelectionTruth: getSelectionTruthMock,
   setMetronomeEnabled: setMetronomeEnabledMock,
   setLoopEnabled: setLoopEnabledMock,
   setMasterVolume: setMasterVolumeMock,
@@ -252,6 +260,7 @@ beforeEach(() => {
   getTransportStateMock.mockClear();
   getAudioConfigMock.mockClear();
   getReadinessSnapshotMock.mockClear();
+  getSelectionTruthMock.mockClear();
   setMetronomeEnabledMock.mockClear();
   setLoopEnabledMock.mockClear();
   setMasterVolumeMock.mockClear();
@@ -266,6 +275,12 @@ beforeEach(() => {
   setMuteMock.mockClear();
   setSoloMock.mockClear();
   hotSwapInstrumentMock.mockClear();
+  getSelectionTruthMock.mockImplementation(() => ({
+    selectedInstruments: [],
+    selectionSource: 'default',
+    summary: 'No instruments loaded',
+    detail: 'The audio engine defaults to no loaded instruments until arrangement playback selects stems.',
+  }));
 
   useProjectStore.setState({
     project: null,
@@ -387,6 +402,12 @@ describe('useAudio transport config', () => {
         totalSeconds: 64,
       };
     });
+    getSelectionTruthMock.mockImplementation(() => ({
+      selectedInstruments: ['piano'],
+      selectionSource: 'loaded',
+      summary: 'Loaded piano',
+      detail: 'The audio engine has loaded piano from the current arrangement.',
+    }));
 
     useProjectStore.setState({
       project: makeProject(),
@@ -412,6 +433,15 @@ describe('useAudio transport config', () => {
     expect(hookValue?.playbackReadiness).toBe('ready');
     expect(hookValue?.playbackTruth.action).toBe('play');
     expect(hookValue?.playbackTruth.summary).toBe('Ready');
+    expect(hookValue?.playbackTruth.detail).toBe(
+      'Arrangement audio is loaded into the engine. The audio engine has loaded piano from the current arrangement.'
+    );
+    expect(hookValue?.engineSelectionTruth).toEqual({
+      selectedInstruments: ['piano'],
+      selectionSource: 'loaded',
+      summary: 'Loaded piano',
+      detail: 'The audio engine has loaded piano from the current arrangement.',
+    });
 
     loadArrangementMock.mockClear();
 
@@ -512,6 +542,15 @@ describe('useAudio transport config', () => {
     expect(hookValue?.playbackTruth.action).toBe('load-and-play');
     expect(hookValue?.playbackTruth.reason).toBe('awaiting-user-play');
     expect(hookValue?.playbackTruth.summary).toBe('Load to play');
+    expect(hookValue?.playbackTruth.detail).toBe(
+      'The audio engine has not started yet. The audio engine is still on its default empty selection and will inherit piano when playback starts.'
+    );
+    expect(hookValue?.engineSelectionTruth).toEqual({
+      selectedInstruments: ['piano'],
+      selectionSource: 'default',
+      summary: 'Pending piano',
+      detail: 'The audio engine is still on its default empty selection and will inherit piano when playback starts.',
+    });
     expect(hookValue?.playbackTruth.nextStep).toBe('Press play to load arrangement audio.');
   });
 
@@ -538,7 +577,9 @@ describe('useAudio transport config', () => {
     expect(hookValue?.playbackReadiness).toBe('loading');
     expect(hookValue?.playbackTruth.action).toBe('load-and-play');
     expect(hookValue?.playbackTruth.summary).toBe('Load to play');
-    expect(hookValue?.playbackTruth.detail).toBe('The audio engine has not started yet.');
+    expect(hookValue?.playbackTruth.detail).toBe(
+      'The audio engine has not started yet. The audio engine is still on its default empty selection and will inherit piano when playback starts.'
+    );
     expect(hookValue?.playbackTruth.nextStep).toBe('Press play to load arrangement audio.');
   });
 

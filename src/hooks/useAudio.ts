@@ -7,6 +7,8 @@ import { useUiStore } from '@/store/ui-store';
 import type {
   AudioEngineConfig,
   AudioEngineReadinessSnapshot,
+  AudioEngineSelectionTruth,
+  InstrumentType,
   PlaybackTruth,
   TransportState,
 } from '@/types';
@@ -40,12 +42,83 @@ function getErrorMessage(error: unknown, fallback: string): string {
   return fallback;
 }
 
+function formatInstrumentList(instruments: InstrumentType[]): string {
+  return instruments.join(', ');
+}
+
+function getArrangementInstrumentSelection(stems: Array<{ instrument: InstrumentType }>): InstrumentType[] {
+  return Array.from(new Set(stems.map((stem) => stem.instrument)));
+}
+
+function buildAudioEngineSelectionTruth({
+  arrangementInstruments,
+  loadedSelectionTruth,
+  arrangementSignature,
+  loadingArrangementSignature,
+  loadedArrangementSignature,
+  engineReadiness,
+}: {
+  arrangementInstruments: InstrumentType[];
+  loadedSelectionTruth: AudioEngineSelectionTruth;
+  arrangementSignature: string;
+  loadingArrangementSignature: string;
+  loadedArrangementSignature: string;
+  engineReadiness: AudioEngineReadinessSnapshot;
+}): AudioEngineSelectionTruth {
+  if (
+    loadedArrangementSignature === arrangementSignature
+    && loadedSelectionTruth.selectedInstruments.length > 0
+  ) {
+    return loadedSelectionTruth;
+  }
+
+  if (arrangementInstruments.length === 0) {
+    return {
+      selectedInstruments: [],
+      selectionSource: 'default',
+      summary: 'No instruments selected',
+      detail: 'The audio engine defaults to no loaded instruments until the arrangement provides playable stems.',
+    };
+  }
+
+  const instrumentList = formatInstrumentList(arrangementInstruments);
+
+  if (
+    loadingArrangementSignature === arrangementSignature
+    || engineReadiness.isLoading
+  ) {
+    return {
+      selectedInstruments: arrangementInstruments,
+      selectionSource: 'inherited',
+      summary: `Loading ${instrumentList}`,
+      detail: `The audio engine is inheriting ${instrumentList} from the current arrangement while samples load.`,
+    };
+  }
+
+  if (!engineReadiness.isInitialized) {
+    return {
+      selectedInstruments: arrangementInstruments,
+      selectionSource: 'default',
+      summary: `Pending ${instrumentList}`,
+      detail: `The audio engine is still on its default empty selection and will inherit ${instrumentList} when playback starts.`,
+    };
+  }
+
+  return {
+    selectedInstruments: arrangementInstruments,
+    selectionSource: 'inherited',
+    summary: `Pending ${instrumentList}`,
+    detail: `The audio engine will inherit ${instrumentList} from the current arrangement on the next load.`,
+  };
+}
+
 function buildPlaybackTruth({
   projectExists,
   hasArrangementRows,
   hasPersistedArrangement,
   stemsCount,
   engineReadiness,
+  engineSelectionTruth,
   arrangementSignature,
   loadingArrangementSignature,
   loadedArrangementSignature,
@@ -56,6 +129,7 @@ function buildPlaybackTruth({
   hasPersistedArrangement: boolean;
   stemsCount: number;
   engineReadiness: AudioEngineReadinessSnapshot;
+  engineSelectionTruth: AudioEngineSelectionTruth;
   arrangementSignature: string;
   loadingArrangementSignature: string;
   loadedArrangementSignature: string;
@@ -136,7 +210,7 @@ function buildPlaybackTruth({
       action: 'play',
       reason: 'ready',
       summary: 'Ready',
-      detail: 'Arrangement audio is loaded into the engine.',
+      detail: `Arrangement audio is loaded into the engine. ${engineSelectionTruth.detail}`,
       nextStep: 'Play, scrub, or adjust the transport.',
     };
   }
@@ -150,7 +224,7 @@ function buildPlaybackTruth({
       action: 'wait',
       reason: 'loading-arrangement',
       summary: 'Loading audio',
-      detail: 'Arrangement audio is loading into the engine right now.',
+      detail: `Arrangement audio is loading into the engine right now. ${engineSelectionTruth.detail}`,
       nextStep: 'Wait for the current audio load to finish.',
     };
   }
@@ -161,8 +235,8 @@ function buildPlaybackTruth({
     reason: 'awaiting-user-play',
     summary: 'Load to play',
     detail: engineReadiness.isInitialized
-      ? 'Arrangement audio is not loaded into the engine yet.'
-      : 'The audio engine has not started yet.',
+      ? `Arrangement audio is not loaded into the engine yet. ${engineSelectionTruth.detail}`
+      : `The audio engine has not started yet. ${engineSelectionTruth.detail}`,
     nextStep: 'Press play to load arrangement audio.',
   };
 }
@@ -234,15 +308,25 @@ export function useAudio() {
     blocks,
     chords,
   });
+  const arrangementInstruments = getArrangementInstrumentSelection(stems);
   const totalBars = sections.reduce((sum, section) => sum + section.barCount, 0);
   const hasArrangementRows = arrangementTruth.hasArrangementRows && totalBars > 0;
   const engineReadiness = engine.getReadinessSnapshot();
+  const engineSelectionTruth = buildAudioEngineSelectionTruth({
+    arrangementInstruments,
+    loadedSelectionTruth: engine.getSelectionTruth(),
+    arrangementSignature,
+    loadingArrangementSignature,
+    loadedArrangementSignature,
+    engineReadiness,
+  });
   const playbackTruth = buildPlaybackTruth({
     projectExists: Boolean(project),
     hasArrangementRows,
     hasPersistedArrangement: arrangementTruth.hasPersistedArrangement,
     stemsCount: stems.length,
     engineReadiness,
+    engineSelectionTruth,
     arrangementSignature,
     loadingArrangementSignature,
     loadedArrangementSignature,
@@ -488,6 +572,7 @@ export function useAudio() {
     transportState,
     audioConfig,
     isReady,
+    engineSelectionTruth,
     playbackReadiness,
     playbackTruth,
     isLoadingAudio: audioLoading,

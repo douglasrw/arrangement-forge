@@ -1,9 +1,12 @@
 // audio.ts — Audio engine and transport state types.
 
+import type { InstrumentType } from './project';
+
 export type PlaybackState = 'stopped' | 'playing' | 'paused';
 export type PlaybackReadiness = 'ready' | 'loading' | 'unavailable';
 export type CountInSetting = 'off' | '1-bar' | '2-bars';
 export type AudioEngineFailureStage = 'engine-start' | 'load-arrangement' | 'hot-swap';
+export type AudioEngineSelectionSource = 'default' | 'inherited' | 'loaded';
 export type PlaybackTruthAction =
   | 'play'
   | 'load-and-play'
@@ -44,6 +47,13 @@ export interface AudioEngineReadinessSnapshot {
   isLoading: boolean;
   failureStage: AudioEngineFailureStage | null;
   failureMessage: string | null;
+}
+
+export interface AudioEngineSelectionTruth {
+  selectedInstruments: InstrumentType[];
+  selectionSource: AudioEngineSelectionSource;
+  summary: string;
+  detail: string;
 }
 
 export interface PlaybackTruth {

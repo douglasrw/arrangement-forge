@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import type { Block, Section, Stem } from '@/types';
+import type { Block, InstrumentType, Section, Stem } from '@/types';
 
 const toneState = vi.hoisted(() => {
   let eventId = 0;
@@ -221,6 +221,32 @@ describe('AudioEngine loadArrangement', () => {
       isLoading: false,
       failureStage: 'load-arrangement',
       failureMessage: 'Salamander drum samples missing',
+    });
+  });
+
+  it('exposes the loaded instrument selection truth and clears it on dispose', async () => {
+    const engine = new AudioEngine();
+    await engine.init();
+
+    (engine as unknown as { loadedInstrumentSelection: InstrumentType[] }).loadedInstrumentSelection = [
+      'piano',
+      'bass',
+    ];
+
+    expect(engine.getSelectionTruth()).toEqual({
+      selectedInstruments: ['piano', 'bass'],
+      selectionSource: 'loaded',
+      summary: 'Loaded piano, bass',
+      detail: 'The audio engine has loaded piano, bass from the current arrangement.',
+    });
+
+    engine.dispose();
+
+    expect(engine.getSelectionTruth()).toEqual({
+      selectedInstruments: [],
+      selectionSource: 'default',
+      summary: 'No instruments loaded',
+      detail: 'The audio engine defaults to no loaded instruments until arrangement playback selects stems.',
     });
   });
 });
