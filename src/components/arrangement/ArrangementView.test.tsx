@@ -283,8 +283,40 @@ describe('ArrangementView empty-state truth', () => {
     );
 
     expect(playheadBadge?.textContent).toContain('Idle');
+    expect(playheadBadge?.textContent).toContain('Ready');
     expect(playheadBadge?.textContent).toContain('Bar 1 Beat 1');
+    expect(playheadBadge?.getAttribute('data-arrangement-readiness')).toBe('ready');
     expect(playheadLine).not.toBeNull();
+  });
+
+  it('keeps waiting playhead truth explicit while arrangement audio is still loading', () => {
+    useAudioState.playbackReadiness = 'loading';
+    useAudioState.playbackTruth = {
+      status: 'loading',
+      action: 'wait',
+      reason: 'loading-arrangement',
+      summary: 'Loading audio',
+      detail: 'Arrangement audio is loading into the engine right now.',
+      nextStep: 'Wait for the current audio load to finish.',
+    };
+
+    const mounted = renderArrangementView();
+    mountedRoot = mounted.root;
+    mountedContainer = mounted.container;
+
+    const playheadBadge = mounted.container.querySelector(
+      '[data-arrangement-playhead-state="waiting"]'
+    );
+
+    expect(playheadBadge?.textContent).toContain('Waiting');
+    expect(playheadBadge?.textContent).toContain('Loading audio');
+    expect(playheadBadge?.textContent).toContain(
+      'Arrangement audio is loading into the engine right now.'
+    );
+    expect(playheadBadge?.getAttribute('data-arrangement-readiness')).toBe('waiting');
+    expect(
+      mounted.container.querySelector('[data-arrangement-playhead-line]')
+    ).toBeNull();
   });
 
   it('keeps blocked playhead truth explicit when arrangement rows exist but playback is unavailable', () => {
@@ -303,13 +335,15 @@ describe('ArrangementView empty-state truth', () => {
     mountedContainer = mounted.container;
 
     const playheadBadge = mounted.container.querySelector(
-      '[data-arrangement-playhead-state="unavailable"]'
+      '[data-arrangement-playhead-state="blocked"]'
     );
 
+    expect(playheadBadge?.textContent).toContain('Blocked');
     expect(playheadBadge?.textContent).toContain('Audio engine blocked');
     expect(playheadBadge?.textContent).toContain(
       'The audio engine could not start: no output device is available.'
     );
+    expect(playheadBadge?.getAttribute('data-arrangement-readiness')).toBe('blocked');
     expect(
       mounted.container.querySelector('[data-arrangement-playhead-line]')
     ).toBeNull();

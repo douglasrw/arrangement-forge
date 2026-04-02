@@ -31,7 +31,7 @@ const ARRANGEMENT_LANE_LABELS: Record<Instrument, string> = {
 }
 
 function getArrangementPlayheadTruth({
-  transportReady,
+  playbackReadiness,
   isPlaying,
   summary,
   detail,
@@ -40,7 +40,7 @@ function getArrangementPlayheadTruth({
   currentBeat,
   totalBars,
 }: {
-  transportReady: boolean
+  playbackReadiness: "ready" | "loading" | "unavailable"
   isPlaying: boolean
   summary: string
   detail: string
@@ -49,9 +49,13 @@ function getArrangementPlayheadTruth({
   currentBeat: number
   totalBars: number
 }) {
-  if (!transportReady) {
+  if (playbackReadiness !== "ready" || totalBars === 0) {
+    const readinessState = playbackReadiness === "loading" ? "waiting" : "blocked"
+    const readinessLabel = readinessState === "waiting" ? "Waiting" : "Blocked"
+
     return {
-      state: "unavailable" as const,
+      state: readinessState,
+      readinessLabel,
       badgeLabel: summary,
       statusText: detail,
       title: `${detail} ${nextStep}`.trim(),
@@ -67,6 +71,7 @@ function getArrangementPlayheadTruth({
 
   return {
     state: isPlaying ? "active" as const : "idle" as const,
+    readinessLabel: "Ready",
     badgeLabel,
     statusText: `Bar ${playheadBar} Beat ${playheadBeat}`,
     title: `${badgeLabel} at bar ${playheadBar} beat ${playheadBeat}`,
@@ -250,9 +255,8 @@ export function ArrangementView({
     : BAR_W
   const GRID_W = totalBars * effectiveBarW
 
-  const transportReady = totalBars > 0 && playbackReadiness === "ready"
   const arrangementPlayheadTruth = getArrangementPlayheadTruth({
-    transportReady,
+    playbackReadiness,
     isPlaying: transportState.playbackState === "playing",
     summary: playbackTruth.summary,
     detail: playbackTruth.detail,
@@ -471,8 +475,11 @@ export function ArrangementView({
                       : "border-border/70 bg-secondary/70 text-muted-foreground"
                 )}
                 data-arrangement-playhead-state={arrangementPlayheadTruth.state}
+                data-arrangement-readiness={arrangementPlayheadTruth.readinessLabel.toLowerCase()}
                 title={arrangementPlayheadTruth.title}
               >
+                <span>{arrangementPlayheadTruth.readinessLabel}</span>
+                <span className="opacity-40" aria-hidden="true">/</span>
                 <span>{arrangementPlayheadTruth.badgeLabel}</span>
                 <span className="text-[9px] normal-case tracking-normal opacity-80">
                   {arrangementPlayheadTruth.statusText}
