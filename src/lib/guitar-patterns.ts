@@ -4,6 +4,7 @@
 import type { MidiNoteData } from '@/types';
 import { getChordTones } from './midi-generator';
 import { knuthHash } from './drum-patterns';
+import { getInstrumentStyleSelectionTruth } from './genre-config';
 
 // ---------- Types ----------
 
@@ -134,11 +135,94 @@ const PATTERNS: Record<string, GuitarPattern> = {
   muted_funk: MUTED_FUNK,
 };
 
+export interface GuitarPatternSelectionTruth {
+  requestedStyleId: string | null;
+  usedDefaultStyle: boolean;
+  defaultStyleId: string;
+  defaultStyleLabel: string;
+  selectedStyleId: string;
+  selectedStyleLabel: string;
+  selectedPattern: GuitarPattern;
+  supportedStyleIds: string[];
+  supportedStyleLabels: string[];
+  fallbackApplied: boolean;
+  summary: string;
+  currentState: string;
+  nextStep: string;
+}
+
 // ---------- Lookup ----------
 
 /** Returns the guitar pattern for the given style. Falls back to rhythm_strum if unknown. */
 export function getGuitarPattern(style: string): GuitarPattern {
-  return PATTERNS[style] ?? PATTERNS['rhythm_strum'];
+  return getGuitarPatternSelectionTruth(style).selectedPattern;
+}
+
+export function getGuitarPatternSelectionTruth(style: string | null | undefined): GuitarPatternSelectionTruth {
+  const styleTruth = getInstrumentStyleSelectionTruth('guitar', style);
+  const supportedStyleIds = styleTruth.supportedStyleIds.join(', ');
+  const supportedStyleLabels = styleTruth.supportedStyleLabels.join(', ');
+
+  if (styleTruth.requestedStyleId === null) {
+    const selectedPattern = PATTERNS[styleTruth.selectedStyleId] ?? PATTERNS.rhythm_strum;
+
+    return {
+      requestedStyleId: styleTruth.requestedStyleId,
+      usedDefaultStyle: styleTruth.usedDefaultStyle,
+      defaultStyleId: styleTruth.defaultStyleId,
+      defaultStyleLabel: styleTruth.defaultStyleLabel,
+      selectedStyleId: styleTruth.selectedStyleId,
+      selectedStyleLabel: styleTruth.selectedStyleLabel,
+      selectedPattern,
+      supportedStyleIds: styleTruth.supportedStyleIds,
+      supportedStyleLabels: styleTruth.supportedStyleLabels,
+      fallbackApplied: false,
+      summary: `No guitar style was requested, so the default ${styleTruth.selectedStyleLabel} pattern ${selectedPattern.id} is active.`,
+      currentState: `Guitar is using the default ${styleTruth.selectedStyleLabel} style with pattern ${selectedPattern.id} because no explicit style was requested.`,
+      nextStep: `Keep the default ${styleTruth.selectedStyleLabel} style, or switch to one of the supported guitar styles: ${supportedStyleLabels} (${supportedStyleIds}).`,
+    };
+  }
+
+  if (!styleTruth.fallbackApplied) {
+    const selectedPattern = PATTERNS[styleTruth.selectedStyleId] ?? PATTERNS.rhythm_strum;
+
+    return {
+      requestedStyleId: styleTruth.requestedStyleId,
+      usedDefaultStyle: styleTruth.usedDefaultStyle,
+      defaultStyleId: styleTruth.defaultStyleId,
+      defaultStyleLabel: styleTruth.defaultStyleLabel,
+      selectedStyleId: styleTruth.selectedStyleId,
+      selectedStyleLabel: styleTruth.selectedStyleLabel,
+      selectedPattern,
+      supportedStyleIds: styleTruth.supportedStyleIds,
+      supportedStyleLabels: styleTruth.supportedStyleLabels,
+      fallbackApplied: false,
+      summary: `${styleTruth.selectedStyleLabel} uses guitar pattern ${selectedPattern.id}.`,
+      currentState: `Guitar style ${styleTruth.selectedStyleLabel} is active with pattern ${selectedPattern.id}. No fallback was needed.`,
+      nextStep: `Keep ${styleTruth.selectedStyleLabel}, or switch to one of the supported guitar styles: ${supportedStyleLabels} (${supportedStyleIds}).`,
+    };
+  }
+
+  const selectedPattern = PATTERNS.rhythm_strum;
+
+  return {
+    requestedStyleId: styleTruth.requestedStyleId,
+    usedDefaultStyle: false,
+    defaultStyleId: styleTruth.defaultStyleId,
+    defaultStyleLabel: styleTruth.defaultStyleLabel,
+    selectedStyleId: selectedPattern.style,
+    selectedStyleLabel:
+      styleTruth.supportedStyleLabels[
+        styleTruth.supportedStyleIds.findIndex((supportedStyleId) => supportedStyleId === selectedPattern.style)
+      ] ?? 'Rhythm Strum',
+    selectedPattern,
+    supportedStyleIds: styleTruth.supportedStyleIds,
+    supportedStyleLabels: styleTruth.supportedStyleLabels,
+    fallbackApplied: true,
+    summary: `Requested guitar style ${styleTruth.requestedStyleId ?? 'default'} falls back to Rhythm Strum with pattern ${selectedPattern.id}.`,
+    currentState: `Requested guitar style "${styleTruth.requestedStyleId}" is unavailable, so guitar style Rhythm Strum is active with fallback pattern ${selectedPattern.id}.`,
+    nextStep: `Choose one of the supported guitar styles: ${supportedStyleLabels} (${supportedStyleIds}).`,
+  };
 }
 
 // ---------- Degree-to-chord-index mapping ----------

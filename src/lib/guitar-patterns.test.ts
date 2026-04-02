@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { getGuitarPattern, buildGuitarFromPattern } from './guitar-patterns';
+import { getGuitarPattern, getGuitarPatternSelectionTruth, buildGuitarFromPattern } from './guitar-patterns';
 
 describe('getGuitarPattern', () => {
   it('returns power_chords pattern', () => {
@@ -25,6 +25,69 @@ describe('getGuitarPattern', () => {
   it('falls back to rhythm_strum for unknown style', () => {
     const pattern = getGuitarPattern('unknown');
     expect(pattern.style).toBe('rhythm_strum');
+  });
+});
+
+describe('getGuitarPatternSelectionTruth', () => {
+  it('keeps the selected guitar pattern visible when the style is supported', () => {
+    const selection = getGuitarPatternSelectionTruth('muted_funk');
+
+    expect(selection).toMatchObject({
+      requestedStyleId: 'muted_funk',
+      usedDefaultStyle: false,
+      defaultStyleId: 'power_chords',
+      defaultStyleLabel: 'Power Chords',
+      selectedStyleId: 'muted_funk',
+      selectedStyleLabel: 'Muted Funk',
+      supportedStyleIds: ['power_chords', 'fingerpick_arpeggios', 'rhythm_strum', 'muted_funk'],
+      supportedStyleLabels: ['Power Chords', 'Fingerpick Arpeggios', 'Rhythm Strum', 'Muted Funk'],
+      fallbackApplied: false,
+      summary: 'Muted Funk uses guitar pattern muted_funk_01.',
+      currentState: 'Guitar style Muted Funk is active with pattern muted_funk_01. No fallback was needed.',
+      nextStep:
+        'Keep Muted Funk, or switch to one of the supported guitar styles: Power Chords, Fingerpick Arpeggios, Rhythm Strum, Muted Funk (power_chords, fingerpick_arpeggios, rhythm_strum, muted_funk).',
+    });
+    expect(selection.selectedPattern.id).toBe('muted_funk_01');
+  });
+
+  it('makes the default guitar pattern explicit when the request is blank', () => {
+    const selection = getGuitarPatternSelectionTruth('   ');
+
+    expect(selection).toMatchObject({
+      requestedStyleId: null,
+      usedDefaultStyle: true,
+      defaultStyleId: 'power_chords',
+      defaultStyleLabel: 'Power Chords',
+      selectedStyleId: 'power_chords',
+      selectedStyleLabel: 'Power Chords',
+      fallbackApplied: false,
+      summary: 'No guitar style was requested, so the default Power Chords pattern power_chords_01 is active.',
+      currentState:
+        'Guitar is using the default Power Chords style with pattern power_chords_01 because no explicit style was requested.',
+      nextStep:
+        'Keep the default Power Chords style, or switch to one of the supported guitar styles: Power Chords, Fingerpick Arpeggios, Rhythm Strum, Muted Funk (power_chords, fingerpick_arpeggios, rhythm_strum, muted_funk).',
+    });
+    expect(selection.selectedPattern.id).toBe('power_chords_01');
+  });
+
+  it('reports fallback guitar truth when the requested style is unsupported', () => {
+    const selection = getGuitarPatternSelectionTruth('surf_lead');
+
+    expect(selection).toMatchObject({
+      requestedStyleId: 'surf_lead',
+      usedDefaultStyle: false,
+      defaultStyleId: 'power_chords',
+      defaultStyleLabel: 'Power Chords',
+      selectedStyleId: 'rhythm_strum',
+      selectedStyleLabel: 'Rhythm Strum',
+      fallbackApplied: true,
+      summary: 'Requested guitar style surf_lead falls back to Rhythm Strum with pattern rhythm_strum_01.',
+      currentState:
+        'Requested guitar style "surf_lead" is unavailable, so guitar style Rhythm Strum is active with fallback pattern rhythm_strum_01.',
+      nextStep:
+        'Choose one of the supported guitar styles: Power Chords, Fingerpick Arpeggios, Rhythm Strum, Muted Funk (power_chords, fingerpick_arpeggios, rhythm_strum, muted_funk).',
+    });
+    expect(selection.selectedPattern.id).toBe('rhythm_strum_01');
   });
 });
 
