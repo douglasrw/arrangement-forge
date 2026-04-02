@@ -3,7 +3,7 @@
 Status date: 2026-04-02
 
 Status: landed on `main`; reverified on 2026-04-02 against current product
-head `a24bf7a0` with no remaining bounded product delta visible in this family
+head `36130b53` with no remaining bounded product delta visible in this family
 
 Purpose: preserve the current undo-stack failure and recovery contract in one
 repo-local place so future work does not have to reconstruct it from
@@ -39,6 +39,9 @@ repo-local place so future work does not have to reconstruct it from
 - `createUndoHistoryTruth` keeps waiting history explicit before any restorable
   boundary exists and prefers the actionable boundary when one side is blocked
   while the other side is still available or paused.
+- `createUndoHistoryTruth` now always carries both `undoBoundaryTruth` and
+  `redoBoundaryTruth`, so downstream surfaces can read direct boundary-specific
+  truth without reconstructing it from the active history summary.
 
 `src/store/undo-store.ts` owns undo-store execution behavior:
 
@@ -63,9 +66,9 @@ UI surfaces preserve the same undo-store error truth:
 
 Current focused proofs for this slice:
 
-- `pnpm exec vitest run src/store/undo-store.test.ts src/lib/undo-helpers.test.ts src/components/layout/StatusBar.test.tsx src/components/transport/TransportBar.test.tsx`
+- `pnpm exec vitest run --exclude '.worktrees/**' src/store/undo-store.test.ts src/lib/undo-helpers.test.ts src/components/layout/StatusBar.test.tsx src/components/transport/TransportBar.test.tsx`
 - `pnpm run type-check`
-- verification head: `a24bf7a0e0042dba1fedebd01e022e1b8c05c325`
+- verification head: `36130b539a81f46f09da15f5e3debc9cd3cfb7b9`
 
 ## Tracked Landing
 
@@ -81,11 +84,13 @@ Current focused proofs for this slice:
   `Expose undo readiness truth on transport`
 - `a24bf7a0e0042dba1fedebd01e022e1b8c05c325`:
   `Add blocked redo transport truth test`
-- The current `main` head at `a24bf7a0` still preserves the undo-store error
+- `36130b539a81f46f09da15f5e3debc9cd3cfb7b9`:
+  `Expose direct undo history boundary truth`
+- The current `main` head at `36130b53` still preserves the undo-store error
   contract and its focused proofs, so this bounded landing refreshes local
   evidence instead of claiming a new product behavior change.
 - The focused undo-store error proofs passed again on 2026-04-02 against
-  product head `a24bf7a0`, so this local artifact matches the live product
+  product head `36130b53`, so this local artifact matches the live product
   surface instead of stale earlier verification.
 - After the 2026-04-02 recheck, this family appears exhausted until undo-stack
   storage, restore parsing, or history-surface rendering changes again.
@@ -97,6 +102,8 @@ The tests cover:
 - trapped-history guidance when a blocked undo boundary hides older restorable
   history behind it
 - waiting history truth before the first undo boundary exists
+- direct per-boundary undo and redo truth on the aggregated history read, even
+  when only one side is actionable
 - status-bar rendering of blocked undo history and trapped-history next-step
   guidance
 - transport-surface rendering of blocked and waiting undo history labels and
