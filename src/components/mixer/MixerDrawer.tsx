@@ -136,11 +136,15 @@ function getMixerReadinessTruth({
   }
 
   if (playbackTruth.status === "unavailable") {
+    const playbackFailureTone = playbackTruth.reason === "engine-start-failed"
+      || playbackTruth.reason === "arrangement-load-failed"
+      || playbackTruth.reason === "instrument-update-failed"
+
     return {
       status: "unavailable",
-      badge: "Unavailable",
+      badge: playbackTruth.summary,
       message: `${playbackTruth.detail} ${playbackTruth.nextStep}`.trim(),
-      tone: playbackTruth.reason === "load-failed" ? "error" : "default",
+      tone: playbackFailureTone ? "error" : "default",
     }
   }
 

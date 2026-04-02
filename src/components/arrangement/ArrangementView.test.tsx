@@ -292,7 +292,7 @@ describe('ArrangementView empty-state truth', () => {
     useAudioState.playbackTruth = {
       status: 'unavailable',
       action: 'retry-play',
-      reason: 'load-failed',
+      reason: 'engine-start-failed',
       summary: 'Audio engine blocked',
       detail: 'The audio engine could not start: no output device is available.',
       nextStep: 'Resolve the audio engine start error, then press play again.',

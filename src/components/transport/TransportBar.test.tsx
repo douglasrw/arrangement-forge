@@ -861,7 +861,7 @@ describe('TransportBar transport controls', () => {
     useAudioState.playbackTruth = {
       status: 'unavailable',
       action: 'retry-play',
-      reason: 'load-failed',
+      reason: 'arrangement-load-failed',
       summary: 'Unavailable',
       detail: 'Audio failed to load: Salamander drum samples missing',
       nextStep: 'Fix the sample error, then press play to try again.',
@@ -884,7 +884,7 @@ describe('TransportBar transport controls', () => {
       'input[aria-label="Transport scrubber"]'
     ) as HTMLInputElement | null;
     const guidance = mounted.container.querySelector(
-      '[data-transport-guidance="load-failed"]'
+      '[data-transport-guidance="arrangement-load-failed"]'
     ) as HTMLDivElement | null;
 
     expect(playButton?.disabled).toBe(false);

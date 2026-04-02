@@ -101,7 +101,7 @@ function buildPlaybackTruth({
     return {
       status: 'unavailable',
       action: 'retry-play',
-      reason: 'load-failed',
+      reason: 'engine-start-failed',
       summary: 'Audio engine blocked',
       detail: `The audio engine could not start: ${engineReadiness.failureMessage ?? 'The audio engine could not start.'}`,
       nextStep: 'Resolve the audio engine start error, then press play again.',
@@ -113,7 +113,7 @@ function buildPlaybackTruth({
       return {
         status: 'unavailable',
         action: 'retry-play',
-        reason: 'load-failed',
+        reason: 'instrument-update-failed',
         summary: 'Audio update failed',
         detail: `Arrangement audio could not refresh: ${engineReadiness.failureMessage ?? 'Instrument update failed.'}`,
         nextStep: 'Fix the instrument update error, then press play to reload arrangement audio.',
@@ -123,7 +123,7 @@ function buildPlaybackTruth({
     return {
       status: 'unavailable',
       action: 'retry-play',
-      reason: 'load-failed',
+      reason: 'arrangement-load-failed',
       summary: 'Audio load failed',
       detail: `Arrangement audio failed to load: ${engineReadiness.failureMessage ?? 'Instrument samples could not be loaded.'}`,
       nextStep: 'Fix the sample error, then press play to try again.',

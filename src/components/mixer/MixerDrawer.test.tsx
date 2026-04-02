@@ -566,8 +566,8 @@ describe('MixerDrawer', () => {
     useAudioState.playbackTruth = {
       status: 'unavailable',
       action: 'retry-play',
-      reason: 'load-failed',
-      summary: 'Unavailable',
+      reason: 'arrangement-load-failed',
+      summary: 'Audio load failed',
       detail: 'Audio failed to load: Salamander drum samples missing',
       nextStep: 'Fix the sample error, then press play to try again.',
     };
@@ -598,7 +598,7 @@ describe('MixerDrawer', () => {
       '[aria-label="Master volume fader"]'
     ) as HTMLDivElement | null;
 
-    expect(mixerReadiness?.textContent).toBe('Unavailable');
+    expect(mixerReadiness?.textContent).toBe('Audio load failed');
     expect(mixerReadiness?.getAttribute('data-mixer-readiness')).toBe('unavailable');
     expect(mounted.container.textContent).toContain(
       'Audio failed to load: Salamander drum samples missing Fix the sample error, then press play to try again.'
@@ -740,8 +740,8 @@ describe('MixerDrawer', () => {
     useAudioState.playbackTruth = {
       status: 'unavailable',
       action: 'retry-play',
-      reason: 'load-failed',
-      summary: 'Unavailable',
+      reason: 'arrangement-load-failed',
+      summary: 'Audio load failed',
       detail: 'Audio failed to load: Salamander drum samples missing',
       nextStep: 'Fix the sample error, then press play to try again.',
     };

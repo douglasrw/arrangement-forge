@@ -485,6 +485,7 @@ describe('useAudio transport config', () => {
 
     expect(hookValue?.playbackReadiness).toBe('unavailable');
     expect(hookValue?.playbackTruth.action).toBe('retry-play');
+    expect(hookValue?.playbackTruth.reason).toBe('arrangement-load-failed');
     expect(hookValue?.playbackTruth.summary).toBe('Audio load failed');
     expect(hookValue?.playbackTruth.detail).toContain('Piano samples unavailable');
     expect(hookValue?.playbackTruth.nextStep).toBe('Fix the sample error, then press play to try again.');
@@ -616,6 +617,7 @@ describe('useAudio transport config', () => {
     expect(useUiStore.getState().errorMessage).toBe('Piano sampler hot-swap failed');
     expect(loadArrangementMock).not.toHaveBeenCalled();
     expect(hookValue?.playbackTruth.action).toBe('retry-play');
+    expect(hookValue?.playbackTruth.reason).toBe('instrument-update-failed');
     expect(hookValue?.playbackTruth.summary).toBe('Audio update failed');
     expect(hookValue?.playbackTruth.nextStep).toBe('Fix the instrument update error, then press play to reload arrangement audio.');
   });
@@ -688,6 +690,7 @@ describe('useAudio transport config', () => {
     expect(playMock).not.toHaveBeenCalled();
     expect(hookValue?.playbackReadiness).toBe('unavailable');
     expect(hookValue?.playbackTruth.action).toBe('retry-play');
+    expect(hookValue?.playbackTruth.reason).toBe('engine-start-failed');
     expect(hookValue?.playbackTruth.summary).toBe('Audio engine blocked');
     expect(hookValue?.playbackTruth.detail).toContain('AudioContext was not allowed to start');
     expect(hookValue?.playbackTruth.nextStep).toBe('Resolve the audio engine start error, then press play again.');

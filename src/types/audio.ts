@@ -17,7 +17,9 @@ export type PlaybackTruthReason =
   | 'no-stems'
   | 'awaiting-user-play'
   | 'loading-arrangement'
-  | 'load-failed';
+  | 'engine-start-failed'
+  | 'arrangement-load-failed'
+  | 'instrument-update-failed';
 
 export interface TransportState {
   playbackState: PlaybackState;
