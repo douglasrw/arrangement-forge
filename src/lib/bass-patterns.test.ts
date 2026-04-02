@@ -36,19 +36,40 @@ describe('getBassPatternSelectionTruth', () => {
   it('keeps the selected bass pattern visible when the style is supported', () => {
     const selection = getBassPatternSelectionTruth('pick');
 
+    expect(selection.selectedStyleId).toBe('pick');
+    expect(selection.selectedStyleLabel).toBe('Pick');
     expect(selection.fallbackApplied).toBe(false);
     expect(selection.selectedPattern.style).toBe('pick');
-    expect(selection.currentState).toBe('Pick is selected for bass.');
-    expect(selection.nextStep).toBe('Keep Pick or choose one of: Walking, Slap, Pick, Fingerstyle.');
+    expect(selection.summary).toBe('Pick uses bass pattern pick_01.');
+    expect(selection.currentState).toBe('Bass style Pick is active with pattern pick_01. No fallback was needed.');
+    expect(selection.nextStep).toBe(
+      'Keep Pick, or switch to one of the supported bass styles: Walking, Slap, Pick, Fingerstyle (walking, slap, pick, fingerstyle).'
+    );
   });
 
   it('makes the fallback selection explicit when the requested style is unsupported', () => {
     const selection = getBassPatternSelectionTruth('walking_bass');
 
     expect(selection.requestedStyleId).toBe('walking_bass');
+    expect(selection.selectedStyleId).toBe('fingerstyle');
     expect(selection.fallbackApplied).toBe(true);
     expect(selection.selectedPattern.style).toBe('fingerstyle');
-    expect(selection.currentState).toBe('bass style "walking_bass" is unavailable, so Fingerstyle is selected instead.');
+    expect(selection.summary).toBe('Requested bass style walking_bass falls back to Fingerstyle with pattern fingerstyle_01.');
+    expect(selection.currentState).toBe(
+      'Requested bass style "walking_bass" is unavailable, so bass style Fingerstyle is active with fallback pattern fingerstyle_01.'
+    );
+    expect(selection.nextStep).toBe(
+      'Choose one of the supported bass styles: Walking, Slap, Pick, Fingerstyle (walking, slap, pick, fingerstyle).'
+    );
+  });
+
+  it('treats a blank request as the default bass pattern without reporting a fallback', () => {
+    const selection = getBassPatternSelectionTruth('   ');
+
+    expect(selection.requestedStyleId).toBeNull();
+    expect(selection.selectedStyleId).toBe('fingerstyle');
+    expect(selection.fallbackApplied).toBe(false);
+    expect(selection.summary).toBe('Fingerstyle uses bass pattern fingerstyle_01.');
   });
 });
 

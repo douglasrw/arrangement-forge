@@ -5,7 +5,7 @@ import type { MidiNoteData } from '@/types';
 import { getChordTones, noteToMidi } from './midi-generator';
 import { degreeToNote } from './chords';
 import { knuthHash } from './drum-patterns';
-import { getInstrumentStyleSelectionTruth } from './genre-config';
+import { getInstrumentStyleSelectionTruth, getSupportedInstrumentStyles } from './genre-config';
 
 // ---------- Types ----------
 
@@ -129,8 +129,11 @@ const PATTERNS: Record<string, BassPattern> = {
 
 export interface BassPatternSelectionTruth {
   requestedStyleId: string | null;
+  selectedStyleId: string;
+  selectedStyleLabel: string;
   selectedPattern: BassPattern;
   fallbackApplied: boolean;
+  summary: string;
   currentState: string;
   nextStep: string;
 }
@@ -144,13 +147,32 @@ export function getBassPattern(style: string): BassPattern {
 
 export function getBassPatternSelectionTruth(style: string | null | undefined): BassPatternSelectionTruth {
   const styleTruth = getInstrumentStyleSelectionTruth('bass', style);
+  const selectedPattern = PATTERNS[styleTruth.selectedStyleId] ?? PATTERNS['fingerstyle'];
+  const supportedStyleIds = getSupportedInstrumentStyles('bass').map((option) => option.id).join(', ');
+  const supportedStyleLabels = getSupportedInstrumentStyles('bass').map((option) => option.label).join(', ');
+
+  if (!styleTruth.fallbackApplied) {
+    return {
+      requestedStyleId: styleTruth.requestedStyleId,
+      selectedStyleId: styleTruth.selectedStyleId,
+      selectedStyleLabel: styleTruth.selectedStyleLabel,
+      selectedPattern,
+      fallbackApplied: false,
+      summary: `${styleTruth.selectedStyleLabel} uses bass pattern ${selectedPattern.id}.`,
+      currentState: `Bass style ${styleTruth.selectedStyleLabel} is active with pattern ${selectedPattern.id}. No fallback was needed.`,
+      nextStep: `Keep ${styleTruth.selectedStyleLabel}, or switch to one of the supported bass styles: ${supportedStyleLabels} (${supportedStyleIds}).`,
+    };
+  }
 
   return {
     requestedStyleId: styleTruth.requestedStyleId,
-    selectedPattern: PATTERNS[styleTruth.selectedStyleId] ?? PATTERNS['fingerstyle'],
-    fallbackApplied: styleTruth.fallbackApplied,
-    currentState: styleTruth.currentState,
-    nextStep: styleTruth.nextStep,
+    selectedStyleId: styleTruth.selectedStyleId,
+    selectedStyleLabel: styleTruth.selectedStyleLabel,
+    selectedPattern,
+    fallbackApplied: true,
+    summary: `Requested bass style ${styleTruth.requestedStyleId ?? 'default'} falls back to ${styleTruth.selectedStyleLabel} with pattern ${selectedPattern.id}.`,
+    currentState: `Requested bass style "${styleTruth.requestedStyleId}" is unavailable, so bass style ${styleTruth.selectedStyleLabel} is active with fallback pattern ${selectedPattern.id}.`,
+    nextStep: `Choose one of the supported bass styles: ${supportedStyleLabels} (${supportedStyleIds}).`,
   };
 }
 

@@ -111,12 +111,16 @@ function getDefaultStyleOption(instrument: InstrumentType): StyleOption {
   );
 }
 
+export function getSupportedInstrumentStyles(instrument: InstrumentType): StyleOption[] {
+  return INSTRUMENT_STYLE_OPTIONS[instrument];
+}
+
 export function getInstrumentStyleSelectionTruth(
   instrument: InstrumentType,
   styleId: string | null | undefined
 ): InstrumentStyleSelectionTruth {
   const requestedStyleId = styleId?.trim() ? styleId : null;
-  const options = INSTRUMENT_STYLE_OPTIONS[instrument];
+  const options = getSupportedInstrumentStyles(instrument);
   const selectedOption = options.find((option) => option.id === requestedStyleId) ?? getDefaultStyleOption(instrument);
   const fallbackApplied = requestedStyleId !== null && selectedOption.id !== requestedStyleId;
   const availableLabels = options.map((option) => option.label).join(', ');
