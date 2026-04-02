@@ -753,6 +753,16 @@ describe('TransportBar transport controls', () => {
   });
 
   it('keeps persisted snapshot truth explicit when the arrangement rows are not loaded', () => {
+    useAudioState.playbackReadiness = 'unavailable';
+    useAudioState.playbackTruth = {
+      status: 'unavailable',
+      action: 'unavailable',
+      reason: 'saved-arrangement-not-loaded',
+      summary: 'Reload arrangement',
+      detail: 'A saved arrangement snapshot exists, but its rows are not loaded into the editor right now.',
+      nextStep: 'Use Reload saved snapshot in the top bar before starting playback.',
+    };
+
     useProjectStore.setState({
       project: makeProject({ hasArrangement: true }),
       sections: [],
@@ -776,6 +786,7 @@ describe('TransportBar transport controls', () => {
     expect(guidance?.textContent).toContain(
       'A saved arrangement snapshot exists, but its rows are not loaded in this session. Use Reload saved snapshot in the top bar to enable playback and transport controls.'
     );
+    expect(mounted.container.textContent).toContain('Reload arrangement');
     expect(guidance?.textContent).not.toContain(
       'Generate or import an arrangement to enable playback and transport controls.'
     );
@@ -887,7 +898,7 @@ describe('TransportBar transport controls', () => {
       status: 'unavailable',
       action: 'retry-play',
       reason: 'arrangement-load-failed',
-      summary: 'Unavailable',
+      summary: 'Audio load failed',
       detail: 'Audio failed to load: Salamander drum samples missing',
       nextStep: 'Fix the sample error, then press play to try again.',
     };
@@ -921,9 +932,9 @@ describe('TransportBar transport controls', () => {
     expect(scrubber).toBeNull();
     expect(guidance?.textContent).toContain('Audio failed to load: Salamander drum samples missing');
     expect(guidance?.textContent).toContain('Fix the sample error, then press play to try again.');
-    expect(readinessBadge?.getAttribute('data-transport-readiness-state')).toBe('blocked');
-    expect(readinessBadge?.textContent).toBe('Blocked');
-    expect(mounted.container.textContent).toContain('Transport blocked');
+    expect(readinessBadge?.getAttribute('data-transport-readiness-state')).toBe('error');
+    expect(readinessBadge?.textContent).toBe('Error');
+    expect(mounted.container.textContent).toContain('Audio load failed');
     expect(mounted.container.textContent).not.toContain('Loading');
     expect(mounted.container.textContent).not.toContain('Load to play');
     expect(playButton?.title).toContain('Audio failed to load: Salamander drum samples missing');
@@ -935,13 +946,13 @@ describe('TransportBar transport controls', () => {
     expect(playMock).toHaveBeenCalledTimes(1);
   });
 
-  it('announces blocked transport readiness with next-step guidance as one status message', () => {
+  it('announces error transport readiness with next-step guidance as one status message', () => {
     useAudioState.playbackReadiness = 'unavailable';
     useAudioState.playbackTruth = {
       status: 'unavailable',
       action: 'retry-play',
       reason: 'arrangement-load-failed',
-      summary: 'Unavailable',
+      summary: 'Audio load failed',
       detail: 'Audio failed to load: Salamander drum samples missing',
       nextStep: 'Fix the sample error, then press play to try again.',
     };
@@ -957,7 +968,7 @@ describe('TransportBar transport controls', () => {
     expect(readinessStatus).not.toBeNull();
     expect(readinessStatus?.getAttribute('aria-live')).toBe('polite');
     expect(readinessStatus?.getAttribute('aria-label')).toBe(
-      'Blocked: Transport blocked. Audio failed to load: Salamander drum samples missing Fix the sample error, then press play to try again.'
+      'Error: Audio load failed. Audio failed to load: Salamander drum samples missing Fix the sample error, then press play to try again.'
     );
   });
 });

@@ -4,12 +4,12 @@
 import * as Tone from 'tone';
 import type { PlaybackTruthAction } from '@/types';
 
-export type TransportReadinessState = 'ready' | 'waiting' | 'blocked';
+export type TransportReadinessState = 'ready' | 'waiting' | 'blocked' | 'error';
 
 export interface TransportReadinessTruth {
   detailLabel: string;
   state: TransportReadinessState;
-  summaryLabel: 'Ready' | 'Waiting' | 'Blocked';
+  summaryLabel: 'Ready' | 'Waiting' | 'Blocked' | 'Error';
   summaryClassName: string;
 }
 
@@ -17,10 +17,12 @@ export function getTransportReadinessTruth({
   timelineAvailable,
   transportReady,
   playbackAction,
+  playbackSummary,
 }: {
   timelineAvailable: boolean;
   transportReady: boolean;
   playbackAction: PlaybackTruthAction;
+  playbackSummary: string;
 }): TransportReadinessTruth {
   if (transportReady) {
     return {
@@ -31,9 +33,27 @@ export function getTransportReadinessTruth({
     };
   }
 
-  if (!timelineAvailable || playbackAction === 'retry-play' || playbackAction === 'unavailable') {
+  if (!timelineAvailable) {
     return {
-      detailLabel: timelineAvailable ? 'Transport blocked' : 'No timeline',
+      detailLabel: playbackSummary === 'Reload arrangement' ? playbackSummary : 'No timeline',
+      state: 'blocked',
+      summaryLabel: 'Blocked',
+      summaryClassName: 'bg-rose-500/10 text-rose-300',
+    };
+  }
+
+  if (playbackAction === 'retry-play') {
+    return {
+      detailLabel: playbackSummary,
+      state: 'error',
+      summaryLabel: 'Error',
+      summaryClassName: 'bg-rose-500/10 text-rose-300',
+    };
+  }
+
+  if (playbackAction === 'unavailable') {
+    return {
+      detailLabel: playbackSummary,
       state: 'blocked',
       summaryLabel: 'Blocked',
       summaryClassName: 'bg-rose-500/10 text-rose-300',
@@ -41,7 +61,7 @@ export function getTransportReadinessTruth({
   }
 
   return {
-    detailLabel: playbackAction === 'wait' ? 'Loading audio' : 'Load to play',
+    detailLabel: playbackSummary,
     state: 'waiting',
     summaryLabel: 'Waiting',
     summaryClassName: 'bg-amber-500/10 text-amber-300',

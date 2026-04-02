@@ -202,6 +202,7 @@ export function TransportBar() {
     timelineAvailable,
     transportReady,
     playbackAction,
+    playbackSummary: playbackTruth.summary,
   })
   const transportReadinessAnnouncement = transportGuidance
     ? `${transportReadinessTruth.summaryLabel}: ${transportReadinessTruth.detailLabel}. ${transportGuidance}`

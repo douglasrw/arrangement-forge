@@ -8,6 +8,7 @@ describe('getTransportReadinessTruth', () => {
         timelineAvailable: true,
         transportReady: true,
         playbackAction: 'play',
+        playbackSummary: 'Ready',
       })
     ).toEqual({
       detailLabel: 'Ready',
@@ -23,6 +24,7 @@ describe('getTransportReadinessTruth', () => {
         timelineAvailable: true,
         transportReady: false,
         playbackAction: 'load-and-play',
+        playbackSummary: 'Load to play',
       })
     ).toEqual({
       detailLabel: 'Load to play',
@@ -32,17 +34,18 @@ describe('getTransportReadinessTruth', () => {
     });
   });
 
-  it('returns blocked truth when audio playback failed', () => {
+  it('returns error truth when audio playback failed', () => {
     expect(
       getTransportReadinessTruth({
         timelineAvailable: true,
         transportReady: false,
         playbackAction: 'retry-play',
+        playbackSummary: 'Audio load failed',
       })
     ).toEqual({
-      detailLabel: 'Transport blocked',
-      state: 'blocked',
-      summaryLabel: 'Blocked',
+      detailLabel: 'Audio load failed',
+      state: 'error',
+      summaryLabel: 'Error',
       summaryClassName: 'bg-rose-500/10 text-rose-300',
     });
   });
@@ -53,9 +56,26 @@ describe('getTransportReadinessTruth', () => {
         timelineAvailable: false,
         transportReady: false,
         playbackAction: 'wait',
+        playbackSummary: 'Unavailable',
       })
     ).toEqual({
       detailLabel: 'No timeline',
+      state: 'blocked',
+      summaryLabel: 'Blocked',
+      summaryClassName: 'bg-rose-500/10 text-rose-300',
+    });
+  });
+
+  it('returns reload truth when a saved arrangement needs to be reloaded', () => {
+    expect(
+      getTransportReadinessTruth({
+        timelineAvailable: false,
+        transportReady: false,
+        playbackAction: 'unavailable',
+        playbackSummary: 'Reload arrangement',
+      })
+    ).toEqual({
+      detailLabel: 'Reload arrangement',
       state: 'blocked',
       summaryLabel: 'Blocked',
       summaryClassName: 'bg-rose-500/10 text-rose-300',
