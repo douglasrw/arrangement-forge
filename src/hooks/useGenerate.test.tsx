@@ -237,6 +237,41 @@ describe('useGenerate assistant prompt flow', () => {
     expect(saveProjectMock).not.toHaveBeenCalled();
   });
 
+  it('keeps no-playable-result summaries honest when the generator returns blocked readiness truth', async () => {
+    parseChordChartMock.mockReturnValue({
+      chords: [{ bar_number: 1, degree: 'I', quality: 'maj7', bass_degree: null }],
+    });
+    generateMock.mockReturnValue({
+      sections: [],
+      stems: [{ instrument: 'piano', sort_order: 0 }],
+      blocks: [],
+      chords: [{ bar_number: 1, degree: 'I', quality: 'maj7', bass_degree: null }],
+      truth: {
+        summary: 'The current chord chart did not produce a playable arrangement yet.',
+        currentState: 'No playable arrangement sections are ready yet.',
+        nextStep: 'Adjust the chord chart or instrument setup, then generate again.',
+      },
+    });
+
+    const mounted = renderHarness();
+    mountedRoot = mounted.root;
+    mountedContainer = mounted.container;
+
+    await act(async () => {
+      await hookValue!.runGeneration();
+      await Promise.resolve();
+    });
+
+    const state = useProjectStore.getState();
+    expect(state.chatMessages).toHaveLength(1);
+    expect(state.chatMessages[0]).toMatchObject({
+      role: 'assistant',
+      scope: 'setup',
+      content:
+        'Generation completed, but no playable arrangement is ready yet. The current chord chart did not produce a playable arrangement yet. Current state: No playable arrangement sections are ready yet. Next step: Adjust the chord chart or instrument setup, then generate again.',
+    });
+  });
+
   it('blocks generation when chord parsing still has unresolved bars', async () => {
     parseChordChartMock.mockReturnValue({
       chords: [

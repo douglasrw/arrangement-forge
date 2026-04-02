@@ -110,9 +110,15 @@ describe('generate', () => {
     expect(result.sections[1].bar_count).toBe(8);
   });
 
-  it('handles empty chord progression gracefully', () => {
+  it('returns blocked readiness truth when no chord bars are available', () => {
     const result = generate({ ...baseRequest, chords: [] });
-    expect(result.sections.length).toBeGreaterThan(0);
+    expect(result.sections).toEqual([]);
+    expect(result.blocks).toEqual([]);
+    expect(result.truth).toEqual({
+      summary: 'The current chart did not produce a playable arrangement yet.',
+      currentState: 'No playable arrangement sections are ready yet.',
+      nextStep: 'Adjust the chord chart or instrument setup, then generate again.',
+    });
   });
 
   it('creates per-section blocks for pitched instruments (not a single block)', () => {

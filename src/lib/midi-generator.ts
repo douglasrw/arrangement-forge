@@ -340,7 +340,7 @@ export function generateMidiForBlock(
 // ---------- Main Generate Function ----------
 
 export function generate(request: GenerationRequest): GenerationResponse {
-  const totalBars = request.chords.length || 8;
+  const totalBars = request.chords.length;
   const sections = createSections(totalBars);
 
   const stems: StemData[] = request.stems.map((instrument, i) => ({

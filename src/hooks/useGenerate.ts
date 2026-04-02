@@ -73,22 +73,31 @@ function buildGenerationSummary(
   const totalBars = response.sections.reduce((sum, section) => sum + section.bar_count, 0);
   const sectionLabel = response.sections.length === 1 ? 'section' : 'sections';
   const barLabel = totalBars === 1 ? 'bar' : 'bars';
+  const hasPlayableArrangement =
+    response.sections.length > 0 &&
+    totalBars > 0 &&
+    response.stems.length > 0 &&
+    response.blocks.length > 0;
   const fallbackTruth = response.truth ?? {
-    summary:
-      response.sections.length === 0 || totalBars === 0
-        ? 'the current chord chart did not produce any playable sections.'
-        : `${response.sections.length} ${sectionLabel} across ${totalBars} ${barLabel} for ${formatList(response.stems.map((stem) => stem.instrument))}.`,
-    currentState:
-      response.sections.length === 0 || totalBars === 0
-        ? ''
-        : `A playable arrangement is ready with ${response.sections.length} ${sectionLabel} across ${totalBars} ${barLabel} for ${formatList(response.stems.map((stem) => stem.instrument))}.`,
+    summary: hasPlayableArrangement
+      ? `${response.sections.length} ${sectionLabel} across ${totalBars} ${barLabel} for ${formatList(response.stems.map((stem) => stem.instrument))}.`
+      : 'The current chord chart did not produce a playable arrangement yet.',
+    currentState: hasPlayableArrangement
+      ? `A playable arrangement is ready with ${response.sections.length} ${sectionLabel} across ${totalBars} ${barLabel} for ${formatList(response.stems.map((stem) => stem.instrument))}.`
+      : 'No playable arrangement sections are ready yet.',
     nextStep: 'Review the arrangement, then regenerate or adjust styles if you want a different pass.',
   };
 
-  if (!fallbackTruth.currentState.trim()) {
+  if (!hasPlayableArrangement) {
+    const details = [
+      fallbackTruth.summary.trim(),
+      fallbackTruth.currentState.trim() ? `Current state: ${fallbackTruth.currentState.trim()}` : null,
+      fallbackTruth.nextStep.trim() ? `Next step: ${fallbackTruth.nextStep.trim()}` : null,
+    ].filter(Boolean);
+
     return options.assistantPrompt
-      ? 'I used your latest request, but the current chord chart did not produce any playable sections.'
-      : 'Generation completed, but the current chord chart did not produce any playable sections.';
+      ? `I used your latest request, but no playable arrangement is ready yet. ${details.join(' ')}`
+      : `Generation completed, but no playable arrangement is ready yet. ${details.join(' ')}`;
   }
 
   const verb = options.hadArrangement ? 'regenerated' : 'generated';
