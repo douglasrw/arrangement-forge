@@ -156,6 +156,18 @@ describe('undoStore', () => {
     });
   });
 
+  it('surfaces waiting history truth before the first undo boundary exists', () => {
+    expect(useUndoStore.getState().getHistoryTruth()).toMatchObject({
+      status: 'waiting',
+      boundary: null,
+      label: 'Undo waiting · Redo waiting',
+      currentState:
+        'Undo is waiting for the first restorable arrangement change, and Redo is waiting for an undo step before it can reopen.',
+      nextStep:
+        'Edit the arrangement to create the next undo boundary. After you undo a change, redo will become available for that boundary.',
+    });
+  });
+
   it('leaves the undo stack unchanged while generation keeps the boundary paused', () => {
     useUndoStore.getState().pushUndo('Split block', {
       undo: makeSnapshot('before'),

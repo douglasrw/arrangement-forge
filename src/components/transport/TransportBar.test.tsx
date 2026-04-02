@@ -474,6 +474,28 @@ describe('TransportBar transport controls', () => {
     );
   });
 
+  it('keeps waiting undo history visible on the transport surface before any edits exist', () => {
+    const mounted = renderTransportBar();
+    mountedRoot = mounted.root;
+    mountedContainer = mounted.container;
+
+    const undoButton = mounted.container.querySelector(
+      'button[aria-label="Undo waiting"]'
+    ) as HTMLButtonElement | null;
+    const redoButton = mounted.container.querySelector(
+      'button[aria-label="Redo waiting"]'
+    ) as HTMLButtonElement | null;
+
+    expect(undoButton?.disabled).toBe(true);
+    expect(undoButton?.title).toBe(
+      'Undo is waiting for the first restorable arrangement change. Edit the arrangement to create the next undo boundary.'
+    );
+    expect(redoButton?.disabled).toBe(true);
+    expect(redoButton?.title).toBe(
+      'Redo is waiting for an undo step before it can reopen. Undo a change to create the next redo boundary.'
+    );
+  });
+
   it('keeps paused redo history visible but disabled while generation is running', () => {
     const before = makeArrangement('before');
     const after = makeArrangement('after');

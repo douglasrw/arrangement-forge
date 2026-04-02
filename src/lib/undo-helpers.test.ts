@@ -121,11 +121,11 @@ describe('createUndoBoundaryTruth', () => {
       status: 'empty',
       description: null,
       actionLabel: null,
-      statusLabel: 'Nothing to undo',
-      currentState: 'No undo boundary is available right now.',
+      statusLabel: 'Undo waiting',
+      currentState: 'Undo is waiting for the first restorable arrangement change.',
       nextStep: 'Edit the arrangement to create the next undo boundary.',
       tooltip:
-        'No undo boundary is available right now. Edit the arrangement to create the next undo boundary.',
+        'Undo is waiting for the first restorable arrangement change. Edit the arrangement to create the next undo boundary.',
       transition: null,
     });
   });
@@ -241,24 +241,24 @@ describe('createUndoBoundaryExecutionTruth', () => {
 });
 
 describe('createUndoHistoryTruth', () => {
-  it('stays idle when neither undo nor redo has a restorable boundary', () => {
+  it('surfaces waiting truth when neither undo nor redo has a restorable boundary', () => {
     expect(
       createUndoHistoryTruth(
         createUndoBoundaryTruth(null, 'undo'),
         createUndoBoundaryTruth(null, 'redo')
       )
     ).toEqual({
-      status: 'idle',
+      status: 'waiting',
       boundary: null,
       activeBoundaryTruth: null,
       companionBoundaryTruth: null,
-      label: 'Nothing to undo or redo',
+      label: 'Undo waiting · Redo waiting',
       currentState:
-        'No undo boundary is available right now, and no redo boundary exists because nothing has been undone yet.',
+        'Undo is waiting for the first restorable arrangement change, and Redo is waiting for an undo step before it can reopen.',
       nextStep:
         'Edit the arrangement to create the next undo boundary. After you undo a change, redo will become available for that boundary.',
       tooltip:
-        'No undo boundary is available right now, and no redo boundary exists because nothing has been undone yet. ' +
+        'Undo is waiting for the first restorable arrangement change, and Redo is waiting for an undo step before it can reopen. ' +
         'Edit the arrangement to create the next undo boundary. After you undo a change, redo will become available for that boundary.',
     });
   });

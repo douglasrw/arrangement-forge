@@ -41,7 +41,7 @@ export interface UndoBoundaryTruth {
 }
 
 export interface UndoHistoryTruth {
-  status: 'idle' | 'available' | 'blocked' | 'paused';
+  status: 'waiting' | 'available' | 'blocked' | 'paused';
   boundary: UndoBoundary | null;
   activeBoundaryTruth: UndoBoundaryTruth | null;
   companionBoundaryTruth: UndoBoundaryTruth | null;
@@ -132,6 +132,10 @@ function formatReadyUndoBoundaryStatusLabel(
   description: string | null
 ): string {
   return description ? `${action} ready: ${description}` : `${action} ready`;
+}
+
+function formatWaitingUndoBoundaryStatusLabel(action: 'Undo' | 'Redo'): string {
+  return `${action} waiting`;
 }
 
 function getUndoBoundaryActionTarget(description: string | null): string {
@@ -259,8 +263,11 @@ export function createUndoBoundaryTruth(
       status: 'empty',
       description: normalizedDescription,
       actionLabel: null,
-      statusLabel: boundary === 'undo' ? 'Nothing to undo' : 'Nothing to redo',
-      currentState: `No ${boundary} boundary is available right now.`,
+      statusLabel: formatWaitingUndoBoundaryStatusLabel(action),
+      currentState:
+        boundary === 'undo'
+          ? 'Undo is waiting for the first restorable arrangement change.'
+          : 'Redo is waiting for an undo step before it can reopen.',
       nextStep:
         boundary === 'undo'
           ? 'Edit the arrangement to create the next undo boundary.'
@@ -344,16 +351,16 @@ export function createUndoHistoryTruth(
   const activeBoundary = selectUndoHistoryBoundaryTruth(undoBoundary, redoBoundary);
   if (!activeBoundary) {
     const currentState =
-      'No undo boundary is available right now, and no redo boundary exists because nothing has been undone yet.';
+      'Undo is waiting for the first restorable arrangement change, and Redo is waiting for an undo step before it can reopen.';
     const nextStep =
       'Edit the arrangement to create the next undo boundary. After you undo a change, redo will become available for that boundary.';
 
     return {
-      status: 'idle',
+      status: 'waiting',
       boundary: null,
       activeBoundaryTruth: null,
       companionBoundaryTruth: null,
-      label: 'Nothing to undo or redo',
+      label: 'Undo waiting · Redo waiting',
       currentState,
       nextStep,
       tooltip: `${currentState} ${nextStep}`.trim(),
