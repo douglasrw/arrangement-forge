@@ -3,7 +3,7 @@
 Status date: 2026-04-02
 
 Status: landed on `main`; reverified on 2026-04-02 against current product
-head `e0ad14d4` with no remaining bounded product delta visible in this family
+head `a24bf7a0` with no remaining bounded product delta visible in this family
 
 Purpose: preserve the current undo-stack failure and recovery contract in one
 repo-local place so future work does not have to reconstruct it from
@@ -65,7 +65,7 @@ Current focused proofs for this slice:
 
 - `pnpm exec vitest run src/store/undo-store.test.ts src/lib/undo-helpers.test.ts src/components/layout/StatusBar.test.tsx src/components/transport/TransportBar.test.tsx`
 - `pnpm run type-check`
-- verification head: `e0ad14d4329ecf16bfbeaf355cc1d6b7d2dd845f`
+- verification head: `a24bf7a0e0042dba1fedebd01e022e1b8c05c325`
 
 ## Tracked Landing
 
@@ -77,11 +77,15 @@ Current focused proofs for this slice:
   `Make undo boundary tooltips first-class truth`
 - `e0ad14d4329ecf16bfbeaf355cc1d6b7d2dd845f`:
   `Expose undo stack waiting truth`
-- The current `main` head at `e0ad14d4` still preserves the undo-store error
+- `2e490b8aa6a7292674844c61c45f4f7794ae0a55`:
+  `Expose undo readiness truth on transport`
+- `a24bf7a0e0042dba1fedebd01e022e1b8c05c325`:
+  `Add blocked redo transport truth test`
+- The current `main` head at `a24bf7a0` still preserves the undo-store error
   contract and its focused proofs, so this bounded landing refreshes local
   evidence instead of claiming a new product behavior change.
 - The focused undo-store error proofs passed again on 2026-04-02 against
-  product head `e0ad14d4`, so this local artifact matches the live product
+  product head `a24bf7a0`, so this local artifact matches the live product
   surface instead of stale earlier verification.
 - After the 2026-04-02 recheck, this family appears exhausted until undo-stack
   storage, restore parsing, or history-surface rendering changes again.
