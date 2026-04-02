@@ -219,6 +219,28 @@ describe('LibraryPage', () => {
     );
   });
 
+  it('keeps an empty library visibly ready instead of implying the route is blocked', async () => {
+    projectApi.listProjects.mockResolvedValue([]);
+
+    const mounted = renderLibrary();
+    mountedRoot = mounted.root;
+    mountedContainer = mounted.container;
+
+    await act(async () => {
+      await Promise.resolve();
+    });
+
+    const readiness = mounted.container.querySelector('[data-testid="library-readiness"]');
+
+    expect(readiness?.textContent).toContain('Library readiness');
+    expect(readiness?.textContent).toContain('Ready');
+    expect(readiness?.textContent).toContain('0 projects in library');
+    expect(readiness?.textContent).toContain('The library is ready for your next arrangement.');
+    expect(readiness?.textContent).not.toContain('Blocked');
+    expect(readiness?.textContent).not.toContain('Waiting');
+    expect(mounted.container.textContent).toContain('No projects yet.');
+  });
+
   it('updates filtered delete state and library count honestly after removing a visible project', async () => {
     projectApi.listProjects.mockResolvedValue([
       makeProject({ id: 'project-solo', name: 'Solo Sketch', genre: 'Jazz' }),
