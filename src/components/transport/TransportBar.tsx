@@ -203,6 +203,9 @@ export function TransportBar() {
     transportReady,
     playbackAction,
   })
+  const transportReadinessAnnouncement = transportGuidance
+    ? `${transportReadinessTruth.summaryLabel}: ${transportReadinessTruth.detailLabel}. ${transportGuidance}`
+    : `${transportReadinessTruth.summaryLabel}: ${transportReadinessTruth.detailLabel}.`
   const timelineStatusLabel = !timelineAvailable
     ? "No timeline"
     : playbackTruth.summary
@@ -450,22 +453,29 @@ export function TransportBar() {
         </div>
 
         <span className="text-sm text-zinc-500">{timeSig}</span>
-        <span
-          data-transport-readiness-state={transportReadinessTruth.state}
-          className={cn(
-            "rounded-full px-2 py-0.5 text-[11px] font-medium uppercase tracking-wide",
-            transportReadinessTruth.summaryClassName
-          )}
-          title={transportGuidance ?? undefined}
+        <div
+          className="flex items-center gap-2"
+          role="status"
+          aria-live="polite"
+          aria-label={transportReadinessAnnouncement}
         >
-          {transportReadinessTruth.summaryLabel}
-        </span>
-        <span
-          className="max-w-[120px] truncate text-[11px] text-zinc-500"
-          title={transportGuidance ?? transportReadinessTruth.detailLabel}
-        >
-          {transportReadinessTruth.detailLabel}
-        </span>
+          <span
+            data-transport-readiness-state={transportReadinessTruth.state}
+            className={cn(
+              "rounded-full px-2 py-0.5 text-[11px] font-medium uppercase tracking-wide",
+              transportReadinessTruth.summaryClassName
+            )}
+            title={transportGuidance ?? undefined}
+          >
+            {transportReadinessTruth.summaryLabel}
+          </span>
+          <span
+            className="max-w-[120px] truncate text-[11px] text-zinc-500"
+            title={transportGuidance ?? transportReadinessTruth.detailLabel}
+          >
+            {transportReadinessTruth.detailLabel}
+          </span>
+        </div>
         <button
           type="button"
           disabled={!transportReady}

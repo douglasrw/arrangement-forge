@@ -934,4 +934,30 @@ describe('TransportBar transport controls', () => {
 
     expect(playMock).toHaveBeenCalledTimes(1);
   });
+
+  it('announces blocked transport readiness with next-step guidance as one status message', () => {
+    useAudioState.playbackReadiness = 'unavailable';
+    useAudioState.playbackTruth = {
+      status: 'unavailable',
+      action: 'retry-play',
+      reason: 'arrangement-load-failed',
+      summary: 'Unavailable',
+      detail: 'Audio failed to load: Salamander drum samples missing',
+      nextStep: 'Fix the sample error, then press play to try again.',
+    };
+
+    const mounted = renderTransportBar();
+    mountedRoot = mounted.root;
+    mountedContainer = mounted.container;
+
+    const readinessStatus = mounted.container.querySelector(
+      '[role="status"]'
+    ) as HTMLDivElement | null;
+
+    expect(readinessStatus).not.toBeNull();
+    expect(readinessStatus?.getAttribute('aria-live')).toBe('polite');
+    expect(readinessStatus?.getAttribute('aria-label')).toBe(
+      'Blocked: Transport blocked. Audio failed to load: Salamander drum samples missing Fix the sample error, then press play to try again.'
+    );
+  });
 });
