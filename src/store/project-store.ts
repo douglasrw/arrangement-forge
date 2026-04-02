@@ -7,6 +7,7 @@ import type {
   Chord,
   AiChatMessage,
   InstrumentType,
+  SelectionLevel,
 } from '@/types';
 import { useUndoStore } from './undo-store';
 import { useUiStore } from './ui-store';
@@ -603,6 +604,31 @@ export interface ProjectStoreReadiness {
   failureTarget: ProjectStoreLoadFailureTarget | null;
 }
 
+export type ProjectSelectionTruthStatus =
+  | 'default-song'
+  | 'selected-section'
+  | 'selected-block'
+  | 'missing-selection';
+
+export interface ProjectSelectionSnapshot {
+  level: SelectionLevel;
+  sectionId: string | null;
+  blockId: string | null;
+  stemId: string | null;
+}
+
+export interface ProjectSelectionTruth {
+  status: ProjectSelectionTruthStatus;
+  selectionLevel: SelectionLevel;
+  selectionSource: 'default' | 'explicit' | 'missing';
+  scopeLabel: 'Whole song' | 'Section' | 'Block';
+  sectionId: string | null;
+  blockId: string | null;
+  stemId: string | null;
+  currentState: string;
+  nextStep: string;
+}
+
 const persistedArrangementFingerprintByProject = new WeakMap<Project, string>();
 
 function captureArrangementFingerprint(state: {
@@ -715,6 +741,22 @@ function describeProjectArrangementTruth({
   };
 }
 
+function formatSelectionBarRange(startBar: number, barCount: number): string {
+  const endBar = startBar + barCount - 1;
+  return startBar === endBar ? `bar ${startBar}` : `bars ${startBar}-${endBar}`;
+}
+
+function formatSelectionInstrumentLabel(instrument: InstrumentType | string | undefined): string {
+  if (!instrument) {
+    return 'Selected';
+  }
+
+  return instrument
+    .split('_')
+    .map((segment) => segment.charAt(0).toUpperCase() + segment.slice(1))
+    .join(' ');
+}
+
 export function getProjectArrangementTruth(state: {
   project: Project | null;
   stems: Stem[];
@@ -765,6 +807,109 @@ export function hasProjectArrangementTruth(state: {
   chords: Chord[];
 }): boolean {
   return getProjectArrangementTruth(state).hasAnyArrangementTruth;
+}
+
+export function getProjectSelectionTruth(
+  state: {
+    sections: Section[];
+    blocks: Block[];
+    stems: Stem[];
+  },
+  selection: ProjectSelectionSnapshot = useSelectionStore.getState()
+): ProjectSelectionTruth {
+  if (selection.level === 'section') {
+    const section =
+      selection.sectionId !== null
+        ? state.sections.find((candidate) => candidate.id === selection.sectionId)
+        : null;
+
+    if (!section) {
+      return {
+        status: 'missing-selection',
+        selectionLevel: 'section',
+        selectionSource: 'missing',
+        scopeLabel: 'Section',
+        sectionId: selection.sectionId,
+        blockId: null,
+        stemId: null,
+        currentState:
+          'The project store still references a section selection that is no longer loaded, so whole-song defaults are the only safe scope right now.',
+        nextStep:
+          'Clear the stale section selection or reload the matching arrangement rows before relying on section-scoped edits.',
+      };
+    }
+
+    return {
+      status: 'selected-section',
+      selectionLevel: 'section',
+      selectionSource: 'explicit',
+      scopeLabel: 'Section',
+      sectionId: section.id,
+      blockId: null,
+      stemId: null,
+      currentState: `Section ${section.name} is selected in the project store for ${formatSelectionBarRange(section.startBar, section.barCount)}.`,
+      nextStep:
+        'Keep editing this section, or clear the selection to return to whole-song defaults.',
+    };
+  }
+
+  if (selection.level === 'block') {
+    const block =
+      selection.blockId !== null
+        ? state.blocks.find((candidate) => candidate.id === selection.blockId)
+        : null;
+    const stem =
+      block?.stemId !== undefined
+        ? state.stems.find((candidate) => candidate.id === block.stemId)
+        : null;
+    const section =
+      block?.sectionId !== undefined
+        ? state.sections.find((candidate) => candidate.id === block.sectionId)
+        : null;
+
+    if (!block || !stem || !section) {
+      return {
+        status: 'missing-selection',
+        selectionLevel: 'block',
+        selectionSource: 'missing',
+        scopeLabel: 'Block',
+        sectionId: block?.sectionId ?? null,
+        blockId: selection.blockId,
+        stemId: selection.stemId,
+        currentState:
+          'The project store still references a block selection that no longer resolves to live arrangement rows, so whole-song defaults are the only safe scope right now.',
+        nextStep:
+          'Clear the stale block selection or reload the matching arrangement rows before relying on block-scoped edits.',
+      };
+    }
+
+    return {
+      status: 'selected-block',
+      selectionLevel: 'block',
+      selectionSource: 'explicit',
+      scopeLabel: 'Block',
+      sectionId: section.id,
+      blockId: block.id,
+      stemId: stem.id,
+      currentState: `${formatSelectionInstrumentLabel(stem.instrument)} block ${block.startBar}-${block.endBar} in ${section.name} is selected in the project store.`,
+      nextStep:
+        'Keep editing this block, or clear the selection to return to whole-song defaults.',
+    };
+  }
+
+  return {
+    status: 'default-song',
+    selectionLevel: 'song',
+    selectionSource: 'default',
+    scopeLabel: 'Whole song',
+    sectionId: null,
+    blockId: null,
+    stemId: null,
+    currentState:
+      'No section or block is selected, so the project store is using whole-song defaults right now.',
+    nextStep:
+      'Keep editing the whole song, or select a section or block to work in a narrower scope.',
+  };
 }
 
 export function getProjectStoreReadiness(state: {

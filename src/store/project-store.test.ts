@@ -1,6 +1,7 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import {
   getProjectArrangementTruth,
+  getProjectSelectionTruth,
   getProjectStoreReadiness,
   serializeProjectExportSnapshot,
   useProjectStore,
@@ -449,6 +450,124 @@ describe('projectStore', () => {
       currentState: 'Project project-b is loaded in the project store.',
       blockedBy: null,
       failureTarget: null,
+    });
+  });
+
+  it('exposes whole-song selection as explicit default truth', () => {
+    expect(
+      getProjectSelectionTruth(
+        {
+          stems: [makeStem()],
+          sections: [makeSection()],
+          blocks: [makeBlock()],
+        },
+        {
+          level: 'song',
+          sectionId: null,
+          blockId: null,
+          stemId: null,
+        }
+      )
+    ).toEqual({
+      status: 'default-song',
+      selectionLevel: 'song',
+      selectionSource: 'default',
+      scopeLabel: 'Whole song',
+      sectionId: null,
+      blockId: null,
+      stemId: null,
+      currentState:
+        'No section or block is selected, so the project store is using whole-song defaults right now.',
+      nextStep:
+        'Keep editing the whole song, or select a section or block to work in a narrower scope.',
+    });
+  });
+
+  it('exposes section selection as explicit project-store truth', () => {
+    expect(
+      getProjectSelectionTruth(
+        {
+          stems: [makeStem()],
+          sections: [makeSection({ name: 'Chorus', startBar: 9, barCount: 8 })],
+          blocks: [makeBlock({ sectionId: 's1', startBar: 9, endBar: 16 })],
+        },
+        {
+          level: 'section',
+          sectionId: 's1',
+          blockId: null,
+          stemId: null,
+        }
+      )
+    ).toEqual({
+      status: 'selected-section',
+      selectionLevel: 'section',
+      selectionSource: 'explicit',
+      scopeLabel: 'Section',
+      sectionId: 's1',
+      blockId: null,
+      stemId: null,
+      currentState: 'Section Chorus is selected in the project store for bars 9-16.',
+      nextStep:
+        'Keep editing this section, or clear the selection to return to whole-song defaults.',
+    });
+  });
+
+  it('exposes block selection as explicit project-store truth', () => {
+    expect(
+      getProjectSelectionTruth(
+        {
+          stems: [makeStem()],
+          sections: [makeSection({ name: 'Verse' })],
+          blocks: [makeBlock({ startBar: 3, endBar: 4 })],
+        },
+        {
+          level: 'block',
+          sectionId: null,
+          blockId: 'b1',
+          stemId: 'st1',
+        }
+      )
+    ).toEqual({
+      status: 'selected-block',
+      selectionLevel: 'block',
+      selectionSource: 'explicit',
+      scopeLabel: 'Block',
+      sectionId: 's1',
+      blockId: 'b1',
+      stemId: 'st1',
+      currentState: 'Piano block 3-4 in Verse is selected in the project store.',
+      nextStep:
+        'Keep editing this block, or clear the selection to return to whole-song defaults.',
+    });
+  });
+
+  it('exposes stale block selection as missing truth instead of silently defaulting', () => {
+    expect(
+      getProjectSelectionTruth(
+        {
+          stems: [makeStem()],
+          sections: [makeSection()],
+          blocks: [],
+        },
+        {
+          level: 'block',
+          sectionId: null,
+          blockId: 'missing-block',
+          stemId: 'st1',
+        }
+      )
+    ).toEqual({
+      status: 'missing-selection',
+      selectionLevel: 'block',
+      selectionSource: 'missing',
+      scopeLabel: 'Block',
+      sectionId: null,
+      blockId: 'missing-block',
+      stemId: 'st1',
+      currentState:
+        'The project store still references a block selection that no longer resolves to live arrangement rows, so whole-song defaults are the only safe scope right now.',
+      nextStep:
+        'Clear the stale block selection or reload the matching arrangement rows before relying on block-scoped edits.',
     });
   });
 
