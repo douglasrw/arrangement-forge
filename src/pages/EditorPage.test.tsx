@@ -168,6 +168,10 @@ function queryReadyBannerLink(href: string) {
   return document.querySelector(`[data-testid="editor-route-ready-banner"] a[href="${href}"]`);
 }
 
+function queryReadinessSurface() {
+  return document.querySelector('[data-editor-readiness]');
+}
+
 function queryProjectNameTrigger() {
   return document.querySelector('[data-testid="project-name-trigger"]');
 }
@@ -231,6 +235,42 @@ afterEach(() => {
 });
 
 describe('EditorPage route loading gate', () => {
+  it('keeps the editor readiness state visible from the page surface while a route loads and after it becomes ready', async () => {
+    let resolveLoad: (() => void) | undefined;
+    loadProjectMock.mockImplementation(
+      (projectId) =>
+        new Promise<LoadProjectResult>((resolve) => {
+          useProjectStore.setState({
+            project: null,
+            projectLoadStatus: 'loading',
+            projectLoadTargetId: projectId,
+            projectLoadMessage: null,
+          });
+          resolveLoad = () => {
+            useProjectStore.setState({ project: makeProject(projectId) });
+            resolve({ status: 'ready' });
+          };
+        })
+    );
+
+    const mounted = renderEditor('project-a');
+    mountedRoot = mounted.root;
+    mountedContainer = mounted.container;
+
+    expect(queryReadinessSurface()?.getAttribute('data-editor-readiness')).toBe('waiting');
+    expect(queryReadinessSurface()?.getAttribute('data-editor-route-state')).toBe('loading');
+    expect(document.body.textContent).toContain('Editor readiness: waiting');
+
+    await act(async () => {
+      resolveLoad?.();
+      await Promise.resolve();
+    });
+
+    expect(queryReadinessSurface()?.getAttribute('data-editor-readiness')).toBe('ready');
+    expect(queryReadinessSurface()?.getAttribute('data-editor-route-state')).toBe('ready');
+    expect(document.body.textContent).toContain('Editor readiness: ready');
+  });
+
   it('keeps the workspace behind a loading gate until the current route load resolves', async () => {
     useProjectStore.setState({ project: makeProject('project-a') });
 
@@ -800,6 +840,22 @@ describe('EditorPage route loading gate', () => {
       blockId: null,
       stemId: null,
     });
+  });
+
+  it('keeps the blocked editor readiness state visible from the page surface when no project is selected', async () => {
+    const mounted = renderEditor(undefined, 'project-selection');
+    mountedRoot = mounted.root;
+    mountedContainer = mounted.container;
+
+    await act(async () => {
+      await Promise.resolve();
+    });
+
+    expect(queryReadinessSurface()?.getAttribute('data-editor-readiness')).toBe('blocked');
+    expect(queryReadinessSurface()?.getAttribute('data-editor-route-state')).toBe(
+      'no-project-selected'
+    );
+    expect(document.body.textContent).toContain('Editor readiness: blocked');
   });
 
   it('renders the /project fallback state immediately instead of flashing a loading shell first', () => {
