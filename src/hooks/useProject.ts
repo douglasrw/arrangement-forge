@@ -7,6 +7,7 @@ import { supabase } from '@/lib/supabase';
 import { useAuthStore } from '@/store/auth-store';
 import {
   getProjectArrangementTruth,
+  getProjectStoreReadiness,
   type ProjectStoreLoadFailureTarget,
   syncPersistedProjectArrangement,
   useProjectStore,
@@ -190,12 +191,33 @@ export interface ProjectSavePlan {
   arrangementTruth: ReturnType<typeof getProjectArrangementTruth>;
 }
 
+type LoadProjectBlockedTruth = Pick<
+  ReturnType<typeof getProjectStoreReadiness>,
+  'currentState' | 'nextStep' | 'detail' | 'failureTarget'
+>;
+
 export type LoadProjectResult =
   | { status: 'ready' }
-  | { status: 'missing-project'; message: string }
-  | { status: 'error'; message: string };
+  | ({ status: 'missing-project'; message: string } & LoadProjectBlockedTruth)
+  | ({ status: 'error'; message: string } & LoadProjectBlockedTruth);
 
 const PROJECT_NOT_FOUND_MESSAGE = 'Project not found';
+
+function getLoadProjectBlockedResult(
+  status: 'missing-project' | 'error',
+  message: string
+): Extract<LoadProjectResult, { status: 'missing-project' | 'error' }> {
+  const readiness = getProjectStoreReadiness(useProjectStore.getState());
+
+  return {
+    status,
+    message,
+    currentState: readiness.currentState,
+    nextStep: readiness.nextStep,
+    detail: readiness.detail,
+    failureTarget: readiness.failureTarget,
+  };
+}
 
 function getPersistedArrangementProjectPatch(
   project: Project,
@@ -483,10 +505,7 @@ export function useProject() {
             projectLoadFailureTarget: null,
           });
           setSystemStatus('error', PROJECT_NOT_FOUND_MESSAGE);
-          return {
-            status: 'missing-project',
-            message: PROJECT_NOT_FOUND_MESSAGE,
-          };
+          return getLoadProjectBlockedResult('missing-project', PROJECT_NOT_FOUND_MESSAGE);
         }
 
         throwIfLoadFailed('project stems', stemsRes.error);
@@ -525,10 +544,7 @@ export function useProject() {
           projectLoadFailureTarget:
             err instanceof ProjectLoadFailure ? err.failureTarget : 'project data',
         });
-        return {
-          status: 'error',
-          message,
-        };
+        return getLoadProjectBlockedResult('error', message);
       }
     },
     [setSystemStatus, handleError]

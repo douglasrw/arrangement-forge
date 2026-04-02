@@ -106,8 +106,8 @@ function EditorShellState({
 type EditorRouteState =
   | { status: 'loading' }
   | { status: 'no-project-selected'; message: string }
-  | { status: 'missing-project'; message: string }
-  | { status: 'error'; message: string }
+  | Extract<LoadProjectResult, { status: 'missing-project' }>
+  | Extract<LoadProjectResult, { status: 'error' }>
   | { status: 'ready' };
 
 function getInitialEditorRouteState(
@@ -127,6 +127,11 @@ function getInitialEditorRouteState(
         status: 'error',
         message:
           'The /project/:id editor route is missing a project id, so Arrangement Forge cannot load a project here.',
+        currentState: 'The requested editor route is malformed because no project id was provided.',
+        nextStep:
+          'Return to the library, then open a project to replace this malformed editor route.',
+        detail: null,
+        failureTarget: null,
       };
 }
 
@@ -329,7 +334,7 @@ export default function EditorPage({
                 ? `Project ${id} is not available, so the editor cannot open this route. ${routeState.message}`
                 : routeState.message
             }
-            currentState={routeTruth.currentState}
+            currentState={routeState.currentState}
             projectStoreReadiness={projectStoreReadiness.status}
             projectStoreCurrentState={projectStoreReadiness.currentState}
             routeModeLabel={routeTruth.routeModeLabel}
@@ -339,7 +344,7 @@ export default function EditorPage({
             fallbackRoute={routeTruth.fallbackRoute ?? undefined}
             routeTruth={routeTruth.routeTruth}
             fallbackHandling={routeTruth.fallbackHandling}
-            nextStep={routeTruth.nextStep}
+            nextStep={routeState.nextStep}
             testId="editor-shell-missing-project-state"
             tone="error"
             actionHref="/library"
@@ -360,10 +365,10 @@ export default function EditorPage({
             title="Unable to open project"
             message={
               id
-                ? `Project ${id} could not be loaded for this editor route. ${routeState.message}`
+                ? `Project ${id} could not be loaded because ${routeState.failureTarget ?? 'project data'} failed to load. ${routeState.message}`
                 : routeState.message
             }
-            currentState={routeTruth.currentState}
+            currentState={routeState.currentState}
             projectStoreReadiness={projectStoreReadiness.status}
             projectStoreCurrentState={projectStoreReadiness.currentState}
             routeModeLabel={routeTruth.routeModeLabel}
@@ -373,7 +378,7 @@ export default function EditorPage({
             fallbackRoute={routeTruth.fallbackRoute ?? undefined}
             routeTruth={routeTruth.routeTruth}
             fallbackHandling={routeTruth.fallbackHandling}
-            nextStep={routeTruth.nextStep}
+            nextStep={routeState.nextStep}
             testId="editor-shell-error-state"
             tone="error"
             actionHref="/library"

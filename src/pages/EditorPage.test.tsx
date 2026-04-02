@@ -492,6 +492,11 @@ describe('EditorPage route loading gate', () => {
       return {
         status: 'missing-project',
         message: 'Project not found',
+        currentState:
+          'Project missing-project is blocked because it could not be found for the project store.',
+        nextStep: 'Return to the library and choose a different project.',
+        detail: 'Project not found',
+        failureTarget: null,
       };
     });
 
@@ -513,7 +518,7 @@ describe('EditorPage route loading gate', () => {
       'Project missing-project is not available, so the editor cannot open this route. Project not found'
     );
     expect(document.body.textContent).toContain(
-      'Current state: The requested project route for missing-project did not resolve to an available project.'
+      'Current state: Project missing-project is blocked because it could not be found for the project store.'
     );
     expect(document.body.textContent).toContain('Project store readiness: blocked');
     expect(document.body.textContent).toContain(
@@ -531,7 +536,7 @@ describe('EditorPage route loading gate', () => {
       'Fallback handling: use /project to clear the blocked workspace state, then choose a different project from the library.'
     );
     expect(document.body.textContent).toContain(
-      'Next step: Return to the library and open a different project.'
+      'Next step: Return to the library and choose a different project.'
     );
     expect(queryBackToLibraryLink()).not.toBeNull();
   });
@@ -552,6 +557,12 @@ describe('EditorPage route loading gate', () => {
       return {
         status: 'error',
         message: 'Backend unavailable',
+        currentState:
+          'Project project-a is blocked because project blocks could not be loaded into the project store.',
+        nextStep:
+          'Retry this project after the project blocks load failure is fixed, or open a different project.',
+        detail: 'Backend unavailable',
+        failureTarget: 'project blocks',
       };
     });
 
@@ -566,10 +577,10 @@ describe('EditorPage route loading gate', () => {
     expect(queryErrorState()).not.toBeNull();
     expect(querySelectionSurface()).toBeNull();
     expect(document.body.textContent).toContain(
-      'Project project-a could not be loaded for this editor route. Backend unavailable'
+      'Project project-a could not be loaded because project blocks failed to load. Backend unavailable'
     );
     expect(document.body.textContent).toContain(
-      'Current state: The requested project route for project-a is blocked by a load failure.'
+      'Current state: Project project-a is blocked because project blocks could not be loaded into the project store.'
     );
     expect(document.body.textContent).toContain('Project store readiness: blocked');
     expect(document.body.textContent).toContain(
@@ -587,7 +598,7 @@ describe('EditorPage route loading gate', () => {
       'Fallback handling: use /project to clear the failed workspace state, then choose a project from the library or retry the requested route later.'
     );
     expect(document.body.textContent).toContain(
-      'Next step: Return to the library, then retry this project after the load failure is resolved.'
+      'Next step: Retry this project after the project blocks load failure is fixed, or open a different project.'
     );
     expect(queryBackToLibraryLink()).not.toBeNull();
   });

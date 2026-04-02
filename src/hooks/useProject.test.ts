@@ -1158,6 +1158,11 @@ describe('useProject loadProject', () => {
     expect(loadResult).toEqual({
       status: 'missing-project',
       message: 'Project not found',
+      currentState:
+        'Project missing-project is blocked because it could not be found for the project store.',
+      nextStep: 'Return to the library and choose a different project.',
+      detail: 'Project not found',
+      failureTarget: null,
     });
     expect(useProjectStore.getState()).toMatchObject({
       project: null,
@@ -1283,6 +1288,12 @@ describe('useProject loadProject', () => {
     expect(loadResult).toEqual({
       status: 'error',
       message: 'Failed to load project blocks: blocks query failed',
+      currentState:
+        'Project project-block-failure is blocked because project blocks could not be loaded into the project store.',
+      nextStep:
+        'Retry this project after the project blocks load failure is fixed, or open a different project.',
+      detail: 'Failed to load project blocks: blocks query failed',
+      failureTarget: 'project blocks',
     });
     expect(useProjectStore.getState()).toMatchObject({
       project: null,
