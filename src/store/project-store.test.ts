@@ -413,6 +413,8 @@ describe('projectStore', () => {
       status: 'waiting',
       projectId: 'project-b',
       currentState: 'Project project-b is still loading into the project store.',
+      blockedBy: null,
+      failureTarget: null,
     });
 
     expect(
@@ -421,12 +423,18 @@ describe('projectStore', () => {
         projectLoadStatus: 'error',
         projectLoadTargetId: 'project-b',
         projectLoadMessage: 'Backend unavailable',
+        projectLoadFailureTarget: 'project blocks',
       })
     ).toMatchObject({
       status: 'blocked',
       projectId: 'project-b',
-      currentState: 'Project project-b is blocked until the project store load failure is resolved.',
+      currentState:
+        'Project project-b is blocked because project blocks could not be loaded into the project store.',
+      nextStep:
+        'Retry this project after the project blocks load failure is fixed, or open a different project.',
       detail: 'Backend unavailable',
+      blockedBy: 'load-failure',
+      failureTarget: 'project blocks',
     });
 
     expect(
@@ -439,6 +447,8 @@ describe('projectStore', () => {
       status: 'ready',
       projectId: 'project-b',
       currentState: 'Project project-b is loaded in the project store.',
+      blockedBy: null,
+      failureTarget: null,
     });
   });
 

@@ -7,6 +7,7 @@ import { supabase } from '@/lib/supabase';
 import { useAuthStore } from '@/store/auth-store';
 import {
   getProjectArrangementTruth,
+  type ProjectStoreLoadFailureTarget,
   syncPersistedProjectArrangement,
   useProjectStore,
 } from '@/store/project-store';
@@ -86,6 +87,16 @@ function getLoadFailureMessage(tableLabel: string, error: unknown): string {
   return getFailureMessage('load', tableLabel, error);
 }
 
+class ProjectLoadFailure extends Error {
+  failureTarget: ProjectStoreLoadFailureTarget;
+
+  constructor(failureTarget: ProjectStoreLoadFailureTarget, error: unknown) {
+    super(getLoadFailureMessage(failureTarget, error));
+    this.name = 'ProjectLoadFailure';
+    this.failureTarget = failureTarget;
+  }
+}
+
 function getActionFailureMessage(actionLabel: string, error: unknown): string {
   if (error instanceof Error && error.message.trim()) {
     return `Failed to ${actionLabel}: ${error.message}`;
@@ -104,12 +115,12 @@ function getActionFailureMessage(actionLabel: string, error: unknown): string {
   return `Failed to ${actionLabel}.`;
 }
 
-function throwIfLoadFailed(tableLabel: string, error: unknown) {
+function throwIfLoadFailed(tableLabel: ProjectStoreLoadFailureTarget, error: unknown) {
   if (!error) {
     return;
   }
 
-  throw new Error(getLoadFailureMessage(tableLabel, error));
+  throw new ProjectLoadFailure(tableLabel, error);
 }
 
 async function ensureWriteSucceeded<T extends { error?: unknown | null }>(
@@ -449,6 +460,7 @@ export function useProject() {
         projectLoadStatus: 'loading',
         projectLoadTargetId: projectId,
         projectLoadMessage: null,
+        projectLoadFailureTarget: null,
       });
       setSystemStatus('ready');
       try {
@@ -461,13 +473,14 @@ export function useProject() {
             supabase.from('ai_chat_messages').select('*').eq('project_id', projectId).order('created_at'),
           ]);
 
-        if (projectRes.error) throw projectRes.error;
+        throwIfLoadFailed('project details', projectRes.error);
         if (!projectRes.data) {
           useProjectStore.getState().clearProjectSession();
           useProjectStore.setState({
             projectLoadStatus: 'missing-project',
             projectLoadTargetId: projectId,
             projectLoadMessage: PROJECT_NOT_FOUND_MESSAGE,
+            projectLoadFailureTarget: null,
           });
           setSystemStatus('error', PROJECT_NOT_FOUND_MESSAGE);
           return {
@@ -509,6 +522,8 @@ export function useProject() {
           projectLoadStatus: 'error',
           projectLoadTargetId: projectId,
           projectLoadMessage: message,
+          projectLoadFailureTarget:
+            err instanceof ProjectLoadFailure ? err.failureTarget : 'project data',
         });
         return {
           status: 'error',

@@ -1014,6 +1014,8 @@ describe('useProject loadProject', () => {
       status: 'waiting',
       projectId: 'project-b',
       currentState: 'Project project-b is still loading into the project store.',
+      blockedBy: null,
+      failureTarget: null,
     });
 
     const nextProjectRows = buildProjectRows('project-b', {
@@ -1183,6 +1185,8 @@ describe('useProject loadProject', () => {
       projectId: 'missing-project',
       currentState: 'Project missing-project is blocked because it could not be found for the project store.',
       detail: 'Project not found',
+      blockedBy: 'missing-project',
+      failureTarget: null,
     });
   });
 
@@ -1282,6 +1286,7 @@ describe('useProject loadProject', () => {
     });
     expect(useProjectStore.getState()).toMatchObject({
       project: null,
+      projectLoadFailureTarget: 'project blocks',
       stems: [],
       sections: [],
       blocks: [],
@@ -1298,8 +1303,13 @@ describe('useProject loadProject', () => {
     expect(getProjectStoreReadiness(useProjectStore.getState())).toMatchObject({
       status: 'blocked',
       projectId: 'project-block-failure',
-      currentState: 'Project project-block-failure is blocked until the project store load failure is resolved.',
+      currentState:
+        'Project project-block-failure is blocked because project blocks could not be loaded into the project store.',
+      nextStep:
+        'Retry this project after the project blocks load failure is fixed, or open a different project.',
       detail: 'Failed to load project blocks: blocks query failed',
+      blockedBy: 'load-failure',
+      failureTarget: 'project blocks',
     });
 
     consoleErrorSpy.mockRestore();

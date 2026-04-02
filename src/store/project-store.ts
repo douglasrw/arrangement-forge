@@ -565,6 +565,15 @@ export type ProjectStoreLoadStatus =
   | 'missing-project'
   | 'error';
 
+export type ProjectStoreLoadFailureTarget =
+  | 'project details'
+  | 'project stems'
+  | 'project sections'
+  | 'project chords'
+  | 'project chat history'
+  | 'project blocks'
+  | 'project data';
+
 export type ProjectStoreReadinessStatus = 'ready' | 'waiting' | 'blocked';
 
 export type ProjectArrangementLoadedRowsState =
@@ -590,6 +599,8 @@ export interface ProjectStoreReadiness {
   currentState: string;
   nextStep: string;
   detail: string | null;
+  blockedBy: 'missing-project' | 'load-failure' | null;
+  failureTarget: ProjectStoreLoadFailureTarget | null;
 }
 
 const persistedArrangementFingerprintByProject = new WeakMap<Project, string>();
@@ -761,6 +772,7 @@ export function getProjectStoreReadiness(state: {
   projectLoadStatus?: ProjectStoreLoadStatus;
   projectLoadTargetId?: string | null;
   projectLoadMessage?: string | null;
+  projectLoadFailureTarget?: ProjectStoreLoadFailureTarget | null;
 }): ProjectStoreReadiness {
   if (state.project) {
     return {
@@ -769,6 +781,8 @@ export function getProjectStoreReadiness(state: {
       currentState: `Project ${state.project.id} is loaded in the project store.`,
       nextStep: 'Edit this arrangement, save changes, or open a different project from the library.',
       detail: null,
+      blockedBy: null,
+      failureTarget: null,
     };
   }
 
@@ -783,6 +797,8 @@ export function getProjectStoreReadiness(state: {
       currentState: `${projectTarget} is still loading into the project store.`,
       nextStep: 'Wait for the current project load to finish before editing this workspace.',
       detail: null,
+      blockedBy: null,
+      failureTarget: null,
     };
   }
 
@@ -797,6 +813,8 @@ export function getProjectStoreReadiness(state: {
       currentState: `${projectTarget} is blocked because it could not be found for the project store.`,
       nextStep: 'Return to the library and choose a different project.',
       detail: state.projectLoadMessage ?? null,
+      blockedBy: 'missing-project',
+      failureTarget: null,
     };
   }
 
@@ -804,13 +822,16 @@ export function getProjectStoreReadiness(state: {
     const projectTarget = state.projectLoadTargetId
       ? `Project ${state.projectLoadTargetId}`
       : 'The requested project';
+    const failureTarget = state.projectLoadFailureTarget ?? 'project data';
 
     return {
       status: 'blocked',
       projectId: state.projectLoadTargetId ?? null,
-      currentState: `${projectTarget} is blocked until the project store load failure is resolved.`,
-      nextStep: 'Retry the project route after the load failure is fixed, or open a different project.',
+      currentState: `${projectTarget} is blocked because ${failureTarget} could not be loaded into the project store.`,
+      nextStep: `Retry this project after the ${failureTarget} load failure is fixed, or open a different project.`,
       detail: state.projectLoadMessage ?? null,
+      blockedBy: 'load-failure',
+      failureTarget,
     };
   }
 
@@ -820,6 +841,8 @@ export function getProjectStoreReadiness(state: {
     currentState: 'No project is loaded in the project store right now.',
     nextStep: 'Open a project from the library or visit a project route to hydrate the workspace.',
     detail: null,
+    blockedBy: null,
+    failureTarget: null,
   };
 }
 
@@ -896,6 +919,7 @@ interface ProjectStore {
   projectLoadStatus: ProjectStoreLoadStatus;
   projectLoadTargetId: string | null;
   projectLoadMessage: string | null;
+  projectLoadFailureTarget: ProjectStoreLoadFailureTarget | null;
   stems: Stem[];
   sections: Section[];
   blocks: Block[];
@@ -961,6 +985,7 @@ export const useProjectStore = create<ProjectStore>()((set, get) => ({
   projectLoadStatus: 'idle',
   projectLoadTargetId: null,
   projectLoadMessage: null,
+  projectLoadFailureTarget: null,
   stems: [],
   sections: [],
   blocks: [],
@@ -980,6 +1005,7 @@ export const useProjectStore = create<ProjectStore>()((set, get) => ({
         projectLoadStatus: 'ready',
         projectLoadTargetId: project.id,
         projectLoadMessage: null,
+        projectLoadFailureTarget: null,
       };
     }),
 
@@ -1009,6 +1035,7 @@ export const useProjectStore = create<ProjectStore>()((set, get) => ({
         projectLoadStatus: 'ready',
         projectLoadTargetId: project.id,
         projectLoadMessage: null,
+        projectLoadFailureTarget: null,
         stems: normalizedStems,
         sections,
         blocks,
@@ -1030,6 +1057,7 @@ export const useProjectStore = create<ProjectStore>()((set, get) => ({
       projectLoadStatus: 'idle',
       projectLoadTargetId: null,
       projectLoadMessage: null,
+      projectLoadFailureTarget: null,
       stems: [],
       sections: [],
       blocks: [],

@@ -215,11 +215,13 @@ export default function EditorPage({
   const projectLoadStatus = useProjectStore((state) => state.projectLoadStatus);
   const projectLoadTargetId = useProjectStore((state) => state.projectLoadTargetId);
   const projectLoadMessage = useProjectStore((state) => state.projectLoadMessage);
+  const projectLoadFailureTarget = useProjectStore((state) => state.projectLoadFailureTarget);
   const projectStoreReadiness = getProjectStoreReadiness({
     project,
     projectLoadStatus,
     projectLoadTargetId,
     projectLoadMessage,
+    projectLoadFailureTarget,
   });
   const [routeState, setRouteState] = useState<EditorRouteState>(() =>
     getInitialEditorRouteState(routeMode, id)

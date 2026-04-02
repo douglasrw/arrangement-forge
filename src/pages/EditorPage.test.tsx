@@ -486,6 +486,7 @@ describe('EditorPage route loading gate', () => {
         projectLoadStatus: 'missing-project',
         projectLoadTargetId: 'missing-project',
         projectLoadMessage: 'Project not found',
+        projectLoadFailureTarget: null,
       });
       useUiStore.setState({ systemStatus: 'error', errorMessage: 'Project not found' });
       return {
@@ -541,6 +542,7 @@ describe('EditorPage route loading gate', () => {
         projectLoadStatus: 'error',
         projectLoadTargetId: 'project-a',
         projectLoadMessage: 'Backend unavailable',
+        projectLoadFailureTarget: 'project blocks',
       });
       useUiStore.setState({
         systemStatus: 'error',
@@ -571,7 +573,7 @@ describe('EditorPage route loading gate', () => {
     );
     expect(document.body.textContent).toContain('Project store readiness: blocked');
     expect(document.body.textContent).toContain(
-      'Project store state: Project project-a is blocked until the project store load failure is resolved.'
+      'Project store state: Project project-a is blocked because project blocks could not be loaded into the project store.'
     );
     expect(document.body.textContent).toContain(
       'Route readiness: /project/project-a is blocked until the load failure is resolved.'
