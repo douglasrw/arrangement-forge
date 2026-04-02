@@ -39,6 +39,11 @@ function AuthLoadingScreen({
   recoveryPath: string;
 }) {
   const recoveryDestination = describeRecoveryDestination(recoveryPath);
+  const isReady = authTruth.access === 'granted';
+  const title = isReady ? 'Authentication ready' : 'Waiting on authentication';
+  const description = isReady
+    ? `${authTruth.currentState} Returning you to ${recoveryDestination}.`
+    : `${authTruth.currentState} Next step: ${authTruth.nextStepLabel}. ${authTruth.nextStepDetail} If one is found, you will continue to ${recoveryDestination}.`;
 
   return (
     <div
@@ -49,12 +54,8 @@ function AuthLoadingScreen({
         <div className="flex flex-col items-center gap-4 text-center">
           <div className="h-8 w-8 rounded-full border-2 border-primary border-t-transparent animate-spin" />
           <div className="space-y-1">
-            <h1 className="text-base font-semibold text-foreground">Waiting on authentication</h1>
-            <p className="text-sm text-muted-foreground">
-              {authTruth.nextStep === 'open-app'
-                ? `${authTruth.currentState} Returning you to ${recoveryDestination}.`
-                : `${authTruth.currentState} Next step: ${authTruth.nextStepLabel}. ${authTruth.nextStepDetail} If one is found, you will continue to ${recoveryDestination}.`}
-            </p>
+            <h1 className="text-base font-semibold text-foreground">{title}</h1>
+            <p className="text-sm text-muted-foreground">{description}</p>
           </div>
         </div>
       </div>

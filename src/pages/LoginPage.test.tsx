@@ -599,7 +599,8 @@ describe('LoginPage failure truth', () => {
     mountedContainer = mounted.container;
 
     expect(mounted.container.querySelector('[data-testid="auth-loading-screen"]')).not.toBeNull();
-    expect(mounted.container.textContent).toContain('Waiting on authentication');
+    expect(mounted.container.textContent).toContain('Authentication ready');
+    expect(mounted.container.textContent).not.toContain('Waiting on authentication');
     expect(mounted.container.textContent).toContain('An authenticated session is ready.');
     expect(mounted.container.textContent).toContain('Returning you to settings');
     expect(mounted.container.querySelector('form')).toBeNull();
@@ -622,6 +623,7 @@ describe('LoginPage failure truth', () => {
     mountedContainer = mounted.container;
 
     expect(mounted.container.querySelector('[data-testid="auth-loading-screen"]')).not.toBeNull();
+    expect(mounted.container.textContent).toContain('Authentication ready');
     expect(mounted.container.textContent).toContain('Returning you to project selection in the editor');
     expect(mounted.container.querySelector('form')).toBeNull();
 
