@@ -15,6 +15,12 @@ type LibraryReadinessState = {
   detail: string;
 };
 
+type LibraryBlockedState = {
+  title: string;
+  detail: string;
+  retryLabel: string;
+};
+
 const LIBRARY_READINESS_STYLES: Record<LibraryReadinessTone, string> = {
   ready: 'border-primary/30 bg-primary/10 text-primary',
   waiting: 'border-border bg-secondary text-secondary-foreground',
@@ -72,6 +78,38 @@ function getLibraryReadinessState({
     label: 'Ready',
     detail: 'Open a saved project or create a new arrangement from here.',
   };
+}
+
+function getLibraryBlockedState({
+  systemStatus,
+  projectCount,
+  errorMessage,
+}: {
+  systemStatus: string;
+  projectCount: number;
+  errorMessage: string | null;
+}): LibraryBlockedState | null {
+  if (systemStatus === 'offline') {
+    return {
+      title: projectCount === 0 ? 'Library offline' : 'Library sync offline',
+      detail:
+        errorMessage?.trim() ||
+        'Arrangement Forge is offline, so the library cannot confirm or refresh this workspace right now.',
+      retryLabel: 'Retry library',
+    };
+  }
+
+  if (systemStatus === 'error') {
+    return {
+      title: projectCount === 0 ? 'Unable to load library' : 'Library action failed',
+      detail:
+        errorMessage?.trim() ||
+        'Arrangement Forge could not finish the requested library action.',
+      retryLabel: 'Retry',
+    };
+  }
+
+  return null;
 }
 
 export default function LibraryPage() {
@@ -162,6 +200,13 @@ export default function LibraryPage() {
     projectCount: projects.length,
     errorMessage,
   });
+  const blockedState = !loading
+    ? getLibraryBlockedState({
+        systemStatus,
+        projectCount: projects.length,
+        errorMessage,
+      })
+    : null;
 
   return (
     <div className="min-h-screen bg-background">
@@ -261,34 +306,29 @@ export default function LibraryPage() {
         )}
 
         {/* Error state */}
-        {!loading && systemStatus === 'error' && (
+        {blockedState && (
           <div
             className="rounded-lg border border-destructive/30 bg-destructive/10 px-4 py-4"
             role="alert"
           >
             <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
               <div className="space-y-1">
-                <p className="text-sm font-semibold text-foreground">
-                  {projects.length === 0 ? 'Unable to load library' : 'Library action failed'}
-                </p>
-                <p className="text-sm text-muted-foreground">
-                  {errorMessage ??
-                    'Arrangement Forge could not finish the requested library action.'}
-                </p>
+                <p className="text-sm font-semibold text-foreground">{blockedState.title}</p>
+                <p className="text-sm text-muted-foreground">{blockedState.detail}</p>
               </div>
               <button
                 type="button"
                 className="rounded border border-border bg-card px-3 py-1.5 text-sm font-medium text-foreground transition-colors hover:bg-secondary"
                 onClick={handleRetry}
               >
-                Retry
+                {blockedState.retryLabel}
               </button>
             </div>
           </div>
         )}
 
         {/* Empty state */}
-        {!loading && systemStatus !== 'error' && projects.length === 0 && (
+        {!loading && blockedState === null && projects.length === 0 && (
           <div className="flex flex-col items-center gap-4 py-24 text-center">
             <p className="text-muted-foreground text-lg">No projects yet.</p>
             <p className="text-muted-foreground/50 text-sm">Create your first arrangement!</p>

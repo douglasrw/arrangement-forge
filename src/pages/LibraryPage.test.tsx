@@ -158,6 +158,29 @@ describe('LibraryPage', () => {
     expect(mounted.container.textContent).toContain('Blocked');
   });
 
+  it('keeps offline library truth blocked on the page surface instead of falling through to the empty state', async () => {
+    projectApi.listProjects.mockImplementation(async () => {
+      useUiStore.getState().setSystemStatus('offline', 'Connection lost while loading the library');
+      return [];
+    });
+
+    const mounted = renderLibrary();
+    mountedRoot = mounted.root;
+    mountedContainer = mounted.container;
+
+    await act(async () => {
+      await Promise.resolve();
+    });
+
+    const readiness = mounted.container.querySelector('[data-testid="library-readiness"]');
+
+    expect(readiness?.textContent).toContain('Blocked');
+    expect(readiness?.textContent).toContain('Connection lost while loading the library');
+    expect(mounted.container.textContent).toContain('Library offline');
+    expect(mounted.container.textContent).toContain('Retry library');
+    expect(mounted.container.textContent).not.toContain('No projects yet.');
+  });
+
   it('shows waiting readiness while the library route is still loading', () => {
     projectApi.listProjects.mockReturnValue(new Promise(() => {}));
 
