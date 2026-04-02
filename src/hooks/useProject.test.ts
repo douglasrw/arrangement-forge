@@ -6,7 +6,7 @@ import { createRoot, type Root } from 'react-dom/client';
 import { getProjectExportReadiness, getProjectSavePlan, useProject } from './useProject';
 import type { LoadProjectResult } from './useProject';
 import { useAuthStore } from '@/store/auth-store';
-import { useProjectStore } from '@/store/project-store';
+import { getProjectStoreReadiness, useProjectStore } from '@/store/project-store';
 import { useSelectionStore } from '@/store/selection-store';
 import { useUiStore } from '@/store/ui-store';
 import { snapshotArrangement } from '@/lib/undo-helpers';
@@ -1010,6 +1010,11 @@ describe('useProject loadProject', () => {
       unsavedChanges: false,
       lastSavedAt: null,
     });
+    expect(getProjectStoreReadiness(useProjectStore.getState())).toMatchObject({
+      status: 'waiting',
+      projectId: 'project-b',
+      currentState: 'Project project-b is still loading into the project store.',
+    });
 
     const nextProjectRows = buildProjectRows('project-b', {
       hasArrangement: false,
@@ -1173,6 +1178,12 @@ describe('useProject loadProject', () => {
       unsavedChanges: false,
       lastSavedAt: null,
     });
+    expect(getProjectStoreReadiness(useProjectStore.getState())).toMatchObject({
+      status: 'blocked',
+      projectId: 'missing-project',
+      currentState: 'Project missing-project is blocked because it could not be found for the project store.',
+      detail: 'Project not found',
+    });
   });
 
   it('keeps loadProject in error truth when arrangement blocks fail to load', async () => {
@@ -1283,6 +1294,12 @@ describe('useProject loadProject', () => {
       errorMessage: 'Failed to load project blocks: blocks query failed',
       unsavedChanges: false,
       lastSavedAt: null,
+    });
+    expect(getProjectStoreReadiness(useProjectStore.getState())).toMatchObject({
+      status: 'blocked',
+      projectId: 'project-block-failure',
+      currentState: 'Project project-block-failure is blocked until the project store load failure is resolved.',
+      detail: 'Failed to load project blocks: blocks query failed',
     });
 
     consoleErrorSpy.mockRestore();

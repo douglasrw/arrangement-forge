@@ -37,6 +37,8 @@ vi.mock('@/components/mixer/MixerDrawer', () => ({
 }));
 
 vi.mock('@/hooks/useKeyboardShortcuts', () => ({
+  KEYBOARD_SHORTCUT_BUTTON_ID: 'topbar-shortcuts-button',
+  KEYBOARD_SHORTCUT_SECTIONS: [],
   useKeyboardShortcuts: () => {},
 }));
 
@@ -188,6 +190,9 @@ beforeEach(() => {
   window.scrollTo = vi.fn();
   useProjectStore.setState({
     project: null,
+    projectLoadStatus: 'idle',
+    projectLoadTargetId: null,
+    projectLoadMessage: null,
     stems: [],
     sections: [],
     blocks: [],
@@ -229,6 +234,12 @@ describe('EditorPage route loading gate', () => {
     loadProjectMock.mockImplementation(
       (projectId) =>
         new Promise<LoadProjectResult>((resolve) => {
+          useProjectStore.setState({
+            project: null,
+            projectLoadStatus: 'loading',
+            projectLoadTargetId: projectId,
+            projectLoadMessage: null,
+          });
           resolveLoad = () => {
             useProjectStore.setState({ project: makeProject(projectId) });
             resolve({ status: 'ready' });
@@ -248,6 +259,10 @@ describe('EditorPage route loading gate', () => {
     expect(document.body.textContent).toContain('Opening project project-b in the editor.');
     expect(document.body.textContent).toContain(
       'Current state: Arrangement Forge is still loading the requested project route for project-b.'
+    );
+    expect(document.body.textContent).toContain('Project store readiness: waiting');
+    expect(document.body.textContent).toContain(
+      'Project store state: Project project-b is still loading into the project store.'
     );
     expect(document.body.textContent).toContain('Route mode: requested project route');
     expect(document.body.textContent).toContain(
@@ -284,6 +299,12 @@ describe('EditorPage route loading gate', () => {
     loadProjectMock.mockImplementation(
       (projectId) =>
         new Promise<LoadProjectResult>((resolve) => {
+          useProjectStore.setState({
+            project: null,
+            projectLoadStatus: 'loading',
+            projectLoadTargetId: projectId,
+            projectLoadMessage: null,
+          });
           resolveLoad = () => {
             useProjectStore.setState({ project: makeProject(projectId) });
             resolve({ status: 'ready' });
@@ -315,6 +336,12 @@ describe('EditorPage route loading gate', () => {
     loadProjectMock.mockImplementation(
       (projectId) =>
         new Promise<LoadProjectResult>((resolve) => {
+          useProjectStore.setState({
+            project: null,
+            projectLoadStatus: 'loading',
+            projectLoadTargetId: projectId,
+            projectLoadMessage: null,
+          });
           resolveLoad = () => {
             useProjectStore.setState({ project: makeProject(projectId) });
             resolve({ status: 'ready' });
@@ -346,6 +373,10 @@ describe('EditorPage route loading gate', () => {
     expect(document.body.textContent).toContain(
       'Current state: The requested project route for project-a is loaded in this workspace.'
     );
+    expect(document.body.textContent).toContain('Project store readiness: ready');
+    expect(document.body.textContent).toContain(
+      'Project store state: Project project-a is loaded in the project store.'
+    );
     expect(document.body.textContent).toContain('Route mode: active project route');
     expect(document.body.textContent).toContain(
       'Next step: Edit this arrangement or return to the library to open a different project.'
@@ -372,6 +403,12 @@ describe('EditorPage route loading gate', () => {
     loadProjectMock.mockImplementation(
       (projectId) =>
         new Promise<LoadProjectResult>((resolve) => {
+          useProjectStore.setState({
+            project: null,
+            projectLoadStatus: 'loading',
+            projectLoadTargetId: projectId,
+            projectLoadMessage: null,
+          });
           resolveLoad = () => {
             useProjectStore.setState({ project: makeProject(projectId) });
             resolve({ status: 'ready' });
@@ -410,6 +447,12 @@ describe('EditorPage route loading gate', () => {
       }
 
       return new Promise<LoadProjectResult>(() => {
+        useProjectStore.setState({
+          project: null,
+          projectLoadStatus: 'loading',
+          projectLoadTargetId: projectId,
+          projectLoadMessage: null,
+        });
         // Keep the new project unresolved so the route stays behind the loading gate.
       });
     });
@@ -439,6 +482,11 @@ describe('EditorPage route loading gate', () => {
 
   it('shows a distinct missing-project state when the requested project does not exist', async () => {
     loadProjectMock.mockImplementation(async () => {
+      useProjectStore.setState({
+        projectLoadStatus: 'missing-project',
+        projectLoadTargetId: 'missing-project',
+        projectLoadMessage: 'Project not found',
+      });
       useUiStore.setState({ systemStatus: 'error', errorMessage: 'Project not found' });
       return {
         status: 'missing-project',
@@ -466,6 +514,10 @@ describe('EditorPage route loading gate', () => {
     expect(document.body.textContent).toContain(
       'Current state: The requested project route for missing-project did not resolve to an available project.'
     );
+    expect(document.body.textContent).toContain('Project store readiness: blocked');
+    expect(document.body.textContent).toContain(
+      'Project store state: Project missing-project is blocked because it could not be found for the project store.'
+    );
     expect(document.body.textContent).toContain(
       'Route readiness: /project/missing-project is blocked because that project is unavailable.'
     );
@@ -485,6 +537,11 @@ describe('EditorPage route loading gate', () => {
 
   it('shows a route error when the requested project load fails unexpectedly', async () => {
     loadProjectMock.mockImplementation(async () => {
+      useProjectStore.setState({
+        projectLoadStatus: 'error',
+        projectLoadTargetId: 'project-a',
+        projectLoadMessage: 'Backend unavailable',
+      });
       useUiStore.setState({
         systemStatus: 'error',
         errorMessage: 'Backend unavailable',
@@ -511,6 +568,10 @@ describe('EditorPage route loading gate', () => {
     );
     expect(document.body.textContent).toContain(
       'Current state: The requested project route for project-a is blocked by a load failure.'
+    );
+    expect(document.body.textContent).toContain('Project store readiness: blocked');
+    expect(document.body.textContent).toContain(
+      'Project store state: Project project-a is blocked until the project store load failure is resolved.'
     );
     expect(document.body.textContent).toContain(
       'Route readiness: /project/project-a is blocked until the load failure is resolved.'

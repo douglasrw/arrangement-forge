@@ -1,6 +1,7 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import {
   getProjectArrangementTruth,
+  getProjectStoreReadiness,
   serializeProjectExportSnapshot,
   useProjectStore,
 } from './project-store';
@@ -399,6 +400,46 @@ describe('projectStore', () => {
     );
     expect(truth.loadedRowsState).toBe('saved-snapshot');
     expect(truth).not.toHaveProperty('summary');
+  });
+
+  it('exposes project-store waiting, blocked, and ready truth as explicit states', () => {
+    expect(
+      getProjectStoreReadiness({
+        project: null,
+        projectLoadStatus: 'loading',
+        projectLoadTargetId: 'project-b',
+      })
+    ).toMatchObject({
+      status: 'waiting',
+      projectId: 'project-b',
+      currentState: 'Project project-b is still loading into the project store.',
+    });
+
+    expect(
+      getProjectStoreReadiness({
+        project: null,
+        projectLoadStatus: 'error',
+        projectLoadTargetId: 'project-b',
+        projectLoadMessage: 'Backend unavailable',
+      })
+    ).toMatchObject({
+      status: 'blocked',
+      projectId: 'project-b',
+      currentState: 'Project project-b is blocked until the project store load failure is resolved.',
+      detail: 'Backend unavailable',
+    });
+
+    expect(
+      getProjectStoreReadiness({
+        project: makeProject({ id: 'project-b' }),
+        projectLoadStatus: 'ready',
+        projectLoadTargetId: 'project-b',
+      })
+    ).toMatchObject({
+      status: 'ready',
+      projectId: 'project-b',
+      currentState: 'Project project-b is loaded in the project store.',
+    });
   });
 
   it('splitBlock creates two blocks with correct bar ranges', () => {

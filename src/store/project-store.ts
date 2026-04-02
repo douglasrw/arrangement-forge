@@ -558,6 +558,15 @@ export type ProjectArrangementTruthStatus =
   | 'persisted-only'
   | 'loaded-and-persisted';
 
+export type ProjectStoreLoadStatus =
+  | 'idle'
+  | 'loading'
+  | 'ready'
+  | 'missing-project'
+  | 'error';
+
+export type ProjectStoreReadinessStatus = 'ready' | 'waiting' | 'blocked';
+
 export type ProjectArrangementLoadedRowsState =
   | 'not-loaded'
   | 'draft'
@@ -573,6 +582,14 @@ export interface ProjectArrangementTruth {
   hasDraftArrangementRows: boolean;
   currentState: string;
   nextStep: string;
+}
+
+export interface ProjectStoreReadiness {
+  status: ProjectStoreReadinessStatus;
+  projectId: string | null;
+  currentState: string;
+  nextStep: string;
+  detail: string | null;
 }
 
 const persistedArrangementFingerprintByProject = new WeakMap<Project, string>();
@@ -739,6 +756,73 @@ export function hasProjectArrangementTruth(state: {
   return getProjectArrangementTruth(state).hasAnyArrangementTruth;
 }
 
+export function getProjectStoreReadiness(state: {
+  project: Project | null;
+  projectLoadStatus?: ProjectStoreLoadStatus;
+  projectLoadTargetId?: string | null;
+  projectLoadMessage?: string | null;
+}): ProjectStoreReadiness {
+  if (state.project) {
+    return {
+      status: 'ready',
+      projectId: state.project.id,
+      currentState: `Project ${state.project.id} is loaded in the project store.`,
+      nextStep: 'Edit this arrangement, save changes, or open a different project from the library.',
+      detail: null,
+    };
+  }
+
+  if (state.projectLoadStatus === 'loading') {
+    const projectTarget = state.projectLoadTargetId
+      ? `Project ${state.projectLoadTargetId}`
+      : 'The requested project';
+
+    return {
+      status: 'waiting',
+      projectId: state.projectLoadTargetId ?? null,
+      currentState: `${projectTarget} is still loading into the project store.`,
+      nextStep: 'Wait for the current project load to finish before editing this workspace.',
+      detail: null,
+    };
+  }
+
+  if (state.projectLoadStatus === 'missing-project') {
+    const projectTarget = state.projectLoadTargetId
+      ? `Project ${state.projectLoadTargetId}`
+      : 'The requested project';
+
+    return {
+      status: 'blocked',
+      projectId: state.projectLoadTargetId ?? null,
+      currentState: `${projectTarget} is blocked because it could not be found for the project store.`,
+      nextStep: 'Return to the library and choose a different project.',
+      detail: state.projectLoadMessage ?? null,
+    };
+  }
+
+  if (state.projectLoadStatus === 'error') {
+    const projectTarget = state.projectLoadTargetId
+      ? `Project ${state.projectLoadTargetId}`
+      : 'The requested project';
+
+    return {
+      status: 'blocked',
+      projectId: state.projectLoadTargetId ?? null,
+      currentState: `${projectTarget} is blocked until the project store load failure is resolved.`,
+      nextStep: 'Retry the project route after the load failure is fixed, or open a different project.',
+      detail: state.projectLoadMessage ?? null,
+    };
+  }
+
+  return {
+    status: 'waiting',
+    projectId: null,
+    currentState: 'No project is loaded in the project store right now.',
+    nextStep: 'Open a project from the library or visit a project route to hydrate the workspace.',
+    detail: null,
+  };
+}
+
 export function serializeProjectExportSnapshot(
   state: {
     project: Project;
@@ -809,6 +893,9 @@ function reconcileSelectionWithArrangement(state: {
 
 interface ProjectStore {
   project: Project | null;
+  projectLoadStatus: ProjectStoreLoadStatus;
+  projectLoadTargetId: string | null;
+  projectLoadMessage: string | null;
   stems: Stem[];
   sections: Section[];
   blocks: Block[];
@@ -871,6 +958,9 @@ interface ProjectStore {
 
 export const useProjectStore = create<ProjectStore>()((set, get) => ({
   project: null,
+  projectLoadStatus: 'idle',
+  projectLoadTargetId: null,
+  projectLoadMessage: null,
   stems: [],
   sections: [],
   blocks: [],
@@ -885,7 +975,12 @@ export const useProjectStore = create<ProjectStore>()((set, get) => ({
         carryPersistedArrangementFingerprint(state.project, project);
       }
 
-      return { project };
+      return {
+        project,
+        projectLoadStatus: 'ready',
+        projectLoadTargetId: project.id,
+        projectLoadMessage: null,
+      };
     }),
 
   hydrateProject: ({ project, stems, sections, blocks, chords, chatMessages }) =>
@@ -911,6 +1006,9 @@ export const useProjectStore = create<ProjectStore>()((set, get) => ({
 
       set({
         project,
+        projectLoadStatus: 'ready',
+        projectLoadTargetId: project.id,
+        projectLoadMessage: null,
         stems: normalizedStems,
         sections,
         blocks,
@@ -929,6 +1027,9 @@ export const useProjectStore = create<ProjectStore>()((set, get) => ({
 
     set({
       project: null,
+      projectLoadStatus: 'idle',
+      projectLoadTargetId: null,
+      projectLoadMessage: null,
       stems: [],
       sections: [],
       blocks: [],

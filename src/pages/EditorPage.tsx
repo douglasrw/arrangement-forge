@@ -8,7 +8,7 @@ import {
   type EditorRouteMode,
   type EditorRouteStatus,
 } from '@/lib/editor-route-truth';
-import { useProjectStore } from '@/store/project-store';
+import { getProjectStoreReadiness, useProjectStore } from '@/store/project-store';
 
 export type { EditorRouteMode } from '@/lib/editor-route-truth';
 
@@ -16,6 +16,8 @@ function EditorShellState({
   title,
   message,
   currentState,
+  projectStoreReadiness,
+  projectStoreCurrentState,
   routeModeLabel,
   routeReadiness,
   routeTarget,
@@ -33,6 +35,8 @@ function EditorShellState({
   title: string;
   message: string;
   currentState: string;
+  projectStoreReadiness: 'ready' | 'waiting' | 'blocked';
+  projectStoreCurrentState: string;
   routeModeLabel: string;
   routeReadiness: string;
   routeTarget: string;
@@ -70,6 +74,12 @@ function EditorShellState({
         <p className="text-sm font-medium text-foreground">{title}</p>
         <p className="text-xs text-muted-foreground">{message}</p>
         <p className="text-xs text-foreground/80">Current state: {currentState}</p>
+        <p className="text-xs text-foreground/80">
+          Project store readiness: {projectStoreReadiness}
+        </p>
+        <p className="text-xs text-foreground/80">
+          Project store state: {projectStoreCurrentState}
+        </p>
         <p className="text-xs text-foreground/80">Route mode: {routeModeLabel}</p>
         <p className="text-xs text-foreground/80">Route readiness: {routeReadiness}</p>
         <p className="text-xs text-foreground/80">Route target: {routeTarget}</p>
@@ -129,6 +139,7 @@ function getLoadingMessage(projectId: string | undefined) {
 function EditorRouteReadyBanner({
   projectId,
   currentState,
+  projectStoreCurrentState,
   nextStep,
   routeTarget,
   currentRoute,
@@ -140,6 +151,7 @@ function EditorRouteReadyBanner({
 }: {
   projectId: string;
   currentState: string;
+  projectStoreCurrentState: string;
   nextStep: string;
   routeTarget: string;
   currentRoute: string;
@@ -160,6 +172,8 @@ function EditorRouteReadyBanner({
         The requested project route is open and the editor workspace is ready.
       </p>
       <p className="text-[11px] text-foreground/80">Current state: {currentState}</p>
+      <p className="text-[11px] text-foreground/80">Project store readiness: ready</p>
+      <p className="text-[11px] text-foreground/80">Project store state: {projectStoreCurrentState}</p>
       <p className="text-[11px] text-foreground/80">Next step: {nextStep}</p>
       <p className="text-[11px] text-foreground/80">Route mode: {routeModeLabel}</p>
       <p className="text-[11px] text-foreground/80">Route readiness: {routeReadiness}</p>
@@ -196,7 +210,17 @@ export default function EditorPage({
   const { id } = useParams<{ id: string }>();
   const location = useLocation();
   const { loadProject } = useProject();
-  const loadedProjectId = useProjectStore((state) => state.project?.id ?? null);
+  const project = useProjectStore((state) => state.project);
+  const loadedProjectId = project?.id ?? null;
+  const projectLoadStatus = useProjectStore((state) => state.projectLoadStatus);
+  const projectLoadTargetId = useProjectStore((state) => state.projectLoadTargetId);
+  const projectLoadMessage = useProjectStore((state) => state.projectLoadMessage);
+  const projectStoreReadiness = getProjectStoreReadiness({
+    project,
+    projectLoadStatus,
+    projectLoadTargetId,
+    projectLoadMessage,
+  });
   const [routeState, setRouteState] = useState<EditorRouteState>(() =>
     getInitialEditorRouteState(routeMode, id)
   );
@@ -244,6 +268,8 @@ export default function EditorPage({
             title="Loading project route"
             message={getLoadingMessage(id)}
             currentState={routeTruth.currentState}
+            projectStoreReadiness={projectStoreReadiness.status}
+            projectStoreCurrentState={projectStoreReadiness.currentState}
             routeModeLabel={routeTruth.routeModeLabel}
             routeReadiness={routeTruth.routeReadiness}
             routeTarget={routeTruth.routeLabel}
@@ -269,6 +295,8 @@ export default function EditorPage({
             title="Choose a project to open the editor"
             message={routeState.message}
             currentState={routeTruth.currentState}
+            projectStoreReadiness={projectStoreReadiness.status}
+            projectStoreCurrentState={projectStoreReadiness.currentState}
             routeModeLabel={routeTruth.routeModeLabel}
             routeReadiness={routeTruth.routeReadiness}
             routeTarget={routeTruth.routeLabel}
@@ -300,6 +328,8 @@ export default function EditorPage({
                 : routeState.message
             }
             currentState={routeTruth.currentState}
+            projectStoreReadiness={projectStoreReadiness.status}
+            projectStoreCurrentState={projectStoreReadiness.currentState}
             routeModeLabel={routeTruth.routeModeLabel}
             routeReadiness={routeTruth.routeReadiness}
             routeTarget={routeTruth.routeLabel}
@@ -332,6 +362,8 @@ export default function EditorPage({
                 : routeState.message
             }
             currentState={routeTruth.currentState}
+            projectStoreReadiness={projectStoreReadiness.status}
+            projectStoreCurrentState={projectStoreReadiness.currentState}
             routeModeLabel={routeTruth.routeModeLabel}
             routeReadiness={routeTruth.routeReadiness}
             routeTarget={routeTruth.routeLabel}
@@ -357,6 +389,7 @@ export default function EditorPage({
         <EditorRouteReadyBanner
           projectId={id}
           currentState={routeTruth.currentState}
+          projectStoreCurrentState={projectStoreReadiness.currentState}
           nextStep={routeTruth.nextStep}
           routeTarget={routeTruth.routeLabel}
           currentRoute={routeTruth.currentRoute}

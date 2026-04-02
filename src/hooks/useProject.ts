@@ -445,6 +445,11 @@ export function useProject() {
   const loadProject = useCallback(
     async (projectId: string): Promise<LoadProjectResult> => {
       useProjectStore.getState().clearProjectSession();
+      useProjectStore.setState({
+        projectLoadStatus: 'loading',
+        projectLoadTargetId: projectId,
+        projectLoadMessage: null,
+      });
       setSystemStatus('ready');
       try {
         const [projectRes, stemsRes, sectionsRes, chordsRes, messagesRes] =
@@ -459,6 +464,11 @@ export function useProject() {
         if (projectRes.error) throw projectRes.error;
         if (!projectRes.data) {
           useProjectStore.getState().clearProjectSession();
+          useProjectStore.setState({
+            projectLoadStatus: 'missing-project',
+            projectLoadTargetId: projectId,
+            projectLoadMessage: PROJECT_NOT_FOUND_MESSAGE,
+          });
           setSystemStatus('error', PROJECT_NOT_FOUND_MESSAGE);
           return {
             status: 'missing-project',
@@ -494,9 +504,15 @@ export function useProject() {
         return { status: 'ready' };
       } catch (err) {
         handleError(err);
+        const message = err instanceof Error ? err.message : 'Unknown error';
+        useProjectStore.setState({
+          projectLoadStatus: 'error',
+          projectLoadTargetId: projectId,
+          projectLoadMessage: message,
+        });
         return {
           status: 'error',
-          message: err instanceof Error ? err.message : 'Unknown error',
+          message,
         };
       }
     },
