@@ -2,6 +2,7 @@ import { useState, useEffect, FormEvent } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/lib/supabase';
 import {
+  describeSavedProfilePresenceTruth,
   describeSupportedProfileSettingsTruth,
   formatChordDisplayModeLabel,
   rowToProfile,
@@ -229,6 +230,14 @@ type SettingsSaveTruth = {
   title: string;
 };
 
+type SettingsPageReadinessTruth = {
+  badgeLabel: string;
+  badgeVariant: 'secondary' | 'outline' | 'destructive';
+  detail: string;
+  status: 'blocked' | 'ready' | 'waiting';
+  title: string;
+};
+
 export function getSettingsSaveTruth({
   authTruth,
   pendingFields,
@@ -280,6 +289,60 @@ export function getSettingsSaveTruth({
     detail: `${pendingSettingsLabel} ${pendingFields.length === 1 ? 'is' : 'are'} still waiting until you save.`,
     status: 'ready',
     title: 'Save is ready',
+  };
+}
+
+export function getSettingsPageReadinessTruth({
+  authTruth,
+  pendingFields,
+  profile,
+  saving,
+}: {
+  authTruth: ReturnType<typeof getAuthTruth>;
+  pendingFields: SettingsField[];
+  profile: Profile | null;
+  saving: boolean;
+}): SettingsPageReadinessTruth {
+  if (authTruth.readiness === 'waiting') {
+    return {
+      badgeLabel: 'Waiting',
+      badgeVariant: 'outline',
+      detail: `${authTruth.currentState} ${authTruth.nextStepDetail}`,
+      status: 'waiting',
+      title: 'Settings are waiting',
+    };
+  }
+
+  if (authTruth.access !== 'granted') {
+    return {
+      badgeLabel: 'Blocked',
+      badgeVariant: 'destructive',
+      detail: `${authTruth.currentState} Next step: ${authTruth.nextStepLabel}. ${authTruth.nextStepDetail}`,
+      status: 'blocked',
+      title: 'Settings are blocked',
+    };
+  }
+
+  if (saving) {
+    return {
+      badgeLabel: 'Waiting',
+      badgeVariant: 'outline',
+      detail: `${pendingFields.length} setting change${pendingFields.length === 1 ? ' is' : 's are'} being applied now.`,
+      status: 'waiting',
+      title: 'Settings are applying changes',
+    };
+  }
+
+  const savedProfilePresenceTruth = describeSavedProfilePresenceTruth(profile);
+
+  return {
+    badgeLabel: 'Ready',
+    badgeVariant: 'secondary',
+    detail: pendingFields.length === 0
+      ? `${savedProfilePresenceTruth.currentState} ${savedProfilePresenceTruth.nextStep}`
+      : `${pendingFields.length} setting change${pendingFields.length === 1 ? ' is' : 's are'} waiting locally until you save. ${savedProfilePresenceTruth.currentState}`,
+    status: 'ready',
+    title: 'Settings are ready',
   };
 }
 
@@ -363,6 +426,12 @@ export default function SettingsPage() {
     pendingFields,
     saving,
   });
+  const pageReadinessTruth = getSettingsPageReadinessTruth({
+    authTruth,
+    pendingFields,
+    profile,
+    saving,
+  });
   const supportedProfileSettingsTruth = describeSupportedProfileSettingsTruth();
   const displayNameTruth = getDisplayNameTruth(draft, profile);
   const chordModeTruth = getChordModeTruth(draft, profile);
@@ -401,13 +470,30 @@ export default function SettingsPage() {
 
       <div className="max-w-2xl mx-auto px-4 py-8">
         <form onSubmit={handleSave} className="flex flex-col gap-6">
+          <Alert
+            data-testid="settings-page-readiness"
+            data-settings-page-readiness={pageReadinessTruth.status}
+            className={cn(
+              pageReadinessTruth.status === 'blocked' && 'border-destructive/50',
+              pageReadinessTruth.status === 'waiting' && 'border-status-saving/50',
+              pageReadinessTruth.status === 'ready' && 'border-status-ready/50'
+            )}
+          >
+            <div className="flex items-center justify-between gap-3">
+              <AlertTitle>{pageReadinessTruth.title}</AlertTitle>
+              <Badge variant={pageReadinessTruth.badgeVariant}>{pageReadinessTruth.badgeLabel}</Badge>
+            </div>
+            <AlertDescription>{pageReadinessTruth.detail}</AlertDescription>
+          </Alert>
+
           <Card className={settingsCardClasses}>
             <CardHeader className={settingsCardHeaderClasses}>
               <div className="flex flex-col gap-1.5">
                 <h2 className={sectionHeadingClasses}>Settings State</h2>
                 <p className="text-sm text-muted-foreground">
-                  Saved settings, pending edits, and unavailable settings stay separate here so
-                  you can tell what is already applied before leaving the page.
+                  Page readiness, saved settings, pending edits, and unavailable settings stay
+                  explicit here so you can tell what is ready, waiting, or blocked before
+                  leaving the page.
                 </p>
               </div>
             </CardHeader>

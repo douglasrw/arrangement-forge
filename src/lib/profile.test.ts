@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import {
+  describeSavedProfilePresenceTruth,
   describeSupportedProfileSettingsTruth,
   formatChordDisplayModeLabel,
   rowToProfile,
@@ -16,6 +17,27 @@ describe('rowToProfile', () => {
       displayName: 'Display names may be left blank and save exactly as entered.',
       chordDisplayModes: 'letter (Letter names) or roman (Roman numerals)',
       defaultGenres: 'Jazz, Blues, Rock, Funk, Country, Gospel, R&B, Latin, or Pop',
+    });
+  });
+
+  it('describes whether saved profile settings are already present on the page', () => {
+    expect(
+      describeSavedProfilePresenceTruth({
+        id: 'profile-1',
+        displayName: 'Doug',
+        chordDisplayMode: 'letter',
+        defaultGenre: 'Jazz',
+        createdAt: '2026-03-28T00:00:00Z',
+        updatedAt: '2026-03-28T01:00:00Z',
+      })
+    ).toEqual({
+      currentState: 'Saved profile settings are loaded on this page.',
+      nextStep: 'Edit any field to create a local change, then save when ready.',
+    });
+
+    expect(describeSavedProfilePresenceTruth(null)).toEqual({
+      currentState: 'No saved profile settings exist yet.',
+      nextStep: 'Your first save here will create profile settings for future sessions.',
     });
   });
 

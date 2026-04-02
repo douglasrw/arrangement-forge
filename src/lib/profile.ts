@@ -36,6 +36,23 @@ export function describeSupportedProfileSettingsTruth(): {
   };
 }
 
+export function describeSavedProfilePresenceTruth(profile: Profile | null): {
+  currentState: string;
+  nextStep: string;
+} {
+  if (profile) {
+    return {
+      currentState: 'Saved profile settings are loaded on this page.',
+      nextStep: 'Edit any field to create a local change, then save when ready.',
+    };
+  }
+
+  return {
+    currentState: 'No saved profile settings exist yet.',
+    nextStep: 'Your first save here will create profile settings for future sessions.',
+  };
+}
+
 function parseRequiredString(
   value: unknown,
   fieldName: string,

@@ -11,9 +11,11 @@ import type { Profile } from '@/types';
 import SettingsPage, {
   applySavedProfile,
   createSettingsDraft,
+  getSettingsPageReadinessTruth,
   reconcileSettingsDraft,
   type SettingsDraft,
 } from './SettingsPage';
+import { getAuthTruth } from '@/store/auth-store';
 
 type SaveResponse = {
   data: Record<string, unknown> | null;
@@ -268,10 +270,82 @@ describe('SettingsPage draft reconciliation', () => {
 });
 
 describe('SettingsPage truth surface', () => {
+  it('derives page readiness as ready, waiting, or blocked from the current surface truth', () => {
+    const readyTruth = getSettingsPageReadinessTruth({
+      authTruth: getAuthTruth({
+        user: { id: 'user-1', email: 'ash@example.com' } as User,
+        profile: makeProfile(),
+        authStatus: 'authenticated',
+        signedOutReason: null,
+      }),
+      pendingFields: [],
+      profile: makeProfile(),
+      saving: false,
+    });
+
+    expect(readyTruth).toEqual({
+      badgeLabel: 'Ready',
+      badgeVariant: 'secondary',
+      detail:
+        'Saved profile settings are loaded on this page. Edit any field to create a local change, then save when ready.',
+      status: 'ready',
+      title: 'Settings are ready',
+    });
+
+    const waitingTruth = getSettingsPageReadinessTruth({
+      authTruth: getAuthTruth({
+        user: null,
+        profile: null,
+        authStatus: 'checking-session',
+        signedOutReason: null,
+      }),
+      pendingFields: [],
+      profile: null,
+      saving: false,
+    });
+
+    expect(waitingTruth).toEqual({
+      badgeLabel: 'Waiting',
+      badgeVariant: 'outline',
+      detail: 'Checking for an existing session. Wait for session bootstrap to finish.',
+      status: 'waiting',
+      title: 'Settings are waiting',
+    });
+
+    const blockedTruth = getSettingsPageReadinessTruth({
+      authTruth: getAuthTruth({
+        user: null,
+        profile: null,
+        authStatus: 'signed-out',
+        signedOutReason: 'no-session',
+      }),
+      pendingFields: [],
+      profile: null,
+      saving: false,
+    });
+
+    expect(blockedTruth).toEqual({
+      badgeLabel: 'Blocked',
+      badgeVariant: 'destructive',
+      detail: 'No saved session was found. Next step: Sign in. Sign in to reopen the app.',
+      status: 'blocked',
+      title: 'Settings are blocked',
+    });
+  });
+
   it('renders unsupported settings as truthful status instead of fake disabled controls', () => {
     const mounted = renderSettingsPage();
     mountedRoot = mounted.root;
     mountedContainer = mounted.container;
+
+    const pageReadiness = mounted.container.querySelector(
+      '[data-testid="settings-page-readiness"]'
+    ) as HTMLDivElement | null;
+
+    expect(pageReadiness?.getAttribute('data-settings-page-readiness')).toBe('ready');
+    expect(pageReadiness?.textContent).toContain('Settings are ready');
+    expect(pageReadiness?.textContent).toContain('Ready');
+    expect(pageReadiness?.textContent).toContain('Saved profile settings are loaded on this page.');
 
     expect(mounted.container.textContent).toContain('Unavailable in this build');
     expect(mounted.container.textContent).toContain(
@@ -677,7 +751,15 @@ describe('SettingsPage truth surface', () => {
     const saveReadiness = mounted.container.querySelector(
       '[data-testid="settings-save-readiness"]'
     ) as HTMLDivElement | null;
+    const pageReadiness = mounted.container.querySelector(
+      '[data-testid="settings-page-readiness"]'
+    ) as HTMLDivElement | null;
 
+    expect(pageReadiness?.getAttribute('data-settings-page-readiness')).toBe('blocked');
+    expect(pageReadiness?.textContent).toContain('Settings are blocked');
+    expect(pageReadiness?.textContent).toContain('Blocked');
+    expect(pageReadiness?.textContent).toContain('No saved session was found.');
+    expect(pageReadiness?.textContent).toContain('Next step: Sign in. Sign in to reopen the app.');
     expect(saveReadiness?.textContent).toContain('Save is blocked');
     expect(saveReadiness?.textContent).toContain('Blocked');
     expect(saveReadiness?.textContent).toContain('No saved session was found.');
@@ -712,5 +794,28 @@ describe('SettingsPage truth surface', () => {
     expect(mounted.container.textContent).toContain(
       'Pre-selected when creating a new project. Saved profile truth accepts Jazz, Blues, Rock, Funk, Country, Gospel, R&B, Latin, or Pop. No saved default genre exists yet. The first save will create the profile with no default genre for new projects.'
     );
+  });
+
+  it('keeps the page visibly waiting while session bootstrap is still unresolved', () => {
+    setAuthStoreFixture({
+      user: null,
+      profile: null,
+      authStatus: 'checking-session',
+      signedOutReason: null,
+    });
+
+    const mounted = renderSettingsPage();
+    mountedRoot = mounted.root;
+    mountedContainer = mounted.container;
+
+    const pageReadiness = mounted.container.querySelector(
+      '[data-testid="settings-page-readiness"]'
+    ) as HTMLDivElement | null;
+
+    expect(pageReadiness?.getAttribute('data-settings-page-readiness')).toBe('waiting');
+    expect(pageReadiness?.textContent).toContain('Settings are waiting');
+    expect(pageReadiness?.textContent).toContain('Waiting');
+    expect(pageReadiness?.textContent).toContain('Checking for an existing session.');
+    expect(pageReadiness?.textContent).toContain('Wait for session bootstrap to finish.');
   });
 });
