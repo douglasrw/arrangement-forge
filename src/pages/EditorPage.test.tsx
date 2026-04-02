@@ -261,6 +261,7 @@ describe('EditorPage route loading gate', () => {
     expect(querySelectionSurface()).toBeNull();
     expect(getStatusBarText()).toContain('Loading project');
     expect(document.body.textContent).toContain('Opening project project-b in the editor.');
+    expect(document.body.textContent).toContain('Editor readiness: waiting');
     expect(document.body.textContent).toContain(
       'Current state: Arrangement Forge is still loading the requested project route for project-b.'
     );
@@ -374,6 +375,7 @@ describe('EditorPage route loading gate', () => {
     expect(document.body.textContent).toContain(
       'The requested project route is open and the editor workspace is ready.'
     );
+    expect(document.body.textContent).toContain('Editor readiness: ready');
     expect(document.body.textContent).toContain(
       'Current state: The requested project route for project-a is loaded in this workspace.'
     );
@@ -518,6 +520,7 @@ describe('EditorPage route loading gate', () => {
     expect(queryMissingProjectState()).not.toBeNull();
     expect(querySelectionSurface()).toBeNull();
     expect(getStatusBarText()).toContain('Error: Project not found');
+    expect(document.body.textContent).toContain('Editor readiness: blocked');
     expect(document.body.textContent).toContain(
       'Project missing-project is not available, so the editor cannot open this route. Project not found'
     );
@@ -580,6 +583,7 @@ describe('EditorPage route loading gate', () => {
 
     expect(queryErrorState()).not.toBeNull();
     expect(querySelectionSurface()).toBeNull();
+    expect(document.body.textContent).toContain('Editor readiness: blocked');
     expect(document.body.textContent).toContain(
       'Project project-a could not be loaded because project blocks failed to load. Backend unavailable'
     );
@@ -628,6 +632,7 @@ describe('EditorPage route loading gate', () => {
     expect(loadProjectMock).not.toHaveBeenCalled();
     expect(queryErrorState()).not.toBeNull();
     expect(querySelectionSurface()).toBeNull();
+    expect(document.body.textContent).toContain('Editor readiness: blocked');
     expect(document.body.textContent).toContain('Editor route is malformed');
     expect(document.body.textContent).toContain(
       'The /project/:id editor route is missing a project id, so Arrangement Forge cannot load a project here.'
@@ -747,6 +752,7 @@ describe('EditorPage route loading gate', () => {
     expect(loadProjectMock).not.toHaveBeenCalled();
     expect(queryNoProjectState()).not.toBeNull();
     expect(querySelectionSurface()).toBeNull();
+    expect(document.body.textContent).toContain('Editor readiness: blocked');
     expect(document.body.textContent).toContain(
       'The /project editor route is open, but no project has been selected yet.'
     );
@@ -804,6 +810,7 @@ describe('EditorPage route loading gate', () => {
     expect(loadProjectMock).not.toHaveBeenCalled();
     expect(queryNoProjectState()).not.toBeNull();
     expect(queryLoadingGate()).toBeNull();
+    expect(document.body.textContent).toContain('Editor readiness: blocked');
     expect(document.body.textContent).toContain(
       'Current state: The editor fallback route is open with no active project in this workspace.'
     );

@@ -12,9 +12,23 @@ import { getProjectStoreReadiness, useProjectStore } from '@/store/project-store
 
 export type { EditorRouteMode } from '@/lib/editor-route-truth';
 
+type EditorReadinessState = 'ready' | 'waiting' | 'blocked';
+
+function getEditorReadinessState(routeStatus: EditorRouteState['status']): EditorReadinessState {
+  switch (routeStatus) {
+    case 'ready':
+      return 'ready';
+    case 'loading':
+      return 'waiting';
+    default:
+      return 'blocked';
+  }
+}
+
 function EditorShellState({
   title,
   message,
+  editorReadiness,
   currentState,
   projectStoreReadiness,
   projectStoreCurrentState,
@@ -34,6 +48,7 @@ function EditorShellState({
 }: {
   title: string;
   message: string;
+  editorReadiness: EditorReadinessState;
   currentState: string;
   projectStoreReadiness: 'ready' | 'waiting' | 'blocked';
   projectStoreCurrentState: string;
@@ -55,6 +70,7 @@ function EditorShellState({
     <div
       className="flex max-w-sm flex-col items-center gap-4 text-center"
       data-testid={testId}
+      data-editor-readiness={editorReadiness}
       data-editor-route-state={routeStatus}
     >
       {tone === 'loading' ? (
@@ -73,6 +89,7 @@ function EditorShellState({
       <div className="space-y-1">
         <p className="text-sm font-medium text-foreground">{title}</p>
         <p className="text-xs text-muted-foreground">{message}</p>
+        <p className="text-xs text-foreground/80">Editor readiness: {editorReadiness}</p>
         <p className="text-xs text-foreground/80">Current state: {currentState}</p>
         <p className="text-xs text-foreground/80">
           Project store readiness: {projectStoreReadiness}
@@ -143,6 +160,7 @@ function getLoadingMessage(projectId: string | undefined) {
 
 function EditorRouteReadyBanner({
   projectId,
+  editorReadiness,
   currentState,
   projectStoreCurrentState,
   nextStep,
@@ -155,6 +173,7 @@ function EditorRouteReadyBanner({
   fallbackHandling,
 }: {
   projectId: string;
+  editorReadiness: EditorReadinessState;
   currentState: string;
   projectStoreCurrentState: string;
   nextStep: string;
@@ -170,12 +189,14 @@ function EditorRouteReadyBanner({
     <div
       className="flex flex-col gap-0.5 text-left"
       data-testid="editor-route-ready-banner"
+      data-editor-readiness={editorReadiness}
       data-editor-route-state="ready"
     >
       <p className="text-xs font-medium text-foreground">Editor route ready for project {projectId}.</p>
       <p className="text-[11px] text-muted-foreground">
         The requested project route is open and the editor workspace is ready.
       </p>
+      <p className="text-[11px] text-foreground/80">Editor readiness: {editorReadiness}</p>
       <p className="text-[11px] text-foreground/80">Current state: {currentState}</p>
       <p className="text-[11px] text-foreground/80">Project store readiness: ready</p>
       <p className="text-[11px] text-foreground/80">Project store state: {projectStoreCurrentState}</p>
@@ -231,6 +252,7 @@ export default function EditorPage({
   const [routeState, setRouteState] = useState<EditorRouteState>(() =>
     getInitialEditorRouteState(routeMode, id)
   );
+  const editorReadiness = getEditorReadinessState(routeState.status);
   const routeTruth = getEditorRouteTruth({
     pathname: location.pathname,
     search: location.search,
@@ -274,6 +296,7 @@ export default function EditorPage({
           <EditorShellState
             title="Loading project route"
             message={getLoadingMessage(id)}
+            editorReadiness={editorReadiness}
             currentState={routeTruth.currentState}
             projectStoreReadiness={projectStoreReadiness.status}
             projectStoreCurrentState={projectStoreReadiness.currentState}
@@ -301,6 +324,7 @@ export default function EditorPage({
           <EditorShellState
             title="Choose a project to open the editor"
             message={routeState.message}
+            editorReadiness={editorReadiness}
             currentState={routeTruth.currentState}
             projectStoreReadiness={projectStoreReadiness.status}
             projectStoreCurrentState={projectStoreReadiness.currentState}
@@ -334,6 +358,7 @@ export default function EditorPage({
                 ? `Project ${id} is not available, so the editor cannot open this route. ${routeState.message}`
                 : routeState.message
             }
+            editorReadiness={editorReadiness}
             currentState={routeState.currentState}
             projectStoreReadiness={projectStoreReadiness.status}
             projectStoreCurrentState={projectStoreReadiness.currentState}
@@ -370,6 +395,7 @@ export default function EditorPage({
                 ? `Project ${id} could not be loaded because ${routeState.failureTarget ?? 'project data'} failed to load. ${routeState.message}`
                 : routeState.message
             }
+            editorReadiness={editorReadiness}
             currentState={routeState.currentState}
             projectStoreReadiness={projectStoreReadiness.status}
             projectStoreCurrentState={projectStoreReadiness.currentState}
@@ -397,6 +423,7 @@ export default function EditorPage({
       workspaceBanner={
         <EditorRouteReadyBanner
           projectId={id}
+          editorReadiness={editorReadiness}
           currentState={routeTruth.currentState}
           projectStoreCurrentState={projectStoreReadiness.currentState}
           nextStep={routeTruth.nextStep}
