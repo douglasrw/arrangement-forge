@@ -154,6 +154,46 @@ describe('LibraryPage', () => {
     expect(mounted.container.textContent).toContain('Unable to load library');
     expect(mounted.container.textContent).toContain('Library backend offline');
     expect(mounted.container.textContent).not.toContain('No projects yet.');
+    expect(mounted.container.textContent).toContain('Library readiness');
+    expect(mounted.container.textContent).toContain('Blocked');
+  });
+
+  it('shows waiting readiness while the library route is still loading', () => {
+    projectApi.listProjects.mockReturnValue(new Promise(() => {}));
+
+    const mounted = renderLibrary();
+    mountedRoot = mounted.root;
+    mountedContainer = mounted.container;
+
+    const readiness = mounted.container.querySelector('[data-testid="library-readiness"]');
+
+    expect(readiness?.textContent).toContain('Library readiness');
+    expect(readiness?.textContent).toContain('Waiting');
+    expect(readiness?.textContent).toContain('Arrangement Forge is still loading this route.');
+    expect(readiness?.textContent).toContain('Loading your saved projects for this workspace.');
+  });
+
+  it('shows ready readiness when the library surface is usable', async () => {
+    projectApi.listProjects.mockResolvedValue([
+      makeProject({ id: 'project-ready', name: 'Ready Cut' }),
+    ]);
+
+    const mounted = renderLibrary();
+    mountedRoot = mounted.root;
+    mountedContainer = mounted.container;
+
+    await act(async () => {
+      await Promise.resolve();
+    });
+
+    const readiness = mounted.container.querySelector('[data-testid="library-readiness"]');
+
+    expect(readiness?.textContent).toContain('Library readiness');
+    expect(readiness?.textContent).toContain('Ready');
+    expect(readiness?.textContent).toContain('1 project in library');
+    expect(readiness?.textContent).toContain(
+      'Open a saved project or create a new arrangement from here.'
+    );
   });
 
   it('updates filtered delete state and library count honestly after removing a visible project', async () => {

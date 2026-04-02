@@ -7,6 +7,19 @@ import { useUiStore } from '@/store/ui-store';
 import type { Project } from '@/types';
 
 type SortKey = 'updatedAt' | 'name-asc' | 'name-desc' | 'genre' | 'key' | 'tempo';
+type LibraryReadinessTone = 'ready' | 'waiting' | 'blocked';
+
+type LibraryReadinessState = {
+  tone: LibraryReadinessTone;
+  label: string;
+  detail: string;
+};
+
+const LIBRARY_READINESS_STYLES: Record<LibraryReadinessTone, string> = {
+  ready: 'border-primary/30 bg-primary/10 text-primary',
+  waiting: 'border-border bg-secondary text-secondary-foreground',
+  blocked: 'border-destructive/30 bg-destructive/10 text-destructive',
+};
 
 function useDebounce<T>(value: T, delay: number): T {
   const [debounced, setDebounced] = useState(value);
@@ -15,6 +28,50 @@ function useDebounce<T>(value: T, delay: number): T {
     return () => clearTimeout(t);
   }, [value, delay]);
   return debounced;
+}
+
+function getLibraryReadinessState({
+  loading,
+  systemStatus,
+  projectCount,
+  errorMessage,
+}: {
+  loading: boolean;
+  systemStatus: string;
+  projectCount: number;
+  errorMessage: string | null;
+}): LibraryReadinessState {
+  if (loading) {
+    return {
+      tone: 'waiting',
+      label: 'Waiting',
+      detail: 'Loading your saved projects for this workspace.',
+    };
+  }
+
+  if (systemStatus === 'error' || systemStatus === 'offline') {
+    return {
+      tone: 'blocked',
+      label: 'Blocked',
+      detail:
+        errorMessage?.trim() ||
+        'Arrangement Forge cannot load the library surface until the current failure is resolved.',
+    };
+  }
+
+  if (projectCount === 0) {
+    return {
+      tone: 'ready',
+      label: 'Ready',
+      detail: 'The library is ready for your next arrangement.',
+    };
+  }
+
+  return {
+    tone: 'ready',
+    label: 'Ready',
+    detail: 'Open a saved project or create a new arrangement from here.',
+  };
 }
 
 export default function LibraryPage() {
@@ -99,6 +156,12 @@ export default function LibraryPage() {
       }
     });
   }, [projects, search, sortKey]);
+  const readiness = getLibraryReadinessState({
+    loading,
+    systemStatus,
+    projectCount: projects.length,
+    errorMessage,
+  });
 
   return (
     <div className="min-h-screen bg-background">
@@ -128,6 +191,33 @@ export default function LibraryPage() {
       </div>
 
       <div className="px-8 py-6 flex flex-col gap-6 max-w-6xl">
+        <section
+          data-testid="library-readiness"
+          className="rounded-xl border border-border bg-card p-4"
+          aria-label="Library readiness"
+        >
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+            <div className="space-y-1">
+              <p className="text-xs font-semibold uppercase tracking-[0.2em] text-muted-foreground">
+                Library readiness
+              </p>
+              <div className="flex items-center gap-2">
+                <span
+                  className={`rounded-full border px-2.5 py-1 text-[10px] font-semibold uppercase tracking-wide ${LIBRARY_READINESS_STYLES[readiness.tone]}`}
+                >
+                  {readiness.label}
+                </span>
+                <span className="text-sm text-foreground">
+                  {loading
+                    ? 'Arrangement Forge is still loading this route.'
+                    : `${projects.length} project${projects.length !== 1 ? 's' : ''} in library`}
+                </span>
+              </div>
+              <p className="text-sm text-muted-foreground">{readiness.detail}</p>
+            </div>
+          </div>
+        </section>
+
         {/* Search + Sort */}
         <div className="flex gap-3 items-center">
           <label htmlFor="library-search" className="sr-only">
