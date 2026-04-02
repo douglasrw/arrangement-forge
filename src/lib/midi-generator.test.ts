@@ -74,6 +74,15 @@ describe('generate', () => {
     expect(result.chords.length).toBe(baseRequest.chords.length);
   });
 
+  it('returns readiness truth with the current state and next step', () => {
+    const result = generate(baseRequest);
+    expect(result.truth).toEqual({
+      summary: '1 section across 4 bars for drums, bass, and piano.',
+      currentState: 'A playable arrangement is ready with 1 section across 4 bars for drums, bass, and piano.',
+      nextStep: 'Review the arrangement, then regenerate or adjust styles if you want a different pass.',
+    });
+  });
+
   it('assigns Jazz styles for Jazz genre', () => {
     const result = generate(baseRequest);
     const drumBlock = result.blocks.find((b) => b.stem_instrument === 'drums');

@@ -135,6 +135,13 @@ export interface GenerationResponse {
   stems: StemData[];
   blocks: BlockData[];
   chords: ChordData[];
+  truth: GenerationTruth;
+}
+
+export interface GenerationTruth {
+  summary: string;
+  currentState: string;
+  nextStep: string;
 }
 
 export interface SectionData {

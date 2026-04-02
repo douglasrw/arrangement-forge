@@ -71,8 +71,21 @@ function buildGenerationSummary(
   options: { assistantPrompt?: string; hadArrangement: boolean }
 ): string {
   const totalBars = response.sections.reduce((sum, section) => sum + section.bar_count, 0);
+  const sectionLabel = response.sections.length === 1 ? 'section' : 'sections';
+  const barLabel = totalBars === 1 ? 'bar' : 'bars';
+  const fallbackTruth = response.truth ?? {
+    summary:
+      response.sections.length === 0 || totalBars === 0
+        ? 'the current chord chart did not produce any playable sections.'
+        : `${response.sections.length} ${sectionLabel} across ${totalBars} ${barLabel} for ${formatList(response.stems.map((stem) => stem.instrument))}.`,
+    currentState:
+      response.sections.length === 0 || totalBars === 0
+        ? ''
+        : `A playable arrangement is ready with ${response.sections.length} ${sectionLabel} across ${totalBars} ${barLabel} for ${formatList(response.stems.map((stem) => stem.instrument))}.`,
+    nextStep: 'Review the arrangement, then regenerate or adjust styles if you want a different pass.',
+  };
 
-  if (response.sections.length === 0 || totalBars === 0) {
+  if (!fallbackTruth.currentState.trim()) {
     return options.assistantPrompt
       ? 'I used your latest request, but the current chord chart did not produce any playable sections.'
       : 'Generation completed, but the current chord chart did not produce any playable sections.';
@@ -80,11 +93,8 @@ function buildGenerationSummary(
 
   const verb = options.hadArrangement ? 'regenerated' : 'generated';
   const subject = options.assistantPrompt ? `Applied your latest request and ${verb}` : `${verb[0].toUpperCase()}${verb.slice(1)}`;
-  const sectionLabel = response.sections.length === 1 ? 'section' : 'sections';
-  const barLabel = totalBars === 1 ? 'bar' : 'bars';
-  const instruments = formatList(response.stems.map((stem) => stem.instrument));
 
-  return `${subject} ${response.sections.length} ${sectionLabel} across ${totalBars} ${barLabel} for ${instruments}.`;
+  return `${subject} ${fallbackTruth.summary} Current state: ${fallbackTruth.currentState} Next step: ${fallbackTruth.nextStep}`;
 }
 
 function getGenerationScope(

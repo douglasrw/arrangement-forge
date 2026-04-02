@@ -5,6 +5,7 @@
 import type {
   GenerationRequest,
   GenerationResponse,
+  GenerationTruth,
   SectionData,
   StemData,
   BlockData,
@@ -64,6 +65,38 @@ function createSections(totalBars: number): SectionData[] {
   }
   // General case: divide into sections of 4-8 bars
   return divideSections(totalBars);
+}
+
+function formatInstrumentList(instruments: string[]): string {
+  if (instruments.length === 0) return 'the current instrument setup';
+  if (instruments.length === 1) return instruments[0] ?? 'the current instrument setup';
+  if (instruments.length === 2) return `${instruments[0]} and ${instruments[1]}`;
+  return `${instruments.slice(0, -1).join(', ')}, and ${instruments.at(-1)}`;
+}
+
+function buildGenerationTruth(
+  sections: SectionData[],
+  stems: StemData[]
+): GenerationTruth {
+  const totalBars = sections.reduce((sum, section) => sum + section.bar_count, 0);
+  const sectionLabel = sections.length === 1 ? 'section' : 'sections';
+  const barLabel = totalBars === 1 ? 'bar' : 'bars';
+  const readinessVerb = sections.length === 1 ? 'is' : 'are';
+  const instruments = formatInstrumentList(stems.map((stem) => stem.instrument));
+
+  if (sections.length === 0 || totalBars === 0 || stems.length === 0) {
+    return {
+      summary: 'The current chart did not produce a playable arrangement yet.',
+      currentState: 'No playable arrangement sections are ready yet.',
+      nextStep: 'Adjust the chord chart or instrument setup, then generate again.',
+    };
+  }
+
+  return {
+    summary: `${sections.length} ${sectionLabel} across ${totalBars} ${barLabel} for ${instruments}.`,
+    currentState: `A playable arrangement is ready with ${sections.length} ${sectionLabel} across ${totalBars} ${barLabel} for ${instruments}.`,
+    nextStep: 'Review the arrangement, then regenerate or adjust styles if you want a different pass.',
+  };
 }
 
 function divideSections(totalBars: number): SectionData[] {
@@ -409,5 +442,11 @@ export function generate(request: GenerationRequest): GenerationResponse {
     bass_degree: c.bass_degree,
   }));
 
-  return { sections, stems, blocks, chords };
+  return {
+    sections,
+    stems,
+    blocks,
+    chords,
+    truth: buildGenerationTruth(sections, stems),
+  };
 }
