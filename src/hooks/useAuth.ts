@@ -7,6 +7,7 @@ import { supabase } from '@/lib/supabase';
 import { rowToProfile } from '@/lib/profile';
 import type {
   AuthReadiness,
+  AuthStoreSelectionTruth,
   AuthStoreTruthSlice,
   AuthTruth,
   SignedOutReason,
@@ -21,6 +22,7 @@ export type UseAuthResult = {
   user: User | null;
   profile: ReturnType<typeof useAuthStore.getState>['profile'];
   authStoreTruth: AuthStoreTruthSlice;
+  authSelectionTruth: AuthStoreSelectionTruth;
   authReadiness: AuthReadiness;
   authTruth: AuthTruth;
   initAuth: () => () => void;
@@ -38,7 +40,7 @@ type HydrationResult =
 
 export function useAuth(): UseAuthResult {
   const authStoreTruth = useAuthStore(useShallow(selectAuthStoreTruthSlice));
-  const { user, profile, authTruth } = authStoreTruth;
+  const { user, profile, authTruth, authSelectionTruth } = authStoreTruth;
   const authTransitionIdRef = useRef(0);
 
   const beginSessionCheck = useCallback(() => {
@@ -215,6 +217,7 @@ export function useAuth(): UseAuthResult {
     user,
     profile,
     authStoreTruth,
+    authSelectionTruth,
     authReadiness: authTruth.readiness,
     authTruth,
     initAuth,

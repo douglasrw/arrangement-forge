@@ -206,6 +206,14 @@ describe('auth-store gate truth', () => {
         nextStepDetail: 'Open the app.',
         signedOutReason: null,
       },
+      authSelectionTruth: {
+        chordDisplayMode: 'roman',
+        selectionSource: 'profile',
+        currentState:
+          'The auth store is using the saved roman chord display mode from the authenticated profile.',
+        nextStep:
+          'Open the app with this saved display mode, or update the profile preference to change the next authenticated default.',
+      },
     });
   });
 
@@ -244,6 +252,14 @@ describe('auth-store gate truth', () => {
         nextStepDetail: 'Retry the profile load by signing in again.',
         signedOutReason: 'profile-load-failed',
       },
+      authSelectionTruth: {
+        chordDisplayMode: 'letter',
+        selectionSource: 'default',
+        currentState:
+          'No authenticated profile preference is available, so the auth store is defaulting chord display mode to letter.',
+        nextStep:
+          'Sign in with a saved profile to inherit its chord display mode, or continue with the letter default.',
+      },
     });
   });
 
@@ -267,5 +283,37 @@ describe('auth-store gate truth', () => {
     useAuthStore.getState().setSignedOut('session-lookup-failed');
 
     expect(getAuthStoreTruthSlice(useAuthStore.getState()).authTruth.readiness).toBe('blocked');
+  });
+
+  it('exposes whether chord display mode is coming from the authenticated profile or auth defaults', () => {
+    expect(getAuthStoreTruthSlice(useAuthStore.getState()).authSelectionTruth).toEqual({
+      chordDisplayMode: 'letter',
+      selectionSource: 'default',
+      currentState:
+        'No authenticated profile preference is available, so the auth store is defaulting chord display mode to letter.',
+      nextStep:
+        'Sign in with a saved profile to inherit its chord display mode, or continue with the letter default.',
+    });
+
+    useAuthStore.getState().completeAuthenticatedSession({
+      user: { id: 'user-1' } as const,
+      profile: {
+        id: 'user-1',
+        displayName: 'Ashlyn',
+        chordDisplayMode: 'roman',
+        defaultGenre: 'Pop',
+        createdAt: '2026-03-29T00:00:00Z',
+        updatedAt: '2026-03-29T01:00:00Z',
+      },
+    });
+
+    expect(getAuthStoreTruthSlice(useAuthStore.getState()).authSelectionTruth).toEqual({
+      chordDisplayMode: 'roman',
+      selectionSource: 'profile',
+      currentState:
+        'The auth store is using the saved roman chord display mode from the authenticated profile.',
+      nextStep:
+        'Open the app with this saved display mode, or update the profile preference to change the next authenticated default.',
+    });
   });
 });

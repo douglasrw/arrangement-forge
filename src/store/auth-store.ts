@@ -41,10 +41,20 @@ export interface AuthTruth extends AuthGateTruth {
   status: AuthStatus;
 }
 
+export type AuthStoreSelectionSource = 'profile' | 'default';
+
+export interface AuthStoreSelectionTruth {
+  chordDisplayMode: Profile['chordDisplayMode'];
+  selectionSource: AuthStoreSelectionSource;
+  currentState: string;
+  nextStep: string;
+}
+
 export interface AuthStoreTruthSlice {
   user: User | null;
   profile: Profile | null;
   authTruth: AuthTruth;
+  authSelectionTruth: AuthStoreSelectionTruth;
 }
 
 type AuthStoreTruthSliceState = Pick<
@@ -331,6 +341,31 @@ export function getAuthStoreTruthSlice(
     user: state.user,
     profile: state.profile,
     authTruth: getAuthTruth(state),
+    authSelectionTruth: getAuthStoreSelectionTruth(state),
+  };
+}
+
+export function getAuthStoreSelectionTruth(
+  state: AuthStoreTruthSliceState
+): AuthStoreSelectionTruth {
+  if (state.authStatus === 'authenticated' && state.profile) {
+    return {
+      chordDisplayMode: state.profile.chordDisplayMode,
+      selectionSource: 'profile',
+      currentState:
+        `The auth store is using the saved ${state.profile.chordDisplayMode} chord display mode from the authenticated profile.`,
+      nextStep:
+        'Open the app with this saved display mode, or update the profile preference to change the next authenticated default.',
+    };
+  }
+
+  return {
+    chordDisplayMode: 'letter',
+    selectionSource: 'default',
+    currentState:
+      'No authenticated profile preference is available, so the auth store is defaulting chord display mode to letter.',
+    nextStep:
+      'Sign in with a saved profile to inherit its chord display mode, or continue with the letter default.',
   };
 }
 

@@ -306,6 +306,18 @@ describe('useAuth auth action failures', () => {
           nextStepDetail: 'Sign in to reopen the app.',
           signedOutReason: 'no-session',
         },
+        authSelectionTruth: {
+          chordDisplayMode: 'letter',
+          selectionSource: 'default',
+          currentState:
+            'No authenticated profile preference is available, so the auth store is defaulting chord display mode to letter.',
+          nextStep:
+            'Sign in with a saved profile to inherit its chord display mode, or continue with the letter default.',
+        },
+      },
+      authSelectionTruth: {
+        chordDisplayMode: 'letter',
+        selectionSource: 'default',
       },
       authTruth: {
         status: 'signed-out',
@@ -345,6 +357,14 @@ describe('useAuth auth action failures', () => {
         nextStepLabel: 'Sign in',
         nextStepDetail: 'Sign in to reopen the app.',
         signedOutReason: 'no-session',
+      },
+      authSelectionTruth: {
+        chordDisplayMode: 'letter',
+        selectionSource: 'default',
+        currentState:
+          'No authenticated profile preference is available, so the auth store is defaulting chord display mode to letter.',
+        nextStep:
+          'Sign in with a saved profile to inherit its chord display mode, or continue with the letter default.',
       },
     });
   });
@@ -543,6 +563,54 @@ describe('useAuth auth action failures', () => {
         nextStepDetail: 'Open the app.',
         signedOutReason: null,
       },
+      authSelectionTruth: {
+        chordDisplayMode: 'roman',
+        selectionSource: 'profile',
+        currentState:
+          'The auth store is using the saved roman chord display mode from the authenticated profile.',
+        nextStep:
+          'Open the app with this saved display mode, or update the profile preference to change the next authenticated default.',
+      },
+    });
+  });
+
+  it('exposes the auth-owned chord display selection truth without reading ui-store state directly', () => {
+    const mounted = renderHarness();
+    mountedRoot = mounted.root;
+    mountedContainer = mounted.container;
+
+    expect(hookValue!.authSelectionTruth).toEqual({
+      chordDisplayMode: 'letter',
+      selectionSource: 'default',
+      currentState:
+        'No authenticated profile preference is available, so the auth store is defaulting chord display mode to letter.',
+      nextStep:
+        'Sign in with a saved profile to inherit its chord display mode, or continue with the letter default.',
+    });
+
+    act(() => {
+      useAuthStore.setState({
+        user: { id: 'user-1', email: 'ash@example.com' },
+        profile: {
+          id: 'user-1',
+          displayName: 'Ashlyn',
+          chordDisplayMode: 'roman',
+          defaultGenre: 'Pop',
+          createdAt: '2026-03-29T00:00:00Z',
+          updatedAt: '2026-03-29T01:00:00Z',
+        },
+        authStatus: 'authenticated',
+        signedOutReason: null,
+      });
+    });
+
+    expect(hookValue!.authSelectionTruth).toEqual({
+      chordDisplayMode: 'roman',
+      selectionSource: 'profile',
+      currentState:
+        'The auth store is using the saved roman chord display mode from the authenticated profile.',
+      nextStep:
+        'Open the app with this saved display mode, or update the profile preference to change the next authenticated default.',
     });
   });
 
