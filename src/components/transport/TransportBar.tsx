@@ -381,34 +381,48 @@ export function TransportBar() {
 
       {/* ---- RIGHT: Tempo + toggles ---- */}
       <div className="flex h-12 min-w-[280px] items-center justify-center gap-2 rounded-xl border border-border bg-background px-3 py-2">
-        <div className="flex items-center gap-1 rounded-lg bg-background">
-          <button
-            type="button"
-            disabled={undoButtonDisabled}
-            title={undoButtonTitle}
-            onClick={handleUndo}
-            className={cn(
-              "flex size-7 items-center justify-center rounded-md transition-colors",
-              getHistoryButtonClassName(undoBoundaryTruth.status)
-            )}
-            aria-label={undoButtonLabel}
-          >
-            <Undo2 className="size-3.5" />
-          </button>
+        <div className="flex min-w-0 items-center gap-2 rounded-lg bg-background">
+          <div className="flex items-center gap-1">
+            <button
+              type="button"
+              disabled={undoButtonDisabled}
+              title={undoButtonTitle}
+              onClick={handleUndo}
+              className={cn(
+                "flex size-7 items-center justify-center rounded-md transition-colors",
+                getHistoryButtonClassName(undoBoundaryTruth.status)
+              )}
+              aria-label={undoButtonLabel}
+            >
+              <Undo2 className="size-3.5" />
+            </button>
 
-          <button
-            type="button"
-            disabled={redoButtonDisabled}
-            title={redoButtonTitle}
-            onClick={handleRedo}
-            className={cn(
-              "flex size-7 items-center justify-center rounded-md transition-colors",
-              getHistoryButtonClassName(redoBoundaryTruth.status)
-            )}
-            aria-label={redoButtonLabel}
+            <button
+              type="button"
+              disabled={redoButtonDisabled}
+              title={redoButtonTitle}
+              onClick={handleRedo}
+              className={cn(
+                "flex size-7 items-center justify-center rounded-md transition-colors",
+                getHistoryButtonClassName(redoBoundaryTruth.status)
+              )}
+              aria-label={redoButtonLabel}
+            >
+              <Redo2 className="size-3.5" />
+            </button>
+          </div>
+
+          <div
+            data-testid="transport-history-truth"
+            className="min-w-0 flex-1 text-[10px] leading-tight text-zinc-500"
           >
-            <Redo2 className="size-3.5" />
-          </button>
+            <div className="truncate" title={undoButtonTitle}>
+              {undoBoundaryTruth.statusLabel}
+            </div>
+            <div className="truncate" title={redoButtonTitle}>
+              {redoBoundaryTruth.statusLabel}
+            </div>
+          </div>
         </div>
 
         <div className="flex items-center gap-1.5">

@@ -494,6 +494,13 @@ describe('TransportBar transport controls', () => {
     expect(redoButton?.title).toBe(
       'Redo is waiting for an undo step before it can reopen. Undo a change to create the next redo boundary.'
     );
+
+    const historyTruth = mounted.container.querySelector(
+      '[data-testid="transport-history-truth"]'
+    ) as HTMLDivElement | null;
+
+    expect(historyTruth?.textContent).toContain('Undo waiting');
+    expect(historyTruth?.textContent).toContain('Redo waiting');
   });
 
   it('keeps paused redo history visible but disabled while generation is running', () => {
@@ -526,6 +533,42 @@ describe('TransportBar transport controls', () => {
       'Generation is still running, so Redo is temporarily paused even though the arrangement captured after Split block is still preserved on the stack. ' +
       'Wait for generation to finish, then use Redo to restore the arrangement captured after Split block.'
     );
+  });
+
+  it('renders visible undo and redo readiness truth beside the transport history controls', () => {
+    useUndoStore.getState().pushUndo('Split block', {
+      undo: JSON.stringify(makeArrangement('before')),
+      redo: JSON.stringify(makeArrangement('after')),
+    });
+
+    const mounted = renderTransportBar();
+    mountedRoot = mounted.root;
+    mountedContainer = mounted.container;
+
+    const historyTruth = mounted.container.querySelector(
+      '[data-testid="transport-history-truth"]'
+    ) as HTMLDivElement | null;
+
+    expect(historyTruth?.textContent).toContain('Undo ready: Split block');
+    expect(historyTruth?.textContent).toContain('Redo waiting');
+  });
+
+  it('renders blocked undo truth visibly on the transport surface without requiring hover text', () => {
+    useUndoStore.getState().pushUndo('Broken action', {
+      undo: 'not json',
+      redo: JSON.stringify(makeArrangement('after')),
+    });
+
+    const mounted = renderTransportBar();
+    mountedRoot = mounted.root;
+    mountedContainer = mounted.container;
+
+    const historyTruth = mounted.container.querySelector(
+      '[data-testid="transport-history-truth"]'
+    ) as HTMLDivElement | null;
+
+    expect(historyTruth?.textContent).toContain('Undo blocked: Broken action');
+    expect(historyTruth?.textContent).toContain('Redo waiting');
   });
 
   it('forwards loop and metronome toggles into the audio hook', () => {
