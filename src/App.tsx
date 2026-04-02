@@ -34,6 +34,7 @@ function LoadingScreen({
               {protectedRouteTruth.recoveryDestination}.
             </p>
             <p className="text-xs text-foreground/80">Current state: {authTruth.currentState}</p>
+            <p className="text-xs text-foreground/80">Auth readiness: {authTruth.readiness}</p>
             <p className="text-xs text-foreground/80">
               Next step: {authTruth.nextStepLabel}. {authTruth.nextStepDetail}
             </p>
@@ -70,10 +71,10 @@ export function AuthGuard({ children }: { children: React.ReactNode }) {
   const location = useLocation();
   const recoveryPath = `${location.pathname}${location.search}${location.hash}`;
 
-  if (authTruth.access === 'pending') {
+  if (authTruth.readiness === 'waiting') {
     return <LoadingScreen authTruth={authTruth} recoveryPath={recoveryPath} />;
   }
-  if (authTruth.access !== 'granted') {
+  if (authTruth.readiness !== 'ready') {
     return (
       <Navigate
         to="/login"

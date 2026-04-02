@@ -270,6 +270,7 @@ describe('useAuth loadProfile', () => {
     });
     expect(hookValue!.authTruth).toMatchObject({
       status: 'signed-out',
+      readiness: 'blocked',
       access: 'blocked',
       currentState: 'The saved profile could not be loaded.',
       nextStep: 'retry-profile-load',
@@ -295,6 +296,7 @@ describe('useAuth auth action failures', () => {
         profile: null,
         authTruth: {
           status: 'signed-out',
+          readiness: 'blocked',
           access: 'blocked',
           currentState: 'No saved session was found.',
           nextStep: 'sign-in',
@@ -305,6 +307,7 @@ describe('useAuth auth action failures', () => {
       },
       authTruth: {
         status: 'signed-out',
+        readiness: 'blocked',
         access: 'blocked',
         currentState: 'No saved session was found.',
         nextStep: 'sign-in',
@@ -331,6 +334,7 @@ describe('useAuth auth action failures', () => {
       profile: null,
       authTruth: {
         status: 'signed-out',
+        readiness: 'blocked',
         access: 'blocked',
         currentState: 'No saved session was found.',
         nextStep: 'sign-in',
@@ -356,6 +360,7 @@ describe('useAuth auth action failures', () => {
     });
     expect(hookValue!.authTruth).toMatchObject({
       status: 'checking-session',
+      readiness: 'waiting',
       access: 'pending',
       currentState: 'Checking for an existing session.',
       nextStep: 'wait-for-session',
@@ -520,6 +525,7 @@ describe('useAuth auth action failures', () => {
       },
       authTruth: {
         status: 'authenticated',
+        readiness: 'ready',
         access: 'granted',
         currentState: 'An authenticated session is ready.',
         nextStep: 'open-app',

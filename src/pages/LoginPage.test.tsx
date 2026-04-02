@@ -9,10 +9,14 @@ import type { SignUpResult } from '@/hooks/useAuth';
 const authApi = vi.hoisted(() => ({
   authStatus: 'signed-out',
   signedOutReason: 'no-session',
+  get authReadiness() {
+    return this.authTruth.readiness;
+  },
   get authTruth() {
     if (this.authStatus === 'checking-session') {
       return {
         status: 'checking-session',
+        readiness: 'waiting',
         access: 'pending',
         currentState: 'Checking for an existing session.',
         nextStep: 'wait-for-session',
@@ -25,6 +29,7 @@ const authApi = vi.hoisted(() => ({
     if (this.authStatus === 'authenticated') {
       return {
         status: 'authenticated',
+        readiness: 'ready',
         access: 'granted',
         currentState: 'An authenticated session is ready.',
         nextStep: 'open-app',
@@ -36,6 +41,7 @@ const authApi = vi.hoisted(() => ({
 
     return {
       status: 'signed-out',
+      readiness: 'blocked',
       access: 'blocked',
       currentState:
         this.signedOutReason === 'email-confirmation-required'

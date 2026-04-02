@@ -15,6 +15,7 @@ describe('auth-store gate truth', () => {
 
   it('stores the pending next step while session bootstrap is in progress', () => {
     expect(getAuthGateTruth(useAuthStore.getState())).toEqual({
+      readiness: 'waiting',
       access: 'pending',
       currentState: 'Checking for an existing session.',
       nextStep: 'wait-for-session',
@@ -24,6 +25,7 @@ describe('auth-store gate truth', () => {
     });
     expect(getAuthTruth(useAuthStore.getState())).toEqual({
       status: 'checking-session',
+      readiness: 'waiting',
       access: 'pending',
       currentState: 'Checking for an existing session.',
       nextStep: 'wait-for-session',
@@ -37,6 +39,7 @@ describe('auth-store gate truth', () => {
     useAuthStore.getState().setSignedOut('missing-profile');
 
     expect(getAuthGateTruth(useAuthStore.getState())).toEqual({
+      readiness: 'blocked',
       access: 'blocked',
       currentState: 'The saved profile is missing, so the session cannot reopen yet.',
       nextStep: 'complete-profile',
@@ -46,6 +49,7 @@ describe('auth-store gate truth', () => {
     });
     expect(getAuthTruth(useAuthStore.getState())).toEqual({
       status: 'signed-out',
+      readiness: 'blocked',
       access: 'blocked',
       currentState: 'The saved profile is missing, so the session cannot reopen yet.',
       nextStep: 'complete-profile',
@@ -67,6 +71,7 @@ describe('auth-store gate truth', () => {
       })
     ).toEqual({
       status: 'signed-out',
+      readiness: 'blocked',
       access: 'blocked',
       currentState: 'The saved profile is missing, so the session cannot reopen yet.',
       nextStep: 'complete-profile',
@@ -83,6 +88,7 @@ describe('auth-store gate truth', () => {
     expect('authGate' in state).toBe(false);
     expect(getAuthTruth(state)).toEqual({
       status: 'checking-session',
+      readiness: 'waiting',
       access: 'pending',
       currentState: 'Checking for an existing session.',
       nextStep: 'wait-for-session',
@@ -112,6 +118,7 @@ describe('auth-store gate truth', () => {
       })
     ).toEqual({
       status: 'signed-out',
+      readiness: 'blocked',
       access: 'blocked',
       currentState: 'The saved session is incomplete, so access is still blocked.',
       nextStep: 'sign-in',
@@ -183,6 +190,7 @@ describe('auth-store gate truth', () => {
       profile,
       authTruth: {
         status: 'authenticated',
+        readiness: 'ready',
         access: 'granted',
         currentState: 'An authenticated session is ready.',
         nextStep: 'open-app',
@@ -219,6 +227,7 @@ describe('auth-store gate truth', () => {
       profile: null,
       authTruth: {
         status: 'signed-out',
+        readiness: 'blocked',
         access: 'blocked',
         currentState: 'The saved profile could not be loaded.',
         nextStep: 'retry-profile-load',
@@ -227,5 +236,27 @@ describe('auth-store gate truth', () => {
         signedOutReason: 'profile-load-failed',
       },
     });
+  });
+
+  it('exposes ready, waiting, and blocked auth readiness directly from the truth surface', () => {
+    expect(getAuthStoreTruthSlice(useAuthStore.getState()).authTruth.readiness).toBe('waiting');
+
+    useAuthStore.getState().completeAuthenticatedSession({
+      user: { id: 'user-1' } as const,
+      profile: {
+        id: 'user-1',
+        displayName: 'Ashlyn',
+        chordDisplayMode: 'roman',
+        defaultGenre: 'Pop',
+        createdAt: '2026-03-29T00:00:00Z',
+        updatedAt: '2026-03-29T01:00:00Z',
+      },
+    });
+
+    expect(getAuthStoreTruthSlice(useAuthStore.getState()).authTruth.readiness).toBe('ready');
+
+    useAuthStore.getState().setSignedOut('session-lookup-failed');
+
+    expect(getAuthStoreTruthSlice(useAuthStore.getState()).authTruth.readiness).toBe('blocked');
   });
 });

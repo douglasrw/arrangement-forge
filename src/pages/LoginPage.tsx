@@ -39,7 +39,7 @@ function AuthLoadingScreen({
   recoveryPath: string;
 }) {
   const recoveryDestination = describeRecoveryDestination(recoveryPath);
-  const isReady = authTruth.access === 'granted';
+  const isReady = authTruth.readiness === 'ready';
   const title = isReady ? 'Authentication ready' : 'Waiting on authentication';
   const description = isReady
     ? `${authTruth.currentState} Returning you to ${recoveryDestination}.`
@@ -137,7 +137,7 @@ function AuthStatusNotice({
 export default function LoginPage() {
   const navigate = useNavigate();
   const location = useLocation();
-  const { authTruth, signIn, signUp, signInWithGoogle } = useAuth();
+  const { authReadiness, authTruth, signIn, signUp, signInWithGoogle } = useAuth();
 
   const [mode, setMode] = useState<'signin' | 'signup'>('signin');
   const [email, setEmail] = useState('');
@@ -151,8 +151,8 @@ export default function LoginPage() {
   } | null>(null);
   const recoveryPath = resolveRecoveryPath(location.state);
   const isSubmitting = activeSubmissionPath !== null;
-  const isCheckingSession = authTruth.access === 'pending';
-  const hasAuthenticatedSession = authTruth.access === 'granted';
+  const isCheckingSession = authReadiness === 'waiting';
+  const hasAuthenticatedSession = authReadiness === 'ready';
 
   useEffect(() => {
     if (hasAuthenticatedSession) {
