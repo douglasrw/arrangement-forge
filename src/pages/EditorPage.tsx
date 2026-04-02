@@ -357,12 +357,14 @@ export default function EditorPage({
   }
 
   if (routeState.status === 'error') {
+    const isMalformedProjectRoute = !id;
+
     return (
       <AppShell
         shellStatus="error"
         shellBody={
           <EditorShellState
-            title="Unable to open project"
+            title={isMalformedProjectRoute ? 'Editor route is malformed' : 'Unable to open project'}
             message={
               id
                 ? `Project ${id} could not be loaded because ${routeState.failureTarget ?? 'project data'} failed to load. ${routeState.message}`
@@ -381,8 +383,8 @@ export default function EditorPage({
             nextStep={routeState.nextStep}
             testId="editor-shell-error-state"
             tone="error"
-            actionHref="/library"
-            actionLabel="Back to library"
+            actionHref={isMalformedProjectRoute ? '/project' : '/library'}
+            actionLabel={isMalformedProjectRoute ? 'Open editor fallback' : 'Back to library'}
             routeStatus="error"
           />
         }

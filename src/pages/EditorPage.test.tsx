@@ -152,6 +152,10 @@ function queryBackToLibraryLink() {
   return document.querySelector('a[href="/library"]');
 }
 
+function queryEditorFallbackLink() {
+  return document.querySelector('a[href="/project"]');
+}
+
 function querySelectionSurface() {
   return document.querySelector('[data-testid="selection-surface"]');
 }
@@ -624,6 +628,7 @@ describe('EditorPage route loading gate', () => {
     expect(loadProjectMock).not.toHaveBeenCalled();
     expect(queryErrorState()).not.toBeNull();
     expect(querySelectionSurface()).toBeNull();
+    expect(document.body.textContent).toContain('Editor route is malformed');
     expect(document.body.textContent).toContain(
       'The /project/:id editor route is missing a project id, so Arrangement Forge cannot load a project here.'
     );
@@ -644,7 +649,8 @@ describe('EditorPage route loading gate', () => {
     expect(document.body.textContent).toContain(
       'Next step: Return to the library, then open a project to replace this malformed editor route.'
     );
-    expect(queryBackToLibraryLink()).not.toBeNull();
+    expect(queryEditorFallbackLink()).not.toBeNull();
+    expect(queryBackToLibraryLink()).toBeNull();
     expect(queryProjectNameTrigger()?.textContent).toBe('Editor route blocked');
     expect(queryTopBarSaveLabel()?.textContent).toBe('Editor route blocked');
     expect(mounted.container.textContent).not.toContain('Untitled Project');
