@@ -36,8 +36,13 @@ describe('getBassPatternSelectionTruth', () => {
   it('keeps the selected bass pattern visible when the style is supported', () => {
     const selection = getBassPatternSelectionTruth('pick');
 
+    expect(selection.usedDefaultStyle).toBe(false);
+    expect(selection.defaultStyleId).toBe('fingerstyle');
+    expect(selection.defaultStyleLabel).toBe('Fingerstyle');
     expect(selection.selectedStyleId).toBe('pick');
     expect(selection.selectedStyleLabel).toBe('Pick');
+    expect(selection.supportedStyleIds).toEqual(['walking', 'slap', 'pick', 'fingerstyle']);
+    expect(selection.supportedStyleLabels).toEqual(['Walking', 'Slap', 'Pick', 'Fingerstyle']);
     expect(selection.fallbackApplied).toBe(false);
     expect(selection.selectedPattern.style).toBe('pick');
     expect(selection.summary).toBe('Pick uses bass pattern pick_01.');
@@ -51,6 +56,9 @@ describe('getBassPatternSelectionTruth', () => {
     const selection = getBassPatternSelectionTruth('walking_bass');
 
     expect(selection.requestedStyleId).toBe('walking_bass');
+    expect(selection.usedDefaultStyle).toBe(true);
+    expect(selection.defaultStyleId).toBe('fingerstyle');
+    expect(selection.defaultStyleLabel).toBe('Fingerstyle');
     expect(selection.selectedStyleId).toBe('fingerstyle');
     expect(selection.fallbackApplied).toBe(true);
     expect(selection.selectedPattern.style).toBe('fingerstyle');
@@ -67,9 +75,20 @@ describe('getBassPatternSelectionTruth', () => {
     const selection = getBassPatternSelectionTruth('   ');
 
     expect(selection.requestedStyleId).toBeNull();
+    expect(selection.usedDefaultStyle).toBe(true);
+    expect(selection.defaultStyleId).toBe('fingerstyle');
+    expect(selection.defaultStyleLabel).toBe('Fingerstyle');
     expect(selection.selectedStyleId).toBe('fingerstyle');
     expect(selection.fallbackApplied).toBe(false);
-    expect(selection.summary).toBe('Fingerstyle uses bass pattern fingerstyle_01.');
+    expect(selection.supportedStyleIds).toEqual(['walking', 'slap', 'pick', 'fingerstyle']);
+    expect(selection.supportedStyleLabels).toEqual(['Walking', 'Slap', 'Pick', 'Fingerstyle']);
+    expect(selection.summary).toBe('No bass style was requested, so the default Fingerstyle pattern fingerstyle_01 is active.');
+    expect(selection.currentState).toBe(
+      'Bass is using the default Fingerstyle style with pattern fingerstyle_01 because no explicit style was requested.'
+    );
+    expect(selection.nextStep).toBe(
+      'Keep the default Fingerstyle style, or switch to one of the supported bass styles: Walking, Slap, Pick, Fingerstyle (walking, slap, pick, fingerstyle).'
+    );
   });
 });
 

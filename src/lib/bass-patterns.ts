@@ -129,9 +129,14 @@ const PATTERNS: Record<string, BassPattern> = {
 
 export interface BassPatternSelectionTruth {
   requestedStyleId: string | null;
+  usedDefaultStyle: boolean;
+  defaultStyleId: string;
+  defaultStyleLabel: string;
   selectedStyleId: string;
   selectedStyleLabel: string;
   selectedPattern: BassPattern;
+  supportedStyleIds: string[];
+  supportedStyleLabels: string[];
   fallbackApplied: boolean;
   summary: string;
   currentState: string;
@@ -148,15 +153,38 @@ export function getBassPattern(style: string): BassPattern {
 export function getBassPatternSelectionTruth(style: string | null | undefined): BassPatternSelectionTruth {
   const styleTruth = getInstrumentStyleSelectionTruth('bass', style);
   const selectedPattern = PATTERNS[styleTruth.selectedStyleId] ?? PATTERNS['fingerstyle'];
-  const supportedStyleIds = getSupportedInstrumentStyles('bass').map((option) => option.id).join(', ');
-  const supportedStyleLabels = getSupportedInstrumentStyles('bass').map((option) => option.label).join(', ');
+  const supportedStyleIds = styleTruth.supportedStyleIds.join(', ');
+  const supportedStyleLabels = styleTruth.supportedStyleLabels.join(', ');
+
+  if (styleTruth.requestedStyleId === null) {
+    return {
+      requestedStyleId: styleTruth.requestedStyleId,
+      usedDefaultStyle: styleTruth.usedDefaultStyle,
+      defaultStyleId: styleTruth.defaultStyleId,
+      defaultStyleLabel: styleTruth.defaultStyleLabel,
+      selectedStyleId: styleTruth.selectedStyleId,
+      selectedStyleLabel: styleTruth.selectedStyleLabel,
+      selectedPattern,
+      supportedStyleIds: styleTruth.supportedStyleIds,
+      supportedStyleLabels: styleTruth.supportedStyleLabels,
+      fallbackApplied: false,
+      summary: `No bass style was requested, so the default ${styleTruth.selectedStyleLabel} pattern ${selectedPattern.id} is active.`,
+      currentState: `Bass is using the default ${styleTruth.selectedStyleLabel} style with pattern ${selectedPattern.id} because no explicit style was requested.`,
+      nextStep: `Keep the default ${styleTruth.selectedStyleLabel} style, or switch to one of the supported bass styles: ${supportedStyleLabels} (${supportedStyleIds}).`,
+    };
+  }
 
   if (!styleTruth.fallbackApplied) {
     return {
       requestedStyleId: styleTruth.requestedStyleId,
+      usedDefaultStyle: styleTruth.usedDefaultStyle,
+      defaultStyleId: styleTruth.defaultStyleId,
+      defaultStyleLabel: styleTruth.defaultStyleLabel,
       selectedStyleId: styleTruth.selectedStyleId,
       selectedStyleLabel: styleTruth.selectedStyleLabel,
       selectedPattern,
+      supportedStyleIds: styleTruth.supportedStyleIds,
+      supportedStyleLabels: styleTruth.supportedStyleLabels,
       fallbackApplied: false,
       summary: `${styleTruth.selectedStyleLabel} uses bass pattern ${selectedPattern.id}.`,
       currentState: `Bass style ${styleTruth.selectedStyleLabel} is active with pattern ${selectedPattern.id}. No fallback was needed.`,
@@ -166,9 +194,14 @@ export function getBassPatternSelectionTruth(style: string | null | undefined): 
 
   return {
     requestedStyleId: styleTruth.requestedStyleId,
+    usedDefaultStyle: styleTruth.usedDefaultStyle,
+    defaultStyleId: styleTruth.defaultStyleId,
+    defaultStyleLabel: styleTruth.defaultStyleLabel,
     selectedStyleId: styleTruth.selectedStyleId,
     selectedStyleLabel: styleTruth.selectedStyleLabel,
     selectedPattern,
+    supportedStyleIds: styleTruth.supportedStyleIds,
+    supportedStyleLabels: styleTruth.supportedStyleLabels,
     fallbackApplied: true,
     summary: `Requested bass style ${styleTruth.requestedStyleId ?? 'default'} falls back to ${styleTruth.selectedStyleLabel} with pattern ${selectedPattern.id}.`,
     currentState: `Requested bass style "${styleTruth.requestedStyleId}" is unavailable, so bass style ${styleTruth.selectedStyleLabel} is active with fallback pattern ${selectedPattern.id}.`,

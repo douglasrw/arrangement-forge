@@ -12,8 +12,13 @@ export interface StyleOption {
 export interface InstrumentStyleSelectionTruth {
   instrument: InstrumentType;
   requestedStyleId: string | null;
+  usedDefaultStyle: boolean;
+  defaultStyleId: string;
+  defaultStyleLabel: string;
   selectedStyleId: string;
   selectedStyleLabel: string;
+  supportedStyleIds: string[];
+  supportedStyleLabels: string[];
   fallbackApplied: boolean;
   currentState: string;
   nextStep: string;
@@ -111,6 +116,10 @@ function getDefaultStyleOption(instrument: InstrumentType): StyleOption {
   );
 }
 
+export function getDefaultInstrumentStyle(instrument: InstrumentType): StyleOption {
+  return getDefaultStyleOption(instrument);
+}
+
 export function getSupportedInstrumentStyles(instrument: InstrumentType): StyleOption[] {
   return INSTRUMENT_STYLE_OPTIONS[instrument];
 }
@@ -121,27 +130,58 @@ export function getInstrumentStyleSelectionTruth(
 ): InstrumentStyleSelectionTruth {
   const requestedStyleId = styleId?.trim() ? styleId : null;
   const options = getSupportedInstrumentStyles(instrument);
-  const selectedOption = options.find((option) => option.id === requestedStyleId) ?? getDefaultStyleOption(instrument);
+  const defaultOption = getDefaultStyleOption(instrument);
+  const selectedOption = options.find((option) => option.id === requestedStyleId) ?? defaultOption;
   const fallbackApplied = requestedStyleId !== null && selectedOption.id !== requestedStyleId;
-  const availableLabels = options.map((option) => option.label).join(', ');
+  const usedDefaultStyle = selectedOption.id === defaultOption.id;
+  const supportedStyleIds = options.map((option) => option.id);
+  const supportedStyleLabels = options.map((option) => option.label);
+  const availableLabels = supportedStyleLabels.join(', ');
+
+  if (requestedStyleId === null) {
+    return {
+      instrument,
+      requestedStyleId,
+      usedDefaultStyle,
+      defaultStyleId: defaultOption.id,
+      defaultStyleLabel: defaultOption.label,
+      selectedStyleId: selectedOption.id,
+      selectedStyleLabel: selectedOption.label,
+      supportedStyleIds,
+      supportedStyleLabels,
+      fallbackApplied: false,
+      currentState: `No explicit ${instrument} style was requested, so the default ${selectedOption.label} style is active.`,
+      nextStep: `Keep the default ${selectedOption.label} style or choose one of the supported ${instrument} styles: ${availableLabels}.`,
+    };
+  }
 
   if (!fallbackApplied) {
     return {
       instrument,
       requestedStyleId,
+      usedDefaultStyle,
+      defaultStyleId: defaultOption.id,
+      defaultStyleLabel: defaultOption.label,
       selectedStyleId: selectedOption.id,
       selectedStyleLabel: selectedOption.label,
+      supportedStyleIds,
+      supportedStyleLabels,
       fallbackApplied: false,
       currentState: `${selectedOption.label} is selected for ${instrument}.`,
-      nextStep: `Keep ${selectedOption.label} or choose one of: ${availableLabels}.`,
+      nextStep: `Keep ${selectedOption.label} or choose one of the supported ${instrument} styles: ${availableLabels}.`,
     };
   }
 
   return {
     instrument,
     requestedStyleId,
+    usedDefaultStyle,
+    defaultStyleId: defaultOption.id,
+    defaultStyleLabel: defaultOption.label,
     selectedStyleId: selectedOption.id,
     selectedStyleLabel: selectedOption.label,
+    supportedStyleIds,
+    supportedStyleLabels,
     fallbackApplied: true,
     currentState: `${instrument} style "${requestedStyleId}" is unavailable, so ${selectedOption.label} is selected instead.`,
     nextStep: `Choose one of the supported ${instrument} styles: ${availableLabels}.`,

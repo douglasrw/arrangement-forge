@@ -82,8 +82,13 @@ describe('getInstrumentStyleSelectionTruth', () => {
     expect(getInstrumentStyleSelectionTruth('bass', 'slap')).toMatchObject({
       instrument: 'bass',
       requestedStyleId: 'slap',
+      usedDefaultStyle: false,
+      defaultStyleId: 'fingerstyle',
+      defaultStyleLabel: 'Fingerstyle',
       selectedStyleId: 'slap',
       selectedStyleLabel: 'Slap',
+      supportedStyleIds: ['walking', 'slap', 'pick', 'fingerstyle'],
+      supportedStyleLabels: ['Walking', 'Slap', 'Pick', 'Fingerstyle'],
       fallbackApplied: false,
     });
   });
@@ -92,11 +97,33 @@ describe('getInstrumentStyleSelectionTruth', () => {
     expect(getInstrumentStyleSelectionTruth('bass', 'walking_bass')).toEqual({
       instrument: 'bass',
       requestedStyleId: 'walking_bass',
+      usedDefaultStyle: true,
+      defaultStyleId: 'fingerstyle',
+      defaultStyleLabel: 'Fingerstyle',
       selectedStyleId: 'fingerstyle',
       selectedStyleLabel: 'Fingerstyle',
+      supportedStyleIds: ['walking', 'slap', 'pick', 'fingerstyle'],
+      supportedStyleLabels: ['Walking', 'Slap', 'Pick', 'Fingerstyle'],
       fallbackApplied: true,
       currentState: 'bass style "walking_bass" is unavailable, so Fingerstyle is selected instead.',
       nextStep: 'Choose one of the supported bass styles: Walking, Slap, Pick, Fingerstyle.',
+    });
+  });
+
+  it('makes the default instrument style explicit when the request is blank', () => {
+    expect(getInstrumentStyleSelectionTruth('bass', '   ')).toEqual({
+      instrument: 'bass',
+      requestedStyleId: null,
+      usedDefaultStyle: true,
+      defaultStyleId: 'fingerstyle',
+      defaultStyleLabel: 'Fingerstyle',
+      selectedStyleId: 'fingerstyle',
+      selectedStyleLabel: 'Fingerstyle',
+      supportedStyleIds: ['walking', 'slap', 'pick', 'fingerstyle'],
+      supportedStyleLabels: ['Walking', 'Slap', 'Pick', 'Fingerstyle'],
+      fallbackApplied: false,
+      currentState: 'No explicit bass style was requested, so the default Fingerstyle style is active.',
+      nextStep: 'Keep the default Fingerstyle style or choose one of the supported bass styles: Walking, Slap, Pick, Fingerstyle.',
     });
   });
 });
