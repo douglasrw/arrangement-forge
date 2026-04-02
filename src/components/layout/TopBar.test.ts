@@ -106,6 +106,12 @@ function getTopBarSaveIndicator(container: HTMLDivElement) {
   return { indicator, dot, label };
 }
 
+function getTopBarShortcutsButton(container: HTMLDivElement) {
+  return container.querySelector(
+    '[data-testid="topbar-shortcuts-button"]'
+  ) as HTMLButtonElement | null;
+}
+
 function makeStem(partial: Partial<Stem> = {}): Stem {
   return {
     id: 'stem-1',
@@ -278,6 +284,42 @@ describe('TopBar project-name draft reconciliation', () => {
 
   it('falls back to Untitled Project for blank committed names', () => {
     expect(normalizeProjectNameDraft('   ')).toBe('Untitled Project');
+  });
+});
+
+describe('TopBar keyboard shortcuts discoverability truth', () => {
+  it('shows an explicit shortcut guide trigger in the top bar', () => {
+    const mounted = renderTopBar();
+    mountedRoot = mounted.root;
+    mountedContainer = mounted.container;
+
+    const shortcutButton = getTopBarShortcutsButton(mounted.container);
+
+    expect(shortcutButton).not.toBeNull();
+    expect(shortcutButton?.textContent).toContain('Shortcuts');
+    expect(shortcutButton?.textContent).toContain('Ctrl/Cmd+K');
+    expect(shortcutButton?.title).toBe('Open the keyboard shortcuts guide');
+  });
+
+  it('opens the shortcut guide with the current keyboard map', async () => {
+    const mounted = renderTopBar();
+    mountedRoot = mounted.root;
+    mountedContainer = mounted.container;
+
+    const shortcutButton = getTopBarShortcutsButton(mounted.container);
+
+    await act(async () => {
+      shortcutButton?.dispatchEvent(new MouseEvent('click', { bubbles: true }));
+    });
+
+    const shortcutGuide = mounted.container.querySelector(
+      '[data-testid="topbar-shortcuts-guide"]'
+    ) as HTMLDivElement | null;
+
+    expect(shortcutGuide?.textContent).toContain('Keyboard shortcuts');
+    expect(shortcutGuide?.textContent).toContain('Save project');
+    expect(shortcutGuide?.textContent).toContain('Open this shortcut guide');
+    expect(shortcutGuide?.textContent).toContain('Duplicate selected block');
   });
 });
 

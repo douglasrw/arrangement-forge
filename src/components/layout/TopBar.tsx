@@ -12,6 +12,10 @@ import { serializeProjectExportSnapshot, useProjectStore } from '@/store/project
 import { useUiStore } from '@/store/ui-store';
 import { useAuth } from '@/hooks/useAuth';
 import { ALL_KEYS } from '@/lib/chords';
+import {
+  KEYBOARD_SHORTCUT_BUTTON_ID,
+  KEYBOARD_SHORTCUT_SECTIONS,
+} from '@/hooks/useKeyboardShortcuts';
 import type { AppStatus } from './StatusBar';
 
 export function reconcileProjectNameDraft(
@@ -496,10 +500,12 @@ export function TopBar({ shellStatus }: { shellStatus?: AppStatus }) {
   const [isEditing, setIsEditing] = useState(false);
   const [nameDraft, setNameDraft] = useState(projectName);
   const [menuOpen, setMenuOpen] = useState(false);
+  const [shortcutGuideOpen, setShortcutGuideOpen] = useState(false);
   const [exportFeedback, setExportFeedback] = useState<string | null>(null);
   const [reloadingSavedSnapshot, setReloadingSavedSnapshot] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
   const menuRef = useRef<HTMLDivElement>(null);
+  const shortcutGuideRef = useRef<HTMLDivElement>(null);
 
   /* Sync draft when project name changes externally */
   useEffect(() => {
@@ -513,15 +519,38 @@ export function TopBar({ shellStatus }: { shellStatus?: AppStatus }) {
 
   /* Close menu on outside click */
   useEffect(() => {
-    if (!menuOpen) return;
+    if (!menuOpen && !shortcutGuideOpen) return;
+
     function handleClick(e: MouseEvent) {
-      if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
+      const target = e.target as Node;
+
+      if (menuOpen && menuRef.current && !menuRef.current.contains(target)) {
         setMenuOpen(false);
       }
+
+      if (shortcutGuideOpen && shortcutGuideRef.current && !shortcutGuideRef.current.contains(target)) {
+        setShortcutGuideOpen(false);
+      }
     }
+
     document.addEventListener('mousedown', handleClick);
     return () => document.removeEventListener('mousedown', handleClick);
-  }, [menuOpen]);
+  }, [menuOpen, shortcutGuideOpen]);
+
+  useEffect(() => {
+    if (!shortcutGuideOpen) {
+      return;
+    }
+
+    function handleKeyDown(event: KeyboardEvent) {
+      if (event.key === 'Escape') {
+        setShortcutGuideOpen(false);
+      }
+    }
+
+    document.addEventListener('keydown', handleKeyDown);
+    return () => document.removeEventListener('keydown', handleKeyDown);
+  }, [shortcutGuideOpen]);
 
   useEffect(() => {
     if (!exportFeedback) return;
@@ -772,6 +801,65 @@ export function TopBar({ shellStatus }: { shellStatus?: AppStatus }) {
 
       {/* ---- RIGHT: Export + Gear + Avatar ---- */}
       <div className="flex items-center gap-2">
+        <div className="relative" ref={shortcutGuideRef}>
+          <button
+            type="button"
+            id={KEYBOARD_SHORTCUT_BUTTON_ID}
+            data-testid="topbar-shortcuts-button"
+            onClick={() => setShortcutGuideOpen((currentValue) => !currentValue)}
+            aria-expanded={shortcutGuideOpen}
+            aria-controls="topbar-shortcuts-guide"
+            title="Open the keyboard shortcuts guide"
+            className={cn(
+              'hidden rounded-lg border border-border bg-secondary px-3 py-1.5 text-xs font-medium transition-colors',
+              'text-foreground hover:bg-secondary/80 md:inline-flex md:items-center md:gap-2'
+            )}
+          >
+            <span>Shortcuts</span>
+            <span className="rounded border border-border/80 bg-card px-1.5 py-0.5 font-mono text-[10px] text-muted-foreground">
+              Ctrl/Cmd+K
+            </span>
+          </button>
+
+          {shortcutGuideOpen ? (
+            <div
+              id="topbar-shortcuts-guide"
+              data-testid="topbar-shortcuts-guide"
+              className="absolute right-0 top-full z-50 mt-2 w-80 rounded-xl border border-border bg-card p-4 shadow-xl"
+            >
+              <div className="mb-3">
+                <h2 className="text-sm font-semibold text-foreground">Keyboard shortcuts</h2>
+                <p className="mt-1 text-xs text-muted-foreground">
+                  Current editor shortcuts live here now. Use Ctrl/Cmd+K any time to reopen this guide.
+                </p>
+              </div>
+
+              <div className="space-y-3">
+                {KEYBOARD_SHORTCUT_SECTIONS.map((section) => (
+                  <section key={section.heading}>
+                    <h3 className="mb-1 text-[11px] font-semibold uppercase tracking-[0.12em] text-muted-foreground">
+                      {section.heading}
+                    </h3>
+                    <ul className="space-y-1.5">
+                      {section.shortcuts.map((shortcut) => (
+                        <li
+                          key={`${section.heading}-${shortcut.keys}`}
+                          className="flex items-center justify-between gap-3 text-xs"
+                        >
+                          <span className="text-foreground">{shortcut.action}</span>
+                          <span className="rounded border border-border/80 bg-secondary/60 px-1.5 py-0.5 font-mono text-[10px] text-muted-foreground">
+                            {shortcut.keys}
+                          </span>
+                        </li>
+                      ))}
+                    </ul>
+                  </section>
+                ))}
+              </div>
+            </div>
+          ) : null}
+        </div>
+
         {/* Export button */}
         <button
           type="button"

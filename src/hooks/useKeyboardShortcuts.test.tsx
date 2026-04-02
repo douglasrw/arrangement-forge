@@ -4,7 +4,7 @@ import { act } from 'react';
 import { createElement } from 'react';
 import { createRoot, type Root } from 'react-dom/client';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { useKeyboardShortcuts } from './useKeyboardShortcuts';
+import { KEYBOARD_SHORTCUT_BUTTON_ID, useKeyboardShortcuts } from './useKeyboardShortcuts';
 import { useProjectStore } from '@/store/project-store';
 import { useSelectionStore } from '@/store/selection-store';
 import { useUiStore } from '@/store/ui-store';
@@ -354,5 +354,22 @@ describe('useKeyboardShortcuts undo boundary truth', () => {
       status: 'paused',
       statusLabel: 'Redo paused: Boundary test',
     });
+  });
+
+  it('routes Ctrl/Cmd+K to the top bar shortcut guide trigger', () => {
+    const shortcutButton = document.createElement('button');
+    const shortcutClick = vi.fn();
+
+    shortcutButton.id = KEYBOARD_SHORTCUT_BUTTON_ID;
+    shortcutButton.addEventListener('click', shortcutClick);
+    document.body.appendChild(shortcutButton);
+
+    const mounted = renderHarness();
+    mountedRoot = mounted.root;
+    mountedContainer = mounted.container;
+
+    dispatchShortcut('k');
+
+    expect(shortcutClick).toHaveBeenCalledTimes(1);
   });
 });

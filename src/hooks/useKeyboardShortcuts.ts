@@ -7,6 +7,41 @@ import { useProjectStore } from '@/store/project-store';
 import { useUndoStore } from '@/store/undo-store';
 import { useProject } from '@/hooks/useProject';
 
+export const KEYBOARD_SHORTCUT_BUTTON_ID = 'topbar-shortcuts-button';
+
+export const KEYBOARD_SHORTCUT_SECTIONS = [
+  {
+    heading: 'Project',
+    shortcuts: [
+      { keys: 'Ctrl/Cmd+S', action: 'Save project' },
+      { keys: 'Ctrl/Cmd+Z', action: 'Undo last change' },
+      { keys: 'Ctrl/Cmd+Shift+Z', action: 'Redo last change' },
+      { keys: 'Ctrl/Cmd+Enter', action: 'Run generation' },
+    ],
+  },
+  {
+    heading: 'View',
+    shortcuts: [
+      { keys: 'Ctrl/Cmd++', action: 'Zoom in' },
+      { keys: 'Ctrl/Cmd+-', action: 'Zoom out' },
+      { keys: 'Ctrl/Cmd+0', action: 'Fit all blocks' },
+      { keys: 'Ctrl/Cmd+K', action: 'Open this shortcut guide' },
+    ],
+  },
+  {
+    heading: 'Selection',
+    shortcuts: [
+      { keys: 'Arrow keys', action: 'Move block selection' },
+      { keys: 'Escape', action: 'Clear selection' },
+      { keys: 'V', action: 'Select tool' },
+      { keys: 'S', action: 'Split tool' },
+      { keys: 'M', action: 'Toggle mixer' },
+      { keys: 'D', action: 'Duplicate selected block' },
+      { keys: 'Delete / Backspace', action: 'Delete selected block' },
+    ],
+  },
+] as const;
+
 function isInputFocused(): boolean {
   const el = document.activeElement;
   return el instanceof HTMLInputElement ||
@@ -17,6 +52,17 @@ function isInputFocused(): boolean {
 
 function isMod(e: KeyboardEvent): boolean {
   return e.metaKey || e.ctrlKey;
+}
+
+export function openKeyboardShortcutsGuide(): boolean {
+  const shortcutButton = document.getElementById(KEYBOARD_SHORTCUT_BUTTON_ID);
+
+  if (!(shortcutButton instanceof HTMLButtonElement)) {
+    return false;
+  }
+
+  shortcutButton.click();
+  return true;
 }
 
 export function useKeyboardShortcuts() {
@@ -87,7 +133,7 @@ export function useKeyboardShortcuts() {
       // Cmd+K — keyboard shortcuts
       if (isMod(e) && e.key === 'k') {
         e.preventDefault();
-        // handled in StatusBar
+        openKeyboardShortcutsGuide();
         return;
       }
 
