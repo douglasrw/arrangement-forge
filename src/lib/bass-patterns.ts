@@ -5,6 +5,7 @@ import type { MidiNoteData } from '@/types';
 import { getChordTones, noteToMidi } from './midi-generator';
 import { degreeToNote } from './chords';
 import { knuthHash } from './drum-patterns';
+import { getInstrumentStyleSelectionTruth } from './genre-config';
 
 // ---------- Types ----------
 
@@ -126,11 +127,31 @@ const PATTERNS: Record<string, BassPattern> = {
   fingerstyle: FINGERSTYLE,
 };
 
+export interface BassPatternSelectionTruth {
+  requestedStyleId: string | null;
+  selectedPattern: BassPattern;
+  fallbackApplied: boolean;
+  currentState: string;
+  nextStep: string;
+}
+
 // ---------- Lookup ----------
 
 /** Returns the bass pattern for the given style. Falls back to fingerstyle if unknown. */
 export function getBassPattern(style: string): BassPattern {
-  return PATTERNS[style] ?? PATTERNS['fingerstyle'];
+  return getBassPatternSelectionTruth(style).selectedPattern;
+}
+
+export function getBassPatternSelectionTruth(style: string | null | undefined): BassPatternSelectionTruth {
+  const styleTruth = getInstrumentStyleSelectionTruth('bass', style);
+
+  return {
+    requestedStyleId: styleTruth.requestedStyleId,
+    selectedPattern: PATTERNS[styleTruth.selectedStyleId] ?? PATTERNS['fingerstyle'],
+    fallbackApplied: styleTruth.fallbackApplied,
+    currentState: styleTruth.currentState,
+    nextStep: styleTruth.nextStep,
+  };
 }
 
 // ---------- Degree-to-index mapping ----------

@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { getBassPattern, buildBassFromPattern } from './bass-patterns';
+import { buildBassFromPattern, getBassPattern, getBassPatternSelectionTruth } from './bass-patterns';
 
 describe('getBassPattern', () => {
   it('returns a walking pattern with 2 bars', () => {
@@ -29,6 +29,26 @@ describe('getBassPattern', () => {
   it('falls back to fingerstyle for unknown style', () => {
     const pattern = getBassPattern('unknown');
     expect(pattern.style).toBe('fingerstyle');
+  });
+});
+
+describe('getBassPatternSelectionTruth', () => {
+  it('keeps the selected bass pattern visible when the style is supported', () => {
+    const selection = getBassPatternSelectionTruth('pick');
+
+    expect(selection.fallbackApplied).toBe(false);
+    expect(selection.selectedPattern.style).toBe('pick');
+    expect(selection.currentState).toBe('Pick is selected for bass.');
+    expect(selection.nextStep).toBe('Keep Pick or choose one of: Walking, Slap, Pick, Fingerstyle.');
+  });
+
+  it('makes the fallback selection explicit when the requested style is unsupported', () => {
+    const selection = getBassPatternSelectionTruth('walking_bass');
+
+    expect(selection.requestedStyleId).toBe('walking_bass');
+    expect(selection.fallbackApplied).toBe(true);
+    expect(selection.selectedPattern.style).toBe('fingerstyle');
+    expect(selection.currentState).toBe('bass style "walking_bass" is unavailable, so Fingerstyle is selected instead.');
   });
 });
 

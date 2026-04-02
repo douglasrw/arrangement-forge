@@ -9,6 +9,16 @@ export interface StyleOption {
   label: string;
 }
 
+export interface InstrumentStyleSelectionTruth {
+  instrument: InstrumentType;
+  requestedStyleId: string | null;
+  selectedStyleId: string;
+  selectedStyleLabel: string;
+  fallbackApplied: boolean;
+  currentState: string;
+  nextStep: string;
+}
+
 export const INSTRUMENT_STYLE_OPTIONS: Record<InstrumentType, StyleOption[]> = {
   drums: [
     { id: 'rock_straight', label: 'Rock Straight' },
@@ -83,6 +93,56 @@ export const GENRE_SLIDERS: Record<string, GenreSliderConfig> = {
 export const GENRES: string[] = Object.keys(GENRE_SUBSTYLES);
 
 export const DEFAULT_GENRE = 'Jazz';
+
+const DEFAULT_INSTRUMENT_STYLE_IDS: Record<InstrumentType, string> = {
+  drums: 'rock_straight',
+  bass: 'fingerstyle',
+  piano: 'jazz_comp',
+  guitar: 'power_chords',
+  strings: 'sustained_pad',
+};
+
+function getDefaultStyleOption(instrument: InstrumentType): StyleOption {
+  const defaultStyleId = DEFAULT_INSTRUMENT_STYLE_IDS[instrument];
+  return (
+    INSTRUMENT_STYLE_OPTIONS[instrument].find((option) => option.id === defaultStyleId) ??
+    INSTRUMENT_STYLE_OPTIONS[instrument][0] ??
+    { id: 'default', label: 'Default' }
+  );
+}
+
+export function getInstrumentStyleSelectionTruth(
+  instrument: InstrumentType,
+  styleId: string | null | undefined
+): InstrumentStyleSelectionTruth {
+  const requestedStyleId = styleId?.trim() ? styleId : null;
+  const options = INSTRUMENT_STYLE_OPTIONS[instrument];
+  const selectedOption = options.find((option) => option.id === requestedStyleId) ?? getDefaultStyleOption(instrument);
+  const fallbackApplied = requestedStyleId !== null && selectedOption.id !== requestedStyleId;
+  const availableLabels = options.map((option) => option.label).join(', ');
+
+  if (!fallbackApplied) {
+    return {
+      instrument,
+      requestedStyleId,
+      selectedStyleId: selectedOption.id,
+      selectedStyleLabel: selectedOption.label,
+      fallbackApplied: false,
+      currentState: `${selectedOption.label} is selected for ${instrument}.`,
+      nextStep: `Keep ${selectedOption.label} or choose one of: ${availableLabels}.`,
+    };
+  }
+
+  return {
+    instrument,
+    requestedStyleId,
+    selectedStyleId: selectedOption.id,
+    selectedStyleLabel: selectedOption.label,
+    fallbackApplied: true,
+    currentState: `${instrument} style "${requestedStyleId}" is unavailable, so ${selectedOption.label} is selected instead.`,
+    nextStep: `Choose one of the supported ${instrument} styles: ${availableLabels}.`,
+  };
+}
 
 export function normalizeGenrePreference(genre: string | null | undefined): string {
   if (genre && GENRE_SUBSTYLES[genre]) {

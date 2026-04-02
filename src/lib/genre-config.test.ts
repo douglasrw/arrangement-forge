@@ -6,6 +6,7 @@ import {
   GENRE_SUBSTYLES,
   getDefaultProjectStyle,
   getDefaultSubStyleForGenre,
+  getInstrumentStyleSelectionTruth,
   normalizeGenrePreference,
 } from './genre-config';
 
@@ -72,6 +73,30 @@ describe('project style defaults', () => {
     expect(getDefaultProjectStyle('Unsupported')).toEqual({
       genre: 'Jazz',
       subStyle: 'Swing',
+    });
+  });
+});
+
+describe('getInstrumentStyleSelectionTruth', () => {
+  it('reports the selected bass style when the request is supported', () => {
+    expect(getInstrumentStyleSelectionTruth('bass', 'slap')).toMatchObject({
+      instrument: 'bass',
+      requestedStyleId: 'slap',
+      selectedStyleId: 'slap',
+      selectedStyleLabel: 'Slap',
+      fallbackApplied: false,
+    });
+  });
+
+  it('reports the fallback and next step when the requested style is unsupported', () => {
+    expect(getInstrumentStyleSelectionTruth('bass', 'walking_bass')).toEqual({
+      instrument: 'bass',
+      requestedStyleId: 'walking_bass',
+      selectedStyleId: 'fingerstyle',
+      selectedStyleLabel: 'Fingerstyle',
+      fallbackApplied: true,
+      currentState: 'bass style "walking_bass" is unavailable, so Fingerstyle is selected instead.',
+      nextStep: 'Choose one of the supported bass styles: Walking, Slap, Pick, Fingerstyle.',
     });
   });
 });
