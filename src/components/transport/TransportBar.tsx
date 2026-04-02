@@ -110,6 +110,41 @@ function getHistoryButtonClassName(status: "empty" | "available" | "blocked" | "
   return "cursor-not-allowed text-zinc-700"
 }
 
+function getTransportReadinessTruth({
+  timelineAvailable,
+  transportReady,
+  playbackAction,
+}: {
+  timelineAvailable: boolean
+  transportReady: boolean
+  playbackAction: "load-and-play" | "play" | "retry-play" | "unavailable" | "wait"
+}) {
+  if (transportReady) {
+    return {
+      detailLabel: "Ready",
+      state: "ready" as const,
+      summaryLabel: "Ready",
+      summaryClassName: "bg-emerald-500/10 text-emerald-300",
+    }
+  }
+
+  if (!timelineAvailable || playbackAction === "retry-play" || playbackAction === "unavailable") {
+    return {
+      detailLabel: timelineAvailable ? "Transport blocked" : "No timeline",
+      state: "blocked" as const,
+      summaryLabel: "Blocked",
+      summaryClassName: "bg-rose-500/10 text-rose-300",
+    }
+  }
+
+  return {
+    detailLabel: playbackAction === "wait" ? "Loading audio" : "Load to play",
+    state: "waiting" as const,
+    summaryLabel: "Waiting",
+    summaryClassName: "bg-amber-500/10 text-amber-300",
+  }
+}
+
 /* ------------------------------------------------------------------ */
 /*  Transport Bar                                                      */
 /* ------------------------------------------------------------------ */
@@ -197,17 +232,14 @@ export function TransportBar() {
     : transportReady
       ? null
       : `${playbackTruth.detail} ${playbackTruth.nextStep}`.trim()
+  const transportReadinessTruth = getTransportReadinessTruth({
+    timelineAvailable,
+    transportReady,
+    playbackAction,
+  })
   const timelineStatusLabel = !timelineAvailable
     ? "No timeline"
     : playbackTruth.summary
-  const readinessLabel = transportReady
-    ? "Ready"
-    : timelineStatusLabel
-  const readinessClassName = transportReady
-    ? "bg-emerald-500/10 text-emerald-300"
-    : playbackReadiness === "loading"
-      ? "bg-amber-500/10 text-amber-300"
-      : "bg-zinc-800 text-zinc-500"
 
   /* BPM inline editing — local draft only */
   const [editingBpm, setEditingBpm] = useState(false)
@@ -305,9 +337,9 @@ export function TransportBar() {
               ? "bg-zinc-800 text-zinc-600 shadow-none"
               : transportNeedsLoad
                 ? "border border-border bg-background text-zinc-200 hover:bg-secondary"
-              : playbackActive
-                ? "bg-primary text-primary-foreground shadow-[0_0_12px_rgba(6,182,212,0.4)]"
-                : "bg-primary text-primary-foreground hover:bg-primary/90"
+                : playbackActive
+                  ? "bg-primary text-primary-foreground shadow-[0_0_12px_rgba(6,182,212,0.4)]"
+                  : "bg-primary text-primary-foreground hover:bg-primary/90"
           )}
           aria-label={playButtonLabel}
         >
@@ -453,12 +485,20 @@ export function TransportBar() {
 
         <span className="text-sm text-zinc-500">{timeSig}</span>
         <span
+          data-transport-readiness-state={transportReadinessTruth.state}
           className={cn(
             "rounded-full px-2 py-0.5 text-[11px] font-medium uppercase tracking-wide",
-            readinessClassName
+            transportReadinessTruth.summaryClassName
           )}
+          title={transportGuidance ?? undefined}
         >
-          {readinessLabel}
+          {transportReadinessTruth.summaryLabel}
+        </span>
+        <span
+          className="max-w-[120px] truncate text-[11px] text-zinc-500"
+          title={transportGuidance ?? transportReadinessTruth.detailLabel}
+        >
+          {transportReadinessTruth.detailLabel}
         </span>
         <button
           type="button"
@@ -470,8 +510,8 @@ export function TransportBar() {
             !transportReady
               ? "cursor-not-allowed text-zinc-700"
               : loopPressed
-              ? "bg-instrument-strings/15 text-playhead-light"
-              : "text-zinc-500 hover:text-muted-foreground"
+                ? "bg-instrument-strings/15 text-playhead-light"
+                : "text-zinc-500 hover:text-muted-foreground"
           )}
           aria-label="Toggle loop"
           aria-pressed={loopPressed}
@@ -489,8 +529,8 @@ export function TransportBar() {
             !transportReady
               ? "cursor-not-allowed text-zinc-700"
               : metronomePressed
-              ? "bg-instrument-strings/15 text-playhead-light"
-              : "text-zinc-500 hover:text-muted-foreground"
+                ? "bg-instrument-strings/15 text-playhead-light"
+                : "text-zinc-500 hover:text-muted-foreground"
           )}
           aria-label="Toggle metronome"
           aria-pressed={metronomePressed}

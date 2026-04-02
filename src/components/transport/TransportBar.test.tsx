@@ -309,10 +309,15 @@ describe('TransportBar transport controls', () => {
     const playheadTruth = mounted.container.querySelector(
       '[data-playhead-state="idle"]'
     ) as HTMLDivElement | null;
+    const readinessBadge = mounted.container.querySelector(
+      '[data-transport-readiness-state]'
+    ) as HTMLSpanElement | null;
 
     expect(loopButton?.getAttribute('aria-pressed')).toBe('true');
     expect(metronomeButton?.getAttribute('aria-pressed')).toBe('true');
     expect(playheadTruth).not.toBeNull();
+    expect(readinessBadge?.getAttribute('data-transport-readiness-state')).toBe('ready');
+    expect(readinessBadge?.textContent).toBe('Ready');
     expect(mounted.container.textContent).toContain('Idle');
     expect(mounted.container.textContent).toContain('Bar 3 Beat 2');
     expect(mounted.container.textContent).toContain('0:24 / 1:36');
@@ -676,6 +681,9 @@ describe('TransportBar transport controls', () => {
       const guidance = mounted.container.querySelector(
         '[data-transport-guidance="no-timeline"]'
       ) as HTMLDivElement | null;
+      const readinessBadge = mounted.container.querySelector(
+        '[data-transport-readiness-state]'
+      ) as HTMLSpanElement | null;
 
       expect(skipStartButton?.disabled).toBe(true);
       expect(playButton?.disabled).toBe(true);
@@ -686,6 +694,8 @@ describe('TransportBar transport controls', () => {
       expect(metronomeButton?.getAttribute('aria-pressed')).toBe('false');
       expect(scrubber).toBeNull();
       expect(guidance?.textContent).toContain('Generate or import an arrangement to enable playback and transport controls.');
+      expect(readinessBadge?.getAttribute('data-transport-readiness-state')).toBe('blocked');
+      expect(readinessBadge?.textContent).toBe('Blocked');
       expect(mounted.container.textContent).toContain('No timeline');
       expect(mounted.container.textContent).not.toContain('Ready');
       expect(mounted.container.textContent).not.toContain('Load to play');
@@ -729,10 +739,15 @@ describe('TransportBar transport controls', () => {
     const guidance = mounted.container.querySelector(
       '[data-transport-guidance="awaiting-user-play"]'
     ) as HTMLDivElement | null;
+    const readinessBadge = mounted.container.querySelector(
+      '[data-transport-readiness-state]'
+    ) as HTMLSpanElement | null;
 
     expect(playButton?.disabled).toBe(false);
     expect(guidance?.textContent).toContain('Arrangement audio is not loaded into the engine yet.');
     expect(guidance?.textContent).toContain('Press play to load arrangement audio.');
+    expect(readinessBadge?.getAttribute('data-transport-readiness-state')).toBe('waiting');
+    expect(readinessBadge?.textContent).toBe('Waiting');
     expect(mounted.container.textContent).toContain('Load to play');
     expect(mounted.container.textContent).not.toContain('No timeline');
   });
@@ -803,6 +818,9 @@ describe('TransportBar transport controls', () => {
     const guidance = mounted.container.querySelector(
       '[data-transport-guidance="awaiting-user-play"]'
     ) as HTMLDivElement | null;
+    const readinessBadge = mounted.container.querySelector(
+      '[data-transport-readiness-state]'
+    ) as HTMLSpanElement | null;
 
     expect(skipStartButton?.disabled).toBe(true);
     expect(playButton?.disabled).toBe(false);
@@ -811,6 +829,8 @@ describe('TransportBar transport controls', () => {
     expect(scrubber).toBeNull();
     expect(guidance?.textContent).toContain('Arrangement audio is not loaded into the engine yet.');
     expect(guidance?.textContent).toContain('Press play to load arrangement audio.');
+    expect(readinessBadge?.getAttribute('data-transport-readiness-state')).toBe('waiting');
+    expect(readinessBadge?.textContent).toBe('Waiting');
     expect(mounted.container.textContent).toContain('Load to play');
     expect(mounted.container.textContent).toContain('Load to play');
   });
@@ -845,6 +865,9 @@ describe('TransportBar transport controls', () => {
     const guidance = mounted.container.querySelector(
       '[data-transport-guidance="loading-arrangement"]'
     ) as HTMLDivElement | null;
+    const readinessBadge = mounted.container.querySelector(
+      '[data-transport-readiness-state]'
+    ) as HTMLSpanElement | null;
 
     expect(playButton?.disabled).toBe(true);
     expect(loopButton?.disabled).toBe(true);
@@ -852,6 +875,8 @@ describe('TransportBar transport controls', () => {
     expect(scrubber).toBeNull();
     expect(guidance?.textContent).toContain('Arrangement audio is loading into the engine right now.');
     expect(guidance?.textContent).toContain('Wait for the current audio load to finish.');
+    expect(readinessBadge?.getAttribute('data-transport-readiness-state')).toBe('waiting');
+    expect(readinessBadge?.textContent).toBe('Waiting');
     expect(mounted.container.textContent).toContain('Loading audio');
     expect(mounted.container.textContent).not.toContain('Load to play');
   });
@@ -886,6 +911,9 @@ describe('TransportBar transport controls', () => {
     const guidance = mounted.container.querySelector(
       '[data-transport-guidance="arrangement-load-failed"]'
     ) as HTMLDivElement | null;
+    const readinessBadge = mounted.container.querySelector(
+      '[data-transport-readiness-state]'
+    ) as HTMLSpanElement | null;
 
     expect(playButton?.disabled).toBe(false);
     expect(loopButton?.disabled).toBe(true);
@@ -893,7 +921,9 @@ describe('TransportBar transport controls', () => {
     expect(scrubber).toBeNull();
     expect(guidance?.textContent).toContain('Audio failed to load: Salamander drum samples missing');
     expect(guidance?.textContent).toContain('Fix the sample error, then press play to try again.');
-    expect(mounted.container.textContent).toContain('Unavailable');
+    expect(readinessBadge?.getAttribute('data-transport-readiness-state')).toBe('blocked');
+    expect(readinessBadge?.textContent).toBe('Blocked');
+    expect(mounted.container.textContent).toContain('Transport blocked');
     expect(mounted.container.textContent).not.toContain('Loading');
     expect(mounted.container.textContent).not.toContain('Load to play');
     expect(playButton?.title).toContain('Audio failed to load: Salamander drum samples missing');
