@@ -1,6 +1,9 @@
 import { useState, useRef, useEffect } from "react"
 import { cn } from "@/lib/utils"
-import { getTransportReadinessTruth } from "@/audio/transport"
+import {
+  getTransportReadinessTruth,
+  getTransportSelectionTruth,
+} from "@/audio/transport"
 import {
   Square,
   Play,
@@ -163,8 +166,8 @@ export function TransportBar() {
   const transportReady = timelineAvailable && playbackReady
   const transportNeedsLoad = timelineAvailable && playbackNeedsLoad
   const playbackActive = transportReady && isPlaying
-  const loopPressed = transportReady && loopActive
-  const metronomePressed = transportReady && metronomeActive
+  const loopPressed = loopActive
+  const metronomePressed = metronomeActive
   const undoButtonDisabled = undoBoundaryTruth.status !== "available"
   const redoButtonDisabled = redoBoundaryTruth.status !== "available"
   const undoButtonTitle = undoBoundaryTruth.tooltip
@@ -203,6 +206,10 @@ export function TransportBar() {
     transportReady,
     playbackAction,
     playbackSummary: playbackTruth.summary,
+  })
+  const transportSelectionTruth = getTransportSelectionTruth({
+    loopEnabled: loopActive,
+    metronomeEnabled: metronomeActive,
   })
   const transportReadinessAnnouncement = transportGuidance
     ? `${transportReadinessTruth.summaryLabel}: ${transportReadinessTruth.detailLabel}. ${transportGuidance}`
@@ -499,7 +506,9 @@ export function TransportBar() {
           className={cn(
             "flex size-7 items-center justify-center rounded-md transition-colors",
             !transportReady
-              ? "cursor-not-allowed text-zinc-700"
+              ? loopPressed
+                ? "cursor-not-allowed bg-instrument-strings/10 text-playhead-light/60"
+                : "cursor-not-allowed text-zinc-700"
               : loopPressed
                 ? "bg-instrument-strings/15 text-playhead-light"
                 : "text-zinc-500 hover:text-muted-foreground"
@@ -518,7 +527,9 @@ export function TransportBar() {
           className={cn(
             "flex size-7 items-center justify-center rounded-md transition-colors",
             !transportReady
-              ? "cursor-not-allowed text-zinc-700"
+              ? metronomePressed
+                ? "cursor-not-allowed bg-instrument-strings/10 text-playhead-light/60"
+                : "cursor-not-allowed text-zinc-700"
               : metronomePressed
                 ? "bg-instrument-strings/15 text-playhead-light"
                 : "text-zinc-500 hover:text-muted-foreground"
@@ -528,6 +539,23 @@ export function TransportBar() {
         >
           <MetronomeIcon className="size-3.5" />
         </button>
+        <div
+          data-testid="transport-selection-truth"
+          className="max-w-[160px] text-[10px] leading-tight text-zinc-500"
+          title={transportSelectionTruth.detailLabel}
+        >
+          {transportSelectionTruth.settings.map((setting) => (
+            <div
+              key={setting.key}
+              data-transport-selection={setting.key}
+              data-transport-selection-state={setting.state}
+              className="truncate"
+              title={setting.detailLabel}
+            >
+              {setting.summaryLabel}
+            </div>
+          ))}
+        </div>
       </div>
     </footer>
   )

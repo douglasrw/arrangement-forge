@@ -312,12 +312,17 @@ describe('TransportBar transport controls', () => {
     const readinessBadge = mounted.container.querySelector(
       '[data-transport-readiness-state]'
     ) as HTMLSpanElement | null;
+    const selectionTruth = mounted.container.querySelector(
+      '[data-testid="transport-selection-truth"]'
+    ) as HTMLDivElement | null;
 
     expect(loopButton?.getAttribute('aria-pressed')).toBe('true');
     expect(metronomeButton?.getAttribute('aria-pressed')).toBe('true');
     expect(playheadTruth).not.toBeNull();
     expect(readinessBadge?.getAttribute('data-transport-readiness-state')).toBe('ready');
     expect(readinessBadge?.textContent).toBe('Ready');
+    expect(selectionTruth?.textContent).toContain('Loop on');
+    expect(selectionTruth?.textContent).toContain('Metronome on');
     expect(mounted.container.textContent).toContain('Idle');
     expect(mounted.container.textContent).toContain('Bar 3 Beat 2');
     expect(mounted.container.textContent).toContain('0:24 / 1:36');
@@ -699,16 +704,21 @@ describe('TransportBar transport controls', () => {
     const guidance = mounted.container.querySelector(
       '[data-transport-guidance="no-timeline"]'
     ) as HTMLDivElement | null;
+    const selectionTruth = mounted.container.querySelector(
+      '[data-testid="transport-selection-truth"]'
+    ) as HTMLDivElement | null;
     expect(skipStartButton?.disabled).toBe(true);
     expect(stopButton?.disabled).toBe(false);
     expect(playButton?.disabled).toBe(true);
     expect(skipEndButton?.disabled).toBe(true);
     expect(loopButton?.disabled).toBe(true);
     expect(metronomeButton?.disabled).toBe(true);
-    expect(loopButton?.getAttribute('aria-pressed')).toBe('false');
-    expect(metronomeButton?.getAttribute('aria-pressed')).toBe('false');
+    expect(loopButton?.getAttribute('aria-pressed')).toBe('true');
+    expect(metronomeButton?.getAttribute('aria-pressed')).toBe('true');
     expect(scrubber).toBeNull();
     expect(guidance?.textContent).toContain('Generate or import an arrangement to enable playback and transport controls.');
+    expect(selectionTruth?.textContent).toContain('Loop on');
+    expect(selectionTruth?.textContent).toContain('Metronome on');
     expect(mounted.container.textContent).toContain('No timeline');
     expect(mounted.container.textContent).not.toContain('Ready');
     expect(mounted.container.textContent).not.toContain('Bar 4');
@@ -769,18 +779,23 @@ describe('TransportBar transport controls', () => {
       const readinessBadge = mounted.container.querySelector(
         '[data-transport-readiness-state]'
       ) as HTMLSpanElement | null;
+      const selectionTruth = mounted.container.querySelector(
+        '[data-testid="transport-selection-truth"]'
+      ) as HTMLDivElement | null;
 
       expect(skipStartButton?.disabled).toBe(true);
       expect(playButton?.disabled).toBe(true);
       expect(skipEndButton?.disabled).toBe(true);
       expect(loopButton?.disabled).toBe(true);
       expect(metronomeButton?.disabled).toBe(true);
-      expect(loopButton?.getAttribute('aria-pressed')).toBe('false');
-      expect(metronomeButton?.getAttribute('aria-pressed')).toBe('false');
+      expect(loopButton?.getAttribute('aria-pressed')).toBe('true');
+      expect(metronomeButton?.getAttribute('aria-pressed')).toBe('true');
       expect(scrubber).toBeNull();
       expect(guidance?.textContent).toContain('Generate or import an arrangement to enable playback and transport controls.');
       expect(readinessBadge?.getAttribute('data-transport-readiness-state')).toBe('blocked');
       expect(readinessBadge?.textContent).toBe('Blocked');
+      expect(selectionTruth?.textContent).toContain('Loop on');
+      expect(selectionTruth?.textContent).toContain('Metronome on');
       expect(mounted.container.textContent).toContain('No timeline');
       expect(mounted.container.textContent).not.toContain('Ready');
       expect(mounted.container.textContent).not.toContain('Load to play');
@@ -789,6 +804,27 @@ describe('TransportBar transport controls', () => {
       expect(mounted.container.textContent).not.toContain('1:04');
     }
   );
+
+  it('surfaces default-off transport selection truth when the engine config still uses defaults', () => {
+    const mounted = renderTransportBar();
+    mountedRoot = mounted.root;
+    mountedContainer = mounted.container;
+
+    const selectionTruth = mounted.container.querySelector(
+      '[data-testid="transport-selection-truth"]'
+    ) as HTMLDivElement | null;
+    const loopTruth = mounted.container.querySelector(
+      '[data-transport-selection="loop"]'
+    ) as HTMLDivElement | null;
+    const metronomeTruth = mounted.container.querySelector(
+      '[data-transport-selection="metronome"]'
+    ) as HTMLDivElement | null;
+
+    expect(selectionTruth?.textContent).toContain('Loop default off');
+    expect(selectionTruth?.textContent).toContain('Metronome default off');
+    expect(loopTruth?.getAttribute('data-transport-selection-state')).toBe('default');
+    expect(metronomeTruth?.getAttribute('data-transport-selection-state')).toBe('default');
+  });
 
   it('keeps the transport timeline available for loaded draft arrangement rows', () => {
     useAudioState.transportState = {

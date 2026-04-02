@@ -1,5 +1,8 @@
 import { describe, expect, it } from 'vitest';
-import { getTransportReadinessTruth } from './transport';
+import {
+  getTransportReadinessTruth,
+  getTransportSelectionTruth,
+} from './transport';
 
 describe('getTransportReadinessTruth', () => {
   it('returns ready truth when the timeline is playable', () => {
@@ -79,6 +82,62 @@ describe('getTransportReadinessTruth', () => {
       state: 'blocked',
       summaryLabel: 'Blocked',
       summaryClassName: 'bg-rose-500/10 text-rose-300',
+    });
+  });
+});
+
+describe('getTransportSelectionTruth', () => {
+  it('surfaces default-off truth when loop and metronome still use engine defaults', () => {
+    expect(
+      getTransportSelectionTruth({
+        loopEnabled: false,
+        metronomeEnabled: false,
+      })
+    ).toEqual({
+      detailLabel:
+        'Loop is off by default until you select it. Metronome is off by default until you select it.',
+      settings: [
+        {
+          detailLabel: 'Loop is off by default until you select it.',
+          key: 'loop',
+          state: 'default',
+          summaryLabel: 'Loop default off',
+        },
+        {
+          detailLabel: 'Metronome is off by default until you select it.',
+          key: 'metronome',
+          state: 'default',
+          summaryLabel: 'Metronome default off',
+        },
+      ],
+      summaryLabel: 'Loop default off · Metronome default off',
+    });
+  });
+
+  it('keeps selected transport settings visible when the engine config has them enabled', () => {
+    expect(
+      getTransportSelectionTruth({
+        loopEnabled: true,
+        metronomeEnabled: false,
+      })
+    ).toEqual({
+      detailLabel:
+        'Loop is selected for playback. Metronome is off by default until you select it.',
+      settings: [
+        {
+          detailLabel: 'Loop is selected for playback.',
+          key: 'loop',
+          state: 'selected',
+          summaryLabel: 'Loop on',
+        },
+        {
+          detailLabel: 'Metronome is off by default until you select it.',
+          key: 'metronome',
+          state: 'default',
+          summaryLabel: 'Metronome default off',
+        },
+      ],
+      summaryLabel: 'Loop on · Metronome default off',
     });
   });
 });

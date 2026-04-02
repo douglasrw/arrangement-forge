@@ -13,6 +13,21 @@ export interface TransportReadinessTruth {
   summaryClassName: string;
 }
 
+export type TransportSelectionState = 'default' | 'selected';
+
+export interface TransportSettingTruth {
+  detailLabel: string;
+  key: 'loop' | 'metronome';
+  state: TransportSelectionState;
+  summaryLabel: string;
+}
+
+export interface TransportSelectionTruth {
+  detailLabel: string;
+  settings: TransportSettingTruth[];
+  summaryLabel: string;
+}
+
 export function getTransportReadinessTruth({
   timelineAvailable,
   transportReady,
@@ -65,6 +80,59 @@ export function getTransportReadinessTruth({
     state: 'waiting',
     summaryLabel: 'Waiting',
     summaryClassName: 'bg-amber-500/10 text-amber-300',
+  };
+}
+
+function getTransportSettingTruth({
+  enabled,
+  key,
+  label,
+}: {
+  enabled: boolean;
+  key: 'loop' | 'metronome';
+  label: 'Loop' | 'Metronome';
+}): TransportSettingTruth {
+  if (enabled) {
+    return {
+      detailLabel: `${label} is selected for playback.`,
+      key,
+      state: 'selected',
+      summaryLabel: `${label} on`,
+    };
+  }
+
+  return {
+    detailLabel: `${label} is off by default until you select it.`,
+    key,
+    state: 'default',
+    summaryLabel: `${label} default off`,
+  };
+}
+
+export function getTransportSelectionTruth({
+  loopEnabled,
+  metronomeEnabled,
+}: {
+  loopEnabled: boolean;
+  metronomeEnabled: boolean;
+}): TransportSelectionTruth {
+  const settings = [
+    getTransportSettingTruth({
+      enabled: loopEnabled,
+      key: 'loop',
+      label: 'Loop',
+    }),
+    getTransportSettingTruth({
+      enabled: metronomeEnabled,
+      key: 'metronome',
+      label: 'Metronome',
+    }),
+  ];
+
+  return {
+    detailLabel: settings.map((setting) => setting.detailLabel).join(' '),
+    settings,
+    summaryLabel: settings.map((setting) => setting.summaryLabel).join(' · '),
   };
 }
 
