@@ -152,6 +152,10 @@ describe('undoStore', () => {
     expect(useUndoStore.getState().getHistoryTruth('generating')).toMatchObject({
       status: 'paused',
       boundary: 'undo',
+      selectedBoundary: 'undo',
+      selectedStatus: 'paused',
+      selectionSource: 'stack',
+      defaultBoundary: 'undo',
       undoBoundaryTruth: {
         boundary: 'undo',
         status: 'paused',
@@ -170,6 +174,10 @@ describe('undoStore', () => {
     expect(useUndoStore.getState().getHistoryTruth()).toMatchObject({
       status: 'waiting',
       boundary: null,
+      selectedBoundary: 'undo',
+      selectedStatus: 'empty',
+      selectionSource: 'default',
+      defaultBoundary: 'undo',
       undoBoundaryTruth: {
         boundary: 'undo',
         status: 'empty',
@@ -275,6 +283,10 @@ describe('undoStore', () => {
     expect(useUndoStore.getState().getHistoryTruth()).toMatchObject({
       status: 'available',
       boundary: 'redo',
+      selectedBoundary: 'redo',
+      selectedStatus: 'available',
+      selectionSource: 'stack',
+      defaultBoundary: 'undo',
       undoBoundaryTruth: {
         boundary: 'undo',
         status: 'empty',
@@ -305,6 +317,10 @@ describe('undoStore', () => {
     expect(useUndoStore.getState().getHistoryTruth()).toMatchObject({
       status: 'available',
       boundary: 'undo',
+      selectedBoundary: 'undo',
+      selectedStatus: 'available',
+      selectionSource: 'stack',
+      defaultBoundary: 'undo',
       undoBoundaryTruth: {
         boundary: 'undo',
         status: 'available',

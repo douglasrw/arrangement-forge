@@ -43,6 +43,10 @@ export interface UndoBoundaryTruth {
 export interface UndoHistoryTruth {
   status: 'waiting' | 'available' | 'blocked' | 'paused';
   boundary: UndoBoundary | null;
+  selectedBoundary: UndoBoundary;
+  selectedStatus: UndoBoundaryStatus;
+  selectionSource: 'default' | 'stack';
+  defaultBoundary: UndoBoundary;
   undoBoundaryTruth: UndoBoundaryTruth;
   redoBoundaryTruth: UndoBoundaryTruth;
   activeBoundaryTruth: UndoBoundaryTruth | null;
@@ -360,6 +364,10 @@ export function createUndoHistoryTruth(
     return {
       status: 'waiting',
       boundary: null,
+      selectedBoundary: 'undo',
+      selectedStatus: 'empty',
+      selectionSource: 'default',
+      defaultBoundary: 'undo',
       undoBoundaryTruth: undoBoundary,
       redoBoundaryTruth: redoBoundary,
       activeBoundaryTruth: null,
@@ -389,6 +397,10 @@ export function createUndoHistoryTruth(
   return {
     status: activeBoundary.status,
     boundary: activeBoundary.boundary,
+    selectedBoundary: activeBoundary.boundary,
+    selectedStatus: activeBoundary.status,
+    selectionSource: 'stack',
+    defaultBoundary: 'undo',
     undoBoundaryTruth: undoBoundary,
     redoBoundaryTruth: redoBoundary,
     activeBoundaryTruth: activeBoundary,
