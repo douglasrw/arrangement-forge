@@ -133,6 +133,10 @@ beforeEach(() => {
   reactActEnv.IS_REACT_ACT_ENVIRONMENT = true;
   useProjectStore.setState({
     project: makeProject(),
+    projectLoadStatus: 'idle',
+    projectLoadTargetId: null,
+    projectLoadMessage: null,
+    projectLoadFailureTarget: null,
     stems: [],
     sections: [],
     blocks: [],
@@ -380,6 +384,42 @@ describe('StatusBar', () => {
 
     expect(container.textContent).toContain('Error: Generator offline');
     expect(container.textContent).not.toContain('Loading samples');
+  });
+
+  it('shows project load failure truth and the next honest move when the shell is blocked', () => {
+    useProjectStore.setState({
+      project: null,
+      projectLoadStatus: 'error',
+      projectLoadTargetId: 'project-a',
+      projectLoadMessage: 'Backend unavailable',
+      projectLoadFailureTarget: 'project blocks',
+      stems: [],
+      sections: [],
+      blocks: [],
+      chords: [],
+    });
+    useUiStore.setState({
+      errorMessage: 'Failed to load project blocks: Backend unavailable',
+    });
+
+    const container = renderStatusBar('error');
+    const nextStep = container.querySelector(
+      '[data-testid="status-bar-history-next-step"]'
+    ) as HTMLSpanElement | null;
+    const truth = container.querySelector(
+      '[data-testid="status-bar-history"]'
+    ) as HTMLSpanElement | null;
+
+    expect(container.textContent).toContain('Error: Failed to load project blocks: Backend unavailable');
+    expect(nextStep?.textContent).toBe(
+      'Retry this project after the project blocks load failure is fixed, or open a different project.'
+    );
+    expect(truth?.textContent).toBe(
+      'Project project-a is blocked because project blocks could not be loaded into the project store.'
+    );
+    expect(truth?.title).toBe(
+      'Project project-a is blocked because project blocks could not be loaded into the project store. Retry this project after the project blocks load failure is fixed, or open a different project.'
+    );
   });
 
   it('renders fully empty history as explicit waiting truth', () => {

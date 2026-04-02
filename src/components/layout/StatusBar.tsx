@@ -1,6 +1,6 @@
 import type { GenerationState, SystemStatus } from '@/types';
 import { cn } from '@/lib/utils';
-import { getProjectArrangementTruth } from '@/store/project-store';
+import { getProjectArrangementTruth, getProjectStoreReadiness } from '@/store/project-store';
 import { getProjectSavePlan } from '@/hooks/useProject';
 import { useProjectStore } from '@/store/project-store';
 import { useUiStore } from '@/store/ui-store';
@@ -144,12 +144,50 @@ function getStatusBarReadiness(status: AppStatus): StatusBarReadiness {
   return 'ready';
 }
 
+function getStatusBarFailureTruth({
+  errorMessage,
+  projectReadinessCurrentState,
+  projectReadinessNextStep,
+  projectReadinessStatus,
+}: {
+  errorMessage: string | null;
+  projectReadinessCurrentState: string;
+  projectReadinessNextStep: string;
+  projectReadinessStatus: 'ready' | 'waiting' | 'blocked';
+}) {
+  if (projectReadinessStatus === 'blocked') {
+    return {
+      currentState: projectReadinessCurrentState,
+      nextStep: projectReadinessNextStep,
+      tooltip: `${projectReadinessCurrentState} ${projectReadinessNextStep}`.trim(),
+    };
+  }
+
+  const detail = formatErrorStatusLabel(errorMessage);
+
+  return {
+    currentState: `${detail} is blocking the current workflow.`,
+    nextStep: 'Resolve the current error, then retry the blocked action.',
+    tooltip: `${detail} is blocking the current workflow. Resolve the current error, then retry the blocked action.`,
+  };
+}
+
 export function StatusBar({ status = 'saved', className }: StatusBarProps) {
   const errorMessage = useUiStore((state) => state.errorMessage);
   const generationState = useUiStore((state) => state.generationState);
   const undoStore = useUndoStore();
   const historyTruth = undoStore.getHistoryTruth(generationState);
-  const { project, stems, sections, blocks, chords } = useProjectStore();
+  const {
+    project,
+    projectLoadStatus,
+    projectLoadTargetId,
+    projectLoadMessage,
+    projectLoadFailureTarget,
+    stems,
+    sections,
+    blocks,
+    chords,
+  } = useProjectStore();
   const arrangementTruth = getProjectArrangementTruth({
     project,
     stems,
@@ -165,8 +203,24 @@ export function StatusBar({ status = 'saved', className }: StatusBarProps) {
     blocks,
     chords,
   });
+  const projectReadiness = getProjectStoreReadiness({
+    project,
+    projectLoadStatus,
+    projectLoadTargetId,
+    projectLoadMessage,
+    projectLoadFailureTarget,
+  });
   const savePlanTooltip = `${savePlan.currentState} ${savePlan.nextStep}`.trim();
   const savedTruthTooltip = `${arrangementTruth.currentState} ${arrangementTruth.nextStep}`.trim();
+  const failureTruth =
+    status === 'error'
+      ? getStatusBarFailureTruth({
+          errorMessage,
+          projectReadinessCurrentState: projectReadiness.currentState,
+          projectReadinessNextStep: projectReadiness.nextStep,
+          projectReadinessStatus: projectReadiness.status,
+        })
+      : null;
   const label =
     status === 'error'
       ? formatErrorStatusLabel(errorMessage)
@@ -211,18 +265,18 @@ export function StatusBar({ status = 'saved', className }: StatusBarProps) {
       <span
         data-testid="status-bar-history-next-step"
         className="min-w-0 flex-1 px-3 text-center text-[10px] text-zinc-600 truncate"
-        title={historyTruth.tooltip}
+        title={failureTruth?.tooltip ?? historyTruth.tooltip}
       >
-        {historyTruth.nextStep}
+        {failureTruth?.nextStep ?? historyTruth.nextStep}
       </span>
 
-      {/* Right: history truth */}
+      {/* Right: history truth or failure truth */}
       <span
         data-testid="status-bar-history"
         className="min-w-0 max-w-[35%] truncate text-right text-[10px] text-zinc-600"
-        title={historyTruth.tooltip}
+        title={failureTruth?.tooltip ?? historyTruth.tooltip}
       >
-        {historyTruth.label}
+        {failureTruth?.currentState ?? historyTruth.label}
       </span>
     </div>
   );
