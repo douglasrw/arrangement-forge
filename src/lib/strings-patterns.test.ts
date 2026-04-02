@@ -1,8 +1,59 @@
 import { describe, it, expect } from 'vitest';
-import { buildStringsFromPattern } from './strings-patterns';
+import {
+  STRINGS_TREMOLO_ENERGY_THRESHOLD,
+  buildStringsFromPattern,
+  getStringsPatternSelectionTruth,
+} from './strings-patterns';
 
 describe('buildStringsFromPattern', () => {
   const cMajorChord = { degree: 'I', quality: null as string | null };
+
+  describe('getStringsPatternSelectionTruth', () => {
+    it('uses the energy threshold when no explicit style override is present', () => {
+      expect(getStringsPatternSelectionTruth(null, 50)).toMatchObject({
+        requestedStyleId: null,
+        energy: 50,
+        energyThreshold: STRINGS_TREMOLO_ENERGY_THRESHOLD,
+        selectedStyleId: 'sustained_pad',
+        selectedStyleLabel: 'Sustained Pad',
+        fallbackApplied: false,
+        selectionSource: 'energy_threshold',
+      });
+
+      expect(getStringsPatternSelectionTruth(null, 71)).toMatchObject({
+        requestedStyleId: null,
+        energy: 71,
+        energyThreshold: STRINGS_TREMOLO_ENERGY_THRESHOLD,
+        selectedStyleId: 'tremolo',
+        selectedStyleLabel: 'Tremolo',
+        fallbackApplied: false,
+        selectionSource: 'energy_threshold',
+      });
+    });
+
+    it('keeps an explicit supported strings style even when energy would choose a different pattern', () => {
+      expect(getStringsPatternSelectionTruth('tremolo', 50)).toMatchObject({
+        requestedStyleId: 'tremolo',
+        energy: 50,
+        selectedStyleId: 'tremolo',
+        selectedStyleLabel: 'Tremolo',
+        fallbackApplied: false,
+        selectionSource: 'explicit_style',
+      });
+    });
+
+    it('falls back to the energy-selected strings pattern when the override is unsupported', () => {
+      expect(getStringsPatternSelectionTruth('spiccato', 80)).toMatchObject({
+        requestedStyleId: 'spiccato',
+        energy: 80,
+        energyThreshold: STRINGS_TREMOLO_ENERGY_THRESHOLD,
+        selectedStyleId: 'tremolo',
+        selectedStyleLabel: 'Tremolo',
+        fallbackApplied: true,
+        selectionSource: 'energy_threshold',
+      });
+    });
+  });
 
   it('energy=50 produces 3 notes (root+3rd+5th) with long duration', () => {
     const notes = buildStringsFromPattern(cMajorChord, 'C', 1, 0, 50);
@@ -32,6 +83,16 @@ describe('buildStringsFromPattern', () => {
   it('energy=71 uses tremolo', () => {
     const notes = buildStringsFromPattern(cMajorChord, 'C', 1, 0, 71);
     expect(notes.length).toBe(16); // Tremolo
+  });
+
+  it('explicit strings overrides beat the energy threshold', () => {
+    const notes = buildStringsFromPattern(cMajorChord, 'C', 1, 0, 50, 4, 'tremolo');
+    expect(notes.length).toBe(16);
+  });
+
+  it('unsupported strings overrides fall back to the energy-selected pattern', () => {
+    const notes = buildStringsFromPattern(cMajorChord, 'C', 1, 0, 80, 4, 'spiccato');
+    expect(notes.length).toBe(16);
   });
 
   it('returns empty array when chord degree is null', () => {

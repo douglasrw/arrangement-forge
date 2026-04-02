@@ -3,6 +3,7 @@
 
 import type { MidiNoteData } from '@/types';
 import { getChordTones } from './midi-generator';
+import { getSupportedInstrumentStyles } from './genre-config';
 
 // ---------- Types ----------
 
@@ -17,6 +18,22 @@ export interface StringsPattern {
   id: string;
   style: string;
   bars: StringsNote[][];
+}
+
+export interface StringsPatternSelectionTruth {
+  requestedStyleId: string | null;
+  energy: number;
+  energyThreshold: number;
+  selectedStyleId: string;
+  selectedStyleLabel: string;
+  selectedPattern: StringsPattern;
+  supportedStyleIds: string[];
+  supportedStyleLabels: string[];
+  fallbackApplied: boolean;
+  selectionSource: 'energy_threshold' | 'explicit_style';
+  summary: string;
+  currentState: string;
+  nextStep: string;
 }
 
 // ---------- Pattern Data ----------
@@ -50,6 +67,13 @@ const TREMOLO: StringsPattern = {
   ],
 };
 
+const PATTERNS: Record<string, StringsPattern> = {
+  sustained_pad: SUSTAINED_PAD,
+  tremolo: TREMOLO,
+};
+
+export const STRINGS_TREMOLO_ENERGY_THRESHOLD = 70;
+
 // ---------- Degree-to-chord-index mapping ----------
 const DEGREE_TO_CHORD_INDEX: Record<number, number> = {
   0: 0,  // root
@@ -64,6 +88,74 @@ const DEGREE_TO_CHORD_INDEX: Record<number, number> = {
  * energy <= 70 -> sustained pad (root+3rd+5th, long hold)
  * energy > 70  -> tremolo (root+3rd, re-attacked 8ths)
  */
+export function getStringsPatternSelectionTruth(
+  styleOverride: string | null | undefined,
+  energy: number
+): StringsPatternSelectionTruth {
+  const requestedStyleId = styleOverride?.trim() ? styleOverride : null;
+  const supportedStyles = getSupportedInstrumentStyles('strings');
+  const supportedStyleIds = supportedStyles.map((option) => option.id);
+  const supportedStyleLabels = supportedStyles.map((option) => option.label);
+  const selectedByEnergy = energy > STRINGS_TREMOLO_ENERGY_THRESHOLD ? TREMOLO : SUSTAINED_PAD;
+  const selectedOptionByEnergy =
+    supportedStyles.find((option) => option.id === selectedByEnergy.style) ??
+    supportedStyles[0] ?? { id: selectedByEnergy.style, label: selectedByEnergy.style };
+  const availableLabels = supportedStyleLabels.join(', ');
+
+  if (requestedStyleId === null) {
+    return {
+      requestedStyleId,
+      energy,
+      energyThreshold: STRINGS_TREMOLO_ENERGY_THRESHOLD,
+      selectedStyleId: selectedByEnergy.style,
+      selectedStyleLabel: selectedOptionByEnergy.label,
+      selectedPattern: selectedByEnergy,
+      supportedStyleIds,
+      supportedStyleLabels,
+      fallbackApplied: false,
+      selectionSource: 'energy_threshold',
+      summary: `Energy ${energy} selects the ${selectedOptionByEnergy.label} strings pattern ${selectedByEnergy.id}.`,
+      currentState: `No explicit strings style was requested, so energy ${energy} is driving strings selection and ${selectedOptionByEnergy.label} is active.`,
+      nextStep: `Keep the energy-driven strings selection, choose ${availableLabels} explicitly, or move energy above or below ${STRINGS_TREMOLO_ENERGY_THRESHOLD} if you want a different default result.`,
+    };
+  }
+
+  const requestedOption = supportedStyles.find((option) => option.id === requestedStyleId);
+  if (requestedOption) {
+    return {
+      requestedStyleId,
+      energy,
+      energyThreshold: STRINGS_TREMOLO_ENERGY_THRESHOLD,
+      selectedStyleId: requestedOption.id,
+      selectedStyleLabel: requestedOption.label,
+      selectedPattern: PATTERNS[requestedOption.id] ?? selectedByEnergy,
+      supportedStyleIds,
+      supportedStyleLabels,
+      fallbackApplied: false,
+      selectionSource: 'explicit_style',
+      summary: `Explicit strings style ${requestedOption.label} selects pattern ${(PATTERNS[requestedOption.id] ?? selectedByEnergy).id}.`,
+      currentState: `Strings style ${requestedOption.label} is active because the explicit style override takes priority over energy ${energy}.`,
+      nextStep: `Keep ${requestedOption.label}, switch to one of the supported strings styles: ${availableLabels}, or clear the override to let energy drive selection again.`,
+    };
+  }
+
+  return {
+    requestedStyleId,
+    energy,
+    energyThreshold: STRINGS_TREMOLO_ENERGY_THRESHOLD,
+    selectedStyleId: selectedOptionByEnergy.id,
+    selectedStyleLabel: selectedOptionByEnergy.label,
+    selectedPattern: selectedByEnergy,
+    supportedStyleIds,
+    supportedStyleLabels,
+    fallbackApplied: true,
+    selectionSource: 'energy_threshold',
+    summary: `Requested strings style ${requestedStyleId} is unsupported, so energy ${energy} falls back to ${selectedOptionByEnergy.label} pattern ${selectedByEnergy.id}.`,
+    currentState: `Strings style "${requestedStyleId}" is unavailable, so the override is ignored and energy ${energy} selects ${selectedOptionByEnergy.label}.`,
+    nextStep: `Choose one of the supported strings styles: ${availableLabels}, or clear the unsupported override and keep the current energy-driven selection.`,
+  };
+}
+
 export function buildStringsFromPattern(
   chord: { degree: string | null; quality: string | null },
   key: string,
@@ -78,13 +170,7 @@ export function buildStringsFromPattern(
   const tones = getChordTones(chord.degree, chord.quality, key, octave);
   if (tones.length === 0) return [];
 
-  const pattern = styleOverride === 'tremolo'
-    ? TREMOLO
-    : styleOverride === 'sustained_pad'
-      ? SUSTAINED_PAD
-      : energy > 70
-        ? TREMOLO
-        : SUSTAINED_PAD;
+  const pattern = getStringsPatternSelectionTruth(styleOverride, energy).selectedPattern;
   const bar = pattern.bars[0]; // Strings use single-bar patterns
 
   const notes: MidiNoteData[] = [];
