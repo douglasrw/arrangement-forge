@@ -177,9 +177,13 @@ interface ProjectCardProps {
   project: Project;
   onOpen?: () => void;
   onDelete?: () => void;
+  selectionTruth?: {
+    label: string;
+    detail: string;
+  } | null;
 }
 
-export function ProjectCard({ project, onOpen, onDelete }: ProjectCardProps) {
+export function ProjectCard({ project, onOpen, onDelete, selectionTruth = null }: ProjectCardProps) {
   const status = getProjectCardStatus(project);
   const generatedAtLabel = project.generatedAt ? formatLibraryDate(project.generatedAt) : 'Not yet';
   const generatedTempoLabel =
@@ -213,6 +217,13 @@ export function ProjectCard({ project, onOpen, onDelete }: ProjectCardProps) {
         </div>
 
         <p className="text-xs leading-relaxed text-muted-foreground">{status.detail}</p>
+
+        {selectionTruth ? (
+          <div className="rounded-xl border border-primary/30 bg-primary/10 px-3 py-2 text-xs">
+            <p className="font-semibold uppercase tracking-wide text-primary">{selectionTruth.label}</p>
+            <p className="mt-1 leading-relaxed text-foreground">{selectionTruth.detail}</p>
+          </div>
+        ) : null}
 
         <dl className="grid gap-3 text-xs sm:grid-cols-2">
           <div className="space-y-1">

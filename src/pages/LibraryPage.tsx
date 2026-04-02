@@ -21,6 +21,12 @@ type LibraryBlockedState = {
   retryLabel: string;
 };
 
+type LibrarySelectionTruth = {
+  projectId: string;
+  label: string;
+  detail: string;
+};
+
 const LIBRARY_READINESS_STYLES: Record<LibraryReadinessTone, string> = {
   ready: 'border-primary/30 bg-primary/10 text-primary',
   waiting: 'border-border bg-secondary text-secondary-foreground',
@@ -110,6 +116,52 @@ function getLibraryBlockedState({
   }
 
   return null;
+}
+
+function getLibrarySelectionTruth({
+  filteredProjects,
+  totalProjects,
+  search,
+  sortKey,
+}: {
+  filteredProjects: Project[];
+  totalProjects: number;
+  search: string;
+  sortKey: SortKey;
+}): LibrarySelectionTruth | null {
+  const defaultProject = filteredProjects[0];
+
+  if (!defaultProject) {
+    return null;
+  }
+
+  const normalizedSearch = search.trim();
+  const searchDetail = normalizedSearch
+    ? ` after filtering for "${normalizedSearch}"`
+    : '';
+
+  const sortDetailByKey: Record<SortKey, string> = {
+    updatedAt: 'the most recently saved project comes first',
+    'name-asc': 'projects are ordered from A to Z',
+    'name-desc': 'projects are ordered from Z to A',
+    genre: 'projects are grouped by genre name',
+    key: 'projects are ordered by key',
+    tempo: 'projects are ordered from slowest to fastest tempo',
+  };
+
+  if (totalProjects === 1 && !normalizedSearch) {
+    return {
+      projectId: defaultProject.id,
+      label: 'Current library default',
+      detail: 'This is the only saved project in the library, so it is the current default target.',
+    };
+  }
+
+  return {
+    projectId: defaultProject.id,
+    label: normalizedSearch ? 'Filtered library default' : 'Current library default',
+    detail: `${defaultProject.name.trim() || 'Untitled Project'} is first in the visible library${searchDetail} because ${sortDetailByKey[sortKey]}.`,
+  };
 }
 
 export default function LibraryPage() {
@@ -207,6 +259,15 @@ export default function LibraryPage() {
         errorMessage,
       })
     : null;
+  const selectionTruth =
+    !loading && blockedState === null
+      ? getLibrarySelectionTruth({
+          filteredProjects: filtered,
+          totalProjects: projects.length,
+          search,
+          sortKey,
+        })
+      : null;
 
   return (
     <div className="min-h-screen bg-background">
@@ -298,6 +359,19 @@ export default function LibraryPage() {
           </span>
         </div>
 
+        {!loading && selectionTruth ? (
+          <section
+            data-testid="library-selection-truth"
+            className="rounded-xl border border-primary/30 bg-primary/10 px-4 py-3"
+            aria-label="Library selection truth"
+          >
+            <p className="text-xs font-semibold uppercase tracking-[0.2em] text-primary">
+              {selectionTruth.label}
+            </p>
+            <p className="mt-1 text-sm text-foreground">{selectionTruth.detail}</p>
+          </section>
+        ) : null}
+
         {/* Loading */}
         {loading && (
           <div className="flex justify-center py-16">
@@ -360,6 +434,14 @@ export default function LibraryPage() {
               <div key={project.id} data-testid="library-project-card" data-project-id={project.id}>
                 <ProjectCard
                   project={project}
+                  selectionTruth={
+                    selectionTruth?.projectId === project.id
+                      ? {
+                          label: selectionTruth.label,
+                          detail: selectionTruth.detail,
+                        }
+                      : null
+                  }
                   onOpen={() => navigate(`/project/${project.id}`)}
                   onDelete={() => setDeleteTarget(project)}
                 />

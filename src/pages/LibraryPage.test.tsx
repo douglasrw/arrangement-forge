@@ -217,6 +217,11 @@ describe('LibraryPage', () => {
     expect(readiness?.textContent).toContain(
       'Open a saved project or create a new arrangement from here.'
     );
+    const selectionTruth = mounted.container.querySelector('[data-testid="library-selection-truth"]');
+    expect(selectionTruth?.textContent).toContain('Current library default');
+    expect(selectionTruth?.textContent).toContain(
+      'This is the only saved project in the library, so it is the current default target.'
+    );
   });
 
   it('keeps an empty library visibly ready instead of implying the route is blocked', async () => {
@@ -487,6 +492,10 @@ describe('LibraryPage', () => {
     expect(freshCard?.textContent).toContain(
       'The saved arrangement matches the latest generated snapshot.'
     );
+    expect(freshCard?.textContent).toContain('Current library default');
+    expect(freshCard?.textContent).toContain(
+      'Fresh Cut is first in the visible library because the most recently saved project comes first.'
+    );
     expect(freshCard?.textContent).toContain('Last saved');
     expect(freshCard?.textContent).toContain('Generated tempo');
     expect(freshCard?.textContent).toContain('Chord chart');
@@ -504,6 +513,62 @@ describe('LibraryPage', () => {
       'Chord chart and notes are saved, but no arrangement is generated yet.'
     );
     expect(incompleteCard?.textContent).toContain('Not yet');
+  });
+
+  it('states which visible project is the filtered default target instead of leaving search and sort implied', async () => {
+    projectApi.listProjects.mockResolvedValue([
+      makeProject({
+        id: 'project-beta',
+        name: 'Beta Sketch',
+        genre: 'Jazz',
+        updatedAt: '2026-03-28T00:00:00Z',
+      }),
+      makeProject({
+        id: 'project-alpha',
+        name: 'Alpha Sketch',
+        genre: 'Jazz',
+        updatedAt: '2026-03-29T00:00:00Z',
+      }),
+      makeProject({
+        id: 'project-zeta',
+        name: 'Zeta Hymn',
+        genre: 'Folk',
+        updatedAt: '2026-03-27T00:00:00Z',
+      }),
+    ]);
+
+    const mounted = renderLibrary();
+    mountedRoot = mounted.root;
+    mountedContainer = mounted.container;
+
+    await act(async () => {
+      await Promise.resolve();
+    });
+
+    const searchInput = mounted.container.querySelector(
+      '#library-search'
+    ) as HTMLInputElement | null;
+    const sortSelect = mounted.container.querySelector('#library-sort') as HTMLSelectElement | null;
+
+    expect(searchInput).not.toBeNull();
+    expect(sortSelect).not.toBeNull();
+
+    act(() => {
+      setInputValue(searchInput!, 'sketch');
+      vi.advanceTimersByTime(300);
+      setSelectValue(sortSelect!, 'name-desc');
+    });
+
+    const selectionTruth = mounted.container.querySelector('[data-testid="library-selection-truth"]');
+    const betaCard = getProjectCard(mounted.container, 'project-beta');
+    const alphaCard = getProjectCard(mounted.container, 'project-alpha');
+
+    expect(selectionTruth?.textContent).toContain('Filtered library default');
+    expect(selectionTruth?.textContent).toContain(
+      'Beta Sketch is first in the visible library after filtering for "sketch" because projects are ordered from Z to A.'
+    );
+    expect(betaCard?.textContent).toContain('Filtered library default');
+    expect(alphaCard?.textContent).not.toContain('Filtered library default');
   });
 
   it('reorders the visible library grid when the sort mode changes', async () => {
