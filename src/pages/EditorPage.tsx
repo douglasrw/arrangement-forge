@@ -8,7 +8,11 @@ import {
   type EditorRouteMode,
   type EditorRouteStatus,
 } from '@/lib/editor-route-truth';
-import { getProjectStoreReadiness, useProjectStore } from '@/store/project-store';
+import {
+  getProjectSelectionTruth,
+  getProjectStoreReadiness,
+  useProjectStore,
+} from '@/store/project-store';
 
 export type { EditorRouteMode } from '@/lib/editor-route-truth';
 
@@ -158,11 +162,26 @@ function getLoadingMessage(projectId: string | undefined) {
     : 'Opening the requested project route in the editor.';
 }
 
+function getSelectionSourceLabel(selectionSource: 'default' | 'explicit' | 'missing') {
+  switch (selectionSource) {
+    case 'default':
+      return 'default';
+    case 'missing':
+      return 'missing';
+    default:
+      return 'explicit';
+  }
+}
+
 function EditorRouteReadyBanner({
   projectId,
   editorReadiness,
   currentState,
   projectStoreCurrentState,
+  selectionScope,
+  selectionSource,
+  selectionCurrentState,
+  selectionNextStep,
   nextStep,
   routeTarget,
   currentRoute,
@@ -176,6 +195,10 @@ function EditorRouteReadyBanner({
   editorReadiness: EditorReadinessState;
   currentState: string;
   projectStoreCurrentState: string;
+  selectionScope: string;
+  selectionSource: string;
+  selectionCurrentState: string;
+  selectionNextStep: string;
   nextStep: string;
   routeTarget: string;
   currentRoute: string;
@@ -200,6 +223,10 @@ function EditorRouteReadyBanner({
       <p className="text-[11px] text-foreground/80">Current state: {currentState}</p>
       <p className="text-[11px] text-foreground/80">Project store readiness: ready</p>
       <p className="text-[11px] text-foreground/80">Project store state: {projectStoreCurrentState}</p>
+      <p className="text-[11px] text-foreground/80">Selection scope: {selectionScope}</p>
+      <p className="text-[11px] text-foreground/80">Selection source: {selectionSource}</p>
+      <p className="text-[11px] text-foreground/80">Selection state: {selectionCurrentState}</p>
+      <p className="text-[11px] text-foreground/80">Selection next step: {selectionNextStep}</p>
       <p className="text-[11px] text-foreground/80">Next step: {nextStep}</p>
       <p className="text-[11px] text-foreground/80">Route mode: {routeModeLabel}</p>
       <p className="text-[11px] text-foreground/80">Route readiness: {routeReadiness}</p>
@@ -237,6 +264,9 @@ export default function EditorPage({
   const location = useLocation();
   const { loadProject } = useProject();
   const project = useProjectStore((state) => state.project);
+  const stems = useProjectStore((state) => state.stems);
+  const sections = useProjectStore((state) => state.sections);
+  const blocks = useProjectStore((state) => state.blocks);
   const loadedProjectId = project?.id ?? null;
   const projectLoadStatus = useProjectStore((state) => state.projectLoadStatus);
   const projectLoadTargetId = useProjectStore((state) => state.projectLoadTargetId);
@@ -248,6 +278,11 @@ export default function EditorPage({
     projectLoadTargetId,
     projectLoadMessage,
     projectLoadFailureTarget,
+  });
+  const projectSelectionTruth = getProjectSelectionTruth({
+    stems,
+    sections,
+    blocks,
   });
   const [routeState, setRouteState] = useState<EditorRouteState>(() =>
     getInitialEditorRouteState(routeMode, id)
@@ -426,6 +461,10 @@ export default function EditorPage({
           editorReadiness={editorReadiness}
           currentState={routeTruth.currentState}
           projectStoreCurrentState={projectStoreReadiness.currentState}
+          selectionScope={projectSelectionTruth.scopeLabel}
+          selectionSource={getSelectionSourceLabel(projectSelectionTruth.selectionSource)}
+          selectionCurrentState={projectSelectionTruth.currentState}
+          selectionNextStep={projectSelectionTruth.nextStep}
           nextStep={routeTruth.nextStep}
           routeTarget={routeTruth.routeLabel}
           currentRoute={routeTruth.currentRoute}

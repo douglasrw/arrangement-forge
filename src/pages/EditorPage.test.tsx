@@ -423,6 +423,14 @@ describe('EditorPage route loading gate', () => {
     expect(document.body.textContent).toContain(
       'Project store state: Project project-a is loaded in the project store.'
     );
+    expect(document.body.textContent).toContain('Selection scope: Whole song');
+    expect(document.body.textContent).toContain('Selection source: default');
+    expect(document.body.textContent).toContain(
+      'Selection state: No section or block is selected, so the project store is using whole-song defaults right now.'
+    );
+    expect(document.body.textContent).toContain(
+      'Selection next step: Keep editing the whole song, or select a section or block to work in a narrower scope.'
+    );
     expect(document.body.textContent).toContain('Route mode: active project route');
     expect(document.body.textContent).toContain(
       'Next step: Edit this arrangement or return to the library to open a different project.'
@@ -440,6 +448,99 @@ describe('EditorPage route loading gate', () => {
     );
     expect(queryReadyBannerLink('/project')).not.toBeNull();
     expect(queryReadyBannerLink('/library')).not.toBeNull();
+  });
+
+  it('surfaces explicit block selection truth from the ready editor page banner', async () => {
+    useProjectStore.setState({
+      project: makeProject('project-a'),
+      stems: [
+        {
+          id: 'stem-1',
+          projectId: 'project-a',
+          instrument: 'piano',
+          sortOrder: 0,
+          volume: 0.8,
+          pan: 0,
+          isMuted: false,
+          isSolo: false,
+          createdAt: '2026-03-28T00:00:00Z',
+        },
+      ],
+      sections: [
+        {
+          id: 'section-1',
+          projectId: 'project-a',
+          name: 'Verse',
+          sortOrder: 0,
+          barCount: 4,
+          startBar: 1,
+          energyOverride: null,
+          grooveOverride: null,
+          feelOverride: null,
+          swingPctOverride: null,
+          dynamicsOverride: null,
+          createdAt: '2026-03-28T00:00:00Z',
+        },
+      ],
+      blocks: [
+        {
+          id: 'block-1',
+          stemId: 'stem-1',
+          sectionId: 'section-1',
+          startBar: 3,
+          endBar: 4,
+          chordDegree: 'I',
+          chordQuality: 'maj7',
+          chordBassDegree: null,
+          style: 'jazz_comp',
+          energyOverride: null,
+          dynamicsOverride: null,
+          midiData: [],
+          createdAt: '2026-03-28T00:00:00Z',
+        },
+      ],
+    });
+    useSelectionStore.setState({
+      level: 'block',
+      sectionId: null,
+      blockId: 'block-1',
+      stemId: 'stem-1',
+    });
+
+    let resolveLoad: (() => void) | undefined;
+    loadProjectMock.mockImplementation(
+      (projectId) =>
+        new Promise<LoadProjectResult>((resolve) => {
+          useProjectStore.setState({
+            project: makeProject(projectId),
+            projectLoadStatus: 'loading',
+            projectLoadTargetId: projectId,
+            projectLoadMessage: null,
+          });
+          resolveLoad = () => {
+            resolve({ status: 'ready' });
+          };
+        })
+    );
+
+    const mounted = renderEditor('project-a');
+    mountedRoot = mounted.root;
+    mountedContainer = mounted.container;
+
+    await act(async () => {
+      resolveLoad?.();
+      await Promise.resolve();
+    });
+
+    expect(queryReadyBanner()).not.toBeNull();
+    expect(document.body.textContent).toContain('Selection scope: Block');
+    expect(document.body.textContent).toContain('Selection source: explicit');
+    expect(document.body.textContent).toContain(
+      'Selection state: Piano block 3-4 in Verse is selected in the project store.'
+    );
+    expect(document.body.textContent).toContain(
+      'Selection next step: Keep editing this block, or clear the selection to return to whole-song defaults.'
+    );
   });
 
   it('keeps the exact requested editor route visible after the project is ready', async () => {
