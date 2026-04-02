@@ -130,6 +130,20 @@ interface StatusBarProps {
   className?: string;
 }
 
+type StatusBarReadiness = 'ready' | 'waiting' | 'blocked';
+
+function getStatusBarReadiness(status: AppStatus): StatusBarReadiness {
+  if (status === 'loading-project' || status === 'loading-samples') {
+    return 'waiting';
+  }
+
+  if (status === 'no-project-selected' || status === 'offline' || status === 'error') {
+    return 'blocked';
+  }
+
+  return 'ready';
+}
+
 export function StatusBar({ status = 'saved', className }: StatusBarProps) {
   const errorMessage = useUiStore((state) => state.errorMessage);
   const generationState = useUiStore((state) => state.generationState);
@@ -161,6 +175,8 @@ export function StatusBar({ status = 'saved', className }: StatusBarProps) {
       : status === 'unsaved'
       ? savePlan.statusLabel
       : cfg.label;
+  const readiness = getStatusBarReadiness(status);
+  const readinessLabel = readiness.charAt(0).toUpperCase() + readiness.slice(1);
   const labelTitle = getStatusBarLabelTitle({
     status,
     errorMessage,
@@ -171,6 +187,7 @@ export function StatusBar({ status = 'saved', className }: StatusBarProps) {
   return (
     <div
       data-testid="status-bar"
+      data-status-readiness={readiness}
       className={cn(
         'flex h-6 shrink-0 items-center border-t border-border bg-secondary/50 px-4',
         className
@@ -179,6 +196,12 @@ export function StatusBar({ status = 'saved', className }: StatusBarProps) {
       {/* Left: status indicator */}
       <div className="flex min-w-0 max-w-[40%] items-center gap-1.5">
         <span className={cn('size-1.5 rounded-full', cfg.dot)} />
+        <span
+          data-testid="status-bar-readiness"
+          className="text-[10px] font-medium uppercase tracking-[0.08em] text-zinc-600"
+        >
+          {readinessLabel}
+        </span>
         <span className="truncate text-xs text-zinc-500" title={labelTitle}>
           {label}
         </span>

@@ -307,7 +307,14 @@ describe('StatusBar', () => {
 
     const container = renderStatusBar('saved');
     const label = container.querySelector('span[title]') as HTMLSpanElement | null;
+    const readiness = container.querySelector(
+      '[data-testid="status-bar-readiness"]'
+    ) as HTMLSpanElement | null;
 
+    expect(readiness?.textContent).toBe('Ready');
+    expect(container.querySelector('[data-testid="status-bar"]')?.getAttribute('data-status-readiness')).toBe(
+      'ready'
+    );
     expect(container.textContent).toContain('Saved');
     expect(label?.title).toBe(
       'A saved arrangement snapshot exists, but its rows are not loaded in the project store right now. Use Reload saved snapshot in the top bar to load the arrangement rows before editing, saving, or exporting the current arrangement snapshot.'
@@ -317,7 +324,14 @@ describe('StatusBar', () => {
   it('renders route-level project loading as a distinct shell status', () => {
     const container = renderStatusBar('loading-project');
     const label = container.querySelector('span[title]') as HTMLSpanElement | null;
+    const readiness = container.querySelector(
+      '[data-testid="status-bar-readiness"]'
+    ) as HTMLSpanElement | null;
 
+    expect(readiness?.textContent).toBe('Waiting');
+    expect(container.querySelector('[data-testid="status-bar"]')?.getAttribute('data-status-readiness')).toBe(
+      'waiting'
+    );
     expect(container.textContent).toContain('Loading project');
     expect(container.textContent).not.toContain('Saved');
     expect(label?.title).toBe(
@@ -328,7 +342,14 @@ describe('StatusBar', () => {
   it('renders no-project-selected as a distinct editor fallback status', () => {
     const container = renderStatusBar('no-project-selected');
     const label = container.querySelector('span[title]') as HTMLSpanElement | null;
+    const readiness = container.querySelector(
+      '[data-testid="status-bar-readiness"]'
+    ) as HTMLSpanElement | null;
 
+    expect(readiness?.textContent).toBe('Blocked');
+    expect(container.querySelector('[data-testid="status-bar"]')?.getAttribute('data-status-readiness')).toBe(
+      'blocked'
+    );
     expect(container.textContent).toContain('No project selected');
     expect(container.textContent).not.toContain('Saved');
     expect(label?.title).toBe(
