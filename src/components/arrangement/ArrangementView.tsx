@@ -226,6 +226,48 @@ function FailureState({
   )
 }
 
+function ArrangementFailureBanner({
+  errorMessage,
+  onGenerate,
+}: {
+  errorMessage: string | null
+  onGenerate: () => void
+}) {
+  const failureTruth = getArrangementFailureTruth(errorMessage)
+
+  return (
+    <div
+      className="absolute left-24 right-4 top-3 z-30 rounded-2xl border border-destructive/30 bg-background/95 p-4 shadow-[0_18px_48px_rgba(0,0,0,0.45)] backdrop-blur"
+      data-testid="arrangement-failure-banner"
+      role="status"
+    >
+      <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
+        <div className="space-y-1.5">
+          <div className="inline-flex items-center gap-2 rounded-full border border-destructive/30 bg-destructive/10 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.16em] text-destructive">
+            <span>{failureTruth.summary}</span>
+          </div>
+          <p className="max-w-3xl text-sm text-zinc-200">
+            {failureTruth.detail}
+          </p>
+          <p className="max-w-3xl text-sm text-zinc-400">
+            {failureTruth.nextStep}
+          </p>
+          <p className="text-xs uppercase tracking-[0.16em] text-zinc-500">
+            Previous arrangement remains loaded below for reference.
+          </p>
+        </div>
+        <button
+          type="button"
+          onClick={onGenerate}
+          className="shrink-0 rounded-xl border border-destructive/30 bg-destructive/10 px-4 py-2 text-sm font-semibold text-zinc-100 transition-colors hover:bg-destructive/20"
+        >
+          Generate again
+        </button>
+      </div>
+    </div>
+  )
+}
+
 /* ------------------------------------------------------------------ */
 /*  Arrangement View (main export)                                     */
 /* ------------------------------------------------------------------ */
@@ -355,13 +397,21 @@ export function ArrangementView({
     currentBeat: transportState.currentBeat,
     totalBars,
   })
+  const showArrangementFailureBanner = generationState === "complete" && systemStatus === "error"
 
   return (
     <div
       ref={containerRef}
-      className="flex flex-1 min-h-0 overflow-hidden bg-background"
+      className="relative flex flex-1 min-h-0 overflow-hidden bg-background"
       data-testid="arrangement-view"
     >
+      {showArrangementFailureBanner ? (
+        <ArrangementFailureBanner
+          errorMessage={errorMessage}
+          onGenerate={() => void runGeneration()}
+        />
+      ) : null}
+
       {/* ---- Left gutter (non-scrolling, content-sized) ---- */}
       <div className="flex w-20 shrink-0 flex-col border-r border-secondary bg-background">
         {/* Section header spacer */}

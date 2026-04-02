@@ -245,6 +245,39 @@ describe('ArrangementView empty-state truth', () => {
     ).toBeNull();
   });
 
+  it('keeps regeneration failures visible inside the arrangement surface when the last arrangement stays loaded', () => {
+    useUiStore.setState({
+      generationState: 'complete',
+      systemStatus: 'error',
+      errorMessage:
+        'Generation failed: Generator offline while refreshing the arrangement preview. Next step: Reconnect the generator, then run Generate again.',
+    });
+
+    const mounted = renderArrangementView();
+    mountedRoot = mounted.root;
+    mountedContainer = mounted.container;
+
+    const failureBanner = mounted.container.querySelector(
+      '[data-testid="arrangement-failure-banner"]'
+    );
+
+    expect(failureBanner).not.toBeNull();
+    expect(mounted.container.querySelector('[data-testid="arrangement-view"]')).not.toBeNull();
+    expect(mounted.container.textContent).toContain(
+      'Generator offline while refreshing the arrangement preview.'
+    );
+    expect(mounted.container.textContent).toContain(
+      'Next step: Reconnect the generator, then run Generate again.'
+    );
+    expect(mounted.container.textContent).toContain(
+      'Previous arrangement remains loaded below for reference.'
+    );
+    expect(
+      mounted.container.querySelector('button[aria-label="drums block, bars 1-4"]')
+    ).not.toBeNull();
+    expect(mounted.container.textContent).not.toContain('Ready to generate');
+  });
+
   it('marks empty, unavailable, and chordless lanes instead of rendering them like normal loaded rows', () => {
     const mounted = renderArrangementView();
     mountedRoot = mounted.root;
