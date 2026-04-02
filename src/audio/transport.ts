@@ -2,6 +2,51 @@
 // Converts between seconds and bar positions using tempo and time signature.
 
 import * as Tone from 'tone';
+import type { PlaybackTruthAction } from '@/types';
+
+export type TransportReadinessState = 'ready' | 'waiting' | 'blocked';
+
+export interface TransportReadinessTruth {
+  detailLabel: string;
+  state: TransportReadinessState;
+  summaryLabel: 'Ready' | 'Waiting' | 'Blocked';
+  summaryClassName: string;
+}
+
+export function getTransportReadinessTruth({
+  timelineAvailable,
+  transportReady,
+  playbackAction,
+}: {
+  timelineAvailable: boolean;
+  transportReady: boolean;
+  playbackAction: PlaybackTruthAction;
+}): TransportReadinessTruth {
+  if (transportReady) {
+    return {
+      detailLabel: 'Ready',
+      state: 'ready',
+      summaryLabel: 'Ready',
+      summaryClassName: 'bg-emerald-500/10 text-emerald-300',
+    };
+  }
+
+  if (!timelineAvailable || playbackAction === 'retry-play' || playbackAction === 'unavailable') {
+    return {
+      detailLabel: timelineAvailable ? 'Transport blocked' : 'No timeline',
+      state: 'blocked',
+      summaryLabel: 'Blocked',
+      summaryClassName: 'bg-rose-500/10 text-rose-300',
+    };
+  }
+
+  return {
+    detailLabel: playbackAction === 'wait' ? 'Loading audio' : 'Load to play',
+    state: 'waiting',
+    summaryLabel: 'Waiting',
+    summaryClassName: 'bg-amber-500/10 text-amber-300',
+  };
+}
 
 export class TransportController {
   private bpm = 120;

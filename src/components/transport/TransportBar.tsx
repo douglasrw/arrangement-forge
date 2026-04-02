@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect } from "react"
 import { cn } from "@/lib/utils"
+import { getTransportReadinessTruth } from "@/audio/transport"
 import {
   Square,
   Play,
@@ -108,41 +109,6 @@ function getHistoryButtonClassName(status: "empty" | "available" | "blocked" | "
   }
 
   return "cursor-not-allowed text-zinc-700"
-}
-
-function getTransportReadinessTruth({
-  timelineAvailable,
-  transportReady,
-  playbackAction,
-}: {
-  timelineAvailable: boolean
-  transportReady: boolean
-  playbackAction: "load-and-play" | "play" | "retry-play" | "unavailable" | "wait"
-}) {
-  if (transportReady) {
-    return {
-      detailLabel: "Ready",
-      state: "ready" as const,
-      summaryLabel: "Ready",
-      summaryClassName: "bg-emerald-500/10 text-emerald-300",
-    }
-  }
-
-  if (!timelineAvailable || playbackAction === "retry-play" || playbackAction === "unavailable") {
-    return {
-      detailLabel: timelineAvailable ? "Transport blocked" : "No timeline",
-      state: "blocked" as const,
-      summaryLabel: "Blocked",
-      summaryClassName: "bg-rose-500/10 text-rose-300",
-    }
-  }
-
-  return {
-    detailLabel: playbackAction === "wait" ? "Loading audio" : "Load to play",
-    state: "waiting" as const,
-    summaryLabel: "Waiting",
-    summaryClassName: "bg-amber-500/10 text-amber-300",
-  }
 }
 
 /* ------------------------------------------------------------------ */
