@@ -571,6 +571,26 @@ describe('TransportBar transport controls', () => {
     expect(historyTruth?.textContent).toContain('Redo waiting');
   });
 
+  it('renders blocked redo truth visibly on the transport surface without requiring hover text', () => {
+    useUndoStore.getState().pushUndo('Broken redo', {
+      undo: JSON.stringify(makeArrangement('before')),
+      redo: 'not json',
+    });
+
+    expect(useUndoStore.getState().undo()).not.toBeNull();
+
+    const mounted = renderTransportBar();
+    mountedRoot = mounted.root;
+    mountedContainer = mounted.container;
+
+    const historyTruth = mounted.container.querySelector(
+      '[data-testid="transport-history-truth"]'
+    ) as HTMLDivElement | null;
+
+    expect(historyTruth?.textContent).toContain('Undo waiting');
+    expect(historyTruth?.textContent).toContain('Redo blocked: Broken redo');
+  });
+
   it('forwards loop and metronome toggles into the audio hook', () => {
     useAudioState.transportState = {
       ...useAudioState.transportState,
