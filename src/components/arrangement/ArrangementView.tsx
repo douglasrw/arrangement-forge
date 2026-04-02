@@ -108,6 +108,34 @@ function getArrangementLaneTruth(instrument: Instrument, hasStem: boolean, block
   }
 }
 
+function getArrangementFailureTruth(errorMessage: string | null) {
+  const normalizedMessage = errorMessage
+    ?.trim()
+    .replace(/^error:\s*/i, "")
+    .replace(/^generation failed:\s*/i, "")
+    .trim()
+
+  if (!normalizedMessage) {
+    return {
+      summary: "Generation failed",
+      detail: "Arrangement Forge could not build the arrangement from the current project inputs.",
+      nextStep: "Review the current input blockers, then generate again.",
+    }
+  }
+
+  const [detailSegment, nextStepSegment] = normalizedMessage.split(/\s+Next step:\s+/i, 2)
+  const detail = detailSegment?.trim() || normalizedMessage
+  const nextStep = nextStepSegment?.trim()
+
+  return {
+    summary: "Generation failed",
+    detail,
+    nextStep: nextStep
+      ? `Next step: ${nextStep}`
+      : "Next step: Review the current input blockers, then generate again.",
+  }
+}
+
 /* ------------------------------------------------------------------ */
 /*  Empty state                                                        */
 /* ------------------------------------------------------------------ */
@@ -151,6 +179,53 @@ function EmptyState({ onGenerate }: { onGenerate: () => void }) {
   )
 }
 
+function FailureState({
+  errorMessage,
+  onGenerate,
+}: {
+  errorMessage: string | null
+  onGenerate: () => void
+}) {
+  const failureTruth = getArrangementFailureTruth(errorMessage)
+
+  return (
+    <div
+      className="flex flex-1 flex-col items-center justify-center gap-4 bg-background px-6 text-center"
+      data-testid="arrangement-failure-state"
+    >
+      <div className="flex size-16 items-center justify-center rounded-2xl border border-destructive/30 bg-destructive/10 text-destructive">
+        <svg viewBox="0 0 24 24" fill="none" className="size-8" aria-hidden="true">
+          <path
+            d="M12 8v5m0 3h.01M10.29 3.86 1.82 18a2 2 0 0 0 1.72 3h16.92a2 2 0 0 0 1.72-3L13.71 3.86a2 2 0 0 0-3.42 0Z"
+            stroke="currentColor"
+            strokeWidth="1.8"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          />
+        </svg>
+      </div>
+      <div className="space-y-2">
+        <h2 className="text-lg font-medium text-zinc-100">
+          {failureTruth.summary}
+        </h2>
+        <p className="max-w-2xl text-sm text-zinc-300">
+          {failureTruth.detail}
+        </p>
+        <p className="max-w-2xl text-sm text-zinc-500">
+          {failureTruth.nextStep}
+        </p>
+      </div>
+      <button
+        type="button"
+        onClick={onGenerate}
+        className="mt-2 rounded-xl border border-destructive/30 bg-destructive/10 px-8 py-3 text-sm font-semibold text-zinc-100 transition-colors hover:bg-destructive/20"
+      >
+        Generate again
+      </button>
+    </div>
+  )
+}
+
 /* ------------------------------------------------------------------ */
 /*  Arrangement View (main export)                                     */
 /* ------------------------------------------------------------------ */
@@ -178,7 +253,13 @@ export function ArrangementView({
       stems: s.stems,
     }))
   )
-  const { generationState } = useUiStore()
+  const { generationState, systemStatus, errorMessage } = useUiStore(
+    useShallow((s) => ({
+      generationState: s.generationState,
+      systemStatus: s.systemStatus,
+      errorMessage: s.errorMessage,
+    }))
+  )
   const { sectionId: selectedSectionId, blockId: selectedBlockId, selectSection, selectBlock, selectSong } = useSelectionStore()
   const { transportState, playbackReadiness, playbackTruth, seek } = useAudio()
   const { runGeneration } = useGenerate()
@@ -223,6 +304,15 @@ export function ArrangementView({
   }, [totalBarsForClamp])
 
   if (generationState !== "complete") {
+    if (systemStatus === "error") {
+      return (
+        <FailureState
+          errorMessage={errorMessage}
+          onGenerate={() => void runGeneration()}
+        />
+      )
+    }
+
     return <EmptyState onGenerate={() => void runGeneration()} />
   }
 

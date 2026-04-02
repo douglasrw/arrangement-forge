@@ -214,6 +214,37 @@ afterEach(() => {
 });
 
 describe('ArrangementView empty-state truth', () => {
+  it('shows explicit generation failure truth instead of neutral empty-state copy', () => {
+    useUiStore.setState({
+      generationState: 'idle',
+      systemStatus: 'error',
+      errorMessage:
+        'Generation failed: Bars 2 and 3 currently parse as N.C., so Generate stays blocked until the chart is fixed. Next step: Replace bars 2 and 3 with explicit chords or fix the bar before them.',
+    });
+
+    const mounted = renderArrangementView();
+    mountedRoot = mounted.root;
+    mountedContainer = mounted.container;
+
+    const failureState = mounted.container.querySelector(
+      '[data-testid="arrangement-failure-state"]'
+    );
+
+    expect(failureState).not.toBeNull();
+    expect(mounted.container.textContent).toContain('Generation failed');
+    expect(mounted.container.textContent).toContain(
+      'Bars 2 and 3 currently parse as N.C., so Generate stays blocked until the chart is fixed.'
+    );
+    expect(mounted.container.textContent).toContain(
+      'Next step: Replace bars 2 and 3 with explicit chords or fix the bar before them.'
+    );
+    expect(mounted.container.textContent).toContain('Generate again');
+    expect(mounted.container.textContent).not.toContain('Ready to generate');
+    expect(
+      mounted.container.querySelector('[data-testid="arrangement-empty-state"]')
+    ).toBeNull();
+  });
+
   it('marks empty, unavailable, and chordless lanes instead of rendering them like normal loaded rows', () => {
     const mounted = renderArrangementView();
     mountedRoot = mounted.root;
