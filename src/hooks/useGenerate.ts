@@ -6,7 +6,11 @@ import { getProjectArrangementTruth, useProjectStore } from '@/store/project-sto
 import { useUiStore } from '@/store/ui-store';
 import { useUndoStore } from '@/store/undo-store';
 import { useProject } from '@/hooks/useProject';
-import { generate, generateMidiForBlock } from '@/lib/midi-generator';
+import {
+  generate,
+  generateMidiForBlock,
+  getMidiGenerationReadinessTruth,
+} from '@/lib/midi-generator';
 import { parseChordChart } from '@/lib/chord-chart-parser';
 import { getEffectiveSwingPct } from '@/lib/genre-config';
 import { formatGenerationFailureMessage } from '@/lib/assistant-chat';
@@ -237,6 +241,17 @@ export function useGenerate() {
     setSystemStatus('generating');
 
     try {
+      const generationReadiness = getMidiGenerationReadinessTruth(project.timeSignature);
+      if (generationReadiness.state === 'blocked') {
+        throw new Error(
+          [
+            generationReadiness.currentState,
+            generationReadiness.summary,
+            `Next step: ${generationReadiness.nextStep}`,
+          ].join(' ')
+        );
+      }
+
       // Parse chord chart
       const parseResult = parseChordChart(project.chordChartRaw, project.key);
       const parseIssues = parseResult.issues ?? [];

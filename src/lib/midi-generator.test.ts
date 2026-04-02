@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { generate } from './midi-generator';
+import { generate, getMidiGenerationReadinessTruth } from './midi-generator';
 import type { GenerationRequest } from '@/types';
 
 const baseRequest: GenerationRequest = {
@@ -25,6 +25,26 @@ const baseRequest: GenerationRequest = {
 };
 
 describe('generate', () => {
+  it('marks full-arrangement generation ready in 4/4', () => {
+    expect(getMidiGenerationReadinessTruth('4/4')).toEqual({
+      state: 'ready',
+      currentState: 'MIDI generation is ready to build a full arrangement in 4/4.',
+      summary: 'The current meter matches the supported full-arrangement generator path.',
+      nextStep: 'Generate when the chord chart is ready.',
+    });
+  });
+
+  it('surfaces blocked readiness truth for unsupported meters', () => {
+    expect(getMidiGenerationReadinessTruth('3/4')).toEqual({
+      state: 'blocked',
+      currentState:
+        'MIDI generation is blocked for 3/4 because the current pitched-instrument generator patterns are only verified for 4/4.',
+      summary:
+        'Drum patterns can adapt to other meters, but bass, piano, guitar, and strings still assume 4-beat bars.',
+      nextStep: 'Switch the project time signature to 4/4 before generating a full arrangement.',
+    });
+  });
+
   it('returns sections, stems, blocks, chords', () => {
     const result = generate(baseRequest);
     expect(result.sections.length).toBeGreaterThan(0);

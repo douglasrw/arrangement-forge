@@ -14,6 +14,7 @@ const saveArrangementMock = vi.hoisted(() => vi.fn(async () => undefined));
 const saveProjectMock = vi.hoisted(() => vi.fn(async () => undefined));
 const generateMock = vi.hoisted(() => vi.fn());
 const generateMidiForBlockMock = vi.hoisted(() => vi.fn());
+const getMidiGenerationReadinessTruthMock = vi.hoisted(() => vi.fn());
 const parseChordChartMock = vi.hoisted(() => vi.fn());
 
 vi.mock('@/hooks/useProject', () => ({
@@ -26,6 +27,7 @@ vi.mock('@/hooks/useProject', () => ({
 vi.mock('@/lib/midi-generator', () => ({
   generate: generateMock,
   generateMidiForBlock: generateMidiForBlockMock,
+  getMidiGenerationReadinessTruth: getMidiGenerationReadinessTruthMock,
 }));
 
 vi.mock('@/lib/chord-chart-parser', () => ({
@@ -107,7 +109,14 @@ beforeEach(() => {
   saveProjectMock.mockClear();
   generateMock.mockReset();
   generateMidiForBlockMock.mockReset();
+  getMidiGenerationReadinessTruthMock.mockReset();
   parseChordChartMock.mockReset();
+  getMidiGenerationReadinessTruthMock.mockReturnValue({
+    state: 'ready',
+    currentState: 'MIDI generation is ready to build a full arrangement in 4/4.',
+    summary: 'The current meter matches the supported full-arrangement generator path.',
+    nextStep: 'Generate when the chord chart is ready.',
+  });
 
   useProjectStore.setState({
     project: makeProject(),
@@ -407,6 +416,48 @@ describe('useGenerate assistant prompt flow', () => {
       scope: 'setup',
       content:
         'Generation failed: The current chart only contains N.C. or rest bars, so Generate stays blocked until at least one playable chord bar is entered. Bars marked as N.C. or rest do not create playable harmony on their own. Next step: Replace at least one N.C. or rest bar with a chord such as Cmaj7 | Fmaj7 | G7 | Cmaj7.',
+    });
+  });
+
+  it('blocks generation when the project time signature is outside the supported full-arrangement meter', async () => {
+    useProjectStore.setState({
+      project: makeProject({
+        timeSignature: '3/4',
+      }),
+    });
+    getMidiGenerationReadinessTruthMock.mockReturnValue({
+      state: 'blocked',
+      currentState:
+        'MIDI generation is blocked for 3/4 because the current pitched-instrument generator patterns are only verified for 4/4.',
+      summary:
+        'Drum patterns can adapt to other meters, but bass, piano, guitar, and strings still assume 4-beat bars.',
+      nextStep: 'Switch the project time signature to 4/4 before generating a full arrangement.',
+    });
+
+    const mounted = renderHarness();
+    mountedRoot = mounted.root;
+    mountedContainer = mounted.container;
+
+    await act(async () => {
+      await hookValue!.runGeneration();
+      await Promise.resolve();
+    });
+
+    expect(parseChordChartMock).not.toHaveBeenCalled();
+    expect(generateMock).not.toHaveBeenCalled();
+    expect(saveArrangementMock).not.toHaveBeenCalled();
+    expect(useUiStore.getState()).toMatchObject({
+      generationState: 'idle',
+      systemStatus: 'error',
+      errorMessage:
+        'MIDI generation is blocked for 3/4 because the current pitched-instrument generator patterns are only verified for 4/4. Drum patterns can adapt to other meters, but bass, piano, guitar, and strings still assume 4-beat bars. Next step: Switch the project time signature to 4/4 before generating a full arrangement.',
+    });
+    expect(saveProjectMock).toHaveBeenCalledTimes(1);
+    expect(useProjectStore.getState().chatMessages[0]).toMatchObject({
+      role: 'assistant',
+      scope: 'setup',
+      content:
+        'Generation failed: MIDI generation is blocked for 3/4 because the current pitched-instrument generator patterns are only verified for 4/4. Drum patterns can adapt to other meters, but bass, piano, guitar, and strings still assume 4-beat bars. Next step: Switch the project time signature to 4/4 before generating a full arrangement.',
     });
   });
 

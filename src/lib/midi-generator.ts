@@ -37,6 +37,31 @@ export interface DrumContext {
   barNumberGlobal: number; // 1-based global start bar of this block
 }
 
+export interface MidiGenerationReadinessTruth {
+  state: 'ready' | 'blocked';
+  currentState: string;
+  summary: string;
+  nextStep: string;
+}
+
+export function getMidiGenerationReadinessTruth(timeSignature: string): MidiGenerationReadinessTruth {
+  if (timeSignature === '4/4') {
+    return {
+      state: 'ready',
+      currentState: 'MIDI generation is ready to build a full arrangement in 4/4.',
+      summary: 'The current meter matches the supported full-arrangement generator path.',
+      nextStep: 'Generate when the chord chart is ready.',
+    };
+  }
+
+  return {
+    state: 'blocked',
+    currentState: `MIDI generation is blocked for ${timeSignature} because the current pitched-instrument generator patterns are only verified for 4/4.`,
+    summary: 'Drum patterns can adapt to other meters, but bass, piano, guitar, and strings still assume 4-beat bars.',
+    nextStep: 'Switch the project time signature to 4/4 before generating a full arrangement.',
+  };
+}
+
 // ---------- Section Creation ----------
 
 function createSections(totalBars: number): SectionData[] {
