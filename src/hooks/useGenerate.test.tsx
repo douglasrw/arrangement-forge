@@ -6,6 +6,7 @@ import { createRoot, type Root } from 'react-dom/client';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { useGenerate } from './useGenerate';
 import { useProjectStore } from '@/store/project-store';
+import { useSelectionStore } from '@/store/selection-store';
 import { useUiStore } from '@/store/ui-store';
 import { useUndoStore } from '@/store/undo-store';
 import type { Project } from '@/types';
@@ -138,6 +139,12 @@ beforeEach(() => {
   });
 
   useUndoStore.setState({ undoStack: [], redoStack: [] });
+  useSelectionStore.setState({
+    level: 'song',
+    sectionId: null,
+    blockId: null,
+    stemId: null,
+  });
 });
 
 afterEach(() => {
@@ -542,9 +549,13 @@ describe('useGenerate assistant prompt flow', () => {
     expect(state.chatMessages[0]).toMatchObject({
       role: 'user',
       content: 'Make it darker',
+      scope: 'song',
+      scopeTarget: 'Whole song default',
     });
     expect(state.chatMessages[1]).toMatchObject({
       role: 'assistant',
+      scope: 'song',
+      scopeTarget: 'Whole song default',
     });
     expect(state.chatMessages[1].content).toContain(
       'Applied your latest request and generated 1 section across 4 bars'
@@ -556,6 +567,130 @@ describe('useGenerate assistant prompt flow', () => {
     });
     expect(saveArrangementMock).toHaveBeenCalledTimes(1);
     expect(saveProjectMock).not.toHaveBeenCalled();
+  });
+
+  it('keeps assistant-prompt chat history scoped to the selected section', async () => {
+    useProjectStore.setState({
+      sections: [
+        {
+          id: 'section-existing',
+          projectId: 'p1',
+          name: 'Bridge',
+          sortOrder: 0,
+          barCount: 4,
+          startBar: 9,
+          energyOverride: null,
+          grooveOverride: null,
+          feelOverride: null,
+          swingPctOverride: null,
+          dynamicsOverride: null,
+          createdAt: '2026-03-28T00:00:00Z',
+        },
+      ],
+    });
+    useSelectionStore.setState({
+      level: 'section',
+      sectionId: 'section-existing',
+      blockId: null,
+      stemId: null,
+    });
+    parseChordChartMock.mockReturnValue({
+      chords: [{ bar_number: 1, degree: 'I', quality: 'maj7', bass_degree: null }],
+    });
+    generateMock.mockReturnValue({
+      sections: [{ name: 'Bridge', sort_order: 0, bar_count: 4, start_bar: 9 }],
+      stems: [{ instrument: 'piano', sort_order: 0 }],
+      blocks: [
+        {
+          stem_instrument: 'piano',
+          section_name: 'Bridge',
+          start_bar: 9,
+          end_bar: 12,
+          chord_degree: 'I',
+          chord_quality: 'maj7',
+          style: 'bridge_comp',
+          midi_data: [],
+        },
+      ],
+      chords: [{ bar_number: 9, degree: 'I', quality: 'maj7', bass_degree: null }],
+    });
+
+    const mounted = renderHarness();
+    mountedRoot = mounted.root;
+    mountedContainer = mounted.container;
+
+    await act(async () => {
+      await hookValue!.runGeneration({ assistantPrompt: 'Open up the voicings' });
+      await Promise.resolve();
+    });
+
+    expect(useProjectStore.getState().chatMessages).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          role: 'user',
+          scope: 'section',
+          scopeTarget: 'Bridge (bars 9-12)',
+        }),
+        expect.objectContaining({
+          role: 'assistant',
+          scope: 'section',
+          scopeTarget: 'Bridge (bars 9-12)',
+        }),
+      ])
+    );
+  });
+
+  it('marks assistant-prompt chat history as a whole-song fallback when the selection is stale', async () => {
+    useSelectionStore.setState({
+      level: 'block',
+      sectionId: null,
+      blockId: 'missing-block',
+      stemId: 'missing-stem',
+    });
+    parseChordChartMock.mockReturnValue({
+      chords: [{ bar_number: 1, degree: 'I', quality: 'maj7', bass_degree: null }],
+    });
+    generateMock.mockReturnValue({
+      sections: [{ name: 'Verse', sort_order: 0, bar_count: 4, start_bar: 1 }],
+      stems: [{ instrument: 'piano', sort_order: 0 }],
+      blocks: [
+        {
+          stem_instrument: 'piano',
+          section_name: 'Verse',
+          start_bar: 1,
+          end_bar: 4,
+          chord_degree: 'I',
+          chord_quality: 'maj7',
+          style: 'verse_comp',
+          midi_data: [],
+        },
+      ],
+      chords: [{ bar_number: 1, degree: 'I', quality: 'maj7', bass_degree: null }],
+    });
+
+    const mounted = renderHarness();
+    mountedRoot = mounted.root;
+    mountedContainer = mounted.container;
+
+    await act(async () => {
+      await hookValue!.runGeneration({ assistantPrompt: 'Tighten the groove' });
+      await Promise.resolve();
+    });
+
+    expect(useProjectStore.getState().chatMessages).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          role: 'user',
+          scope: 'song',
+          scopeTarget: 'Whole song fallback',
+        }),
+        expect.objectContaining({
+          role: 'assistant',
+          scope: 'song',
+          scopeTarget: 'Whole song fallback',
+        }),
+      ])
+    );
   });
 
   it('drops stored swing_pct from generation requests for straight-time genres', async () => {

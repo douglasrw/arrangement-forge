@@ -4,7 +4,8 @@ import { ScrollArea } from "@/components/ui/scroll-area"
 import { useGenerate } from "@/hooks/useGenerate"
 import { getGenerationFailureDetail, isGenerationFailureContent } from "@/lib/assistant-chat"
 import { parseChordChart } from "@/lib/chord-chart-parser"
-import { useProjectStore } from "@/store/project-store"
+import { getProjectSelectionTruth, useProjectStore } from "@/store/project-store"
+import { useSelectionStore } from "@/store/selection-store"
 import { useUiStore } from "@/store/ui-store"
 import { cn } from "@/lib/utils"
 import type { AiChatMessage } from "@/types"
@@ -33,13 +34,89 @@ function isFailureMessage(message: AiChatMessage) {
   return message.role === "assistant" && isGenerationFailureContent(message.content)
 }
 
+function formatScopeTarget(message: AiChatMessage) {
+  return getScopeLabel(message)
+}
+
+function getAssistantSelectionTruth({
+  selectionLevel,
+  sectionId,
+  blockId,
+  stemId,
+  sections,
+  blocks,
+  stems,
+}: {
+  selectionLevel: "song" | "section" | "block"
+  sectionId: string | null
+  blockId: string | null
+  stemId: string | null
+  sections: ReturnType<typeof useProjectStore.getState>["sections"]
+  blocks: ReturnType<typeof useProjectStore.getState>["blocks"]
+  stems: ReturnType<typeof useProjectStore.getState>["stems"]
+}) {
+  const selectionTruth = getProjectSelectionTruth(
+    { sections, blocks, stems },
+    { level: selectionLevel, sectionId, blockId, stemId }
+  )
+
+  if (selectionTruth.status === "selected-section") {
+    const section = sections.find((candidate) => candidate.id === sectionId)
+
+    return {
+      tone: "ready" as const,
+      badge: "Selected scope",
+      value: section ? `${section.name} (${section.startBar}-${section.startBar + section.barCount - 1})` : "Section selected",
+      detail: selectionTruth.nextStep,
+    }
+  }
+
+  if (selectionTruth.status === "selected-block") {
+    const block = blocks.find((candidate) => candidate.id === blockId)
+    const stem = stems.find((candidate) => candidate.id === stemId)
+    const section = sections.find((candidate) => candidate.id === selectionTruth.sectionId)
+
+    return {
+      tone: "ready" as const,
+      badge: "Selected scope",
+      value: block && stem && section
+        ? `${stem.instrument} ${block.startBar}-${block.endBar} in ${section.name}`
+        : "Block selected",
+      detail: selectionTruth.nextStep,
+    }
+  }
+
+  if (selectionTruth.status === "missing-selection") {
+    return {
+      tone: "blocked" as const,
+      badge: "Fallback scope",
+      value: "Whole song fallback",
+      detail: `${selectionTruth.currentState} ${selectionTruth.nextStep}`,
+    }
+  }
+
+  return {
+    tone: "ready" as const,
+    badge: "Default scope",
+    value: "Whole song default",
+    detail: `${selectionTruth.currentState} ${selectionTruth.nextStep}`,
+  }
+}
+
 export function AiAssistantSection() {
   const [input, setInput] = useState("")
   const project = useProjectStore((state) => state.project)
   const chatMessages = useProjectStore((state) => state.chatMessages)
+  const stems = useProjectStore((state) => state.stems)
+  const sections = useProjectStore((state) => state.sections)
+  const blocks = useProjectStore((state) => state.blocks)
   const generationState = useUiStore((state) => state.generationState)
   const systemStatus = useUiStore((state) => state.systemStatus)
   const errorMessage = useUiStore((state) => state.errorMessage)
+  const selectionLevel = useSelectionStore((state) => state.level)
+  const sectionId = useSelectionStore((state) => state.sectionId)
+  const blockId = useSelectionStore((state) => state.blockId)
+  const stemId = useSelectionStore((state) => state.stemId)
   const { runGeneration } = useGenerate()
   const bottomRef = useRef<HTMLDivElement>(null)
 
@@ -75,6 +152,15 @@ export function AiAssistantSection() {
         ? "active"
         : "ready",
   }
+  const assistantSelectionTruth = getAssistantSelectionTruth({
+    selectionLevel,
+    sectionId,
+    blockId,
+    stemId,
+    sections,
+    blocks,
+    stems,
+  })
 
   function handleSend() {
     if (!canSend) return
@@ -118,7 +204,7 @@ export function AiAssistantSection() {
                       SCOPE_STYLES[message.scope]
                     )}
                   >
-                    {getScopeLabel(message)}
+                    {formatScopeTarget(message)}
                   </span>
                   <div
                     data-testid={failureMessage ? "ai-assistant-failure-bubble" : undefined}
@@ -153,6 +239,31 @@ export function AiAssistantSection() {
       <div className="flex items-center gap-2 rounded-md border border-border bg-secondary px-2.5 py-1.5">
         <label htmlFor="ai-input" className="sr-only">Ask the AI assistant</label>
         <div className="flex min-w-0 flex-1 flex-col gap-1.5">
+          <div
+            data-testid="ai-assistant-selection-truth"
+            className={cn(
+              "rounded-md border px-2 py-1.5 text-[11px] leading-relaxed",
+              assistantSelectionTruth.tone === "blocked"
+                ? "border-warning/30 bg-warning/10 text-foreground"
+                : "border-border/70 bg-card/60 text-foreground"
+            )}
+          >
+            <div className="flex flex-wrap items-center gap-2">
+              <span
+                className={cn(
+                  "rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.18em]",
+                  assistantSelectionTruth.tone === "blocked"
+                    ? "border border-warning/30 bg-warning/10 text-warning"
+                    : "border border-border/70 bg-secondary/60 text-muted-foreground"
+                )}
+              >
+                {assistantSelectionTruth.badge}
+              </span>
+              <span className="font-medium">{assistantSelectionTruth.value}</span>
+            </div>
+            <div className="mt-1 text-muted-foreground">{assistantSelectionTruth.detail}</div>
+          </div>
+
           <div
             data-testid="ai-assistant-composer-state"
             role="status"

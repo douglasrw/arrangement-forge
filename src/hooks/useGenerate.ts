@@ -2,7 +2,11 @@
 // Also provides regenerateMidi() for reactive slider → playback updates.
 
 import { useCallback, useEffect, useRef } from 'react';
-import { getProjectArrangementTruth, useProjectStore } from '@/store/project-store';
+import {
+  getProjectArrangementTruth,
+  getProjectSelectionTruth,
+  useProjectStore,
+} from '@/store/project-store';
 import { useUiStore } from '@/store/ui-store';
 import { useUndoStore } from '@/store/undo-store';
 import { useProject } from '@/hooks/useProject';
@@ -15,6 +19,7 @@ import { parseChordChart } from '@/lib/chord-chart-parser';
 import { getEffectiveSwingPct } from '@/lib/genre-config';
 import { formatGenerationFailureMessage } from '@/lib/assistant-chat';
 import { snapshotArrangement } from '@/lib/undo-helpers';
+import { useSelectionStore } from '@/store/selection-store';
 import type {
   AiChatMessage,
   GenerationRequest,
@@ -43,6 +48,11 @@ type ChordParseFailureLike = {
     issueHighlights?: string[];
     remainingIssueCount?: number;
   };
+};
+
+type AssistantMessageScope = {
+  scope: AiChatMessage['scope'];
+  scopeTarget: string | null;
 };
 
 function createChatMessage(
@@ -194,6 +204,56 @@ function describeChordParseBlocker(parseResult: ChordParseFailureLike): string {
   return 'Fix the flagged chord chart bars before generating.';
 }
 
+function formatBarRange(startBar: number, endBar: number): string {
+  return startBar === endBar ? `bar ${startBar}` : `bars ${startBar}-${endBar}`;
+}
+
+function getAssistantMessageScope(state: {
+  sections: Section[];
+  blocks: Block[];
+  stems: Stem[];
+}): AssistantMessageScope {
+  const selectionTruth = getProjectSelectionTruth(state, useSelectionStore.getState());
+
+  if (selectionTruth.status === 'selected-section') {
+    const section = state.sections.find((candidate) => candidate.id === selectionTruth.sectionId);
+
+    if (section) {
+      return {
+        scope: 'section',
+        scopeTarget: `${section.name} (${formatBarRange(section.startBar, section.startBar + section.barCount - 1)})`,
+      };
+    }
+  }
+
+  if (selectionTruth.status === 'selected-block') {
+    const block = state.blocks.find((candidate) => candidate.id === selectionTruth.blockId);
+    const stem = state.stems.find((candidate) => candidate.id === selectionTruth.stemId);
+    const section = state.sections.find((candidate) => candidate.id === selectionTruth.sectionId);
+
+    if (block && stem && section) {
+      const instrumentLabel = `${stem.instrument.charAt(0).toUpperCase()}${stem.instrument.slice(1)}`;
+
+      return {
+        scope: 'block',
+        scopeTarget: `${instrumentLabel} ${formatBarRange(block.startBar, block.endBar)} in ${section.name}`,
+      };
+    }
+  }
+
+  if (selectionTruth.status === 'missing-selection') {
+    return {
+      scope: 'song',
+      scopeTarget: 'Whole song fallback',
+    };
+  }
+
+  return {
+    scope: 'song',
+    scopeTarget: 'Whole song default',
+  };
+}
+
 export function useGenerate() {
   const {
     project,
@@ -226,9 +286,22 @@ export function useGenerate() {
     const hadArrangement = hasArrangementRows;
     const shouldRegenerate = hadArrangement || isRegeneration;
     const generationScope = getGenerationScope(shouldRegenerate, Boolean(trimmedAssistantPrompt));
+    const assistantMessageScope = getAssistantMessageScope({
+      sections,
+      blocks,
+      stems,
+    });
 
     if (trimmedAssistantPrompt) {
-      addChatMessage(createChatMessage(project.id, 'user', trimmedAssistantPrompt, 'song'));
+      addChatMessage(
+        createChatMessage(
+          project.id,
+          'user',
+          trimmedAssistantPrompt,
+          assistantMessageScope.scope,
+          assistantMessageScope.scopeTarget
+        )
+      );
     }
 
     // Capture pre-generation state for undo when the run is replacing an
@@ -364,7 +437,8 @@ export function useGenerate() {
             assistantPrompt: trimmedAssistantPrompt,
             hadArrangement: shouldRegenerate,
           }),
-          generationScope
+          trimmedAssistantPrompt ? assistantMessageScope.scope : generationScope,
+          trimmedAssistantPrompt ? assistantMessageScope.scopeTarget : null
         )
       );
 
@@ -387,7 +461,8 @@ export function useGenerate() {
           project.id,
           'assistant',
           formatGenerationFailureMessage(err),
-          generationScope
+          trimmedAssistantPrompt ? assistantMessageScope.scope : generationScope,
+          trimmedAssistantPrompt ? assistantMessageScope.scopeTarget : null
         )
       );
       await saveProject();
