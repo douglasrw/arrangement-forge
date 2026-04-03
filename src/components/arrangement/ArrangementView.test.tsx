@@ -334,6 +334,76 @@ describe('ArrangementView empty-state truth', () => {
     expect(mounted.container.textContent).not.toContain('Default');
   });
 
+  it('surfaces song-default selection truth and marks each lane entry point explicitly', () => {
+    const mounted = renderArrangementView();
+    mountedRoot = mounted.root;
+    mountedContainer = mounted.container;
+
+    const selectionTruth = mounted.container.querySelector(
+      '[data-testid="arrangement-selection-truth"]'
+    ) as HTMLDivElement | null;
+    const defaultBadge = mounted.container.querySelector(
+      '[data-block-selection-state="default"]'
+    ) as HTMLSpanElement | null;
+
+    expect(selectionTruth?.textContent).toContain('Song default');
+    expect(selectionTruth?.getAttribute('data-arrangement-selection-state')).toBe('default');
+    expect(mounted.container.textContent).toContain(
+      'No section or block is selected. Lane headers target the first loaded block in each lane.'
+    );
+    expect(defaultBadge?.textContent).toContain('Lane default');
+  });
+
+  it('surfaces inherited section scope when a section is selected but no block is explicit', () => {
+    useProjectStore.setState({
+      stems: [
+        makeStem({ id: 'stem-drums', instrument: 'drums', sortOrder: 0 }),
+      ],
+      blocks: [
+        makeBlock({ id: 'block-verse', stemId: 'stem-drums', sectionId: 'section-1', startBar: 1, endBar: 4 }),
+      ],
+    });
+    useSelectionStore.getState().selectSection('section-1');
+
+    const mounted = renderArrangementView();
+    mountedRoot = mounted.root;
+    mountedContainer = mounted.container;
+
+    const selectionTruth = mounted.container.querySelector(
+      '[data-testid="arrangement-selection-truth"]'
+    ) as HTMLDivElement | null;
+    const inheritedBadge = mounted.container.querySelector(
+      '[data-block-selection-state="inherited"]'
+    ) as HTMLSpanElement | null;
+
+    expect(selectionTruth?.textContent).toContain('Verse selected');
+    expect(selectionTruth?.getAttribute('data-arrangement-selection-state')).toBe('inherited');
+    expect(mounted.container.textContent).toContain(
+      '4 bars in focus. Blocks inside this section inherit the active scope until you pick a block.'
+    );
+    expect(inheritedBadge?.textContent).toContain('Inherited');
+  });
+
+  it('surfaces explicit block selection truth when a block is active', () => {
+    useSelectionStore.getState().selectBlock('block-drums', 'stem-drums');
+
+    const mounted = renderArrangementView();
+    mountedRoot = mounted.root;
+    mountedContainer = mounted.container;
+
+    const selectionTruth = mounted.container.querySelector(
+      '[data-testid="arrangement-selection-truth"]'
+    ) as HTMLDivElement | null;
+    const selectedBadge = mounted.container.querySelector(
+      '[data-block-selection-state="selected"]'
+    ) as HTMLSpanElement | null;
+
+    expect(selectionTruth?.textContent).toContain('DRUMS selected');
+    expect(selectionTruth?.getAttribute('data-arrangement-selection-state')).toBe('selected');
+    expect(mounted.container.textContent).toContain('Steady Groove covers bars 1-4.');
+    expect(selectedBadge?.textContent).toContain('Selected');
+  });
+
   it('surfaces idle playhead truth inside the arrangement when transport is ready', () => {
     const mounted = renderArrangementView();
     mountedRoot = mounted.root;

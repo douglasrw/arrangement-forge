@@ -30,6 +30,14 @@ const ARRANGEMENT_LANE_LABELS: Record<Instrument, string> = {
   strings: "STRINGS",
 }
 
+function formatArrangementStyleLabel(value: string) {
+  return value
+    .split(/[_\s-]+/)
+    .filter(Boolean)
+    .map((segment) => segment.charAt(0).toUpperCase() + segment.slice(1))
+    .join(" ")
+}
+
 function getArrangementPlayheadTruth({
   playbackReadiness,
   isPlaying,
@@ -133,6 +141,40 @@ function getArrangementFailureTruth(errorMessage: string | null) {
     nextStep: nextStep
       ? `Next step: ${nextStep}`
       : "Next step: Review the current input blockers, then generate again.",
+  }
+}
+
+function getArrangementSelectionTruth({
+  selectedSection,
+  selectedBlock,
+  selectedLaneLabel,
+}: {
+  selectedSection: { name: string; barCount: number } | null
+  selectedBlock: { instrument: Instrument; styleName: string | null; startBar: number; endBar: number } | null
+  selectedLaneLabel: string | null
+}) {
+  if (selectedBlock && selectedLaneLabel) {
+    const normalizedStyle = selectedBlock.styleName?.trim()
+
+    return {
+      state: "selected" as const,
+      summary: `${selectedLaneLabel} selected`,
+      detail: `${normalizedStyle ? formatArrangementStyleLabel(normalizedStyle) : "Pattern missing"} covers bars ${selectedBlock.startBar}-${selectedBlock.endBar}.`,
+    }
+  }
+
+  if (selectedSection) {
+    return {
+      state: "inherited" as const,
+      summary: `${selectedSection.name} selected`,
+      detail: `${selectedSection.barCount} bar${selectedSection.barCount !== 1 ? "s" : ""} in focus. Blocks inside this section inherit the active scope until you pick a block.`,
+    }
+  }
+
+  return {
+    state: "default" as const,
+    summary: "Song default",
+    detail: "No section or block is selected. Lane headers target the first loaded block in each lane.",
   }
 }
 
@@ -379,6 +421,29 @@ export function ArrangementView({
       ...truth,
     }
   })
+  const selectedSection = selectedSectionId
+    ? sortedSections.find((section) => section.id === selectedSectionId) ?? null
+    : null
+  const selectedBlock = selectedBlockId
+    ? blocks.find((block) => block.id === selectedBlockId) ?? null
+    : null
+  const selectedLane = selectedBlock
+    ? arrangementLanes.find((lane) => lane.laneBlocks.some((block) => block.id === selectedBlock.id)) ?? null
+    : null
+  const arrangementSelectionTruth = getArrangementSelectionTruth({
+    selectedSection: selectedSection
+      ? { name: selectedSection.name, barCount: selectedSection.barCount }
+      : null,
+    selectedBlock: selectedBlock
+      ? {
+        instrument: selectedLane?.instrument ?? "drums",
+        styleName: selectedBlock.style ?? null,
+        startBar: selectedBlock.startBar,
+        endBar: selectedBlock.endBar,
+      }
+      : null,
+    selectedLaneLabel: selectedLane?.label ?? null,
+  })
 
   /* Compute total bars and effective bar width (expand to fill viewport) */
   const totalBars = sortedSections.reduce((sum, s) => sum + s.barCount, 0)
@@ -423,7 +488,25 @@ export function ArrangementView({
         <div
           className="shrink-0 border-b border-secondary bg-card/80"
           style={{ height: RULER_H }}
-        />
+        >
+          <div
+            className={cn(
+              "flex h-full items-center px-2 text-[10px] font-medium uppercase tracking-[0.14em]",
+              arrangementSelectionTruth.state === "selected"
+                ? "text-zinc-100"
+                : arrangementSelectionTruth.state === "inherited"
+                  ? "text-sky-200"
+                  : "text-muted-foreground",
+            )}
+            data-testid="arrangement-selection-truth"
+            data-arrangement-selection-state={arrangementSelectionTruth.state}
+            title={arrangementSelectionTruth.detail}
+          >
+            <span className="truncate">
+              {arrangementSelectionTruth.summary}
+            </span>
+          </div>
+        </div>
         {/* Instrument rows — fixed height, matches grid lanes */}
         {arrangementLanes.map((lane, i) => {
           const isEven = i % 2 === 1
@@ -605,25 +688,44 @@ export function ArrangementView({
               )
             })}
             <div className="pointer-events-none absolute right-2 top-1/2 -translate-y-1/2">
-              <div
-                className={cn(
-                  "inline-flex items-center gap-2 rounded-full border px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.16em]",
-                  arrangementPlayheadTruth.state === "active"
-                    ? "border-playhead/40 bg-playhead/10 text-playhead-light"
-                    : arrangementPlayheadTruth.state === "idle"
-                      ? "border-sky-400/40 bg-sky-500/10 text-sky-300"
-                      : "border-border/70 bg-secondary/70 text-muted-foreground"
-                )}
-                data-arrangement-playhead-state={arrangementPlayheadTruth.state}
-                data-arrangement-readiness={arrangementPlayheadTruth.readinessLabel.toLowerCase()}
-                title={arrangementPlayheadTruth.title}
-              >
-                <span>{arrangementPlayheadTruth.readinessLabel}</span>
-                <span className="opacity-40" aria-hidden="true">/</span>
-                <span>{arrangementPlayheadTruth.badgeLabel}</span>
-                <span className="text-[9px] normal-case tracking-normal opacity-80">
-                  {arrangementPlayheadTruth.statusText}
-                </span>
+              <div className="flex items-center gap-2">
+                <div
+                  className={cn(
+                    "max-w-[24rem] rounded-full border px-2 py-0.5 text-[10px] font-medium",
+                    arrangementSelectionTruth.state === "selected"
+                      ? "border-zinc-100/15 bg-zinc-100/10 text-zinc-100"
+                      : arrangementSelectionTruth.state === "inherited"
+                        ? "border-sky-400/30 bg-sky-500/10 text-sky-200"
+                        : "border-border/70 bg-secondary/70 text-muted-foreground"
+                  )}
+                >
+                  <span className="font-semibold uppercase tracking-[0.16em]">
+                    {arrangementSelectionTruth.summary}
+                  </span>
+                  <span className="ml-2 text-[9px] opacity-80">
+                    {arrangementSelectionTruth.detail}
+                  </span>
+                </div>
+                <div
+                  className={cn(
+                    "inline-flex items-center gap-2 rounded-full border px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.16em]",
+                    arrangementPlayheadTruth.state === "active"
+                      ? "border-playhead/40 bg-playhead/10 text-playhead-light"
+                      : arrangementPlayheadTruth.state === "idle"
+                        ? "border-sky-400/40 bg-sky-500/10 text-sky-300"
+                        : "border-border/70 bg-secondary/70 text-muted-foreground"
+                  )}
+                  data-arrangement-playhead-state={arrangementPlayheadTruth.state}
+                  data-arrangement-readiness={arrangementPlayheadTruth.readinessLabel.toLowerCase()}
+                  title={arrangementPlayheadTruth.title}
+                >
+                  <span>{arrangementPlayheadTruth.readinessLabel}</span>
+                  <span className="opacity-40" aria-hidden="true">/</span>
+                  <span>{arrangementPlayheadTruth.badgeLabel}</span>
+                  <span className="text-[9px] normal-case tracking-normal opacity-80">
+                    {arrangementPlayheadTruth.statusText}
+                  </span>
+                </div>
               </div>
             </div>
           </div>
@@ -670,6 +772,26 @@ export function ArrangementView({
                       const left = (block.startBar - 1) * effectiveBarW
                       const width = (block.endBar - block.startBar + 1) * effectiveBarW
                       const isSelected = block.id === selectedBlockId
+                      const isLaneDefault =
+                        selectedBlockId === null &&
+                        selectedSectionId === null &&
+                        lane.laneBlocks[0]?.id === block.id
+                      const isInheritedFromSection =
+                        selectedBlockId === null &&
+                        selectedSectionId !== null &&
+                        block.sectionId === selectedSectionId
+                      const selectionLabel = isSelected
+                        ? "Selected"
+                        : isInheritedFromSection
+                          ? "Inherited"
+                          : isLaneDefault
+                            ? "Lane default"
+                            : undefined
+                      const selectionState = isSelected
+                        ? "selected"
+                        : isInheritedFromSection
+                          ? "inherited"
+                          : "default"
                       return (
                         <div
                           key={block.id}
@@ -680,6 +802,8 @@ export function ArrangementView({
                             instrument={lane.instrument}
                             styleName={block.style ?? "Default"}
                             state={isSelected ? "selected" : "default"}
+                            selectionLabel={selectionLabel}
+                            selectionState={selectionState}
                             dimmed={hasAnyBlockSelected && !isSelected}
                             aria-label={`${lane.instrument} block, bars ${block.startBar}-${block.endBar}`}
                             onClick={() => {

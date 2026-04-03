@@ -23,6 +23,8 @@ interface SequencerBlockProps {
   instrument: Instrument
   styleName?: string
   state?: BlockState
+  selectionLabel?: string
+  selectionState?: "default" | "inherited" | "selected"
   /** True when any block in the arrangement is selected (dims unselected blocks) */
   dimmed?: boolean
   onClick?: () => void
@@ -65,6 +67,8 @@ export function SequencerBlock({
   instrument,
   styleName,
   state = "default",
+  selectionLabel,
+  selectionState = "default",
   dimmed = false,
   onClick,
   className,
@@ -113,6 +117,21 @@ export function SequencerBlock({
         }
       }}
     >
+      {selectionLabel ? (
+        <span
+          className={cn(
+            "absolute right-2 top-2 rounded-full border px-1.5 py-0.5 text-[8px] font-semibold uppercase tracking-[0.16em]",
+            selectionState === "selected"
+              ? "border-white/25 bg-white/15 text-zinc-100"
+              : selectionState === "inherited"
+                ? "border-sky-400/30 bg-sky-500/10 text-sky-200"
+                : "border-border/70 bg-secondary/80 text-muted-foreground",
+          )}
+          data-block-selection-state={selectionState}
+        >
+          {selectionLabel}
+        </span>
+      ) : null}
       <span className="flex min-w-0 flex-col gap-1">
         <span
           className={cn(
