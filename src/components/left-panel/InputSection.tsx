@@ -11,6 +11,7 @@ import { useUiStore } from "@/store/ui-store"
 const INPUT_TABS = ["Chord", "Text", "Upload"] as const
 type InputTab = (typeof INPUT_TABS)[number]
 type UploadFeedbackTone = "neutral" | "success" | "blocked" | "error"
+type InputTabSelectionTone = "default" | "selected"
 type ImportedChordChartUpload = {
   chordChartRaw: string
   generationHints: string
@@ -323,11 +324,60 @@ function getGenerateGateMessage(args: {
   return null
 }
 
+function getInputTabSelectionTruth(args: {
+  activeTab: InputTab
+  hasChordChart: boolean
+  hasParseBlockers: boolean
+  reviewLineNumber: number | null
+}) {
+  const { activeTab, hasChordChart, hasParseBlockers, reviewLineNumber } = args
+
+  if (activeTab === "Text") {
+    return {
+      badge: "Text selected",
+      summary: hasParseBlockers
+        ? "Text is active so the raw chord chart truth and any blocked rows can be reviewed directly."
+        : "Text is active so the raw chord chart and Description can be edited directly.",
+      selectionLabel: "Current selection",
+      selectionValue: "Text editor",
+      footer: reviewLineNumber !== null
+        ? `The blocked chart row at line ${reviewLineNumber} is focused here for direct review.`
+        : "Use this tab when you need line-aware chord chart edits or note updates.",
+      tone: "selected" as InputTabSelectionTone,
+    }
+  }
+
+  if (activeTab === "Upload") {
+    return {
+      badge: "Upload selected",
+      summary: "Upload is active so the next plain-text file import will replace the current chord chart.",
+      selectionLabel: "Current selection",
+      selectionValue: "File import",
+      footer: hasChordChart
+        ? "Description lines are preserved unless the imported file includes new note text."
+        : "Import a plain-text chart here to create the first chord chart for this project.",
+      tone: "selected" as InputTabSelectionTone,
+    }
+  }
+
+  return {
+    badge: "Default tab",
+    summary: "Chord is active because Input opens on the song chord chart by default.",
+    selectionLabel: "Current selection",
+    selectionValue: hasChordChart ? "Chord palette" : "Chord palette (empty chart)",
+    footer: hasParseBlockers
+      ? "Use Text to inspect the blocked chart rows directly or Upload to replace the chart from file."
+      : "Use Text for line-by-line chart edits or Upload to replace the chart from file.",
+    tone: "default" as InputTabSelectionTone,
+  }
+}
+
 export function InputSection() {
   const [activeTab, setActiveTab] = useState<InputTab>("Chord")
   const [isImporting, setIsImporting] = useState(false)
   const [shouldFocusChordChartEditor, setShouldFocusChordChartEditor] = useState(false)
   const [reviewLineNumber, setReviewLineNumber] = useState<number | null>(null)
+  const [activeReviewLineNumber, setActiveReviewLineNumber] = useState<number | null>(null)
   const [uploadFeedback, setUploadFeedback] = useState<{
     tone: UploadFeedbackTone
     message: string
@@ -407,6 +457,12 @@ export function InputSection() {
   const reviewBlockedChartLabel = firstBlockedIssue
     ? `Review chord chart text at line ${firstBlockedIssue.lineNumber}`
     : "Review chord chart text"
+  const inputTabSelectionTruth = getInputTabSelectionTruth({
+    activeTab,
+    hasChordChart,
+    hasParseBlockers,
+    reviewLineNumber: activeTab === "Text" ? activeReviewLineNumber : null,
+  })
 
   useEffect(() => {
     if (!shouldFocusChordChartEditor || activeTab !== "Text") {
@@ -430,7 +486,10 @@ export function InputSection() {
   }, [activeTab, chordChartRaw, reviewLineNumber, shouldFocusChordChartEditor])
 
   function handleReviewBlockedChart() {
-    setReviewLineNumber(firstBlockedIssue?.lineNumber ?? null)
+    const nextReviewLineNumber = firstBlockedIssue?.lineNumber ?? null
+
+    setReviewLineNumber(nextReviewLineNumber)
+    setActiveReviewLineNumber(nextReviewLineNumber)
     setShouldFocusChordChartEditor(true)
     setActiveTab("Text")
   }
@@ -587,6 +646,35 @@ export function InputSection() {
         </div>
       )}
 
+      <div
+        data-input-tab-selection-state={inputTabSelectionTruth.tone}
+        className={cn(
+          "rounded-md border px-3 py-2 text-xs leading-relaxed",
+          inputTabSelectionTruth.tone === "default"
+            ? "border-border bg-secondary/40 text-foreground"
+            : "border-sky-500/30 bg-sky-500/10 text-foreground"
+        )}
+      >
+        <div className="flex flex-wrap items-center gap-2">
+          <span
+            className={cn(
+              "rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.18em]",
+              inputTabSelectionTruth.tone === "default"
+                ? "bg-card text-muted-foreground"
+                : "bg-sky-500/10 text-sky-200"
+            )}
+          >
+            {inputTabSelectionTruth.badge}
+          </span>
+          <span className="font-medium text-foreground">{inputTabSelectionTruth.summary}</span>
+        </div>
+        <p className="mt-1 text-muted-foreground">
+          <span className="font-medium text-foreground">{inputTabSelectionTruth.selectionLabel}: </span>
+          {inputTabSelectionTruth.selectionValue}
+        </p>
+        <p className="mt-1 text-muted-foreground">{inputTabSelectionTruth.footer}</p>
+      </div>
+
       {/* Tab switcher row */}
       <div className="flex gap-1 rounded-md bg-secondary p-0.5">
         {INPUT_TABS.map((tab) => (
@@ -594,6 +682,7 @@ export function InputSection() {
             key={tab}
             type="button"
             onClick={() => setActiveTab(tab)}
+            aria-pressed={activeTab === tab}
             className={cn(
               "flex-1 rounded-[5px] px-2 py-1.5 text-xs font-medium transition-colors",
               activeTab === tab

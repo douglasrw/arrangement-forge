@@ -166,15 +166,63 @@ describe('InputSection upload tab', () => {
     mountedContainer = mounted.container;
 
     const readiness = mounted.container.querySelector('[data-input-readiness]') as HTMLDivElement | null;
+    const tabTruth = mounted.container.querySelector(
+      '[data-input-tab-selection-state]'
+    ) as HTMLDivElement | null;
     const generateGate = mounted.container.querySelector('[data-generate-gate-state]') as HTMLParagraphElement | null;
 
     expect(readiness?.getAttribute('data-input-readiness')).toBe('empty');
+    expect(tabTruth?.getAttribute('data-input-tab-selection-state')).toBe('default');
+    expect(tabTruth?.textContent).toContain('Default tab');
+    expect(tabTruth?.textContent).toContain(
+      'Chord is active because Input opens on the song chord chart by default.'
+    );
+    expect(tabTruth?.textContent).toContain('Current selection: Chord palette (empty chart)');
+    expect(tabTruth?.textContent).toContain(
+      'Use Text for line-by-line chart edits or Upload to replace the chart from file.'
+    );
     expect(mounted.container.textContent).toContain('Chord chart needed');
     expect(generateGate?.getAttribute('data-generate-gate-state')).toBe('waiting');
     expect(generateGate?.textContent).toBe(
       'Generate unlocks after the chord chart includes at least one bar.'
     );
     expect(getGenerateButton(mounted.container).disabled).toBe(true);
+  });
+
+  it('keeps the current input tab and default behavior explicit as the operator switches tabs', () => {
+    useProjectStore.setState({
+      project: makeProject({
+        chordChartRaw: '[Verse]\nCmaj7 | Dm7 | G7 | Cmaj7',
+      }),
+    });
+
+    const mounted = renderSection();
+    mountedRoot = mounted.root;
+    mountedContainer = mounted.container;
+
+    const tabTruth = () =>
+      mounted.container.querySelector('[data-input-tab-selection-state]') as HTMLDivElement | null;
+
+    expect(tabTruth()?.getAttribute('data-input-tab-selection-state')).toBe('default');
+    expect(tabTruth()?.textContent).toContain('Current selection: Chord palette');
+
+    openTextTab(mounted.container);
+
+    expect(tabTruth()?.getAttribute('data-input-tab-selection-state')).toBe('selected');
+    expect(tabTruth()?.textContent).toContain('Text selected');
+    expect(tabTruth()?.textContent).toContain(
+      'Text is active so the raw chord chart and Description can be edited directly.'
+    );
+    expect(tabTruth()?.textContent).toContain('Current selection: Text editor');
+
+    openUploadTab(mounted.container);
+
+    expect(tabTruth()?.getAttribute('data-input-tab-selection-state')).toBe('selected');
+    expect(tabTruth()?.textContent).toContain('Upload selected');
+    expect(tabTruth()?.textContent).toContain(
+      'Upload is active so the next plain-text file import will replace the current chord chart.'
+    );
+    expect(tabTruth()?.textContent).toContain('Current selection: File import');
   });
 
   it('surfaces ready readiness when the project already has a chord chart', () => {
@@ -422,6 +470,9 @@ describe('InputSection upload tab', () => {
     });
 
     const chordChartInput = mounted.container.querySelector('#chord-chart-raw-input') as HTMLTextAreaElement | null;
+    const tabTruth = mounted.container.querySelector(
+      '[data-input-tab-selection-state]'
+    ) as HTMLDivElement | null;
 
     expect(chordChartInput).not.toBeNull();
     expect(document.activeElement).toBe(chordChartInput);
@@ -429,6 +480,14 @@ describe('InputSection upload tab', () => {
     expect(chordChartInput?.selectionEnd).toBe(26);
     expect(chordChartInput?.value.slice(chordChartInput.selectionStart, chordChartInput.selectionEnd)).toBe(
       'Cmaj7 | xyz?? | %'
+    );
+    expect(tabTruth?.getAttribute('data-input-tab-selection-state')).toBe('selected');
+    expect(tabTruth?.textContent).toContain('Text selected');
+    expect(tabTruth?.textContent).toContain(
+      'Text is active so the raw chord chart truth and any blocked rows can be reviewed directly.'
+    );
+    expect(tabTruth?.textContent).toContain(
+      'The blocked chart row at line 3 is focused here for direct review.'
     );
     expect(
       Array.from(mounted.container.querySelectorAll('button')).some(
