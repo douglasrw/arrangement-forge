@@ -5,16 +5,22 @@ import { createRoot, type Root } from 'react-dom/client';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { AiAssistantSection } from './AiAssistantSection';
 import { useProjectStore } from '@/store/project-store';
+import { useSelectionStore } from '@/store/selection-store';
 import { useUiStore } from '@/store/ui-store';
 import type { AiChatMessage, Project } from '@/types';
 
 const runGenerationMock = vi.hoisted(() => vi.fn());
 
-vi.mock('@/hooks/useGenerate', () => ({
-  useGenerate: () => ({
-    runGeneration: runGenerationMock,
-  }),
-}));
+vi.mock('@/hooks/useGenerate', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('@/hooks/useGenerate')>();
+
+  return {
+    ...actual,
+    useGenerate: () => ({
+      runGeneration: runGenerationMock,
+    }),
+  };
+});
 
 vi.mock('@/components/ui/scroll-area', () => ({
   ScrollArea: ({ children, className }: { children: any; className?: string }) => (
@@ -103,6 +109,13 @@ beforeEach(() => {
     errorMessage: null,
     unsavedChanges: false,
     lastSavedAt: null,
+  });
+
+  useSelectionStore.setState({
+    level: 'song',
+    sectionId: null,
+    blockId: null,
+    stemId: null,
   });
 });
 
@@ -219,6 +232,109 @@ describe('AiAssistantSection', () => {
     );
     expect(input?.disabled).toBe(false);
     expect(sendButton?.disabled).toBe(true);
+  });
+
+  it('surfaces whole-song default scope in the assistant panel before prompting', () => {
+    const mounted = renderSection();
+    mountedRoot = mounted.root;
+    mountedContainer = mounted.container;
+
+    const selectionTruth = mounted.container.querySelector(
+      '[data-testid="ai-assistant-selection-truth"]'
+    );
+
+    expect(selectionTruth?.textContent).toContain('Default scope');
+    expect(selectionTruth?.textContent).toContain('Whole song default');
+    expect(selectionTruth?.textContent).toContain(
+      'No section or block is selected, so the project store is using whole-song defaults right now.'
+    );
+  });
+
+  it('surfaces explicit section scope in the assistant panel instead of leaving it implicit', () => {
+    useProjectStore.setState({
+      sections: [
+        {
+          id: 'section-1',
+          projectId: 'p1',
+          name: 'Verse',
+          sortOrder: 0,
+          barCount: 8,
+          startBar: 1,
+          energyOverride: null,
+          grooveOverride: null,
+          feelOverride: null,
+          swingPctOverride: null,
+          dynamicsOverride: null,
+          createdAt: '2026-03-28T00:00:00Z',
+        },
+      ],
+    });
+    useSelectionStore.setState({
+      level: 'section',
+      sectionId: 'section-1',
+      blockId: null,
+      stemId: null,
+    });
+
+    const mounted = renderSection();
+    mountedRoot = mounted.root;
+    mountedContainer = mounted.container;
+
+    const selectionTruth = mounted.container.querySelector(
+      '[data-testid="ai-assistant-selection-truth"]'
+    );
+
+    expect(selectionTruth?.textContent).toContain('Selected scope');
+    expect(selectionTruth?.textContent).toContain('Verse (1-8)');
+    expect(selectionTruth?.textContent).toContain(
+      'Keep editing this section, or clear the selection to return to whole-song defaults.'
+    );
+  });
+
+  it('surfaces missing selection truth as an assistant fallback instead of hiding it', () => {
+    useSelectionStore.setState({
+      level: 'block',
+      sectionId: null,
+      blockId: 'missing-block',
+      stemId: 'missing-stem',
+    });
+
+    const mounted = renderSection();
+    mountedRoot = mounted.root;
+    mountedContainer = mounted.container;
+
+    const selectionTruth = mounted.container.querySelector(
+      '[data-testid="ai-assistant-selection-truth"]'
+    );
+
+    expect(selectionTruth?.textContent).toContain('Fallback scope');
+    expect(selectionTruth?.textContent).toContain('Whole song fallback');
+    expect(selectionTruth?.textContent).toContain(
+      'The project store still references a block selection that no longer resolves to live arrangement rows, so whole-song defaults are the only safe scope right now.'
+    );
+  });
+
+  it('surfaces stale section selection as the same assistant fallback truth', () => {
+    useSelectionStore.setState({
+      level: 'section',
+      sectionId: 'missing-section',
+      blockId: null,
+      stemId: null,
+    });
+
+    const mounted = renderSection();
+    mountedRoot = mounted.root;
+    mountedContainer = mounted.container;
+
+    const selectionTruth = mounted.container.querySelector(
+      '[data-testid="ai-assistant-selection-truth"]'
+    );
+
+    expect(selectionTruth?.textContent).toContain('Fallback scope');
+    expect(selectionTruth?.textContent).toContain('Whole song fallback');
+    expect(selectionTruth?.textContent).toContain(
+      'The project store still references a section selection that is no longer loaded, so whole-song defaults are the only safe scope right now.'
+    );
   });
 
   it('shows a failed assistant state after a generation error instead of ready copy', () => {

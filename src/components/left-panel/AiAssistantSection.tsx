@@ -1,7 +1,7 @@
 import { ArrowUp } from "lucide-react"
 import { useEffect, useRef, useState } from "react"
 import { ScrollArea } from "@/components/ui/scroll-area"
-import { useGenerate } from "@/hooks/useGenerate"
+import { getAssistantSelectionPresentation, useGenerate } from "@/hooks/useGenerate"
 import { getGenerationFailureDetail, isGenerationFailureContent } from "@/lib/assistant-chat"
 import { parseChordChart } from "@/lib/chord-chart-parser"
 import { useProjectStore } from "@/store/project-store"
@@ -33,10 +33,17 @@ function isFailureMessage(message: AiChatMessage) {
   return message.role === "assistant" && isGenerationFailureContent(message.content)
 }
 
+function formatScopeTarget(message: AiChatMessage) {
+  return getScopeLabel(message)
+}
+
 export function AiAssistantSection() {
   const [input, setInput] = useState("")
   const project = useProjectStore((state) => state.project)
   const chatMessages = useProjectStore((state) => state.chatMessages)
+  const stems = useProjectStore((state) => state.stems)
+  const sections = useProjectStore((state) => state.sections)
+  const blocks = useProjectStore((state) => state.blocks)
   const generationState = useUiStore((state) => state.generationState)
   const systemStatus = useUiStore((state) => state.systemStatus)
   const errorMessage = useUiStore((state) => state.errorMessage)
@@ -75,6 +82,11 @@ export function AiAssistantSection() {
         ? "active"
         : "ready",
   }
+  const assistantSelectionTruth = getAssistantSelectionPresentation({
+    sections,
+    blocks,
+    stems,
+  })
 
   function handleSend() {
     if (!canSend) return
@@ -88,9 +100,9 @@ export function AiAssistantSection() {
       ? "Add a chord chart before asking the assistant to generate or revise the arrangement."
       : hasParseIssues
         ? `${assistantReadiness.detail} Assistant history will appear here after the chord chart is fixed and you send a request.`
-      : isGenerating
-        ? "Generating from your latest request..."
-        : "Assistant history is empty. Ask for a generation or revision and the result will be tracked here."
+        : isGenerating
+          ? "Generating from your latest request..."
+          : "Assistant history is empty. Ask for a generation or revision and the result will be tracked here."
 
   return (
     <div className="flex flex-1 flex-col gap-2 overflow-hidden">
@@ -118,7 +130,7 @@ export function AiAssistantSection() {
                       SCOPE_STYLES[message.scope]
                     )}
                   >
-                    {getScopeLabel(message)}
+                    {formatScopeTarget(message)}
                   </span>
                   <div
                     data-testid={failureMessage ? "ai-assistant-failure-bubble" : undefined}
@@ -153,6 +165,31 @@ export function AiAssistantSection() {
       <div className="flex items-center gap-2 rounded-md border border-border bg-secondary px-2.5 py-1.5">
         <label htmlFor="ai-input" className="sr-only">Ask the AI assistant</label>
         <div className="flex min-w-0 flex-1 flex-col gap-1.5">
+          <div
+            data-testid="ai-assistant-selection-truth"
+            className={cn(
+              "rounded-md border px-2 py-1.5 text-[11px] leading-relaxed",
+              assistantSelectionTruth.tone === "blocked"
+                ? "border-warning/30 bg-warning/10 text-foreground"
+                : "border-border/70 bg-card/60 text-foreground"
+            )}
+          >
+            <div className="flex flex-wrap items-center gap-2">
+              <span
+                className={cn(
+                  "rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.18em]",
+                  assistantSelectionTruth.tone === "blocked"
+                    ? "border border-warning/30 bg-warning/10 text-warning"
+                    : "border border-border/70 bg-secondary/60 text-muted-foreground"
+                )}
+              >
+                {assistantSelectionTruth.badge}
+              </span>
+              <span className="font-medium">{assistantSelectionTruth.value}</span>
+            </div>
+            <div className="mt-1 text-muted-foreground">{assistantSelectionTruth.detail}</div>
+          </div>
+
           <div
             data-testid="ai-assistant-composer-state"
             role="status"
