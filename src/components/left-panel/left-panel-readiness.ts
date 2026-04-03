@@ -1,5 +1,5 @@
 import type { ChordChartParseTruth } from "@/lib/chord-chart-parser"
-import type { GenerationState } from "@/types"
+import type { GenerationState, SystemStatus } from "@/types"
 
 export type LeftPanelTruthTone = "ready" | "attention" | "neutral"
 
@@ -9,6 +9,8 @@ type LeftPanelReadinessInputs = {
   hasParseIssues?: boolean
   parseTruth?: ChordChartParseTruth | null
   generationState: GenerationState
+  systemStatus?: SystemStatus
+  errorMessage?: string | null
   isImporting?: boolean
 }
 
@@ -81,6 +83,24 @@ function describeBlockedChordChart(parseTruth?: ChordChartParseTruth | null) {
   return "Fix the chord chart in Input before generating."
 }
 
+function describeAssistantFailure(errorMessage?: string | null) {
+  const normalizedMessage = errorMessage
+    ?.trim()
+    .replace(/^error:\s*/i, "")
+    .replace(/^generation failed:\s*/i, "")
+    .trim()
+
+  if (!normalizedMessage) {
+    return "The assistant could not finish the last request. Next step: Review the current input blockers, then try again."
+  }
+
+  if (/next step:/i.test(normalizedMessage)) {
+    return normalizedMessage
+  }
+
+  return `${normalizedMessage} Next step: Review the current input blockers, then try again.`
+}
+
 export function getInputReadinessTruth({
   hasProject,
   hasChordChart,
@@ -148,6 +168,8 @@ export function getAiAssistantReadinessTruth({
   hasParseIssues = false,
   parseTruth,
   generationState,
+  systemStatus,
+  errorMessage,
 }: LeftPanelReadinessInputs): AiAssistantReadinessTruth {
   if (!hasProject) {
     return {
@@ -175,6 +197,16 @@ export function getAiAssistantReadinessTruth({
       badge: "Blocked",
       title: "Chord chart needs fixes",
       detail: `${describeBlockedChordChart(parseTruth)} Fix the chord chart in Input before asking the assistant to generate or revise the arrangement.`,
+      tone: "attention",
+    }
+  }
+
+  if (systemStatus === "error") {
+    return {
+      status: "blocked",
+      badge: "Failed",
+      title: "Assistant request failed",
+      detail: describeAssistantFailure(errorMessage),
       tone: "attention",
     }
   }

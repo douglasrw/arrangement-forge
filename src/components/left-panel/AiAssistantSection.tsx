@@ -38,6 +38,8 @@ export function AiAssistantSection() {
   const project = useProjectStore((state) => state.project)
   const chatMessages = useProjectStore((state) => state.chatMessages)
   const generationState = useUiStore((state) => state.generationState)
+  const systemStatus = useUiStore((state) => state.systemStatus)
+  const errorMessage = useUiStore((state) => state.errorMessage)
   const { runGeneration } = useGenerate()
   const bottomRef = useRef<HTMLDivElement>(null)
 
@@ -61,6 +63,8 @@ export function AiAssistantSection() {
     hasParseIssues,
     parseTruth,
     generationState,
+    systemStatus,
+    errorMessage,
   })
   const composerStatus = {
     title: assistantReadiness.title,

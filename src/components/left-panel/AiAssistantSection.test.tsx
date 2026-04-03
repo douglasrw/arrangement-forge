@@ -221,6 +221,29 @@ describe('AiAssistantSection', () => {
     expect(sendButton?.disabled).toBe(true);
   });
 
+  it('shows a failed assistant state after a generation error instead of ready copy', () => {
+    useUiStore.setState({
+      generationState: 'complete',
+      systemStatus: 'error',
+      errorMessage: 'Generator offline',
+    });
+
+    const mounted = renderSection();
+    mountedRoot = mounted.root;
+    mountedContainer = mounted.container;
+
+    const composerState = mounted.container.querySelector(
+      '[data-testid="ai-assistant-composer-state"]'
+    );
+
+    expect(composerState?.textContent).toContain('Assistant request failed');
+    expect(composerState?.textContent).toContain('Generator offline');
+    expect(composerState?.textContent).toContain(
+      'Next step: Review the current input blockers, then try again.'
+    );
+    expect(composerState?.textContent).not.toContain('Assistant is ready');
+  });
+
   it('keeps the blocked parse-failure reason visible before the assistant can send', () => {
     useProjectStore.setState({
       project: makeProject({ chordChartRaw: 'Cmaj7 | xyz?? | %' }),
