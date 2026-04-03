@@ -1,6 +1,10 @@
 import type { GenerationState, SystemStatus } from '@/types';
 import { cn } from '@/lib/utils';
-import { getProjectArrangementTruth, getProjectStoreReadiness } from '@/store/project-store';
+import {
+  getProjectArrangementTruth,
+  getProjectSelectionTruth,
+  getProjectStoreReadiness,
+} from '@/store/project-store';
 import { getProjectSavePlan } from '@/hooks/useProject';
 import { useProjectStore } from '@/store/project-store';
 import { useUiStore } from '@/store/ui-store';
@@ -172,6 +176,44 @@ function getStatusBarFailureTruth({
   };
 }
 
+function getStatusBarSelectionLabel() {
+  const selectionTruth = getProjectSelectionTruth(useProjectStore.getState());
+
+  if (selectionTruth.selectionSource === 'missing') {
+    return {
+      label: 'Scope fallback: Whole song default',
+      tone: 'warning',
+      tooltip: `${selectionTruth.currentState} ${selectionTruth.nextStep}`.trim(),
+      source: selectionTruth.selectionSource,
+    } as const;
+  }
+
+  if (selectionTruth.selectionLevel === 'section') {
+    return {
+      label: `Section selected`,
+      tone: 'ready',
+      tooltip: `${selectionTruth.currentState} ${selectionTruth.nextStep}`.trim(),
+      source: selectionTruth.selectionSource,
+    } as const;
+  }
+
+  if (selectionTruth.selectionLevel === 'block') {
+    return {
+      label: 'Block selected',
+      tone: 'ready',
+      tooltip: `${selectionTruth.currentState} ${selectionTruth.nextStep}`.trim(),
+      source: selectionTruth.selectionSource,
+    } as const;
+  }
+
+  return {
+    label: 'Whole song default',
+    tone: 'muted',
+    tooltip: `${selectionTruth.currentState} ${selectionTruth.nextStep}`.trim(),
+    source: selectionTruth.selectionSource,
+  } as const;
+}
+
 export function StatusBar({ status = 'saved', className }: StatusBarProps) {
   const errorMessage = useUiStore((state) => state.errorMessage);
   const generationState = useUiStore((state) => state.generationState);
@@ -195,6 +237,7 @@ export function StatusBar({ status = 'saved', className }: StatusBarProps) {
     blocks,
     chords,
   });
+  const selectionTruth = getStatusBarSelectionLabel();
   const cfg = STATUS_CONFIG[status];
   const savePlan = getProjectSavePlan({
     project,
@@ -260,6 +303,22 @@ export function StatusBar({ status = 'saved', className }: StatusBarProps) {
           {label}
         </span>
       </div>
+
+      <span
+        data-testid="status-bar-selection-truth"
+        data-selection-source={selectionTruth.source}
+        className={cn(
+          'min-w-0 max-w-[22%] truncate px-3 text-[10px]',
+          selectionTruth.tone === 'warning'
+            ? 'text-amber-700'
+            : selectionTruth.tone === 'ready'
+            ? 'text-zinc-700'
+            : 'text-zinc-500'
+        )}
+        title={selectionTruth.tooltip}
+      >
+        {selectionTruth.label}
+      </span>
 
       {/* Center: actionable history guidance */}
       <span

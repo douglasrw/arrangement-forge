@@ -4,6 +4,7 @@ import { act, createElement } from 'react';
 import { createRoot, type Root } from 'react-dom/client';
 import type { Block, Chord, Project, Section, Stem } from '@/types';
 import { useProjectStore } from '@/store/project-store';
+import { useSelectionStore } from '@/store/selection-store';
 import { useUiStore } from '@/store/ui-store';
 import { useUndoStore } from '@/store/undo-store';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
@@ -152,6 +153,12 @@ beforeEach(() => {
   useUndoStore.setState({
     undoStack: [],
     redoStack: [],
+  });
+  useSelectionStore.setState({
+    level: 'song',
+    sectionId: null,
+    blockId: null,
+    stemId: null,
   });
 });
 
@@ -322,6 +329,61 @@ describe('StatusBar', () => {
     expect(container.textContent).toContain('Saved');
     expect(label?.title).toBe(
       'A saved arrangement snapshot exists, but its rows are not loaded in the project store right now. Use Reload saved snapshot in the top bar to load the arrangement rows before editing, saving, or exporting the current arrangement snapshot.'
+    );
+  });
+
+  it('surfaces whole-song default selection truth in the status bar', () => {
+    const container = renderStatusBar('saved');
+    const selectionTruth = container.querySelector(
+      '[data-testid="status-bar-selection-truth"]'
+    ) as HTMLSpanElement | null;
+
+    expect(selectionTruth?.textContent).toBe('Whole song default');
+    expect(selectionTruth?.getAttribute('data-selection-source')).toBe('default');
+    expect(selectionTruth?.title).toBe(
+      'No section or block is selected, so the project store is using whole-song defaults right now. Keep editing the whole song, or select a section or block to work in a narrower scope.'
+    );
+  });
+
+  it('surfaces explicit block selection truth instead of leaving scope implicit', () => {
+    useProjectStore.setState({
+      project: makeProject({ hasArrangement: true }),
+      stems: [makeStem({ instrument: 'piano' })],
+      sections: [makeSection({ name: 'Verse' })],
+      blocks: [makeBlock({ startBar: 1, endBar: 4 })],
+      chords: [makeChord()],
+    });
+    useSelectionStore.getState().selectBlock('block-1', 'stem-1');
+
+    const container = renderStatusBar('saved');
+    const selectionTruth = container.querySelector(
+      '[data-testid="status-bar-selection-truth"]'
+    ) as HTMLSpanElement | null;
+
+    expect(selectionTruth?.textContent).toBe('Block selected');
+    expect(selectionTruth?.getAttribute('data-selection-source')).toBe('explicit');
+    expect(selectionTruth?.title).toBe(
+      'Piano block 1-4 in Verse is selected in the project store. Keep editing this block, or clear the selection to return to whole-song defaults.'
+    );
+  });
+
+  it('surfaces missing selection truth as an explicit whole-song fallback', () => {
+    useSelectionStore.setState({
+      level: 'block',
+      sectionId: null,
+      blockId: 'missing-block',
+      stemId: 'missing-stem',
+    });
+
+    const container = renderStatusBar('saved');
+    const selectionTruth = container.querySelector(
+      '[data-testid="status-bar-selection-truth"]'
+    ) as HTMLSpanElement | null;
+
+    expect(selectionTruth?.textContent).toBe('Scope fallback: Whole song default');
+    expect(selectionTruth?.getAttribute('data-selection-source')).toBe('missing');
+    expect(selectionTruth?.title).toBe(
+      'The project store still references a block selection that no longer resolves to live arrangement rows, so whole-song defaults are the only safe scope right now. Clear the stale block selection or reload the matching arrangement rows before relying on block-scoped edits.'
     );
   });
 
