@@ -6,7 +6,6 @@ import { useShallow } from 'zustand/react/shallow';
 import { supabase } from '@/lib/supabase';
 import { rowToProfile } from '@/lib/profile';
 import type {
-  AuthReadiness,
   AuthStoreSelectionTruth,
   AuthStoreTruthSlice,
   AuthTruth,
@@ -23,7 +22,6 @@ export type UseAuthResult = {
   profile: ReturnType<typeof useAuthStore.getState>['profile'];
   authStoreTruth: AuthStoreTruthSlice;
   authSelectionTruth: AuthStoreSelectionTruth;
-  authReadiness: AuthReadiness;
   authTruth: AuthTruth;
   initAuth: () => () => void;
   signIn: (email: string, password: string) => Promise<void>;
@@ -218,7 +216,6 @@ export function useAuth(): UseAuthResult {
     profile,
     authStoreTruth,
     authSelectionTruth,
-    authReadiness: authTruth.readiness,
     authTruth,
     initAuth,
     signIn,

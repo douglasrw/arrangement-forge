@@ -332,6 +332,7 @@ describe('useAuth auth action failures', () => {
       },
     });
     expect('authStatus' in hookValue!).toBe(false);
+    expect('authReadiness' in hookValue!).toBe(false);
     expect('isLoading' in hookValue!).toBe(false);
     expect('isAuthenticated' in hookValue!).toBe(false);
     expect('signedOutReason' in hookValue!).toBe(false);

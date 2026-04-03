@@ -31,6 +31,17 @@ function describeRecoveryDestination(path: string) {
   return getProtectedRouteTruth(path).recoveryDestination;
 }
 
+function formatReadinessLabel(readiness: AuthTruth['readiness']) {
+  switch (readiness) {
+    case 'ready':
+      return 'Ready';
+    case 'waiting':
+      return 'Waiting';
+    default:
+      return 'Blocked';
+  }
+}
+
 function AuthLoadingScreen({
   authTruth,
   recoveryPath,
@@ -55,6 +66,9 @@ function AuthLoadingScreen({
           <div className="h-8 w-8 rounded-full border-2 border-primary border-t-transparent animate-spin" />
           <div className="space-y-1">
             <h1 className="text-base font-semibold text-foreground">{title}</h1>
+            <p className="text-xs font-medium uppercase tracking-[0.2em] text-muted-foreground">
+              Readiness: {formatReadinessLabel(authTruth.readiness)}
+            </p>
             <p className="text-sm text-muted-foreground">{description}</p>
           </div>
         </div>
@@ -115,7 +129,10 @@ function AuthStatusNotice({
     return (
       <Alert data-testid="auth-status-notice">
         <AlertTitle>Waiting on authentication</AlertTitle>
-        <AlertDescription>{waitingDescription}</AlertDescription>
+        <AlertDescription>
+          <p>Readiness: {formatReadinessLabel(authTruth.readiness)}</p>
+          <p>{waitingDescription}</p>
+        </AlertDescription>
       </Alert>
     );
   }
@@ -126,6 +143,7 @@ function AuthStatusNotice({
         {authTruth.blockingState === 'error' ? 'Authentication failed' : 'Authentication blocked'}
       </AlertTitle>
       <AlertDescription>
+        <p>Readiness: {formatReadinessLabel(authTruth.readiness)}</p>
         <p>{authTruth.currentState}</p>
         <p>
           Next step: {authTruth.nextStepLabel}. {authTruth.nextStepDetail} After authentication,
@@ -139,7 +157,7 @@ function AuthStatusNotice({
 export default function LoginPage() {
   const navigate = useNavigate();
   const location = useLocation();
-  const { authReadiness, authTruth, signIn, signUp, signInWithGoogle } = useAuth();
+  const { authTruth, signIn, signUp, signInWithGoogle } = useAuth();
 
   const [mode, setMode] = useState<'signin' | 'signup'>('signin');
   const [email, setEmail] = useState('');
@@ -153,8 +171,8 @@ export default function LoginPage() {
   } | null>(null);
   const recoveryPath = resolveRecoveryPath(location.state);
   const isSubmitting = activeSubmissionPath !== null;
-  const isCheckingSession = authReadiness === 'waiting';
-  const hasAuthenticatedSession = authReadiness === 'ready';
+  const isCheckingSession = authTruth.readiness === 'waiting';
+  const hasAuthenticatedSession = authTruth.readiness === 'ready';
 
   useEffect(() => {
     if (hasAuthenticatedSession) {

@@ -9,9 +9,6 @@ import type { SignUpResult } from '@/hooks/useAuth';
 const authApi = vi.hoisted(() => ({
   authStatus: 'signed-out',
   signedOutReason: 'no-session',
-  get authReadiness() {
-    return this.authTruth.readiness;
-  },
   get authTruth() {
     if (this.authStatus === 'checking-session') {
       return {
@@ -320,6 +317,7 @@ describe('LoginPage failure truth', () => {
     mountedContainer = mounted.container;
 
     expect(mounted.container.textContent).toContain('Authentication blocked');
+    expect(mounted.container.textContent).toContain('Readiness: Blocked');
     expect(mounted.container.textContent).toContain('return you to project project-1 in the editor');
     expect(mounted.container.querySelector('form')).not.toBeNull();
   });
@@ -334,6 +332,7 @@ describe('LoginPage failure truth', () => {
     mountedContainer = mounted.container;
 
     expect(mounted.container.textContent).toContain('Authentication blocked');
+    expect(mounted.container.textContent).toContain('Readiness: Blocked');
     expect(mounted.container.textContent).toContain('return you to project selection in the editor');
     expect(mounted.container.querySelector('form')).not.toBeNull();
   });
@@ -352,6 +351,7 @@ describe('LoginPage failure truth', () => {
     expect(mounted.container.textContent).toContain(
       'The saved profile is missing, so the session cannot reopen yet.'
     );
+    expect(mounted.container.textContent).toContain('Readiness: Blocked');
     expect(mounted.container.textContent).toContain(
       'Restore or complete the profile, then sign in again.'
     );
@@ -406,6 +406,7 @@ describe('LoginPage failure truth', () => {
 
     expect(authApi.signIn).toHaveBeenCalledWith('ash@example.com', 'secret-1');
     expect(mounted.container.textContent).toContain('Waiting on authentication');
+    expect(mounted.container.textContent).toContain('Readiness: Blocked');
     expect(mounted.container.textContent).toContain('continue to the library');
     expect(
       (mounted.container.querySelector('button[type="submit"]') as HTMLButtonElement | null)
@@ -581,6 +582,7 @@ describe('LoginPage failure truth', () => {
 
     expect(mounted.container.querySelector('[data-testid="auth-loading-screen"]')).not.toBeNull();
     expect(mounted.container.textContent).toContain('Waiting on authentication');
+    expect(mounted.container.textContent).toContain('Readiness: Waiting');
     expect(mounted.container.textContent).toContain('Checking for an existing session.');
     expect(mounted.container.textContent).toContain('Next step: Wait for session bootstrap.');
     expect(mounted.container.textContent).toContain('continue to settings');
@@ -614,6 +616,7 @@ describe('LoginPage failure truth', () => {
 
     expect(mounted.container.querySelector('[data-testid="auth-loading-screen"]')).not.toBeNull();
     expect(mounted.container.textContent).toContain('Authentication ready');
+    expect(mounted.container.textContent).toContain('Readiness: Ready');
     expect(mounted.container.textContent).not.toContain('Waiting on authentication');
     expect(mounted.container.textContent).toContain('An authenticated session is ready.');
     expect(mounted.container.textContent).toContain('Returning you to settings');
