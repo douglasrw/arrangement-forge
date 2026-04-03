@@ -332,7 +332,7 @@ describe('ArrangementView empty-state truth', () => {
     expect(mounted.container.textContent).toContain('Pattern missing');
     expect(mounted.container.textContent).toContain('Needs pattern');
     expect(mounted.container.textContent).toContain(
-      'Choose a pattern in block details to make this block playable.'
+      'Choose a pattern in Block Inspector to make this block playable.'
     );
     expect(mounted.container.textContent).not.toContain('Default');
   });
@@ -381,7 +381,10 @@ describe('ArrangementView empty-state truth', () => {
     expect(container.textContent).toContain('Pattern missing');
     expect(container.textContent).toContain('Needs pattern');
     expect(container.textContent).toContain(
-      'Choose a pattern in block details to make this block playable.'
+      'Choose a pattern in Block Inspector to make this block playable.'
+    );
+    expect(container.textContent).toContain(
+      'Pattern missing for bars 1-4. Choose a pattern in Block Inspector to make this block playable.'
     );
     expect(container.textContent).not.toContain('Default');
   });

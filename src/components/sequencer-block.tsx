@@ -47,7 +47,7 @@ function getBlockPatternTruth(instrument: Instrument, styleName?: string) {
   if (!normalizedStyleName) {
     return {
       title: "Pattern missing",
-      detail: "Choose a pattern in block details to make this block playable.",
+      detail: "Choose a pattern in Block Inspector to make this block playable.",
       badge: "Needs pattern",
       isMissing: true,
     }

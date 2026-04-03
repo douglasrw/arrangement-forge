@@ -155,11 +155,14 @@ function getArrangementSelectionTruth({
 }) {
   if (selectedBlock && selectedLaneLabel) {
     const normalizedStyle = selectedBlock.styleName?.trim()
+    const detail = normalizedStyle
+      ? `${formatArrangementStyleLabel(normalizedStyle)} covers bars ${selectedBlock.startBar}-${selectedBlock.endBar}.`
+      : `Pattern missing for bars ${selectedBlock.startBar}-${selectedBlock.endBar}. Choose a pattern in Block Inspector to make this block playable.`
 
     return {
       state: "selected" as const,
       summary: `${selectedLaneLabel} selected`,
-      detail: `${normalizedStyle ? formatArrangementStyleLabel(normalizedStyle) : "Pattern missing"} covers bars ${selectedBlock.startBar}-${selectedBlock.endBar}.`,
+      detail,
     }
   }
 
