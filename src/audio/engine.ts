@@ -89,6 +89,7 @@ export class AudioEngine {
     this.arrangementEndEventId = null;
     this.activeLoadPromise = null;
     this._isLoading = false;
+    this.clearFailureState();
     this.metronome.dispose();
     // Don't dispose samplers — they are cached in sampler-cache.ts
     // Just disconnect them from our signal chain

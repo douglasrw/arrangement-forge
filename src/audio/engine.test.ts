@@ -249,4 +249,27 @@ describe('AudioEngine loadArrangement', () => {
       detail: 'The audio engine defaults to no loaded instruments until arrangement playback selects stems.',
     });
   });
+
+  it('clears stale readiness failures on dispose', async () => {
+    const engine = new AudioEngine();
+    await engine.init();
+
+    (engine as unknown as {
+      _failureStage: 'load-arrangement' | null;
+      _failureMessage: string | null;
+    })._failureStage = 'load-arrangement';
+    (engine as unknown as {
+      _failureStage: 'load-arrangement' | null;
+      _failureMessage: string | null;
+    })._failureMessage = 'Piano samples unavailable';
+
+    engine.dispose();
+
+    expect(engine.getReadinessSnapshot()).toEqual({
+      isInitialized: false,
+      isLoading: false,
+      failureStage: null,
+      failureMessage: null,
+    });
+  });
 });
