@@ -1,12 +1,13 @@
 import { useState, useEffect, FormEvent } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
-import type { AuthTruth } from '@/store/auth-store';
+import type { AuthStoreSelectionTruth, AuthTruth } from '@/store/auth-store';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { getProtectedRouteTruth } from '@/lib/editor-route-truth';
+import { formatChordDisplayModeLabel } from '@/lib/profile';
 
 function resolveRecoveryPath(state: unknown) {
   if (state && typeof state === 'object' && 'redirectTo' in state) {
@@ -42,10 +43,36 @@ function formatReadinessLabel(readiness: AuthTruth['readiness']) {
   }
 }
 
+function getSelectionSourceLabel(selectionSource: AuthStoreSelectionTruth['selectionSource']) {
+  return selectionSource === 'profile' ? 'Inherited from profile' : 'Default fallback';
+}
+
+function AuthSelectionNotice({
+  authSelectionTruth,
+}: {
+  authSelectionTruth: AuthStoreSelectionTruth;
+}) {
+  const chordDisplayModeLabel = formatChordDisplayModeLabel(authSelectionTruth.chordDisplayMode);
+
+  return (
+    <Alert data-testid="auth-selection-notice">
+      <AlertTitle>Chord display mode</AlertTitle>
+      <AlertDescription>
+        <p>Current selection: {chordDisplayModeLabel}</p>
+        <p>Selection source: {getSelectionSourceLabel(authSelectionTruth.selectionSource)}</p>
+        <p>{authSelectionTruth.currentState}</p>
+        <p>{authSelectionTruth.nextStep}</p>
+      </AlertDescription>
+    </Alert>
+  );
+}
+
 function AuthLoadingScreen({
+  authSelectionTruth,
   authTruth,
   recoveryPath,
 }: {
+  authSelectionTruth: AuthStoreSelectionTruth;
   authTruth: AuthTruth;
   recoveryPath: string;
 }) {
@@ -71,6 +98,9 @@ function AuthLoadingScreen({
             </p>
             <p className="text-sm text-muted-foreground">{description}</p>
           </div>
+        </div>
+        <div className="mt-4 text-left">
+          <AuthSelectionNotice authSelectionTruth={authSelectionTruth} />
         </div>
       </div>
     </div>
@@ -157,7 +187,7 @@ function AuthStatusNotice({
 export default function LoginPage() {
   const navigate = useNavigate();
   const location = useLocation();
-  const { authTruth, signIn, signUp, signInWithGoogle } = useAuth();
+  const { authSelectionTruth, authTruth, signIn, signUp, signInWithGoogle } = useAuth();
 
   const [mode, setMode] = useState<'signin' | 'signup'>('signin');
   const [email, setEmail] = useState('');
@@ -217,7 +247,13 @@ export default function LoginPage() {
   }
 
   if (isCheckingSession || hasAuthenticatedSession) {
-    return <AuthLoadingScreen authTruth={authTruth} recoveryPath={recoveryPath} />;
+    return (
+      <AuthLoadingScreen
+        authSelectionTruth={authSelectionTruth}
+        authTruth={authTruth}
+        recoveryPath={recoveryPath}
+      />
+    );
   }
 
   return (
@@ -236,6 +272,7 @@ export default function LoginPage() {
             error={error}
             recoveryPath={recoveryPath}
           />
+          <AuthSelectionNotice authSelectionTruth={authSelectionTruth} />
 
           {/* Mode toggle */}
           <div className="flex gap-2 bg-secondary rounded-lg p-1">
