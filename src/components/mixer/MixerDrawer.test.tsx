@@ -251,6 +251,9 @@ describe('MixerDrawer', () => {
     const pianoPanReset = mounted.container.querySelector(
       'button[aria-label="Center PIANO pan"]'
     ) as HTMLButtonElement | null;
+    const pianoSelectionTruth = Array.from(
+      mounted.container.querySelectorAll('[data-mixer-selection-state]')
+    ).find((element) => element.getAttribute('title')?.includes('Mute on')) as HTMLSpanElement | null;
     const stringsMuteButton = mounted.container.querySelector(
       'button[aria-label="Toggle STRINGS mute"]'
     ) as HTMLButtonElement | null;
@@ -272,6 +275,9 @@ describe('MixerDrawer', () => {
     const mixerReadiness = mounted.container.querySelector(
       '[data-mixer-readiness]'
     ) as HTMLSpanElement | null;
+    const defaultMixTruth = mounted.container.querySelector(
+      '[data-mixer-selection-state="default"]'
+    ) as HTMLSpanElement | null;
 
     expect(mixerReadiness?.textContent).toBe('Ready');
     expect(mixerReadiness?.getAttribute('data-mixer-readiness')).toBe('ready');
@@ -280,6 +286,14 @@ describe('MixerDrawer', () => {
     expect(pianoPan?.value).toBe('-40');
     expect(pianoPanValue?.textContent).toBe('L40');
     expect(pianoPanReset?.disabled).toBe(false);
+    expect(pianoSelectionTruth?.textContent).toContain('Current mix');
+    expect(pianoSelectionTruth?.getAttribute('data-mixer-selection-state')).toBe('selected');
+    expect(pianoSelectionTruth?.getAttribute('title')).toContain('Mute on');
+    expect(pianoSelectionTruth?.getAttribute('title')).toContain('-6 dB gain');
+    expect(pianoSelectionTruth?.getAttribute('title')).toContain('Pan L40');
+    expect(defaultMixTruth?.textContent).toContain('Default mix');
+    expect(defaultMixTruth?.getAttribute('data-mixer-selection-state')).toBe('default');
+    expect(defaultMixTruth?.getAttribute('title')).toBe('Default gain, centered pan, mute off, solo off.');
     expect(stringsMuteButton?.disabled).toBe(true);
     expect(stringsSlider?.getAttribute('aria-disabled')).toBe('true');
     expect(stringsPan?.disabled).toBe(true);

@@ -47,10 +47,17 @@ interface LaneTruth {
   tone: "default" | "error"
 }
 
+interface LaneSelectionTruth {
+  badge: string
+  detail: string
+  state: "default" | "selected"
+}
+
 const UNITY_SLIDER_VALUE = 80
 const MAX_SLIDER_VALUE = 100
 const PAN_SLIDER_VALUE = 100
 const DEFAULT_GROUP_LEVEL = 50
+const DEFAULT_STEM_GAIN = 0.8
 
 function volumeToDb(v: number): string {
   if (v === 0) return "-inf"
@@ -254,6 +261,35 @@ function getLaneTruth({
     badge: null,
     detail: null,
     tone: "default",
+  }
+}
+
+function getLaneSelectionTruth(stem: Stem): LaneSelectionTruth {
+  const volume = gainToSliderValue(stem.volume)
+  const defaultVolume = stem.volume === DEFAULT_STEM_GAIN
+  const defaultPan = stem.pan === 0
+  const defaultMute = !stem.isMuted
+  const defaultSolo = !stem.isSolo
+
+  if (defaultVolume && defaultPan && defaultMute && defaultSolo) {
+    return {
+      badge: "Default mix",
+      detail: "Default gain, centered pan, mute off, solo off.",
+      state: "default",
+    }
+  }
+
+  const details = [
+    stem.isMuted ? "Mute on" : "Mute off",
+    stem.isSolo ? "Solo on" : "Solo off",
+    defaultVolume ? "Default gain" : `${volumeToDb(volume)} gain`,
+    defaultPan ? "Centered pan" : `Pan ${formatPanValue(panToSliderValue(stem.pan))}`,
+  ]
+
+  return {
+    badge: "Current mix",
+    detail: details.join(", "),
+    state: "selected",
   }
 }
 
@@ -614,6 +650,7 @@ export function MixerDrawer() {
                 isDrums,
                 drumSubMixTruth,
               })
+              const laneSelectionTruth = stem ? getLaneSelectionTruth(stem) : null
               return (
                 <div
                   key={inst.key}
@@ -662,6 +699,20 @@ export function MixerDrawer() {
                         )}
                       >
                         {laneTruth.badge}
+                      </span>
+                    )}
+                    {laneSelectionTruth && (
+                      <span
+                        data-mixer-selection-state={laneSelectionTruth.state}
+                        title={laneSelectionTruth.detail}
+                        className={cn(
+                          "rounded-full px-1.5 py-0.5 text-[8px] font-semibold uppercase tracking-[0.18em]",
+                          laneSelectionTruth.state === "selected"
+                            ? "bg-primary/15 text-primary"
+                            : "bg-card text-muted-foreground"
+                        )}
+                      >
+                        {laneSelectionTruth.badge}
                       </span>
                     )}
                   </div>
