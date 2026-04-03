@@ -67,7 +67,7 @@ function getAssistantSelectionTruth({
       tone: "ready" as const,
       badge: "Selected scope",
       value: section ? `${section.name} (${section.startBar}-${section.startBar + section.barCount - 1})` : "Section selected",
-      detail: selectionTruth.nextStep,
+      detail: `The next assistant prompt will stay scoped to this section until you clear the selection. ${selectionTruth.nextStep}`,
     }
   }
 
@@ -82,7 +82,7 @@ function getAssistantSelectionTruth({
       value: block && stem && section
         ? `${stem.instrument} ${block.startBar}-${block.endBar} in ${section.name}`
         : "Block selected",
-      detail: selectionTruth.nextStep,
+      detail: `The next assistant prompt will stay scoped to this block until you clear the selection. ${selectionTruth.nextStep}`,
     }
   }
 
@@ -91,7 +91,7 @@ function getAssistantSelectionTruth({
       tone: "blocked" as const,
       badge: "Fallback scope",
       value: "Whole song fallback",
-      detail: `${selectionTruth.currentState} ${selectionTruth.nextStep}`,
+      detail: `${selectionTruth.currentState} The next assistant prompt will fall back to whole-song scope until the missing selection is repaired. ${selectionTruth.nextStep}`,
     }
   }
 
@@ -99,7 +99,7 @@ function getAssistantSelectionTruth({
     tone: "ready" as const,
     badge: "Default scope",
     value: "Whole song default",
-    detail: `${selectionTruth.currentState} ${selectionTruth.nextStep}`,
+    detail: `${selectionTruth.currentState} The next assistant prompt will use whole-song scope until you select a section or block. ${selectionTruth.nextStep}`,
   }
 }
 

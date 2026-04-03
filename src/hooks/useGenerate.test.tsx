@@ -640,6 +640,107 @@ describe('useGenerate assistant prompt flow', () => {
     );
   });
 
+  it('keeps assistant-prompt chat history scoped to the selected block', async () => {
+    useProjectStore.setState({
+      stems: [
+        {
+          id: 'stem-existing',
+          projectId: 'p1',
+          instrument: 'piano',
+          sortOrder: 0,
+          volume: 0.8,
+          pan: 0,
+          isMuted: false,
+          isSolo: false,
+          createdAt: '2026-03-28T00:00:00Z',
+        },
+      ],
+      sections: [
+        {
+          id: 'section-existing',
+          projectId: 'p1',
+          name: 'Verse',
+          sortOrder: 0,
+          barCount: 8,
+          startBar: 1,
+          energyOverride: null,
+          grooveOverride: null,
+          feelOverride: null,
+          swingPctOverride: null,
+          dynamicsOverride: null,
+          createdAt: '2026-03-28T00:00:00Z',
+        },
+      ],
+      blocks: [
+        {
+          id: 'block-existing',
+          stemId: 'stem-existing',
+          sectionId: 'section-existing',
+          startBar: 3,
+          endBar: 4,
+          chordDegree: 'I',
+          chordQuality: 'maj7',
+          chordBassDegree: null,
+          style: 'verse_comp',
+          energyOverride: null,
+          dynamicsOverride: null,
+          midiData: [],
+          createdAt: '2026-03-28T00:00:00Z',
+        },
+      ],
+    });
+    useSelectionStore.setState({
+      level: 'block',
+      sectionId: 'section-existing',
+      blockId: 'block-existing',
+      stemId: 'stem-existing',
+    });
+    parseChordChartMock.mockReturnValue({
+      chords: [{ bar_number: 1, degree: 'I', quality: 'maj7', bass_degree: null }],
+    });
+    generateMock.mockReturnValue({
+      sections: [{ name: 'Verse', sort_order: 0, bar_count: 4, start_bar: 1 }],
+      stems: [{ instrument: 'piano', sort_order: 0 }],
+      blocks: [
+        {
+          stem_instrument: 'piano',
+          section_name: 'Verse',
+          start_bar: 3,
+          end_bar: 4,
+          chord_degree: 'I',
+          chord_quality: 'maj7',
+          style: 'verse_comp',
+          midi_data: [],
+        },
+      ],
+      chords: [{ bar_number: 3, degree: 'I', quality: 'maj7', bass_degree: null }],
+    });
+
+    const mounted = renderHarness();
+    mountedRoot = mounted.root;
+    mountedContainer = mounted.container;
+
+    await act(async () => {
+      await hookValue!.runGeneration({ assistantPrompt: 'Tighten the comping here' });
+      await Promise.resolve();
+    });
+
+    expect(useProjectStore.getState().chatMessages).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          role: 'user',
+          scope: 'block',
+          scopeTarget: 'Piano bars 3-4 in Verse',
+        }),
+        expect.objectContaining({
+          role: 'assistant',
+          scope: 'block',
+          scopeTarget: 'Piano bars 3-4 in Verse',
+        }),
+      ])
+    );
+  });
+
   it('marks assistant-prompt chat history as a whole-song fallback when the selection is stale', async () => {
     useSelectionStore.setState({
       level: 'block',
