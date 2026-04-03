@@ -62,13 +62,15 @@ export function AiAssistantSection() {
     parseTruth,
     generationState,
   })
-  const composerStatus = assistantReadiness.status === "ready"
-    ? null
-    : {
-        title: assistantReadiness.title,
-        detail: assistantReadiness.detail,
-        tone: assistantReadiness.status === "blocked" ? "blocked" : "active",
-      }
+  const composerStatus = {
+    title: assistantReadiness.title,
+    detail: assistantReadiness.detail,
+    tone: assistantReadiness.status === "blocked"
+      ? "blocked"
+      : assistantReadiness.status === "active"
+        ? "active"
+        : "ready",
+  }
 
   function handleSend() {
     if (!canSend) return
@@ -147,31 +149,35 @@ export function AiAssistantSection() {
       <div className="flex items-center gap-2 rounded-md border border-border bg-secondary px-2.5 py-1.5">
         <label htmlFor="ai-input" className="sr-only">Ask the AI assistant</label>
         <div className="flex min-w-0 flex-1 flex-col gap-1.5">
-          {composerStatus ? (
-            <div
-              data-testid="ai-assistant-composer-state"
-              role="status"
-              aria-live={composerStatus.tone === "active" ? "polite" : undefined}
-              className={cn(
-                "flex items-start gap-2 rounded-md border px-2 py-1.5 text-[11px] leading-relaxed",
-                composerStatus.tone === "active"
-                  ? "border-ring/30 bg-ring/10 text-foreground"
+          <div
+            data-testid="ai-assistant-composer-state"
+            role="status"
+            aria-live={composerStatus.tone === "active" ? "polite" : undefined}
+            className={cn(
+              "flex items-start gap-2 rounded-md border px-2 py-1.5 text-[11px] leading-relaxed",
+              composerStatus.tone === "active"
+                ? "border-ring/30 bg-ring/10 text-foreground"
+                : composerStatus.tone === "ready"
+                  ? "border-emerald-500/30 bg-emerald-500/10 text-foreground"
                   : "border-warning/30 bg-warning/10 text-foreground"
+            )}
+          >
+            <span
+              aria-hidden="true"
+              className={cn(
+                "mt-1 size-1.5 shrink-0 rounded-full",
+                composerStatus.tone === "active"
+                  ? "bg-ring"
+                  : composerStatus.tone === "ready"
+                    ? "bg-emerald-500"
+                    : "bg-warning"
               )}
-            >
-              <span
-                aria-hidden="true"
-                className={cn(
-                  "mt-1 size-1.5 shrink-0 rounded-full",
-                  composerStatus.tone === "active" ? "bg-ring" : "bg-warning"
-                )}
-              />
-              <div className="min-w-0">
-                <div className="font-medium">{composerStatus.title}</div>
-                <div className="text-muted-foreground">{composerStatus.detail}</div>
-              </div>
+            />
+            <div className="min-w-0">
+              <div className="font-medium">{composerStatus.title}</div>
+              <div className="text-muted-foreground">{composerStatus.detail}</div>
             </div>
-          ) : null}
+          </div>
 
           <div className="flex items-center gap-2">
             <input

@@ -196,6 +196,31 @@ describe('AiAssistantSection', () => {
     expect(input?.disabled).toBe(true);
   });
 
+  it('shows a ready assistant state when prompts can be sent', () => {
+    useProjectStore.setState({
+      chatMessages: [],
+    });
+
+    const mounted = renderSection();
+    mountedRoot = mounted.root;
+    mountedContainer = mounted.container;
+
+    const composerState = mounted.container.querySelector(
+      '[data-testid="ai-assistant-composer-state"]'
+    );
+    const input = mounted.container.querySelector('#ai-input') as HTMLInputElement | null;
+    const sendButton = mounted.container.querySelector(
+      '[data-testid="ai-assistant-send"]'
+    ) as HTMLButtonElement | null;
+
+    expect(composerState?.textContent).toContain('Assistant is ready');
+    expect(composerState?.textContent).toContain(
+      'Ask for a generation or revision once the chord chart reflects the song you want.'
+    );
+    expect(input?.disabled).toBe(false);
+    expect(sendButton?.disabled).toBe(true);
+  });
+
   it('keeps the blocked parse-failure reason visible before the assistant can send', () => {
     useProjectStore.setState({
       project: makeProject({ chordChartRaw: 'Cmaj7 | xyz?? | %' }),
