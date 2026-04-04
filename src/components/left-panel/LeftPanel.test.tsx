@@ -356,9 +356,9 @@ describe('LeftPanel inspector truth regression', () => {
 
     expect(mounted.container.textContent).toContain('Collapse');
     expect(mounted.container.textContent).not.toContain('Close inspector');
-    expect(mounted.container.textContent).toContain('Block selected');
+    expect(mounted.container.textContent).toContain('Block scope unavailable');
     expect(mounted.container.textContent).toContain(
-      'The arrangement is currently focused on Bars 3-6, but block chord overrides are unavailable here today.'
+      'Piano bars 3-6 is selected in the arrangement, but this palette still edits the whole-song chord chart today.'
     );
     expect(mounted.container.textContent).toContain('Piano block');
 
@@ -366,10 +366,10 @@ describe('LeftPanel inspector truth regression', () => {
       useSelectionStore.getState().selectSong();
     });
 
-    expect(mounted.container.textContent).not.toContain('Block selected');
-    expect(mounted.container.textContent).toContain('Empty chart');
+    expect(mounted.container.textContent).not.toContain('Block scope unavailable');
+    expect(mounted.container.textContent).toContain('Song chart needed');
     expect(mounted.container.textContent).toContain(
-      'No song chord chart is loaded yet.'
+      'No whole-song chord chart is loaded yet, so this palette is waiting for the first chord.'
     );
     expect(mounted.container.textContent).toContain('Whole song');
   });

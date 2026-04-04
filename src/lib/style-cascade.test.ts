@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { resolveStyle, isInherited } from './style-cascade';
+import { getCascadeSourceLabel, resolveStyle, isInherited } from './style-cascade';
 import type { Project, Section, Block } from '@/types';
 
 const project: Project = {
@@ -138,5 +138,19 @@ describe('isInherited', () => {
 
   it('block level with null block is inherited', () => {
     expect(isInherited(section, null, 'energy', 'block')).toBe(true);
+  });
+});
+
+describe('getCascadeSourceLabel', () => {
+  it('returns project label', () => {
+    expect(getCascadeSourceLabel('project')).toBe('Project');
+  });
+
+  it('returns section label', () => {
+    expect(getCascadeSourceLabel('section')).toBe('Section');
+  });
+
+  it('returns block label', () => {
+    expect(getCascadeSourceLabel('block')).toBe('Block');
   });
 });

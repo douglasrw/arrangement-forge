@@ -12,6 +12,18 @@ export interface CascadeResult {
   source: CascadeSource;
 }
 
+export function getCascadeSourceLabel(source: CascadeSource): string {
+  if (source === 'project') {
+    return 'Project';
+  }
+
+  if (source === 'section') {
+    return 'Section';
+  }
+
+  return 'Block';
+}
+
 /**
  * Resolve the effective value of a style field at the most specific non-null level.
  * Block override wins, then section override, then project default.

@@ -157,6 +157,12 @@ function getBlockScopeBadge(container: HTMLElement) {
     | null;
 }
 
+function getBlockReadinessCard(container: HTMLElement) {
+  return container.querySelector('[data-block-context-readiness]') as
+    | HTMLDivElement
+    | null;
+}
+
 let mountedRoot: Root | null = null;
 let mountedContainer: HTMLDivElement | null = null;
 
@@ -277,7 +283,16 @@ describe('BlockContext truth surface', () => {
       '#block-reset-Dynamics'
     ) as HTMLButtonElement | null;
     const scopeBadge = getBlockScopeBadge(mounted.container);
+    const readiness = getBlockReadinessCard(mounted.container);
 
+    expect(readiness?.getAttribute('data-block-context-readiness')).toBe('ready');
+    expect(readiness?.textContent).toContain('Ready');
+    expect(readiness?.textContent).toContain('Block context ready');
+    expect(readiness?.textContent).toContain(
+      'The current block and its parent section are both live, so this inspector is reading real block truth.'
+    );
+    expect(readiness?.textContent).toContain('Current block');
+    expect(readiness?.textContent).toContain('Piano Bars 3 – 6');
     expect(mounted.container.textContent).toContain('Bars 3 – 6');
     expect(mounted.container.textContent).toContain('Block Inspector');
     expect(scopeBadge?.textContent).toBe('Block Active');
@@ -721,7 +736,15 @@ describe('BlockContext truth surface', () => {
     mountedContainer = mounted.container;
 
     const scopeBadge = getBlockScopeBadge(mounted.container);
+    const readiness = getBlockReadinessCard(mounted.container);
 
+    expect(readiness?.getAttribute('data-block-context-readiness')).toBe('blocked');
+    expect(readiness?.textContent).toContain('Selected block missing');
+    expect(readiness?.textContent).toContain(
+      'The current selection no longer resolves to a live block, so this inspector cannot read saved block truth.'
+    );
+    expect(readiness?.textContent).toContain('Last requested block');
+    expect(readiness?.textContent).toContain('Piano Bars 1 – 2');
     expect(scopeBadge?.textContent).toBe('Block Missing');
     expect(scopeBadge?.getAttribute('data-scope-tone')).toBe('missing');
     expect(mounted.container.textContent).toContain('Block unavailable');
@@ -854,5 +877,55 @@ describe('BlockContext truth surface', () => {
     expect(mounted.container.textContent).toContain(
       'This block is carrying its own saved dynamics override.'
     );
+  });
+
+  it('shows a waiting readiness state when no block is selected yet', () => {
+    useSelectionStore.setState({
+      level: 'song',
+      sectionId: null,
+      blockId: null,
+      stemId: null,
+    });
+
+    const mounted = renderBlockContext();
+    mountedRoot = mounted.root;
+    mountedContainer = mounted.container;
+
+    const readiness = getBlockReadinessCard(mounted.container);
+
+    expect(readiness?.getAttribute('data-block-context-readiness')).toBe('waiting');
+    expect(readiness?.textContent).toContain('Choose a block');
+    expect(readiness?.textContent).toContain(
+      'No live block is selected yet, so this inspector is waiting for a block before it can show saved block truth.'
+    );
+    expect(readiness?.textContent).toContain('Inspector fallback');
+    expect(readiness?.textContent).toContain('Piano Bars 1 – 2');
+  });
+
+  it('shows a blocked readiness state when the block survives but its section context is missing', () => {
+    useProjectStore.setState({
+      project: makeProject(),
+      stems: [makeStem()],
+      sections: [],
+      blocks: [makeBlock()],
+      chords: [],
+      chatMessages: [],
+      drumOnlyUpdate: false,
+      allInstrumentsUpdate: false,
+    });
+
+    const mounted = renderBlockContext();
+    mountedRoot = mounted.root;
+    mountedContainer = mounted.container;
+
+    const readiness = getBlockReadinessCard(mounted.container);
+
+    expect(readiness?.getAttribute('data-block-context-readiness')).toBe('blocked');
+    expect(readiness?.textContent).toContain('Section context missing');
+    expect(readiness?.textContent).toContain(
+      'The selected block still exists, but its parent section does not, so inherited block defaults are blocked.'
+    );
+    expect(readiness?.textContent).toContain('Affected block');
+    expect(readiness?.textContent).toContain('Piano Bars 3 – 6');
   });
 });

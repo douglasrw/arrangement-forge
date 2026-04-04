@@ -8,7 +8,11 @@ import { useUiStore } from "@/store/ui-store"
 import { ConfirmDialog } from "@/components/shared/ConfirmDialog"
 import { INSTRUMENT_STYLE_OPTIONS } from "@/lib/genre-config"
 import { formatChord } from "@/lib/chords"
-import { isInherited, resolveStyle } from "@/lib/style-cascade"
+import {
+  getCascadeSourceLabel,
+  isInherited,
+  resolveStyle,
+} from "@/lib/style-cascade"
 import type { InstrumentType } from "@/types"
 import {
   Select,
@@ -75,6 +79,7 @@ interface BlockChordTruth {
   tone: TruthTone
 }
 
+type BlockContextReadiness = "ready" | "waiting" | "blocked"
 type TruthTone = "default" | "missing"
 type BlockScopeTone = "default" | "missing"
 
@@ -83,6 +88,16 @@ interface BlockScopeTruth {
   meta: string
   summary: string
   tone: BlockScopeTone
+}
+
+interface BlockContextReadinessTruth {
+  readiness: BlockContextReadiness
+  badge: string
+  title: string
+  detail: string
+  scopeLabel: string
+  scopeValue: string
+  footer: string
 }
 
 const TRUTH_TONE_STYLES: Record<
@@ -132,6 +147,126 @@ const BLOCK_SCOPE_TONE_STYLES: Record<
     meta: "text-warning",
     summary: "text-warning",
   },
+}
+
+const BLOCK_CONTEXT_READINESS_STYLES: Record<
+  BlockContextReadiness,
+  {
+    panel: string
+    badge: string
+    detail: string
+  }
+> = {
+  ready: {
+    panel: "border-emerald-500/30 bg-emerald-500/10",
+    badge: "bg-emerald-500/15 text-emerald-200",
+    detail: "text-foreground",
+  },
+  waiting: {
+    panel: "border-border/60 bg-secondary/70",
+    badge: "bg-secondary text-foreground",
+    detail: "text-foreground",
+  },
+  blocked: {
+    panel: "border-amber-500/30 bg-amber-500/10",
+    badge: "bg-amber-500/15 text-amber-200",
+    detail: "text-foreground",
+  },
+}
+
+function formatBlockBarRange(startBar: number, endBar: number): string {
+  return startBar === endBar
+    ? `Bar ${startBar}`
+    : `Bars ${startBar} – ${endBar}`
+}
+
+function getBlockContextReadinessTruth({
+  hasProject,
+  hasLiveBlock,
+  hasLiveSection,
+  blockId,
+  instrumentLabel,
+  startBar,
+  endBar,
+}: {
+  hasProject: boolean
+  hasLiveBlock: boolean
+  hasLiveSection: boolean
+  blockId: string | null
+  instrumentLabel: string
+  startBar: number
+  endBar: number
+}): BlockContextReadinessTruth {
+  const blockRange = formatBlockBarRange(startBar, endBar)
+  const scopeValue = `${instrumentLabel} ${blockRange}`
+
+  if (!hasProject) {
+    return {
+      readiness: "waiting",
+      badge: "Waiting",
+      title: "Project required",
+      detail:
+        "Load or create a project before this inspector can resolve live block context.",
+      scopeLabel: "Inspector fallback",
+      scopeValue,
+      footer:
+        "The fallback range below is placeholder context only until project truth loads.",
+    }
+  }
+
+  if (hasLiveBlock && hasLiveSection) {
+    return {
+      readiness: "ready",
+      badge: "Ready",
+      title: "Block context ready",
+      detail:
+        "The current block and its parent section are both live, so this inspector is reading real block truth.",
+      scopeLabel: "Current block",
+      scopeValue,
+      footer:
+        "Pattern, style inheritance, mixer truth, and chord scope below now reflect the active block selection.",
+    }
+  }
+
+  if (hasLiveBlock) {
+    return {
+      readiness: "blocked",
+      badge: "Blocked",
+      title: "Section context missing",
+      detail:
+        "The selected block still exists, but its parent section does not, so inherited block defaults are blocked.",
+      scopeLabel: "Affected block",
+      scopeValue,
+      footer:
+        "Restore or relink the parent section before relying on section-derived defaults in this inspector.",
+    }
+  }
+
+  if (blockId) {
+    return {
+      readiness: "blocked",
+      badge: "Blocked",
+      title: "Selected block missing",
+      detail:
+        "The current selection no longer resolves to a live block, so this inspector cannot read saved block truth.",
+      scopeLabel: "Last requested block",
+      scopeValue,
+      footer:
+        "Select a live block in the arrangement to restore ready block context here.",
+    }
+  }
+
+  return {
+    readiness: "waiting",
+    badge: "Waiting",
+    title: "Choose a block",
+    detail:
+      "No live block is selected yet, so this inspector is waiting for a block before it can show saved block truth.",
+    scopeLabel: "Inspector fallback",
+    scopeValue,
+    footer:
+      "The fallback range below is only a placeholder until the operator selects a live block.",
+  }
 }
 
 function getBlockScopeTruth({
@@ -334,8 +469,18 @@ export function BlockContext({
 
   const color = INSTRUMENT_COLORS[instrument]
   const label = INSTRUMENT_LABELS[instrument]
+  const hasProject = project != null
   const blockScopeTruth = getBlockScopeTruth({
     hasLiveBlock,
+    blockId,
+    instrumentLabel: label,
+    startBar: resolvedStartBar,
+    endBar: resolvedEndBar,
+  })
+  const blockContextReadiness = getBlockContextReadinessTruth({
+    hasProject,
+    hasLiveBlock,
+    hasLiveSection: liveSection != null,
     blockId,
     instrumentLabel: label,
     startBar: resolvedStartBar,
@@ -379,8 +524,7 @@ export function BlockContext({
   const isEnergyInherited = liveSection
     ? isInherited(liveSection, liveBlock ?? null, "energy", "block")
     : liveBlock?.energyOverride == null
-  const inheritedEnergySourceLabel =
-    inheritedEnergy.source === "section" ? "Section" : "Project"
+  const inheritedEnergySourceLabel = getCascadeSourceLabel(inheritedEnergy.source)
   const effectiveDynamics =
     project && liveSection
       ? resolveStyle(project, liveSection, liveBlock ?? null, "dynamics")
@@ -398,9 +542,10 @@ export function BlockContext({
   const isDynamicsInherited = liveSection
     ? isInherited(liveSection, liveBlock ?? null, "dynamics", "block")
     : liveBlock?.dynamicsOverride == null
-  const inheritedDynamicsSourceLabel =
-    inheritedDynamics.source === "section" ? "Section" : "Project"
+  const inheritedDynamicsSourceLabel = getCascadeSourceLabel(inheritedDynamics.source)
   const blockScopeTone = BLOCK_SCOPE_TONE_STYLES[blockScopeTruth.tone]
+  const blockContextReadinessStyles =
+    BLOCK_CONTEXT_READINESS_STYLES[blockContextReadiness.readiness]
   const audioTruthTone = TRUTH_TONE_STYLES[blockAudioTruth.tone]
   const chordTruthTone = TRUTH_TONE_STYLES[blockChordTruth.tone]
 
@@ -463,6 +608,53 @@ export function BlockContext({
       </button>
 
       <div className="border-t border-border px-4 pb-4 pt-4">
+        <div
+          className={cn("rounded-lg border px-3 py-2", blockContextReadinessStyles.panel)}
+          data-block-context-readiness={blockContextReadiness.readiness}
+          aria-live="polite"
+        >
+          <div className="flex items-center justify-between gap-2">
+            <span
+              className={cn(
+                "rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase tracking-widest",
+                blockContextReadinessStyles.badge
+              )}
+            >
+              {blockContextReadiness.badge}
+            </span>
+            <span className="text-[10px] font-medium uppercase tracking-widest text-muted-foreground">
+              Block readiness
+            </span>
+          </div>
+
+          <div className="mt-2">
+            <p className="text-xs font-medium leading-relaxed text-foreground">
+              {blockContextReadiness.title}
+            </p>
+            <p
+              className={cn(
+                "mt-1 text-xs leading-relaxed",
+                blockContextReadinessStyles.detail
+              )}
+            >
+              {blockContextReadiness.detail}
+            </p>
+          </div>
+
+          <div className="mt-2 flex items-center justify-between gap-3 rounded-md bg-background/40 px-2 py-1.5">
+            <span className="text-[10px] font-medium uppercase tracking-widest text-muted-foreground">
+              {blockContextReadiness.scopeLabel}
+            </span>
+            <span className="text-[11px] font-medium text-foreground">
+              {blockContextReadiness.scopeValue}
+            </span>
+          </div>
+
+          <p className="mt-2 text-[11px] leading-relaxed text-muted-foreground">
+            {blockContextReadiness.footer}
+          </p>
+        </div>
+
         <div className={cn("rounded-lg border p-3", blockScopeTone.panel)}>
           <div className="flex items-center justify-between gap-3">
             <div className="flex items-center gap-2">
