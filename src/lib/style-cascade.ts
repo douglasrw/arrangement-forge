@@ -12,6 +12,11 @@ export interface CascadeResult {
   source: CascadeSource;
 }
 
+export interface CascadeBehaviorTruth {
+  badge: string;
+  summary: string;
+}
+
 export function getCascadeSourceLabel(source: CascadeSource): string {
   if (source === 'project') {
     return 'Project';
@@ -22,6 +27,33 @@ export function getCascadeSourceLabel(source: CascadeSource): string {
   }
 
   return 'Block';
+}
+
+export function getBlockCascadeBehaviorTruth(
+  field: 'energy' | 'dynamics',
+  effectiveSource: CascadeSource,
+  isInheritedAtBlock: boolean
+): CascadeBehaviorTruth {
+  const fieldLabel = field === 'energy' ? 'energy' : 'dynamics';
+
+  if (!isInheritedAtBlock) {
+    return {
+      badge: 'Selected override',
+      summary: `This block is carrying its own saved ${fieldLabel} override.`,
+    };
+  }
+
+  if (effectiveSource === 'section') {
+    return {
+      badge: 'Inherited section',
+      summary: `This block is inheriting the section ${fieldLabel} default.`,
+    };
+  }
+
+  return {
+    badge: 'Project default',
+    summary: `This block is defaulting to the project ${fieldLabel} value because neither the section nor block overrides it.`,
+  };
 }
 
 /**

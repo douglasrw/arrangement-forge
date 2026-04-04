@@ -1,5 +1,10 @@
 import { describe, it, expect } from 'vitest';
-import { getCascadeSourceLabel, resolveStyle, isInherited } from './style-cascade';
+import {
+  getBlockCascadeBehaviorTruth,
+  getCascadeSourceLabel,
+  resolveStyle,
+  isInherited,
+} from './style-cascade';
 import type { Project, Section, Block } from '@/types';
 
 const project: Project = {
@@ -152,5 +157,29 @@ describe('getCascadeSourceLabel', () => {
 
   it('returns block label', () => {
     expect(getCascadeSourceLabel('block')).toBe('Block');
+  });
+});
+
+describe('getBlockCascadeBehaviorTruth', () => {
+  it('describes a saved block override as the selected behavior', () => {
+    expect(getBlockCascadeBehaviorTruth('energy', 'block', false)).toEqual({
+      badge: 'Selected override',
+      summary: 'This block is carrying its own saved energy override.',
+    });
+  });
+
+  it('describes section inheritance explicitly', () => {
+    expect(getBlockCascadeBehaviorTruth('dynamics', 'section', true)).toEqual({
+      badge: 'Inherited section',
+      summary: 'This block is inheriting the section dynamics default.',
+    });
+  });
+
+  it('describes a project fallback as a defaulted behavior', () => {
+    expect(getBlockCascadeBehaviorTruth('energy', 'project', true)).toEqual({
+      badge: 'Project default',
+      summary:
+        'This block is defaulting to the project energy value because neither the section nor block overrides it.',
+    });
   });
 });

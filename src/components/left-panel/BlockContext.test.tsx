@@ -242,6 +242,7 @@ describe('BlockContext truth surface', () => {
     expect(mounted.container.textContent).toContain(
       'This block is carrying its own saved energy override.'
     );
+    expect(mounted.container.textContent).toContain('Selected override');
     expect(mounted.container.textContent).toContain(
       'This block is carrying its own saved dynamics override.'
     );
@@ -307,11 +308,13 @@ describe('BlockContext truth surface', () => {
     expect(mounted.container.textContent).toContain(
       'This block is inheriting the section energy default.'
     );
+    expect(mounted.container.textContent).toContain('Inherited section');
     expect(mounted.container.textContent).toContain('Section default: High (75)');
     expect(mounted.container.textContent).toContain('Block Dynamics Override');
     expect(mounted.container.textContent).toContain(
       'This block is inheriting the section dynamics default.'
     );
+    expect(mounted.container.textContent).toContain('Inherited section');
     expect(mounted.container.textContent).toContain('Section default: f (76)');
     expect(mounted.container.textContent).toContain('Inherited Audio Truth');
     expect(mounted.container.textContent).toContain(
@@ -457,12 +460,14 @@ describe('BlockContext truth surface', () => {
     expect(dynamicsSlider?.value).toBe('76');
     expect(dynamicsResetButton?.disabled).toBe(true);
     expect(mounted.container.textContent).toContain(
-      'This block is inheriting the project energy default.'
+      'This block is defaulting to the project energy value because neither the section nor block overrides it.'
     );
+    expect(mounted.container.textContent).toContain('Project default');
     expect(mounted.container.textContent).toContain('Project default: Laid (22)');
     expect(mounted.container.textContent).toContain(
-      'This block is inheriting the project dynamics default.'
+      'This block is defaulting to the project dynamics value because neither the section nor block overrides it.'
     );
+    expect(mounted.container.textContent).toContain('Project default');
     expect(mounted.container.textContent).toContain('Project default: f (76)');
 
     act(() => {
@@ -872,10 +877,10 @@ describe('BlockContext truth surface', () => {
     expect(dynamicsSlider?.value).toBe('76');
     expect(dynamicsResetButton?.disabled).toBe(true);
     expect(mounted.container.textContent).toContain(
-      'This block is inheriting the project energy default.'
+      'This block is defaulting to the project energy value because neither the section nor block overrides it.'
     );
     expect(mounted.container.textContent).toContain(
-      'This block is inheriting the project dynamics default.'
+      'This block is defaulting to the project dynamics value because neither the section nor block overrides it.'
     );
     expect(mounted.container.textContent).toContain('Project default: Laid (22)');
     expect(mounted.container.textContent).toContain('Project default: f (76)');

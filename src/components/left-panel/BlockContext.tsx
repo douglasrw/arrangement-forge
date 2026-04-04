@@ -9,6 +9,7 @@ import { ConfirmDialog } from "@/components/shared/ConfirmDialog"
 import { INSTRUMENT_STYLE_OPTIONS } from "@/lib/genre-config"
 import { formatChord } from "@/lib/chords"
 import {
+  getBlockCascadeBehaviorTruth,
   getCascadeSourceLabel,
   isInherited,
   resolveStyle,
@@ -536,6 +537,11 @@ export function BlockContext({
     ? isInherited(liveSection, liveBlock ?? null, "energy", "block")
     : liveBlock?.energyOverride == null
   const inheritedEnergySourceLabel = getCascadeSourceLabel(inheritedEnergy.source)
+  const energyBehaviorTruth = getBlockCascadeBehaviorTruth(
+    "energy",
+    inheritedEnergy.source,
+    isEnergyInherited
+  )
   const effectiveDynamics =
     project && liveSection
       ? resolveStyle(project, liveSection, liveBlock ?? null, "dynamics")
@@ -554,6 +560,11 @@ export function BlockContext({
     ? isInherited(liveSection, liveBlock ?? null, "dynamics", "block")
     : liveBlock?.dynamicsOverride == null
   const inheritedDynamicsSourceLabel = getCascadeSourceLabel(inheritedDynamics.source)
+  const dynamicsBehaviorTruth = getBlockCascadeBehaviorTruth(
+    "dynamics",
+    inheritedDynamics.source,
+    isDynamicsInherited
+  )
   const blockScopeTone = BLOCK_SCOPE_TONE_STYLES[blockScopeTruth.tone]
   const blockContextReadinessStyles =
     BLOCK_CONTEXT_READINESS_STYLES[blockContextReadiness.readiness]
@@ -745,13 +756,11 @@ export function BlockContext({
                 Block Energy Override
               </h3>
               <p className="text-xs text-muted-foreground">
-                {isEnergyInherited
-                  ? `This block is inheriting the ${inheritedEnergy.source === "section" ? "section" : "project"} energy default.`
-                  : "This block is carrying its own saved energy override."}
+                {energyBehaviorTruth.summary}
               </p>
             </div>
             <span className="rounded border border-border/70 px-2 py-0.5 text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
-              {isEnergyInherited ? inheritedEnergySourceLabel : "Block"}
+              {energyBehaviorTruth.badge}
             </span>
           </div>
 
@@ -808,13 +817,11 @@ export function BlockContext({
                 Block Dynamics Override
               </h3>
               <p className="text-xs text-muted-foreground">
-                {isDynamicsInherited
-                  ? `This block is inheriting the ${inheritedDynamics.source === "section" ? "section" : "project"} dynamics default.`
-                  : "This block is carrying its own saved dynamics override."}
+                {dynamicsBehaviorTruth.summary}
               </p>
             </div>
             <span className="rounded border border-border/70 px-2 py-0.5 text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
-              {isDynamicsInherited ? inheritedDynamicsSourceLabel : "Block"}
+              {dynamicsBehaviorTruth.badge}
             </span>
           </div>
 
