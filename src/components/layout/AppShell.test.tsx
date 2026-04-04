@@ -28,6 +28,8 @@ vi.mock('@/components/mixer/MixerDrawer', () => ({
 }));
 
 vi.mock('@/hooks/useKeyboardShortcuts', () => ({
+  KEYBOARD_SHORTCUT_BUTTON_ID: 'topbar-shortcuts-button',
+  KEYBOARD_SHORTCUT_SECTIONS: [],
   useKeyboardShortcuts: () => {},
 }));
 

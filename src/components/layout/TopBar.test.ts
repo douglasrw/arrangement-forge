@@ -7,6 +7,7 @@ import type { Block, Chord, Project, Section, Stem } from '@/types';
 import type { LoadProjectResult } from '@/hooks/useProject';
 import { useProjectStore } from '@/store/project-store';
 import { useUiStore } from '@/store/ui-store';
+import type { ProjectStoreReadiness } from '@/store/project-store';
 import {
   TopBar,
   formatProjectChordChartExport,
@@ -19,6 +20,17 @@ import {
 
 const signOutMock = vi.hoisted(() => vi.fn());
 const loadProjectMock = vi.hoisted(() => vi.fn());
+const projectStoreReadinessMock = vi.hoisted(() =>
+  vi.fn<() => ProjectStoreReadiness>(() => ({
+    status: 'ready',
+    projectId: 'project-1',
+    currentState: 'Project project-1 is loaded in the project store.',
+    nextStep: 'Edit this arrangement, save changes, or open a different project from the library.',
+    detail: null,
+    blockedBy: null,
+    failureTarget: null,
+  }))
+);
 
 vi.mock('@/hooks/useAuth', () => ({
   useAuth: () => ({
@@ -33,6 +45,7 @@ vi.mock('@/hooks/useProject', async () => {
     ...actual,
     useProject: () => ({
       loadProject: loadProjectMock,
+      projectStoreReadiness: projectStoreReadinessMock(),
     }),
   };
 });
@@ -195,6 +208,16 @@ beforeEach(() => {
   signOutMock.mockReset();
   loadProjectMock.mockReset();
   loadProjectMock.mockResolvedValue({ status: 'ready' } satisfies LoadProjectResult);
+  projectStoreReadinessMock.mockReset();
+  projectStoreReadinessMock.mockReturnValue({
+    status: 'ready',
+    projectId: 'project-1',
+    currentState: 'Project project-1 is loaded in the project store.',
+    nextStep: 'Edit this arrangement, save changes, or open a different project from the library.',
+    detail: null,
+    blockedBy: null,
+    failureTarget: null,
+  });
 
   useProjectStore.setState({
     project: makeProject(),
@@ -532,6 +555,86 @@ describe('TopBar save indicator truth', () => {
 });
 
 describe('TopBar export baseline', () => {
+  it('shows project-store waiting truth directly in the save and export surface', () => {
+    projectStoreReadinessMock.mockReturnValue({
+      status: 'waiting',
+      projectId: 'project-2',
+      currentState: 'Project project-2 is still loading into the project store.',
+      nextStep: 'Wait for the current project load to finish before editing this workspace.',
+      detail: null,
+      blockedBy: null,
+      failureTarget: null,
+    });
+    useProjectStore.setState({
+      project: null,
+      stems: [],
+      sections: [],
+      blocks: [],
+      chords: [],
+    });
+
+    const mounted = renderTopBar();
+    mountedRoot = mounted.root;
+    mountedContainer = mounted.container;
+
+    const { dot, label } = getTopBarSaveIndicator(mounted.container);
+    const exportButton = mounted.container.querySelector(
+      '[data-testid="topbar-export-button"]'
+    ) as HTMLButtonElement | null;
+
+    expect(label?.textContent).toBe('Loading project...');
+    expect(label?.title).toBe(
+      'Project project-2 is still loading into the project store. Wait for the current project load to finish before editing this workspace.'
+    );
+    expect(dot?.className).toContain('bg-status-saving');
+    expect(exportButton?.disabled).toBe(true);
+    expect(exportButton?.textContent).toBe('Project loading...');
+    expect(exportButton?.title).toBe(
+      'Project project-2 is still loading into the project store. Wait for the current project load to finish before editing this workspace.'
+    );
+  });
+
+  it('shows project-store blocked truth directly in the save and export surface', () => {
+    projectStoreReadinessMock.mockReturnValue({
+      status: 'blocked',
+      projectId: 'project-2',
+      currentState:
+        'Project project-2 is blocked because project blocks could not be loaded into the project store.',
+      nextStep:
+        'Retry this project after the project blocks load failure is fixed, or open a different project.',
+      detail: 'Backend unavailable',
+      blockedBy: 'load-failure',
+      failureTarget: 'project blocks',
+    });
+    useProjectStore.setState({
+      project: null,
+      stems: [],
+      sections: [],
+      blocks: [],
+      chords: [],
+    });
+
+    const mounted = renderTopBar();
+    mountedRoot = mounted.root;
+    mountedContainer = mounted.container;
+
+    const { dot, label } = getTopBarSaveIndicator(mounted.container);
+    const exportButton = mounted.container.querySelector(
+      '[data-testid="topbar-export-button"]'
+    ) as HTMLButtonElement | null;
+
+    expect(label?.textContent).toBe('Project load blocked');
+    expect(label?.title).toBe(
+      'Project project-2 is blocked because project blocks could not be loaded into the project store. Retry this project after the project blocks load failure is fixed, or open a different project. Backend unavailable'
+    );
+    expect(dot?.className).toContain('bg-destructive');
+    expect(exportButton?.disabled).toBe(true);
+    expect(exportButton?.textContent).toBe('Project load blocked');
+    expect(exportButton?.title).toBe(
+      'Project project-2 is blocked because project blocks could not be loaded into the project store. Retry this project after the project blocks load failure is fixed, or open a different project. Backend unavailable'
+    );
+  });
+
   it('downloads the current project as a plain-text chord chart plus arrangement snapshot with visible outcome truth', async () => {
     useProjectStore.setState({
       project: makeProject({

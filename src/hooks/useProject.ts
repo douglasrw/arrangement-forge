@@ -167,6 +167,16 @@ export type ProjectSaveStatus =
   | 'arrangement-draft'
   | 'arrangement-draft-over-saved-arrangement';
 
+export interface UseProjectResult {
+  projectStoreReadiness: ReturnType<typeof getProjectStoreReadiness>;
+  loadProject: (projectId: string) => Promise<LoadProjectResult>;
+  saveProject: () => Promise<void>;
+  createProject: () => Promise<string | null>;
+  deleteProject: (projectId: string) => Promise<boolean>;
+  listProjects: () => Promise<Project[]>;
+  saveArrangement: () => Promise<void>;
+}
+
 interface ProjectSaveCopy {
   statusLabel:
     | 'Project draft'
@@ -464,8 +474,20 @@ export function getProjectExportReadiness(state: {
   };
 }
 
-export function useProject() {
+export function useProject(): UseProjectResult {
   const { setSystemStatus, markSaved, setLibraryCount } = useUiStore();
+  const project = useProjectStore((state) => state.project);
+  const projectLoadStatus = useProjectStore((state) => state.projectLoadStatus);
+  const projectLoadTargetId = useProjectStore((state) => state.projectLoadTargetId);
+  const projectLoadMessage = useProjectStore((state) => state.projectLoadMessage);
+  const projectLoadFailureTarget = useProjectStore((state) => state.projectLoadFailureTarget);
+  const projectStoreReadiness = getProjectStoreReadiness({
+    project,
+    projectLoadStatus,
+    projectLoadTargetId,
+    projectLoadMessage,
+    projectLoadFailureTarget,
+  });
 
   const handleError = useCallback(
     (error: unknown) => {
@@ -814,6 +836,7 @@ export function useProject() {
   }, [persistArrangementDraft]);
 
   return {
+    projectStoreReadiness,
     loadProject,
     saveProject,
     createProject,

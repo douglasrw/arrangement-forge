@@ -5,7 +5,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { createRoot, type Root } from 'react-dom/client';
 import type { LoadProjectResult } from '@/hooks/useProject';
 import type { Project } from '@/types';
-import { useProjectStore } from '@/store/project-store';
+import { getProjectStoreReadiness, useProjectStore } from '@/store/project-store';
 import { useSelectionStore } from '@/store/selection-store';
 import { useUiStore } from '@/store/ui-store';
 import type { EditorRouteMode } from './EditorPage';
@@ -61,6 +61,7 @@ vi.mock('@/hooks/useProject', async () => {
     ...actual,
     useProject: () => ({
       loadProject: loadProjectMock,
+      projectStoreReadiness: getProjectStoreReadiness(useProjectStore.getState()),
     }),
   };
 });

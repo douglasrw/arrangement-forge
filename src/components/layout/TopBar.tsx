@@ -2,6 +2,7 @@ import { useState, useRef, useEffect } from 'react';
 import { cn } from '@/lib/utils';
 import { Settings } from 'lucide-react';
 import type { Block, Chord, Project, Section, Stem, SystemStatus } from '@/types';
+import type { ProjectStoreReadiness } from '@/store/project-store';
 import {
   getProjectExportReadiness,
   getProjectSavePlan,
@@ -310,6 +311,60 @@ function getRouteShellSaveIndicatorCopy(
   }
 }
 
+function formatProjectStoreReadinessTooltip(projectStoreReadiness: ProjectStoreReadiness): string {
+  const detail = projectStoreReadiness.detail?.trim();
+
+  return detail
+    ? `${projectStoreReadiness.currentState} ${projectStoreReadiness.nextStep} ${detail}`.trim()
+    : `${projectStoreReadiness.currentState} ${projectStoreReadiness.nextStep}`.trim();
+}
+
+function getProjectStoreSaveIndicatorCopy(
+  projectStoreReadiness: ProjectStoreReadiness
+): { label: string; tooltip: string } {
+  if (projectStoreReadiness.status === 'ready') {
+    return {
+      label: 'Project ready',
+      tooltip: formatProjectStoreReadinessTooltip(projectStoreReadiness),
+    };
+  }
+
+  if (projectStoreReadiness.status === 'blocked') {
+    return {
+      label:
+        projectStoreReadiness.blockedBy === 'missing-project'
+          ? 'Project not found'
+          : 'Project load blocked',
+      tooltip: formatProjectStoreReadinessTooltip(projectStoreReadiness),
+    };
+  }
+
+  return {
+    label: projectStoreReadiness.projectId ? 'Loading project...' : 'No project loaded',
+    tooltip: formatProjectStoreReadinessTooltip(projectStoreReadiness),
+  };
+}
+
+function getProjectStoreExportButtonCopy(projectStoreReadiness: ProjectStoreReadiness): {
+  label: string;
+  title: string;
+} {
+  if (projectStoreReadiness.status === 'blocked') {
+    return {
+      label:
+        projectStoreReadiness.blockedBy === 'missing-project'
+          ? 'Project not found'
+          : 'Project load blocked',
+      title: formatProjectStoreReadinessTooltip(projectStoreReadiness),
+    };
+  }
+
+  return {
+    label: projectStoreReadiness.projectId ? 'Project loading...' : 'No project loaded',
+    title: formatProjectStoreReadinessTooltip(projectStoreReadiness),
+  };
+}
+
 /* ------------------------------------------------------------------ */
 /*  Key dropdown                                                       */
 /* ------------------------------------------------------------------ */
@@ -472,7 +527,7 @@ function ChordDisplayToggle({
 /* ------------------------------------------------------------------ */
 export function TopBar({ shellStatus }: { shellStatus?: AppStatus }) {
   const { project, stems, sections, blocks, chords, updateProject } = useProjectStore();
-  const { loadProject } = useProject();
+  const { loadProject, projectStoreReadiness } = useProject();
   const {
     unsavedChanges,
     systemStatus,
@@ -665,14 +720,26 @@ export function TopBar({ shellStatus }: { shellStatus?: AppStatus }) {
   }
 
   const exportActionEnabled =
-    !routeShellStatus && Boolean(project) && !reloadingSavedSnapshot && exportReadiness.actionType !== 'none';
+    !routeShellStatus &&
+    projectStoreReadiness.status === 'ready' &&
+    Boolean(project) &&
+    !reloadingSavedSnapshot &&
+    exportReadiness.actionType !== 'none';
+  const projectStoreExportCopy =
+    projectStoreReadiness.status === 'ready'
+      ? null
+      : getProjectStoreExportButtonCopy(projectStoreReadiness);
   const exportTitle = routeShellStatus
     ? getRouteShellSaveIndicatorCopy(routeShellStatus, errorMessage).tooltip
+    : projectStoreExportCopy
+      ? projectStoreExportCopy.title
     : reloadingSavedSnapshot
       ? 'Reloading the saved arrangement rows for this project.'
       : (exportFeedback ?? `${exportReadiness.currentState} ${exportReadiness.nextStep}`.trim());
   const exportButtonLabel = routeShellStatus
     ? 'Nothing to export'
+    : projectStoreExportCopy
+      ? projectStoreExportCopy.label
     : reloadingSavedSnapshot
       ? 'Reloading snapshot...'
       : exportFeedback
@@ -690,8 +757,15 @@ export function TopBar({ shellStatus }: { shellStatus?: AppStatus }) {
   );
   const displayedSaveIndicatorCopy = routeShellStatus
     ? getRouteShellSaveIndicatorCopy(routeShellStatus, errorMessage)
+    : projectStoreReadiness.status !== 'ready'
+      ? getProjectStoreSaveIndicatorCopy(projectStoreReadiness)
     : saveIndicatorCopy;
-  const displayedSaveIndicatorState = routeShellStatus ?? saveIndicatorState;
+  const displayedSaveIndicatorState = routeShellStatus
+    ?? (projectStoreReadiness.status === 'blocked'
+      ? 'error'
+      : projectStoreReadiness.status === 'waiting'
+        ? 'loading-project'
+        : saveIndicatorState);
 
   function commitName(newName: string) {
     setIsEditing(false);
