@@ -759,7 +759,16 @@ describe('BlockContext truth surface', () => {
   it('refreshes override truth when selection moves between blocks with different saved state', () => {
     useProjectStore.setState({
       project: makeProject({ energy: 22, dynamics: 76 }),
-      stems: [makeStem()],
+      stems: [
+        makeStem(),
+        makeStem({
+          id: 'stem-2',
+          instrument: 'bass',
+          sortOrder: 1,
+          volume: 0.65,
+          pan: -0.35,
+        }),
+      ],
       sections: [
         makeSection({ id: 'section-1', energyOverride: 75, dynamicsOverride: 84 }),
         makeSection({
@@ -775,6 +784,7 @@ describe('BlockContext truth surface', () => {
         makeBlock({ id: 'block-1', energyOverride: 33, dynamicsOverride: 18 }),
         makeBlock({
           id: 'block-2',
+          stemId: 'stem-2',
           sectionId: 'section-2',
           startBar: 9,
           endBar: 12,
@@ -819,7 +829,7 @@ describe('BlockContext truth surface', () => {
     );
 
     act(() => {
-      useSelectionStore.getState().selectBlock('block-2', 'stem-1');
+      useSelectionStore.getState().selectBlock('block-2', 'stem-2');
     });
 
     energySlider = mounted.container.querySelector(
@@ -836,6 +846,27 @@ describe('BlockContext truth surface', () => {
     ) as HTMLButtonElement | null;
 
     expect(mounted.container.textContent).toContain('Bars 9 – 12');
+    expect(mounted.container.textContent).toContain('Bass Bars 9 – 12');
+    expect(mounted.container.textContent).toContain(
+      'Active scope: Bass block across bars 9 – 12.'
+    );
+    expect(mounted.container.textContent).toContain(
+      'This block inherits volume and pan from the current bass mixer lane.'
+    );
+    expect(
+      (
+        mounted.container.querySelector('#block-audio-volume-value') as
+          | HTMLSpanElement
+          | null
+      )?.textContent
+    ).toBe('-4 dB');
+    expect(
+      (
+        mounted.container.querySelector('#block-audio-pan-value') as
+          | HTMLSpanElement
+          | null
+      )?.textContent
+    ).toBe('L35');
     expect(energySlider?.value).toBe('22');
     expect(energyResetButton?.disabled).toBe(true);
     expect(dynamicsSlider?.value).toBe('76');
@@ -877,6 +908,52 @@ describe('BlockContext truth surface', () => {
     expect(mounted.container.textContent).toContain(
       'This block is carrying its own saved dynamics override.'
     );
+  });
+
+  it('keeps missing selected stem truth visible instead of borrowing another same-instrument lane', () => {
+    useProjectStore.setState({
+      project: makeProject({ hasArrangement: true }),
+      stems: [
+        makeStem({ id: 'stem-1', instrument: 'piano' }),
+        makeStem({ id: 'stem-2', instrument: 'piano', sortOrder: 1, volume: 0.4 }),
+      ],
+      sections: [makeSection()],
+      blocks: [makeBlock({ stemId: 'missing-stem' })],
+      chords: [],
+      chatMessages: [],
+      drumOnlyUpdate: false,
+      allInstrumentsUpdate: false,
+    });
+
+    useSelectionStore.setState({
+      level: 'block',
+      sectionId: null,
+      blockId: 'block-1',
+      stemId: 'missing-stem',
+    });
+
+    const mounted = renderBlockContext();
+    mountedRoot = mounted.root;
+    mountedContainer = mounted.container;
+
+    expect(mounted.container.textContent).toContain('Inherited Audio Truth');
+    expect(mounted.container.textContent).toContain(
+      'No current piano stem is loaded for this arrangement, so block audio truth is missing rather than hidden.'
+    );
+    expect(
+      (
+        mounted.container.querySelector('#block-audio-volume-value') as
+          | HTMLSpanElement
+          | null
+      )?.textContent
+    ).toBe('--');
+    expect(
+      (
+        mounted.container.querySelector('#block-audio-pan-value') as
+          | HTMLSpanElement
+          | null
+      )?.textContent
+    ).toBe('--');
   });
 
   it('shows a waiting readiness state when no block is selected yet', () => {

@@ -461,14 +461,24 @@ export function BlockContext({
   /* Derive live block from store */
   const liveBlock = blocks.find((b) => b.id === blockId)
   const liveSection = sections.find((section) => section.id === liveBlock?.sectionId)
+  const liveBlockStem = liveBlock
+    ? stems.find((stem) => stem.id === liveBlock.stemId) ?? null
+    : null
+  const selectedStem = stemId
+    ? stems.find((stem) => stem.id === stemId) ?? null
+    : null
   const hasLiveBlock = liveBlock != null
 
   /* Use live block data if available, otherwise fall back to props */
   const resolvedStartBar = liveBlock?.startBar ?? startBar
   const resolvedEndBar = liveBlock?.endBar ?? endBar
 
-  const color = INSTRUMENT_COLORS[instrument]
-  const label = INSTRUMENT_LABELS[instrument]
+  const resolvedInstrument =
+    liveBlockStem?.instrument ??
+    selectedStem?.instrument ??
+    instrument
+  const color = INSTRUMENT_COLORS[resolvedInstrument]
+  const label = INSTRUMENT_LABELS[resolvedInstrument]
   const hasProject = project != null
   const blockScopeTruth = getBlockScopeTruth({
     hasLiveBlock,
@@ -488,8 +498,9 @@ export function BlockContext({
   })
   const activePattern = liveBlock?.style ?? styleName
   const liveStem =
-    stems.find((stem) => stem.id === (liveBlock?.stemId ?? stemId)) ??
-    stems.find((stem) => stem.instrument === instrument)
+    liveBlockStem ??
+    selectedStem ??
+    (blockId || stemId ? null : stems.find((stem) => stem.instrument === resolvedInstrument) ?? null)
   const hasArrangementAudio = Boolean(project?.hasArrangement || stems.length > 0)
   const blockAudioTruth = getBlockAudioTruth({
     stem: liveStem,
