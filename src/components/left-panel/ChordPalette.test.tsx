@@ -156,9 +156,13 @@ describe("ChordPalette selection truth", () => {
     mountedRoot = mounted.root
     mountedContainer = mounted.container
 
-    expect(mounted.container.textContent).toContain("Song chart")
+    const readiness = mounted.container.querySelector("[data-chord-palette-readiness]") as HTMLDivElement | null
+
+    expect(readiness?.getAttribute("data-chord-palette-readiness")).toBe("ready")
+    expect(mounted.container.textContent).toContain("Ready")
+    expect(mounted.container.textContent).toContain("Whole-song chart active")
     expect(mounted.container.textContent).toContain(
-      "You are editing the song chord chart the arrangement inherits today."
+      "This palette is editing the whole-song chord chart the arrangement inherits today."
     )
     expect(mounted.container.textContent).toContain("Whole song")
     expect(mounted.container.textContent).toContain(
@@ -175,9 +179,13 @@ describe("ChordPalette selection truth", () => {
     mountedRoot = mounted.root
     mountedContainer = mounted.container
 
-    expect(mounted.container.textContent).toContain("Empty chart")
+    const readiness = mounted.container.querySelector("[data-chord-palette-readiness]") as HTMLDivElement | null
+
+    expect(readiness?.getAttribute("data-chord-palette-readiness")).toBe("waiting")
+    expect(mounted.container.textContent).toContain("Waiting")
+    expect(mounted.container.textContent).toContain("Song chart needed")
     expect(mounted.container.textContent).toContain(
-      "No song chord chart is loaded yet."
+      "No whole-song chord chart is loaded yet, so this palette is waiting for the first chord."
     )
     expect(mounted.container.textContent).toContain("Whole song")
     expect(mounted.container.textContent).toContain(
@@ -197,13 +205,17 @@ describe("ChordPalette selection truth", () => {
     mountedRoot = mounted.root
     mountedContainer = mounted.container
 
-    expect(mounted.container.textContent).toContain("Section selected")
+    const readiness = mounted.container.querySelector("[data-chord-palette-readiness]") as HTMLDivElement | null
+
+    expect(readiness?.getAttribute("data-chord-palette-readiness")).toBe("blocked")
+    expect(mounted.container.textContent).toContain("Blocked")
+    expect(mounted.container.textContent).toContain("Section scope unavailable")
     expect(mounted.container.textContent).toContain(
-      "Verse is selected in the arrangement, but section-scoped chord editing is unavailable here today."
+      "Verse is selected in the arrangement, but this palette still edits the whole-song chord chart today."
     )
     expect(mounted.container.textContent).toContain("Verse (Bars 1-8)")
     expect(mounted.container.textContent).toContain(
-      "Changes below still update the song chord chart instead of a section-only progression."
+      "Changes below still update the whole-song chart instead of a section-only progression."
     )
   })
 
@@ -219,13 +231,17 @@ describe("ChordPalette selection truth", () => {
     mountedRoot = mounted.root
     mountedContainer = mounted.container
 
-    expect(mounted.container.textContent).toContain("Block selected")
+    const readiness = mounted.container.querySelector("[data-chord-palette-readiness]") as HTMLDivElement | null
+
+    expect(readiness?.getAttribute("data-chord-palette-readiness")).toBe("blocked")
+    expect(mounted.container.textContent).toContain("Blocked")
+    expect(mounted.container.textContent).toContain("Block scope unavailable")
     expect(mounted.container.textContent).toContain(
-      "The arrangement is currently focused on Bars 3-6, but block chord overrides are unavailable here today."
+      "Piano bars 3-6 is selected in the arrangement, but this palette still edits the whole-song chord chart today."
     )
     expect(mounted.container.textContent).toContain("Piano block")
     expect(mounted.container.textContent).toContain(
-      "Changes below still update the song chord chart for the full project."
+      "Changes below still update the whole-song chart for the project."
     )
   })
 
@@ -241,15 +257,18 @@ describe("ChordPalette selection truth", () => {
     mountedRoot = mounted.root
     mountedContainer = mounted.container
 
+    const readiness = mounted.container.querySelector("[data-chord-palette-readiness]") as HTMLDivElement | null
+
+    expect(readiness?.getAttribute("data-chord-palette-readiness")).toBe("blocked")
     expect(mounted.container.textContent).toContain("Selection missing")
     expect(mounted.container.textContent).toContain(
-      "The current arrangement selection no longer resolves to live data, so this palette is falling back to song-level chord truth."
+      "The current arrangement selection no longer resolves to live data, so this palette cannot safely honor section or block scope right now."
     )
     expect(mounted.container.textContent).toContain("Fallback scope")
     expect(mounted.container.textContent).toContain("Whole song")
     expect(mounted.container.textContent).toContain(
-      "Add chords below to create the song-level chart truth the arrangement can follow."
+      "Clear the stale selection or add chords below to rebuild the whole-song chart truth first."
     )
-    expect(mounted.container.textContent).not.toContain("Empty chart")
+    expect(mounted.container.textContent).not.toContain("Song chart needed")
   })
 })
