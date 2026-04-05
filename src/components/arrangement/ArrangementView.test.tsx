@@ -171,6 +171,10 @@ beforeEach(() => {
 
   useProjectStore.setState({
     project: makeProject(),
+    projectLoadStatus: 'ready',
+    projectLoadTargetId: 'project-1',
+    projectLoadMessage: null,
+    projectLoadFailureTarget: null,
     sections: [makeSection()],
     stems: [
       makeStem({ id: 'stem-drums', instrument: 'drums', sortOrder: 0 }),
@@ -278,7 +282,7 @@ describe('ArrangementView empty-state truth', () => {
     expect(mounted.container.textContent).not.toContain('Ready to generate');
   });
 
-  it('marks empty, unavailable, and chordless lanes instead of rendering them like normal loaded rows', () => {
+  it('marks empty, unavailable, and waiting chord truth instead of rendering them like normal loaded rows', () => {
     const mounted = renderArrangementView();
     mountedRoot = mounted.root;
     mountedContainer = mounted.container;
@@ -308,9 +312,68 @@ describe('ArrangementView empty-state truth', () => {
     expect(mounted.container.textContent).toContain('No bass stem loaded yet.');
 
     expect(
-      mounted.container.querySelector('[data-chord-lane-state="empty"]')
+      mounted.container.querySelector('[data-chord-lane-state="waiting"]')
     ).not.toBeNull();
-    expect(mounted.container.textContent).toContain('No chord bars loaded yet.');
+    expect(mounted.container.textContent).toContain('Chord lane is waiting for chord bars to load for this arrangement.');
+    const chordReadiness = mounted.container.querySelector(
+      '[data-chord-lane-readiness="waiting"]'
+    );
+
+    expect(chordReadiness?.textContent).toContain('Waiting');
+  });
+
+  it('keeps chord lane blocked truth visible when the project store is blocked', () => {
+    useProjectStore.setState({
+      project: null,
+      projectLoadStatus: 'error',
+      projectLoadTargetId: 'project-1',
+      projectLoadMessage: 'Backend unavailable',
+      projectLoadFailureTarget: 'project blocks',
+      sections: [],
+      blocks: [],
+      stems: [],
+      chords: [],
+    });
+
+    const mounted = renderArrangementView();
+    mountedRoot = mounted.root;
+    mountedContainer = mounted.container;
+
+    const chordLane = mounted.container.querySelector('[data-chord-lane-state="blocked"]');
+    const chordReadiness = mounted.container.querySelector('[data-chord-lane-readiness="blocked"]');
+
+    expect(chordLane).not.toBeNull();
+    expect(chordReadiness?.textContent).toContain('Blocked');
+    expect(mounted.container.textContent).toContain(
+      'Project project-1 is blocked because project blocks could not be loaded into the project store. Backend unavailable'
+    );
+  });
+
+  it('keeps chord lane waiting truth visible while the project store is still loading', () => {
+    useProjectStore.setState({
+      project: null,
+      projectLoadStatus: 'loading',
+      projectLoadTargetId: 'project-2',
+      projectLoadMessage: null,
+      projectLoadFailureTarget: null,
+      sections: [],
+      blocks: [],
+      stems: [],
+      chords: [],
+    });
+
+    const mounted = renderArrangementView();
+    mountedRoot = mounted.root;
+    mountedContainer = mounted.container;
+
+    const chordLane = mounted.container.querySelector('[data-chord-lane-state="waiting"]');
+    const chordReadiness = mounted.container.querySelector('[data-chord-lane-readiness="waiting"]');
+
+    expect(chordLane).not.toBeNull();
+    expect(chordReadiness?.textContent).toContain('Waiting');
+    expect(mounted.container.textContent).toContain(
+      'Project project-2 is still loading into the project store.'
+    );
   });
 
   it('surfaces missing block pattern truth instead of a fake default label', () => {

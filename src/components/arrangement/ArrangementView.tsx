@@ -1,7 +1,7 @@
 import { cn } from "@/lib/utils"
-import { ChordLane, CHORD_LANE_HEIGHT } from "@/components/arrangement/ChordLane"
+import { ChordLane, CHORD_LANE_HEIGHT, type ChordLaneTruth } from "@/components/arrangement/ChordLane"
 import { SequencerBlock, INSTRUMENT_COLORS } from "@/components/sequencer-block"
-import { useProjectStore } from "@/store/project-store"
+import { getProjectStoreReadiness, useProjectStore } from "@/store/project-store"
 import { useSelectionStore } from "@/store/selection-store"
 import { useUiStore } from "@/store/ui-store"
 import { useAudio } from "@/hooks/useAudio"
@@ -141,6 +141,67 @@ function getArrangementFailureTruth(errorMessage: string | null) {
     nextStep: nextStep
       ? `Next step: ${nextStep}`
       : "Next step: Review the current input blockers, then generate again.",
+  }
+}
+
+function getChordLaneTruth({
+  projectReadiness,
+  totalBars,
+  chordCount,
+}: {
+  projectReadiness: ReturnType<typeof getProjectStoreReadiness>
+  totalBars: number
+  chordCount: number
+}): ChordLaneTruth {
+  if (projectReadiness.status === "blocked") {
+    const detail = [projectReadiness.currentState, projectReadiness.detail]
+      .filter(Boolean)
+      .join(" ")
+
+    return {
+      state: "blocked",
+      badge: "Blocked",
+      detail,
+      title: [detail, projectReadiness.nextStep].filter(Boolean).join(" "),
+    }
+  }
+
+  if (projectReadiness.status === "waiting") {
+    return {
+      state: "waiting",
+      badge: "Waiting",
+      detail: projectReadiness.currentState,
+      title: `${projectReadiness.currentState} ${projectReadiness.nextStep}`.trim(),
+    }
+  }
+
+  if (totalBars === 0) {
+    const detail = "Chord lane is waiting for the first arrangement section before chord bars can render."
+
+    return {
+      state: "waiting",
+      badge: "Waiting",
+      detail,
+      title: `${detail} Add or load arrangement sections to make the chord lane ready.`.trim(),
+    }
+  }
+
+  if (chordCount === 0) {
+    const detail = "Chord lane is waiting for chord bars to load for this arrangement."
+
+    return {
+      state: "waiting",
+      badge: "Waiting",
+      detail,
+      title: `${detail} Load or generate the chord chart to make the chord lane ready.`.trim(),
+    }
+  }
+
+  return {
+    state: "ready",
+    badge: "Ready",
+    detail: "Chord bars are loaded for this arrangement.",
+    title: "Chord bars are loaded for this arrangement.",
   }
 }
 
@@ -333,11 +394,27 @@ export function ArrangementView({
   onBlockSelect,
   onSectionSelect,
 }: ArrangementViewProps) {
-  const { sections, blocks, stems } = useProjectStore(
+  const {
+    project,
+    projectLoadStatus,
+    projectLoadTargetId,
+    projectLoadMessage,
+    projectLoadFailureTarget,
+    sections,
+    blocks,
+    stems,
+    chords,
+  } = useProjectStore(
     useShallow((s) => ({
+      project: s.project,
+      projectLoadStatus: s.projectLoadStatus,
+      projectLoadTargetId: s.projectLoadTargetId,
+      projectLoadMessage: s.projectLoadMessage,
+      projectLoadFailureTarget: s.projectLoadFailureTarget,
       sections: s.sections,
       blocks: s.blocks,
       stems: s.stems,
+      chords: s.chords,
     }))
   )
   const { generationState, systemStatus, errorMessage } = useUiStore(
@@ -405,6 +482,19 @@ export function ArrangementView({
 
   /* Sort sections by sortOrder */
   const sortedSections = [...sections].sort((a, b) => a.sortOrder - b.sortOrder)
+  const projectReadiness = getProjectStoreReadiness({
+    project,
+    projectLoadStatus,
+    projectLoadTargetId,
+    projectLoadMessage,
+    projectLoadFailureTarget,
+  })
+  const totalBars = sortedSections.reduce((sum, s) => sum + s.barCount, 0)
+  const chordLaneTruth = getChordLaneTruth({
+    projectReadiness,
+    totalBars,
+    chordCount: chords.length,
+  })
   const arrangementLanes = ARRANGEMENT_LANE_ORDER.map((instrument) => {
     const stem = stems.find((candidate) => candidate.instrument === instrument)
     const laneBlocks = stem
@@ -449,7 +539,6 @@ export function ArrangementView({
   })
 
   /* Compute total bars and effective bar width (expand to fill viewport) */
-  const totalBars = sortedSections.reduce((sum, s) => sum + s.barCount, 0)
   const effectiveBarW = totalBars > 0 && scrollableW > 0
     ? Math.max(BAR_W, Math.floor(scrollableW / totalBars))
     : BAR_W
@@ -585,9 +674,23 @@ export function ArrangementView({
         <div
           className="flex shrink-0 items-center gap-1.5 border-b border-secondary border-t border-t-border/50 px-2"
           style={{ height: CHORD_H, backgroundColor: "var(--card)" }}
+          data-chord-lane-readiness={chordLaneTruth.state}
+          title={chordLaneTruth.title}
         >
           <span className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
             CHORDS
+          </span>
+          <span
+            className={cn(
+              "rounded-full border px-1.5 py-0.5 text-[8px] font-semibold uppercase tracking-[0.16em]",
+              chordLaneTruth.state === "ready"
+                ? "border-emerald-500/30 bg-emerald-500/10 text-emerald-300"
+                : chordLaneTruth.state === "blocked"
+                  ? "border-destructive/30 bg-destructive/10 text-destructive"
+                  : "border-warning/30 bg-warning/10 text-warning"
+            )}
+          >
+            {chordLaneTruth.badge}
           </span>
         </div>
       </div>
@@ -856,7 +959,7 @@ export function ArrangementView({
           })}
 
           {/* == Chord lane == */}
-          <ChordLane barWidth={effectiveBarW} />
+          <ChordLane barWidth={effectiveBarW} truth={chordLaneTruth} />
 
           {/* == Playhead (spans full height as overlay) == */}
           {arrangementPlayheadTruth.showOverlay ? (

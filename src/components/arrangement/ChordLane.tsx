@@ -7,37 +7,57 @@ import type { Chord } from '@/types';
 
 export const CHORD_LANE_HEIGHT = 32;
 
-interface ChordLaneProps {
-  barWidth: number;
+export interface ChordLaneTruth {
+  state: 'ready' | 'waiting' | 'blocked';
+  badge: string;
+  detail: string;
+  title: string;
 }
 
-export function ChordLane({ barWidth }: ChordLaneProps) {
+interface ChordLaneProps {
+  barWidth: number;
+  truth: ChordLaneTruth;
+}
+
+export function ChordLane({ barWidth, truth }: ChordLaneProps) {
   const { chords, sections, project } = useProjectStore();
   const { chordDisplayMode } = useUiStore();
 
   const sortedSections = [...sections].sort((a, b) => a.sortOrder - b.sortOrder);
   const totalBars = sortedSections.reduce((sum, section) => sum + section.barCount, 0);
 
-  if (totalBars === 0 || !project) return null;
-
-  if (chords.length === 0) {
+  if (truth.state !== 'ready') {
     return (
       <div
         className="flex shrink-0 items-center border-b border-border border-t border-border/50 bg-[var(--surface-sunken)] px-3"
-        data-chord-lane-state="empty"
+        data-chord-lane-state={truth.state}
         style={{ height: CHORD_LANE_HEIGHT }}
       >
         <div
-          className="inline-flex max-w-full items-center gap-2 rounded-full border border-dashed border-warning/30 bg-warning/10 px-2.5 py-1 text-[10px] text-warning"
+          className={
+            truth.state === 'blocked'
+              ? 'inline-flex max-w-full items-center gap-2 rounded-full border border-dashed border-destructive/30 bg-destructive/10 px-2.5 py-1 text-[10px] text-destructive'
+              : 'inline-flex max-w-full items-center gap-2 rounded-full border border-dashed border-warning/30 bg-warning/10 px-2.5 py-1 text-[10px] text-warning'
+          }
           role="status"
-          title="No chord bars are loaded for this arrangement yet."
+          title={truth.title}
         >
-          <span className="font-semibold uppercase tracking-[0.16em]">Empty chart</span>
-          <span className="truncate text-warning/80">No chord bars loaded yet.</span>
+          <span className="font-semibold uppercase tracking-[0.16em]">{truth.badge}</span>
+          <span
+            className={
+              truth.state === 'blocked'
+                ? 'truncate text-destructive/80'
+                : 'truncate text-warning/80'
+            }
+          >
+            {truth.detail}
+          </span>
         </div>
       </div>
     );
   }
+
+  if (totalBars === 0 || !project || chords.length === 0) return null;
 
   const chordMap = new Map<number, Chord>();
   for (const chord of chords) chordMap.set(chord.barNumber, chord);
