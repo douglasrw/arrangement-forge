@@ -229,6 +229,7 @@ export function getAiAssistantReadinessTruth({
   generationState,
   systemStatus,
   errorMessage,
+  isImporting = false,
 }: LeftPanelReadinessInputs): AiAssistantReadinessTruth {
   if (!hasProject) {
     return {
@@ -257,6 +258,16 @@ export function getAiAssistantReadinessTruth({
       title: "Chord chart needs fixes",
       detail: `${describeBlockedChordChart(parseTruth)} Fix the chord chart in Input before asking the assistant to generate or revise the arrangement.`,
       tone: "attention",
+    }
+  }
+
+  if (isImporting) {
+    return {
+      status: "waiting",
+      badge: "Waiting",
+      title: "Chord chart import in progress",
+      detail: "The assistant unlocks after the imported chord chart finishes replacing the current song input.",
+      tone: "neutral",
     }
   }
 
@@ -362,6 +373,21 @@ export function getLeftPanelCoordinationTruth(
       badge: "Waiting",
       title: "Arrangement generation is in progress",
       detail: "Input stays visible while the assistant waits and any style edits steer the next pass instead of this one.",
+      tone: "neutral",
+      sections: {
+        input: toInputSectionTruth(inputTruth),
+        style: styleTruth,
+        ai: aiTruth,
+      },
+    }
+  }
+
+  if (inputs.isImporting) {
+    return {
+      state: "waiting",
+      badge: "Waiting",
+      title: "Chord chart import is in progress",
+      detail: "Input is replacing the current chart from file, style defaults remain visible, and assistant requests unlock after the import finishes.",
       tone: "neutral",
       sections: {
         input: toInputSectionTruth(inputTruth),

@@ -372,7 +372,11 @@ function getInputTabSelectionTruth(args: {
   }
 }
 
-export function InputSection() {
+interface InputSectionProps {
+  onImportingChange?: (isImporting: boolean) => void
+}
+
+export function InputSection({ onImportingChange }: InputSectionProps = {}) {
   const [activeTab, setActiveTab] = useState<InputTab>("Chord")
   const [isImporting, setIsImporting] = useState(false)
   const [shouldFocusChordChartEditor, setShouldFocusChordChartEditor] = useState(false)
@@ -484,6 +488,10 @@ export function InputSection() {
     setShouldFocusChordChartEditor(false)
     setReviewLineNumber(null)
   }, [activeTab, chordChartRaw, reviewLineNumber, shouldFocusChordChartEditor])
+
+  useEffect(() => {
+    onImportingChange?.(isImporting)
+  }, [isImporting, onImportingChange])
 
   function handleReviewBlockedChart() {
     const nextReviewLineNumber = firstBlockedIssue?.lineNumber ?? null

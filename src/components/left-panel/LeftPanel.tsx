@@ -169,6 +169,7 @@ export function LeftPanel({
   const generationState = useUiStore((s) => s.generationState)
   const systemStatus = useUiStore((s) => s.systemStatus)
   const errorMessage = useUiStore((s) => s.errorMessage)
+  const [isImportingChordChart, setIsImportingChordChart] = useState(false)
   const hasChordChart = Boolean(project?.chordChartRaw.trim())
   const parseTruth = project && hasChordChart
     ? parseChordChart(project.chordChartRaw, project.key).truth
@@ -189,6 +190,7 @@ export function LeftPanel({
     generationState,
     systemStatus: latestAssistantFailure ? "error" : systemStatus,
     errorMessage: latestAssistantFailure?.content ?? errorMessage,
+    isImporting: isImportingChordChart,
   })
   const shellSelectionTruth = getLeftPanelShellSelectionTruth(
     getProjectSelectionTruth(
@@ -311,7 +313,7 @@ export function LeftPanel({
               onToggle={() => toggle("input")}
               className={expanded === "input" ? "flex-1 min-h-0" : ""}
             >
-              <InputSection />
+              <InputSection onImportingChange={setIsImportingChordChart} />
             </PanelSection>
 
             <PanelSection

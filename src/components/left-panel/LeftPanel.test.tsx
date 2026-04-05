@@ -232,6 +232,71 @@ describe('LeftPanel inspector truth regression', () => {
     );
   });
 
+  it('surfaces shell waiting truth while a chord chart import is replacing the current input', async () => {
+    useProjectStore.setState({
+      project: makeProject({
+        chordChartRaw: '[Verse]\nCmaj7 | Dm7 | G7 | Cmaj7',
+      }),
+    });
+
+    const mounted = renderLeftPanel({ mode: 'default' });
+    mountedRoot = mounted.root;
+    mountedContainer = mounted.container;
+
+    const uploadTabButton = Array.from(mounted.container.querySelectorAll('button')).find(
+      (button) => button.textContent === 'Upload'
+    ) as HTMLButtonElement | undefined;
+
+    expect(uploadTabButton).not.toBeUndefined();
+
+    act(() => {
+      uploadTabButton?.dispatchEvent(new MouseEvent('click', { bubbles: true }));
+    });
+
+    const fileInput = mounted.container.querySelector(
+      '#upload-chord-chart-input'
+    ) as HTMLInputElement | null;
+
+    expect(fileInput).not.toBeNull();
+
+    let resolveImportText: ((value: string) => void) | null = null;
+    const file = new File(['placeholder'], 'pending-import.txt', { type: 'text/plain' });
+    vi.spyOn(file, 'text').mockImplementation(
+      () =>
+        new Promise<string>((resolve) => {
+          resolveImportText = resolve;
+        })
+    );
+
+    Object.defineProperty(fileInput, 'files', {
+      configurable: true,
+      value: [file],
+    });
+
+    await act(async () => {
+      fileInput.dispatchEvent(new Event('change', { bubbles: true }));
+      await Promise.resolve();
+    });
+
+    expect(mounted.container.querySelector('[data-left-panel-coordination="waiting"]')).not.toBeNull();
+    expect(mounted.container.querySelector('[data-left-panel-readiness="waiting"]')).not.toBeNull();
+    expect(mounted.container.textContent).toContain('Chord chart import is in progress');
+    expect(mounted.container.textContent).toContain(
+      'Input is replacing the current chart from file, style defaults remain visible, and assistant requests unlock after the import finishes.'
+    );
+    expect(mounted.container.textContent).toContain('Chord chart import in progress');
+    expect(mounted.container.textContent).toContain(
+      'The assistant unlocks after the imported chord chart finishes replacing the current song input.'
+    );
+    expect(mounted.container.textContent).toContain('Import in progress');
+
+    await act(async () => {
+      resolveImportText?.('[Verse]\nFmaj7 | G7 | Em7 | A7');
+      await Promise.resolve();
+      await Promise.resolve();
+    });
+  });
+
   it('keeps the panel-level coordination truth blocked when parse issues remain', () => {
     useProjectStore.setState({
       project: makeProject({
