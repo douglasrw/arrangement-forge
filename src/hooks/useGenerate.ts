@@ -213,6 +213,18 @@ function describeChordParseBlocker(parseResult: ChordParseFailureLike): string {
   return 'Fix the flagged chord chart bars before generating.';
 }
 
+function describeMidiGenerationBlocker(readiness: {
+  currentState: string;
+  summary: string;
+  nextStep: string;
+}): string {
+  return [
+    `Current state: ${readiness.currentState}`,
+    `Constraint: ${readiness.summary}`,
+    `Next step: ${readiness.nextStep}`,
+  ].join(' ');
+}
+
 function formatBarRange(startBar: number, endBar: number): string {
   return startBar === endBar ? `bar ${startBar}` : `bars ${startBar}-${endBar}`;
 }
@@ -339,13 +351,7 @@ export function useGenerate() {
     try {
       const generationReadiness = getMidiGenerationReadinessTruth(project.timeSignature);
       if (generationReadiness.state === 'blocked') {
-        throw new Error(
-          [
-            generationReadiness.currentState,
-            generationReadiness.summary,
-            `Next step: ${generationReadiness.nextStep}`,
-          ].join(' ')
-        );
+        throw new Error(describeMidiGenerationBlocker(generationReadiness));
       }
 
       const parseResult = parseChordChart(project.chordChartRaw, project.key);

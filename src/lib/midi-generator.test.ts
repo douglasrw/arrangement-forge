@@ -28,8 +28,9 @@ describe('generate', () => {
   it('marks full-arrangement generation ready in 4/4', () => {
     expect(getMidiGenerationReadinessTruth('4/4')).toEqual({
       state: 'ready',
-      currentState: 'MIDI generation is ready to build a full arrangement in 4/4.',
-      summary: 'The current meter matches the supported full-arrangement generator path.',
+      currentState:
+        'MIDI generation is ready in 4/4 because drums, bass, piano, guitar, and strings all use the supported full-arrangement path.',
+      summary: '4/4 is the only verified meter for the current full-arrangement generator.',
       nextStep: 'Generate when the chord chart is ready.',
     });
   });
@@ -38,10 +39,10 @@ describe('generate', () => {
     expect(getMidiGenerationReadinessTruth('3/4')).toEqual({
       state: 'blocked',
       currentState:
-        'MIDI generation is blocked for 3/4 because the current pitched-instrument generator patterns are only verified for 4/4.',
+        'MIDI generation is blocked in 3/4 because full-arrangement generation is currently verified only in 4/4.',
       summary:
         'Drum patterns can adapt to other meters, but bass, piano, guitar, and strings still assume 4-beat bars.',
-      nextStep: 'Switch the project time signature to 4/4 before generating a full arrangement.',
+      nextStep: 'Change the project time signature to 4/4, then generate the full arrangement.',
     });
   });
 

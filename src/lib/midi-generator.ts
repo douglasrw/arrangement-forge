@@ -48,17 +48,20 @@ export function getMidiGenerationReadinessTruth(timeSignature: string): MidiGene
   if (timeSignature === '4/4') {
     return {
       state: 'ready',
-      currentState: 'MIDI generation is ready to build a full arrangement in 4/4.',
-      summary: 'The current meter matches the supported full-arrangement generator path.',
+      currentState:
+        'MIDI generation is ready in 4/4 because drums, bass, piano, guitar, and strings all use the supported full-arrangement path.',
+      summary: '4/4 is the only verified meter for the current full-arrangement generator.',
       nextStep: 'Generate when the chord chart is ready.',
     };
   }
 
   return {
     state: 'blocked',
-    currentState: `MIDI generation is blocked for ${timeSignature} because the current pitched-instrument generator patterns are only verified for 4/4.`,
-    summary: 'Drum patterns can adapt to other meters, but bass, piano, guitar, and strings still assume 4-beat bars.',
-    nextStep: 'Switch the project time signature to 4/4 before generating a full arrangement.',
+    currentState:
+      `MIDI generation is blocked in ${timeSignature} because full-arrangement generation is currently verified only in 4/4.`,
+    summary:
+      'Drum patterns can adapt to other meters, but bass, piano, guitar, and strings still assume 4-beat bars.',
+    nextStep: 'Change the project time signature to 4/4, then generate the full arrangement.',
   };
 }
 

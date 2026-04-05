@@ -114,8 +114,9 @@ beforeEach(() => {
   parseChordChartMock.mockReset();
   getMidiGenerationReadinessTruthMock.mockReturnValue({
     state: 'ready',
-    currentState: 'MIDI generation is ready to build a full arrangement in 4/4.',
-    summary: 'The current meter matches the supported full-arrangement generator path.',
+    currentState:
+      'MIDI generation is ready in 4/4 because drums, bass, piano, guitar, and strings all use the supported full-arrangement path.',
+    summary: '4/4 is the only verified meter for the current full-arrangement generator.',
     nextStep: 'Generate when the chord chart is ready.',
   });
 
@@ -435,10 +436,10 @@ describe('useGenerate assistant prompt flow', () => {
     getMidiGenerationReadinessTruthMock.mockReturnValue({
       state: 'blocked',
       currentState:
-        'MIDI generation is blocked for 3/4 because the current pitched-instrument generator patterns are only verified for 4/4.',
+        'MIDI generation is blocked in 3/4 because full-arrangement generation is currently verified only in 4/4.',
       summary:
         'Drum patterns can adapt to other meters, but bass, piano, guitar, and strings still assume 4-beat bars.',
-      nextStep: 'Switch the project time signature to 4/4 before generating a full arrangement.',
+      nextStep: 'Change the project time signature to 4/4, then generate the full arrangement.',
     });
 
     const mounted = renderHarness();
@@ -457,14 +458,14 @@ describe('useGenerate assistant prompt flow', () => {
       generationState: 'idle',
       systemStatus: 'error',
       errorMessage:
-        'MIDI generation is blocked for 3/4 because the current pitched-instrument generator patterns are only verified for 4/4. Drum patterns can adapt to other meters, but bass, piano, guitar, and strings still assume 4-beat bars. Next step: Switch the project time signature to 4/4 before generating a full arrangement.',
+        'Current state: MIDI generation is blocked in 3/4 because full-arrangement generation is currently verified only in 4/4. Constraint: Drum patterns can adapt to other meters, but bass, piano, guitar, and strings still assume 4-beat bars. Next step: Change the project time signature to 4/4, then generate the full arrangement.',
     });
     expect(saveProjectMock).toHaveBeenCalledTimes(1);
     expect(useProjectStore.getState().chatMessages[0]).toMatchObject({
       role: 'assistant',
       scope: 'setup',
       content:
-        'Generation failed: MIDI generation is blocked for 3/4 because the current pitched-instrument generator patterns are only verified for 4/4. Drum patterns can adapt to other meters, but bass, piano, guitar, and strings still assume 4-beat bars. Next step: Switch the project time signature to 4/4 before generating a full arrangement.',
+        'Generation failed: Current state: MIDI generation is blocked in 3/4 because full-arrangement generation is currently verified only in 4/4. Constraint: Drum patterns can adapt to other meters, but bass, piano, guitar, and strings still assume 4-beat bars. Next step: Change the project time signature to 4/4, then generate the full arrangement.',
     });
   });
 
