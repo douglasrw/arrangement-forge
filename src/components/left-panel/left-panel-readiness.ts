@@ -1,4 +1,5 @@
 import type { ChordChartParseTruth } from "@/lib/chord-chart-parser"
+import type { ProjectSelectionTruth } from "@/store/project-store"
 import type { GenerationState, SystemStatus } from "@/types"
 
 export type LeftPanelTruthTone = "ready" | "attention" | "neutral"
@@ -60,6 +61,15 @@ export type LeftPanelCoordinationTruth = {
   }
 }
 
+export type LeftPanelShellSelectionTruth = {
+  badge: string
+  title: string
+  scopeLabel: string
+  scopeValue: string
+  detail: string
+  tone: LeftPanelTruthTone
+}
+
 function describeBlockedChordChart(parseTruth?: ChordChartParseTruth | null) {
   const currentState = parseTruth?.currentState?.trim()
   const summary = parseTruth?.summary?.trim()
@@ -102,6 +112,52 @@ function describeAssistantFailure(errorMessage?: string | null) {
   }
 
   return `${normalizedMessage} Next step: Review the current input blockers, then try again.`
+}
+
+export function getLeftPanelShellSelectionTruth(
+  selectionTruth: ProjectSelectionTruth
+): LeftPanelShellSelectionTruth {
+  if (selectionTruth.selectionSource === "missing") {
+    return {
+      badge: "Fallback",
+      title: "Whole-song fallback",
+      scopeLabel: "Active scope",
+      scopeValue: "Whole song default",
+      detail: `${selectionTruth.currentState} ${selectionTruth.nextStep}`.trim(),
+      tone: "attention",
+    }
+  }
+
+  if (selectionTruth.selectionLevel === "section") {
+    return {
+      badge: "Selected",
+      title: "Section selection active",
+      scopeLabel: "Active scope",
+      scopeValue: "Section selection",
+      detail: `${selectionTruth.currentState} ${selectionTruth.nextStep}`.trim(),
+      tone: "ready",
+    }
+  }
+
+  if (selectionTruth.selectionLevel === "block") {
+    return {
+      badge: "Selected",
+      title: "Block selection active",
+      scopeLabel: "Active scope",
+      scopeValue: "Block selection",
+      detail: `${selectionTruth.currentState} ${selectionTruth.nextStep}`.trim(),
+      tone: "ready",
+    }
+  }
+
+  return {
+    badge: "Default",
+    title: "Whole-song default",
+    scopeLabel: "Active scope",
+    scopeValue: "Whole song default",
+    detail: `${selectionTruth.currentState} ${selectionTruth.nextStep}`.trim(),
+    tone: "neutral",
+  }
 }
 
 export function getInputReadinessTruth({

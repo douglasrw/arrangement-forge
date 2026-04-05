@@ -167,10 +167,23 @@ afterEach(() => {
 
 describe('LeftPanel inspector truth regression', () => {
   it('coordinates subsection readiness truth before the operator opens each section', () => {
+    useSelectionStore.setState({
+      level: 'song',
+      sectionId: null,
+      blockId: null,
+      stemId: null,
+    });
+
     const mounted = renderLeftPanel({ mode: 'default' });
     mountedRoot = mounted.root;
     mountedContainer = mounted.container;
 
+    expect(mounted.container.querySelector('[data-left-panel-shell-selection="default"]')).not.toBeNull();
+    expect(mounted.container.textContent).toContain('Whole-song default');
+    expect(mounted.container.textContent).toContain(
+      'No section or block is selected, so the project store is using whole-song defaults right now.'
+    );
+    expect(mounted.container.textContent).toContain('Active scope');
     expect(mounted.container.querySelector('[data-left-panel-coordination="waiting"]')).not.toBeNull();
     expect(mounted.container.querySelector('[data-left-panel-readiness="waiting"]')).not.toBeNull();
     expect(mounted.container.textContent).toContain('Waiting');
@@ -285,6 +298,41 @@ describe('LeftPanel inspector truth regression', () => {
     expect(mounted.container.textContent).toContain('The left panel is coordinated');
     expect(mounted.container.textContent).toContain(
       'Input is ready, style controls shape the next pass, and the assistant can request arrangement changes without hidden prerequisites.'
+    );
+  });
+
+  it('surfaces explicit shell selection truth instead of leaving section scope implicit', () => {
+    const mounted = renderLeftPanel({ mode: 'default' });
+    mountedRoot = mounted.root;
+    mountedContainer = mounted.container;
+
+    expect(mounted.container.querySelector('[data-left-panel-shell-selection="selected"]')).not.toBeNull();
+    expect(mounted.container.textContent).toContain('Section selection active');
+    expect(mounted.container.textContent).toContain(
+      'Section Verse is selected in the project store for bars 1-8.'
+    );
+    expect(mounted.container.textContent).toContain('Section selection');
+  });
+
+  it('surfaces whole-song fallback when the shell selection no longer resolves', () => {
+    useSelectionStore.setState({
+      level: 'block',
+      sectionId: null,
+      blockId: 'missing-block',
+      stemId: 'missing-stem',
+    });
+
+    const mounted = renderLeftPanel({ mode: 'default' });
+    mountedRoot = mounted.root;
+    mountedContainer = mounted.container;
+
+    expect(mounted.container.querySelector('[data-left-panel-shell-selection="fallback"]')).not.toBeNull();
+    expect(mounted.container.textContent).toContain('Whole-song fallback');
+    expect(mounted.container.textContent).toContain(
+      'The project store still references a block selection that no longer resolves to live arrangement rows, so whole-song defaults are the only safe scope right now.'
+    );
+    expect(mounted.container.textContent).toContain(
+      'Clear the stale block selection or reload the matching arrangement rows before relying on block-scoped edits.'
     );
   });
 

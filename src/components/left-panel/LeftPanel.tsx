@@ -13,9 +13,11 @@ import { SectionContext } from "./SectionContext"
 import { BlockContext } from "./BlockContext"
 import {
   getLeftPanelCoordinationTruth,
+  getLeftPanelShellSelectionTruth,
   type LeftPanelTruthTone,
 } from "./left-panel-readiness"
-import { useProjectStore } from "@/store/project-store"
+import { getProjectSelectionTruth, useProjectStore } from "@/store/project-store"
+import { useSelectionStore } from "@/store/selection-store"
 import { useUiStore } from "@/store/ui-store"
 import { parseChordChart } from "@/lib/chord-chart-parser"
 import { isGenerationFailureContent } from "@/lib/assistant-chat"
@@ -155,7 +157,14 @@ export function LeftPanel({
   onContextClose,
 }: LeftPanelProps) {
   const project = useProjectStore((s) => s.project)
+  const stems = useProjectStore((s) => s.stems)
+  const sections = useProjectStore((s) => s.sections)
+  const blocks = useProjectStore((s) => s.blocks)
   const chatMessages = useProjectStore((s) => s.chatMessages)
+  const selectionLevel = useSelectionStore((s) => s.level)
+  const selectionSectionId = useSelectionStore((s) => s.sectionId)
+  const selectionBlockId = useSelectionStore((s) => s.blockId)
+  const selectionStemId = useSelectionStore((s) => s.stemId)
   const isInspector = context.mode !== "default"
   const generationState = useUiStore((s) => s.generationState)
   const systemStatus = useUiStore((s) => s.systemStatus)
@@ -181,6 +190,21 @@ export function LeftPanel({
     systemStatus: latestAssistantFailure ? "error" : systemStatus,
     errorMessage: latestAssistantFailure?.content ?? errorMessage,
   })
+  const shellSelectionTruth = getLeftPanelShellSelectionTruth(
+    getProjectSelectionTruth(
+      {
+        stems,
+        sections,
+        blocks,
+      },
+      {
+        level: selectionLevel,
+        sectionId: selectionSectionId,
+        blockId: selectionBlockId,
+        stemId: selectionStemId,
+      }
+    )
+  )
   const defaultSection: AccordionSection =
     generationState === "complete" ? "style" : "input"
   const [expanded, setExpanded] = useState<AccordionSection>(defaultSection)
@@ -218,6 +242,37 @@ export function LeftPanel({
 
         {context.mode === "default" && (
           <div className="flex min-h-0 flex-1 flex-col gap-2 overflow-hidden p-2">
+            <div
+              data-left-panel-shell-selection={shellSelectionTruth.badge.toLowerCase()}
+              className={cn(
+                "rounded-lg border px-3 py-2 text-xs leading-relaxed",
+                getTruthContainerClassName(shellSelectionTruth.tone)
+              )}
+            >
+              <div className="flex flex-wrap items-center gap-2">
+                <span
+                  className={cn(
+                    "rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.18em]",
+                    getTruthBadgeClassName(shellSelectionTruth.tone)
+                  )}
+                >
+                  {shellSelectionTruth.badge}
+                </span>
+                <span className="font-medium text-foreground">
+                  {shellSelectionTruth.title}
+                </span>
+              </div>
+              <p className="mt-1 text-muted-foreground">
+                {shellSelectionTruth.detail}
+              </p>
+              <div className="mt-2 flex flex-wrap items-center gap-2 text-[11px] text-muted-foreground">
+                <span className="font-medium uppercase tracking-[0.12em] text-foreground">
+                  {shellSelectionTruth.scopeLabel}
+                </span>
+                <span>{shellSelectionTruth.scopeValue}</span>
+              </div>
+            </div>
+
             <div
               data-left-panel-coordination={coordinationTruth.state}
               data-left-panel-readiness={coordinationTruth.state}
