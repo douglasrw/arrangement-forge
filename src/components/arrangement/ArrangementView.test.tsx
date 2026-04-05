@@ -472,8 +472,23 @@ describe('ArrangementView empty-state truth', () => {
 
     expect(selectionTruth?.textContent).toContain('Song default');
     expect(selectionTruth?.getAttribute('data-arrangement-selection-state')).toBe('default');
+    expect(
+      mounted.container.querySelector('[data-testid="chord-lane-selection-truth"]')?.textContent
+    ).toContain('Song default');
+    expect(
+      mounted.container
+        .querySelector('[data-testid="chord-lane-selection-truth"]')
+        ?.getAttribute('data-chord-lane-selection-state')
+    ).toBe('default');
     expect(mounted.container.textContent).toContain(
       'No section or block is selected. Lane headers target the first loaded block in each lane.'
+    );
+    expect(
+      mounted.container
+        .querySelector('[data-testid="chord-lane-selection-truth"]')
+        ?.getAttribute('title')
+    ).toContain(
+      'No section or block is selected. The chord lane is showing the whole-song chart every arrangement lane inherits.'
     );
     expect(defaultBadge?.textContent).toContain('Lane default');
   });
@@ -499,9 +514,17 @@ describe('ArrangementView empty-state truth', () => {
     const inheritedBadge = mounted.container.querySelector(
       '[data-block-selection-state="inherited"]'
     ) as HTMLSpanElement | null;
+    const chordSelectionTruth = mounted.container.querySelector(
+      '[data-testid="chord-lane-selection-truth"]'
+    ) as HTMLSpanElement | null;
 
     expect(selectionTruth?.textContent).toContain('Verse selected');
     expect(selectionTruth?.getAttribute('data-arrangement-selection-state')).toBe('inherited');
+    expect(chordSelectionTruth?.textContent).toContain('Verse selected');
+    expect(chordSelectionTruth?.getAttribute('data-chord-lane-selection-state')).toBe('selected');
+    expect(chordSelectionTruth?.getAttribute('title')).toContain(
+      'Verse is selected in the arrangement, but the chord lane still shows the whole-song chart this section inherits today.'
+    );
     expect(mounted.container.textContent).toContain(
       '4 bars in focus. Blocks inside this section inherit the active scope until you pick a block.'
     );
@@ -521,9 +544,17 @@ describe('ArrangementView empty-state truth', () => {
     const selectedBadge = mounted.container.querySelector(
       '[data-block-selection-state="selected"]'
     ) as HTMLSpanElement | null;
+    const chordSelectionTruth = mounted.container.querySelector(
+      '[data-testid="chord-lane-selection-truth"]'
+    ) as HTMLSpanElement | null;
 
     expect(selectionTruth?.textContent).toContain('DRUMS selected');
     expect(selectionTruth?.getAttribute('data-arrangement-selection-state')).toBe('selected');
+    expect(chordSelectionTruth?.textContent).toContain('DRUMS bars 1-4 selected');
+    expect(chordSelectionTruth?.getAttribute('data-chord-lane-selection-state')).toBe('selected');
+    expect(chordSelectionTruth?.getAttribute('title')).toContain(
+      'DRUMS bars 1-4 is selected in the arrangement, but the chord lane still shows the whole-song chart that block inherits today.'
+    );
     expect(mounted.container.textContent).toContain('Steady Groove covers bars 1-4.');
     expect(selectedBadge?.textContent).toContain('Selected');
   });

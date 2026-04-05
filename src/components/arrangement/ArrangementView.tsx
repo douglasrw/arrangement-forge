@@ -9,6 +9,7 @@ import { useGenerate } from "@/hooks/useGenerate"
 import { useShallow } from "zustand/react/shallow"
 import { useRef, useState, useEffect, useCallback } from "react"
 import type { Instrument } from "@/components/sequencer-block"
+import type { Block, Section, Stem } from "@/types"
 
 /* ------------------------------------------------------------------ */
 /*  Constants                                                          */
@@ -260,6 +261,66 @@ function getArrangementSelectionTruth({
   }
 }
 
+function getChordLaneSelectionTruth({
+  selectionLevel,
+  selectedSection,
+  selectedBlock,
+  selectedStem,
+}: {
+  selectionLevel: ReturnType<typeof useSelectionStore.getState>["level"]
+  selectedSection: Section | null
+  selectedBlock: Block | null
+  selectedStem: Stem | null
+}) {
+  if (selectionLevel === "section") {
+    if (!selectedSection) {
+      return {
+        state: "blocked" as const,
+        summary: "Selection missing",
+        detail:
+          "The current arrangement selection no longer resolves, so the chord lane is falling back to the whole-song chart until you clear or replace it.",
+      }
+    }
+
+    return {
+      state: "selected" as const,
+      summary: `${selectedSection.name} selected`,
+      detail: `${selectedSection.name} is selected in the arrangement, but the chord lane still shows the whole-song chart this section inherits today.`,
+    }
+  }
+
+  if (selectionLevel === "block") {
+    if (!selectedBlock) {
+      return {
+        state: "blocked" as const,
+        summary: "Selection missing",
+        detail:
+          "The current arrangement selection no longer resolves, so the chord lane is falling back to the whole-song chart until you clear or replace it.",
+      }
+    }
+
+    const stemLabel = selectedStem
+      ? ARRANGEMENT_LANE_LABELS[selectedStem.instrument]
+      : "Block"
+    const barLabel =
+      selectedBlock.startBar === selectedBlock.endBar
+        ? `bar ${selectedBlock.startBar}`
+        : `bars ${selectedBlock.startBar}-${selectedBlock.endBar}`
+
+    return {
+      state: "selected" as const,
+      summary: `${stemLabel} ${barLabel} selected`,
+      detail: `${stemLabel} ${barLabel} is selected in the arrangement, but the chord lane still shows the whole-song chart that block inherits today.`,
+    }
+  }
+
+  return {
+    state: "default" as const,
+    summary: "Song default",
+    detail: "No section or block is selected. The chord lane is showing the whole-song chart every arrangement lane inherits.",
+  }
+}
+
 /* ------------------------------------------------------------------ */
 /*  Empty state                                                        */
 /* ------------------------------------------------------------------ */
@@ -442,7 +503,14 @@ export function ArrangementView({
       errorMessage: s.errorMessage,
     }))
   )
-  const { sectionId: selectedSectionId, blockId: selectedBlockId, selectSection, selectBlock, selectSong } = useSelectionStore()
+  const {
+    level: selectionLevel,
+    sectionId: selectedSectionId,
+    blockId: selectedBlockId,
+    selectSection,
+    selectBlock,
+    selectSong,
+  } = useSelectionStore()
   const { transportState, playbackReadiness, playbackTruth, seek } = useAudio()
   const { runGeneration } = useGenerate()
   const hasAnyBlockSelected = selectedBlockId !== null
@@ -543,6 +611,9 @@ export function ArrangementView({
   const selectedBlock = selectedBlockId
     ? blocks.find((block) => block.id === selectedBlockId) ?? null
     : null
+  const selectedStem = selectedBlock
+    ? stems.find((stem) => stem.id === selectedBlock.stemId) ?? null
+    : null
   const selectedLane = selectedBlock
     ? arrangementLanes.find((lane) => lane.laneBlocks.some((block) => block.id === selectedBlock.id)) ?? null
     : null
@@ -559,6 +630,12 @@ export function ArrangementView({
       }
       : null,
     selectedLaneLabel: selectedLane?.label ?? null,
+  })
+  const chordLaneSelectionTruth = getChordLaneSelectionTruth({
+    selectionLevel,
+    selectedSection,
+    selectedBlock,
+    selectedStem,
   })
 
   /* Compute total bars and effective bar width (expand to fill viewport) */
@@ -714,6 +791,21 @@ export function ArrangementView({
             )}
           >
             {chordLaneTruth.badge}
+          </span>
+          <span
+            className={cn(
+              "truncate rounded-full border px-1.5 py-0.5 text-[8px] font-semibold tracking-[0.08em]",
+              chordLaneSelectionTruth.state === "selected"
+                ? "border-sky-400/30 bg-sky-500/10 text-sky-200"
+                : chordLaneSelectionTruth.state === "blocked"
+                  ? "border-destructive/30 bg-destructive/10 text-destructive"
+                  : "border-border/70 bg-secondary/70 text-muted-foreground"
+            )}
+            data-testid="chord-lane-selection-truth"
+            data-chord-lane-selection-state={chordLaneSelectionTruth.state}
+            title={chordLaneSelectionTruth.detail}
+          >
+            {chordLaneSelectionTruth.summary}
           </span>
         </div>
       </div>
