@@ -7,6 +7,7 @@ import {
   getDefaultProjectStyle,
   getDefaultProjectStyleTruth,
   getDefaultSubStyleForGenre,
+  getInstrumentStyleOptionById,
   getInstrumentStyleSelectionTruth,
   normalizeGenrePreference,
 } from './genre-config';
@@ -101,6 +102,14 @@ describe('project style defaults', () => {
 });
 
 describe('getInstrumentStyleSelectionTruth', () => {
+  it('exposes canonical instrument style option lookup', () => {
+    expect(getInstrumentStyleOptionById('guitar', 'rhythm_strum')).toEqual({
+      id: 'rhythm_strum',
+      label: 'Rhythm Strum',
+    });
+    expect(getInstrumentStyleOptionById('guitar', 'surf_lead')).toBeNull();
+  });
+
   it('reports the selected bass style when the request is supported', () => {
     expect(getInstrumentStyleSelectionTruth('bass', 'slap')).toMatchObject({
       instrument: 'bass',

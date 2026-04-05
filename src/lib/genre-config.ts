@@ -133,6 +133,17 @@ export function getSupportedInstrumentStyles(instrument: InstrumentType): StyleO
   return INSTRUMENT_STYLE_OPTIONS[instrument];
 }
 
+export function getInstrumentStyleOptionById(
+  instrument: InstrumentType,
+  styleId: string | null | undefined
+): StyleOption | null {
+  if (!styleId) {
+    return null;
+  }
+
+  return getSupportedInstrumentStyles(instrument).find((option) => option.id === styleId) ?? null;
+}
+
 export function getInstrumentStyleSelectionTruth(
   instrument: InstrumentType,
   styleId: string | null | undefined

@@ -39,6 +39,11 @@ describe('getGuitarPatternSelectionTruth', () => {
       defaultStyleLabel: 'Power Chords',
       selectedStyleId: 'muted_funk',
       selectedStyleLabel: 'Muted Funk',
+      fallbackStyleId: 'rhythm_strum',
+      fallbackStyleLabel: 'Rhythm Strum',
+      patternSource: 'requested_style',
+      selectionPolicy:
+        'Supported guitar styles use their matching named pattern, so Muted Funk selects muted_funk_01. Unsupported guitar requests still fall back to Rhythm Strum.',
       supportedStyleIds: ['power_chords', 'fingerpick_arpeggios', 'rhythm_strum', 'muted_funk'],
       supportedStyleLabels: ['Power Chords', 'Fingerpick Arpeggios', 'Rhythm Strum', 'Muted Funk'],
       fallbackApplied: false,
@@ -60,6 +65,11 @@ describe('getGuitarPatternSelectionTruth', () => {
       defaultStyleLabel: 'Power Chords',
       selectedStyleId: 'power_chords',
       selectedStyleLabel: 'Power Chords',
+      fallbackStyleId: 'rhythm_strum',
+      fallbackStyleLabel: 'Rhythm Strum',
+      patternSource: 'default_style',
+      selectionPolicy:
+        'When no guitar style is requested, guitar uses the default Power Chords style and its matching pattern power_chords_01. Unsupported guitar requests fall back to Rhythm Strum.',
       fallbackApplied: false,
       summary: 'No guitar style was requested, so the default Power Chords pattern power_chords_01 is active.',
       currentState:
@@ -80,12 +90,18 @@ describe('getGuitarPatternSelectionTruth', () => {
       defaultStyleLabel: 'Power Chords',
       selectedStyleId: 'rhythm_strum',
       selectedStyleLabel: 'Rhythm Strum',
+      fallbackStyleId: 'rhythm_strum',
+      fallbackStyleLabel: 'Rhythm Strum',
+      patternSource: 'unsupported_style_safe_fallback',
+      selectionPolicy:
+        'Unsupported guitar styles do not fall back to the default Power Chords style. They fall back to the safer Rhythm Strum pattern rhythm_strum_01.',
       fallbackApplied: true,
-      summary: 'Requested guitar style surf_lead falls back to Rhythm Strum with pattern rhythm_strum_01.',
+      summary:
+        'Requested guitar style surf_lead is unsupported, so guitar uses the safer Rhythm Strum fallback pattern rhythm_strum_01 instead of the default Power Chords style.',
       currentState:
-        'Requested guitar style "surf_lead" is unavailable, so guitar style Rhythm Strum is active with fallback pattern rhythm_strum_01.',
+        'Requested guitar style "surf_lead" is unavailable. Guitar is currently using the Rhythm Strum fallback pattern rhythm_strum_01; the normal default remains Power Chords.',
       nextStep:
-        'Choose one of the supported guitar styles: Power Chords, Fingerpick Arpeggios, Rhythm Strum, Muted Funk (power_chords, fingerpick_arpeggios, rhythm_strum, muted_funk).',
+        'Choose one of the supported guitar styles if you want something other than the current Rhythm Strum fallback: Power Chords, Fingerpick Arpeggios, Rhythm Strum, Muted Funk (power_chords, fingerpick_arpeggios, rhythm_strum, muted_funk).',
     });
     expect(selection.selectedPattern.id).toBe('rhythm_strum_01');
   });
