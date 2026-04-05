@@ -1,14 +1,16 @@
 import { ArrowUp } from "lucide-react"
 import { useEffect, useRef, useState } from "react"
 import { ScrollArea } from "@/components/ui/scroll-area"
-import { getAssistantSelectionPresentation, useGenerate } from "@/hooks/useGenerate"
+import { useGenerate } from "@/hooks/useGenerate"
 import {
+  getAssistantSelectionPresentation,
   getGenerationFailureNextStep,
   getGenerationFailurePrimaryDetail,
   isGenerationFailureContent,
 } from "@/lib/assistant-chat"
 import { parseChordChart } from "@/lib/chord-chart-parser"
 import { useProjectStore } from "@/store/project-store"
+import { useSelectionStore } from "@/store/selection-store"
 import { useUiStore } from "@/store/ui-store"
 import { cn } from "@/lib/utils"
 import type { AiChatMessage } from "@/types"
@@ -52,6 +54,10 @@ export function AiAssistantSection() {
   const stems = useProjectStore((state) => state.stems)
   const sections = useProjectStore((state) => state.sections)
   const blocks = useProjectStore((state) => state.blocks)
+  const selectionLevel = useSelectionStore((state) => state.level)
+  const selectionSectionId = useSelectionStore((state) => state.sectionId)
+  const selectionBlockId = useSelectionStore((state) => state.blockId)
+  const selectionStemId = useSelectionStore((state) => state.stemId)
   const generationState = useUiStore((state) => state.generationState)
   const systemStatus = useUiStore((state) => state.systemStatus)
   const errorMessage = useUiStore((state) => state.errorMessage)
@@ -96,10 +102,17 @@ export function AiAssistantSection() {
         ? "waiting"
         : "ready",
   }
+  const selection = {
+    level: selectionLevel,
+    sectionId: selectionSectionId,
+    blockId: selectionBlockId,
+    stemId: selectionStemId,
+  }
   const assistantSelectionTruth = getAssistantSelectionPresentation({
     sections,
     blocks,
     stems,
+    selection,
   })
 
   function handleSend() {

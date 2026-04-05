@@ -295,6 +295,76 @@ describe('AiAssistantSection', () => {
     );
   });
 
+  it('updates assistant selection truth when the selection store changes after render', () => {
+    useProjectStore.setState({
+      stems: [
+        {
+          id: 'stem-1',
+          projectId: 'p1',
+          instrument: 'piano',
+          sortOrder: 0,
+          volume: 0.8,
+          pan: 0,
+          isMuted: false,
+          isSolo: false,
+          createdAt: '2026-03-28T00:00:00Z',
+        },
+      ],
+      sections: [
+        {
+          id: 'section-1',
+          projectId: 'p1',
+          name: 'Verse',
+          sortOrder: 0,
+          barCount: 8,
+          startBar: 1,
+          energyOverride: null,
+          grooveOverride: null,
+          feelOverride: null,
+          swingPctOverride: null,
+          dynamicsOverride: null,
+          createdAt: '2026-03-28T00:00:00Z',
+        },
+      ],
+      blocks: [
+        {
+          id: 'block-1',
+          stemId: 'stem-1',
+          sectionId: 'section-1',
+          startBar: 3,
+          endBar: 4,
+          chordDegree: null,
+          chordQuality: null,
+          chordBassDegree: null,
+          style: 'comp',
+          energyOverride: null,
+          dynamicsOverride: null,
+          midiData: [],
+          createdAt: '2026-03-28T00:00:00Z',
+        },
+      ],
+    });
+
+    const mounted = renderSection();
+    mountedRoot = mounted.root;
+    mountedContainer = mounted.container;
+
+    const selectionTruth = () =>
+      mounted.container.querySelector('[data-testid="ai-assistant-selection-truth"]');
+
+    expect(selectionTruth()?.textContent).toContain('Whole song default');
+
+    act(() => {
+      useSelectionStore.getState().selectBlock('block-1', 'stem-1');
+    });
+
+    expect(selectionTruth()?.textContent).toContain('Selected scope');
+    expect(selectionTruth()?.textContent).toContain('piano 3-4 in Verse');
+    expect(selectionTruth()?.textContent).toContain(
+      'Keep editing this block, or clear the selection to return to whole-song defaults.'
+    );
+  });
+
   it('surfaces missing selection truth as an assistant fallback instead of hiding it', () => {
     useSelectionStore.setState({
       level: 'block',

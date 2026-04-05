@@ -4,7 +4,6 @@
 import { useCallback, useEffect, useRef } from 'react';
 import {
   getProjectArrangementTruth,
-  getProjectSelectionTruth,
   useProjectStore,
 } from '@/store/project-store';
 import { useUiStore } from '@/store/ui-store';
@@ -17,7 +16,10 @@ import {
 } from '@/lib/midi-generator';
 import { parseChordChart } from '@/lib/chord-chart-parser';
 import { getEffectiveSwingPct } from '@/lib/genre-config';
-import { formatGenerationFailureMessage } from '@/lib/assistant-chat';
+import {
+  formatGenerationFailureMessage,
+  getAssistantSelectionPresentation,
+} from '@/lib/assistant-chat';
 import { snapshotArrangement } from '@/lib/undo-helpers';
 import { useSelectionStore } from '@/store/selection-store';
 import type {
@@ -51,15 +53,6 @@ type ChordParseFailureLike = {
 };
 
 type AssistantMessageScope = {
-  scope: AiChatMessage['scope'];
-  scopeTarget: string | null;
-};
-
-export type AssistantSelectionPresentation = {
-  tone: 'ready' | 'blocked';
-  badge: string;
-  value: string;
-  detail: string;
   scope: AiChatMessage['scope'];
   scopeTarget: string | null;
 };
@@ -225,71 +218,6 @@ function describeMidiGenerationBlocker(readiness: {
   ].join(' ');
 }
 
-function formatBarRange(startBar: number, endBar: number): string {
-  return startBar === endBar ? `bar ${startBar}` : `bars ${startBar}-${endBar}`;
-}
-
-export function getAssistantSelectionPresentation(state: {
-  sections: Section[];
-  blocks: Block[];
-  stems: Stem[];
-}): AssistantSelectionPresentation {
-  const selectionTruth = getProjectSelectionTruth(state, useSelectionStore.getState());
-
-  if (selectionTruth.status === 'selected-section') {
-    const section = state.sections.find((candidate) => candidate.id === selectionTruth.sectionId);
-
-    if (section) {
-      return {
-        tone: 'ready',
-        badge: 'Selected scope',
-        value: `${section.name} (${section.startBar}-${section.startBar + section.barCount - 1})`,
-        detail: selectionTruth.nextStep,
-        scope: 'section',
-        scopeTarget: `${section.name} (${formatBarRange(section.startBar, section.startBar + section.barCount - 1)})`,
-      };
-    }
-  }
-
-  if (selectionTruth.status === 'selected-block') {
-    const block = state.blocks.find((candidate) => candidate.id === selectionTruth.blockId);
-    const stem = state.stems.find((candidate) => candidate.id === selectionTruth.stemId);
-    const section = state.sections.find((candidate) => candidate.id === selectionTruth.sectionId);
-
-    if (block && stem && section) {
-      const instrumentLabel = `${stem.instrument.charAt(0).toUpperCase()}${stem.instrument.slice(1)}`;
-
-      return {
-        tone: 'ready',
-        badge: 'Selected scope',
-        value: `${stem.instrument} ${block.startBar}-${block.endBar} in ${section.name}`,
-        detail: selectionTruth.nextStep,
-        scope: 'block',
-        scopeTarget: `${instrumentLabel} ${formatBarRange(block.startBar, block.endBar)} in ${section.name}`,
-      };
-    }
-  }
-
-  if (selectionTruth.status === 'missing-selection') {
-    return {
-      tone: 'blocked',
-      badge: 'Fallback scope',
-      value: 'Whole song fallback',
-      detail: `${selectionTruth.currentState} ${selectionTruth.nextStep}`.trim(),
-      scope: 'song',
-      scopeTarget: 'Whole song fallback',
-    };
-  }
-
-  return {
-    tone: 'ready',
-    badge: 'Default scope',
-    value: 'Whole song default',
-    detail: `${selectionTruth.currentState} ${selectionTruth.nextStep}`.trim(),
-    scope: 'song',
-    scopeTarget: 'Whole song default',
-  };
-}
 
 export function useGenerate() {
   const {
@@ -327,6 +255,7 @@ export function useGenerate() {
       sections,
       blocks,
       stems,
+      selection: useSelectionStore.getState(),
     });
 
     if (trimmedAssistantPrompt) {
