@@ -130,6 +130,15 @@ export function AiAssistantSection() {
         : isGenerating
           ? "Generating from your latest request..."
           : "Assistant history is empty. Ask for a generation or revision and the result will be tracked here."
+  const assistantPromptPlaceholder = !project
+    ? "Load a project to use the assistant..."
+    : !hasChordChart
+      ? "Add a chord chart first..."
+      : hasParseIssues
+        ? "Fix blocked chord bars first..."
+        : isGenerating
+          ? "Generating..."
+          : `Describe the arrangement change you want for ${assistantSelectionTruth.scopeTarget ?? assistantSelectionTruth.value}...`
 
   return (
     <div className="flex flex-1 flex-col gap-2 overflow-hidden">
@@ -278,17 +287,7 @@ export function AiAssistantSection() {
                   handleSend()
                 }
               }}
-              placeholder={
-                !project
-                  ? "Load a project to use the assistant..."
-                  : !hasChordChart
-                    ? "Add a chord chart first..."
-                    : hasParseIssues
-                      ? "Fix blocked chord bars first..."
-                    : isGenerating
-                      ? "Generating..."
-                      : "Describe the arrangement change you want..."
-              }
+              placeholder={assistantPromptPlaceholder}
               className="flex-1 bg-transparent text-xs text-foreground placeholder:text-muted-foreground focus:outline-none"
             />
             <button

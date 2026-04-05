@@ -252,6 +252,11 @@ describe('AiAssistantSection', () => {
     expect(selectionTruth?.textContent).toContain(
       'No section or block is selected, so the project store is using whole-song defaults right now.'
     );
+
+    const input = mounted.container.querySelector('#ai-input') as HTMLInputElement | null;
+    expect(input?.placeholder).toBe(
+      'Describe the arrangement change you want for Whole song default...'
+    );
   });
 
   it('surfaces explicit section scope in the assistant panel instead of leaving it implicit', () => {
@@ -292,6 +297,11 @@ describe('AiAssistantSection', () => {
     expect(selectionTruth?.textContent).toContain('Verse (1-8)');
     expect(selectionTruth?.textContent).toContain(
       'Keep editing this section, or clear the selection to return to whole-song defaults.'
+    );
+
+    const input = mounted.container.querySelector('#ai-input') as HTMLInputElement | null;
+    expect(input?.placeholder).toBe(
+      'Describe the arrangement change you want for Verse (bars 1-8)...'
     );
   });
 
@@ -385,6 +395,11 @@ describe('AiAssistantSection', () => {
     expect(selectionTruth?.textContent).toContain('Whole song fallback');
     expect(selectionTruth?.textContent).toContain(
       'The project store still references a block selection that no longer resolves to live arrangement rows, so whole-song defaults are the only safe scope right now.'
+    );
+
+    const input = mounted.container.querySelector('#ai-input') as HTMLInputElement | null;
+    expect(input?.placeholder).toBe(
+      'Describe the arrangement change you want for Whole song fallback...'
     );
   });
 
