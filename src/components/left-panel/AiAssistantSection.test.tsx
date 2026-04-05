@@ -347,6 +347,9 @@ describe('AiAssistantSection', () => {
       systemStatus: 'error',
       errorMessage: 'Generator offline',
     });
+    useProjectStore.setState({
+      chatMessages: [makeMessage({ content: 'Generation failed: Generator offline' })],
+    });
 
     const mounted = renderSection();
     mountedRoot = mounted.root;
@@ -362,6 +365,26 @@ describe('AiAssistantSection', () => {
       'Next step: Review the current input blockers, then try again.'
     );
     expect(composerState?.textContent).not.toContain('Assistant is ready');
+  });
+
+  it('keeps the assistant ready when the last failure came from non-assistant generation', () => {
+    useUiStore.setState({
+      generationState: 'complete',
+      systemStatus: 'error',
+      errorMessage: 'Generator offline',
+    });
+
+    const mounted = renderSection();
+    mountedRoot = mounted.root;
+    mountedContainer = mounted.container;
+
+    const composerState = mounted.container.querySelector(
+      '[data-testid="ai-assistant-composer-state"]'
+    );
+
+    expect(composerState?.textContent).toContain('Assistant is ready');
+    expect(composerState?.textContent).not.toContain('Assistant request failed');
+    expect(composerState?.textContent).not.toContain('Generator offline');
   });
 
   it('keeps the blocked parse-failure reason visible before the assistant can send', () => {
@@ -454,6 +477,9 @@ describe('AiAssistantSection', () => {
     expect(failureBubble).not.toBeNull();
     expect(failureBubble?.textContent).toContain('Generation failed');
     expect(failureBubble?.textContent).toContain('Generator offline');
+    expect(failureBubble?.textContent).toContain(
+      'Next step: Review the current input blockers, then try again.'
+    );
   });
 
   it('keeps successful assistant replies visually distinct from failed generations', () => {

@@ -2,7 +2,11 @@ import { ArrowUp } from "lucide-react"
 import { useEffect, useRef, useState } from "react"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { getAssistantSelectionPresentation, useGenerate } from "@/hooks/useGenerate"
-import { getGenerationFailureDetail, isGenerationFailureContent } from "@/lib/assistant-chat"
+import {
+  getGenerationFailureNextStep,
+  getGenerationFailurePrimaryDetail,
+  isGenerationFailureContent,
+} from "@/lib/assistant-chat"
 import { parseChordChart } from "@/lib/chord-chart-parser"
 import { useProjectStore } from "@/store/project-store"
 import { useUiStore } from "@/store/ui-store"
@@ -64,14 +68,18 @@ export function AiAssistantSection() {
   const hasParseIssues = parseTruth?.state === "blocked"
   const isGenerating = generationState === "generating"
   const canSend = Boolean(project && hasChordChart && !hasParseIssues && trimmedInput && !isGenerating)
+  const latestAssistantFailure = [...chatMessages]
+    .reverse()
+    .find((message) => isFailureMessage(message))
+  const hasActiveAssistantFailure = systemStatus === "error" && Boolean(latestAssistantFailure)
   const assistantReadiness = getAiAssistantReadinessTruth({
     hasProject: Boolean(project),
     hasChordChart,
     hasParseIssues,
     parseTruth,
     generationState,
-    systemStatus,
-    errorMessage,
+    systemStatus: hasActiveAssistantFailure ? systemStatus : undefined,
+    errorMessage: hasActiveAssistantFailure ? latestAssistantFailure?.content ?? errorMessage : null,
   })
   const composerStatus = {
     badge: assistantReadiness.badge,
@@ -149,7 +157,10 @@ export function AiAssistantSection() {
                         <div className="mb-1 text-[10px] font-semibold uppercase tracking-wider text-warning">
                           Generation failed
                         </div>
-                        <div>{getGenerationFailureDetail(message.content)}</div>
+                        <div>{getGenerationFailurePrimaryDetail(message.content)}</div>
+                        <div className="mt-1 text-muted-foreground">
+                          Next step: {getGenerationFailureNextStep(message.content)}
+                        </div>
                       </>
                     ) : (
                       message.content
