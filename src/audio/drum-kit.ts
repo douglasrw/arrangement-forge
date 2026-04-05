@@ -3,6 +3,16 @@
 
 import * as Tone from 'tone';
 
+export type DrumKitSelectionSource = 'default' | 'inherited' | 'selected';
+
+export interface DrumKitSelectionTruth {
+  kitId: string;
+  kitLabel: string;
+  selectionSource: DrumKitSelectionSource;
+  summary: string;
+  detail: string;
+}
+
 /**
  * Interface for drum kit implementations, matching the subset of Tone.Sampler
  * methods that engine.ts actually uses for scheduling and signal routing.
@@ -21,6 +31,7 @@ export interface DrumKitLike {
   getVoiceGroups(): { name: string; label: string; voices: string[] }[];
   getVoiceGroupGain(groupName: string): number;
   setVoiceGroupGain(groupName: string, value: number): void;
+  getSelectionTruth(): DrumKitSelectionTruth;
 }
 
 // GM Drum Note Map (Tone.js note names)

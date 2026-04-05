@@ -4,7 +4,7 @@ import { act } from 'react';
 import { createRoot, type Root } from 'react-dom/client';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { MixerDrawer } from './MixerDrawer';
-import type { DrumKitLike } from '@/audio/drum-kit';
+import type { DrumKitLike, DrumKitSelectionTruth } from '@/audio/drum-kit';
 import { useProjectStore } from '@/store/project-store';
 import { useUiStore } from '@/store/ui-store';
 import type {
@@ -132,6 +132,15 @@ function findElementByTitle(container: HTMLElement, title: string): HTMLElement 
 }
 
 function makeDrumKit(overrides: Partial<DrumKitLike> = {}): DrumKitLike {
+  const defaultSelectionTruth: DrumKitSelectionTruth = {
+    kitId: 'salamander',
+    kitLabel: 'Salamander',
+    selectionSource: 'default',
+    summary: 'Default Salamander kit',
+    detail:
+      'Drums use the built-in Salamander sampled kit by default because no alternate drum kit is selected in this session.',
+  };
+
   const drumKit: DrumKitLike = {
     triggerAttackRelease: () => undefined,
     connect: () => drumKit,
@@ -141,6 +150,7 @@ function makeDrumKit(overrides: Partial<DrumKitLike> = {}): DrumKitLike {
     getVoiceGroups: () => [],
     getVoiceGroupGain: () => 1,
     setVoiceGroupGain: () => undefined,
+    getSelectionTruth: () => defaultSelectionTruth,
     ...overrides,
   };
 
@@ -747,6 +757,49 @@ describe('MixerDrawer', () => {
     );
     expect(mounted.container.textContent).toContain('...');
     expect((mounted.container.querySelector('#drum-sub-kick') as HTMLInputElement | null)?.disabled).toBe(true);
+  });
+
+  it('shows the active drum kit truth when the sampled kit is available', () => {
+    useProjectStore.setState({
+      stems: [makeStem({ id: 'st-drums', instrument: 'drums', sortOrder: 0 })],
+    });
+
+    useAudioState.engine = {
+      getDrumKit: () =>
+        makeDrumKit({
+          getSelectionTruth: () => ({
+            kitId: 'salamander',
+            kitLabel: 'Salamander',
+            selectionSource: 'default',
+            summary: 'Default Salamander kit',
+            detail:
+              'Drums use the built-in Salamander sampled kit by default because no alternate drum kit is selected in this session.',
+          }),
+        }),
+    };
+
+    const mounted = renderMixer();
+    mountedRoot = mounted.root;
+    mountedContainer = mounted.container;
+
+    expect(mounted.container.textContent).toContain('Default Salamander kit');
+    expect(
+      findElementByTitle(
+        mounted.container,
+        'Drums use the built-in Salamander sampled kit by default because no alternate drum kit is selected in this session.'
+      )?.textContent
+    ).toContain('Default Salamander kit');
+
+    const drumButton = findButtonByText(mounted.container, 'DRUMS');
+
+    act(() => {
+      drumButton?.dispatchEvent(new MouseEvent('click', { bubbles: true }));
+    });
+
+    expect(mounted.container.textContent).toContain('Salamander');
+    expect(mounted.container.textContent).toContain(
+      'Drums use the built-in Salamander sampled kit by default because no alternate drum kit is selected in this session.'
+    );
   });
 
   it('shows drum sub-mix error truth when sample loading fails', () => {

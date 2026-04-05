@@ -4,7 +4,7 @@ import { X, ChevronDown, ChevronUp } from "lucide-react"
 import { useAudio } from "@/hooks/useAudio"
 import { getProjectArrangementTruth, type ProjectArrangementTruthStatus, useProjectStore } from "@/store/project-store"
 import { useUiStore } from "@/store/ui-store"
-import type { DrumKitLike } from "@/audio/drum-kit"
+import type { DrumKitLike, DrumKitSelectionTruth } from "@/audio/drum-kit"
 import type { PlaybackTruth, Stem, SystemStatus } from "@/types"
 
 /* ------------------------------------------------------------------ */
@@ -428,10 +428,12 @@ const DRUM_GROUPS = [
 function DrumSubMix({
   drumKit,
   truth,
+  selectionTruth,
   interactionLocked = false,
 }: {
   drumKit: DrumKitLike | null
   truth: DrumSubMixTruth
+  selectionTruth: DrumKitSelectionTruth | null
   interactionLocked?: boolean
 }) {
   const [levels, setLevels] = useState<Record<string, number>>({
@@ -466,6 +468,30 @@ function DrumSubMix({
 
   return (
     <div className="px-4 pb-2 pt-1">
+      {selectionTruth && (
+        <div className="pb-2">
+          <div className="flex items-center gap-2">
+            <span
+              data-drum-kit-selection-state={selectionTruth.selectionSource}
+              title={selectionTruth.detail}
+              className={cn(
+                "rounded-full px-2 py-0.5 text-[9px] font-semibold uppercase tracking-[0.18em]",
+                selectionTruth.selectionSource === "default"
+                  ? "bg-card text-muted-foreground"
+                  : "bg-primary/15 text-primary"
+              )}
+            >
+              {selectionTruth.summary}
+            </span>
+            <span className="text-[10px] font-medium text-foreground">
+              {selectionTruth.kitLabel}
+            </span>
+          </div>
+          <p className="mt-1 text-[10px] text-muted-foreground">
+            {selectionTruth.detail}
+          </p>
+        </div>
+      )}
       {truth.message && (
         <p
           className={cn(
@@ -530,6 +556,7 @@ export function MixerDrawer() {
   } = useAudio()
 
   const drumKit = engine.getDrumKit()
+  const drumKitSelectionTruth = drumKit?.getSelectionTruth() ?? null
   const drumSubMixTruth = getDrumSubMixTruth({ drumKit, systemStatus, errorMessage })
   const arrangementTruth = getProjectArrangementTruth({
     project,
@@ -715,6 +742,20 @@ export function MixerDrawer() {
                         {laneSelectionTruth.badge}
                       </span>
                     )}
+                    {isDrums && drumKitSelectionTruth && (
+                      <span
+                        data-drum-kit-selection-state={drumKitSelectionTruth.selectionSource}
+                        title={drumKitSelectionTruth.detail}
+                        className={cn(
+                          "rounded-full px-1.5 py-0.5 text-[8px] font-semibold uppercase tracking-[0.18em]",
+                          drumKitSelectionTruth.selectionSource === "default"
+                            ? "bg-card text-muted-foreground"
+                            : "bg-primary/15 text-primary"
+                        )}
+                      >
+                        {drumKitSelectionTruth.summary}
+                      </span>
+                    )}
                   </div>
 
                   <div className="flex gap-1">
@@ -855,11 +896,12 @@ export function MixerDrawer() {
                   <X className="size-3" />
                 </button>
               </div>
-              <DrumSubMix
-                drumKit={drumKit}
-                truth={drumSubMixTruth}
-                interactionLocked={!mixerReady}
-              />
+                <DrumSubMix
+                  drumKit={drumKit}
+                  truth={drumSubMixTruth}
+                  selectionTruth={drumKitSelectionTruth}
+                  interactionLocked={!mixerReady}
+                />
             </div>
           )}
         </div>

@@ -3,10 +3,18 @@
 // Salamander Drumkit by Alexander Holm — CC BY-SA 3.0.
 
 import * as Tone from 'tone';
-import type { DrumKitLike } from './drum-kit';
+import type { DrumKitLike, DrumKitSelectionTruth } from './drum-kit';
 import { NOTE_MAP } from './drum-kit';
 
 const SAMPLE_BASE_URL = '/samples/drums/salamander';
+const DEFAULT_DRUM_KIT_SELECTION: DrumKitSelectionTruth = {
+  kitId: 'salamander',
+  kitLabel: 'Salamander',
+  selectionSource: 'default',
+  summary: 'Default Salamander kit',
+  detail:
+    'Drums use the built-in Salamander sampled kit by default because no alternate drum kit is selected in this session.',
+};
 
 // Voices that have unique sample sets (10 sample-voices)
 const SAMPLE_VOICES = [
@@ -198,6 +206,10 @@ export class SampledDrumKit implements DrumKitLike {
 
   getVoiceGroups(): { name: string; label: string; voices: string[] }[] {
     return VOICE_GROUPS;
+  }
+
+  getSelectionTruth(): DrumKitSelectionTruth {
+    return DEFAULT_DRUM_KIT_SELECTION;
   }
 
   dispose(): void {
