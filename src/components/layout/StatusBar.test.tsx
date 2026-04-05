@@ -394,7 +394,7 @@ describe('StatusBar', () => {
       '[data-testid="status-bar-readiness"]'
     ) as HTMLSpanElement | null;
 
-    expect(readiness?.textContent).toBe('Waiting');
+    expect(readiness?.textContent).toBe('Waiting for project');
     expect(container.querySelector('[data-testid="status-bar"]')?.getAttribute('data-status-readiness')).toBe(
       'waiting'
     );
@@ -412,7 +412,7 @@ describe('StatusBar', () => {
       '[data-testid="status-bar-readiness"]'
     ) as HTMLSpanElement | null;
 
-    expect(readiness?.textContent).toBe('Blocked');
+    expect(readiness?.textContent).toBe('Blocked: project required');
     expect(container.querySelector('[data-testid="status-bar"]')?.getAttribute('data-status-readiness')).toBe(
       'blocked'
     );
@@ -425,14 +425,28 @@ describe('StatusBar', () => {
 
   it('renders sample loading as a distinct visible status', () => {
     const container = renderStatusBar('loading-samples');
+    const readiness = container.querySelector(
+      '[data-testid="status-bar-readiness"]'
+    ) as HTMLSpanElement | null;
 
+    expect(readiness?.textContent).toBe('Waiting for samples');
+    expect(container.querySelector('[data-testid="status-bar"]')?.getAttribute('data-status-readiness')).toBe(
+      'waiting'
+    );
     expect(container.textContent).toContain('Loading samples');
     expect(container.textContent).not.toContain('Saved');
   });
 
   it('renders offline as a distinct visible status', () => {
     const container = renderStatusBar('offline');
+    const readiness = container.querySelector(
+      '[data-testid="status-bar-readiness"]'
+    ) as HTMLSpanElement | null;
 
+    expect(readiness?.textContent).toBe('Blocked: offline');
+    expect(container.querySelector('[data-testid="status-bar"]')?.getAttribute('data-status-readiness')).toBe(
+      'blocked'
+    );
     expect(container.textContent).toContain('Offline');
     expect(container.textContent).not.toContain('Saved');
   });
@@ -443,7 +457,14 @@ describe('StatusBar', () => {
     });
 
     const container = renderStatusBar('error');
+    const readiness = container.querySelector(
+      '[data-testid="status-bar-readiness"]'
+    ) as HTMLSpanElement | null;
 
+    expect(readiness?.textContent).toBe('Blocked: error');
+    expect(container.querySelector('[data-testid="status-bar"]')?.getAttribute('data-status-readiness')).toBe(
+      'blocked'
+    );
     expect(container.textContent).toContain('Error: Generator offline');
     expect(container.textContent).not.toContain('Loading samples');
   });

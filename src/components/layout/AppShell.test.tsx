@@ -105,6 +105,7 @@ describe('AppShell status surface truth', () => {
 
     const statusBarText = getStatusBarText(mounted.container);
 
+    expect(statusBarText).toContain('Waiting for samples');
     expect(statusBarText).toContain('Loading samples');
     expect(statusBarText).not.toContain('Unsaved changes');
   });
@@ -121,6 +122,7 @@ describe('AppShell status surface truth', () => {
 
     const statusBarText = getStatusBarText(mounted.container);
 
+    expect(statusBarText).toContain('Blocked: offline');
     expect(statusBarText).toContain('Offline');
     expect(statusBarText).not.toContain('Saved');
   });
@@ -138,6 +140,7 @@ describe('AppShell status surface truth', () => {
 
     const statusBarText = getStatusBarText(mounted.container);
 
+    expect(statusBarText).toContain('Blocked: error');
     expect(statusBarText).toContain('Error: Generator offline');
     expect(statusBarText).not.toContain('Saved');
   });

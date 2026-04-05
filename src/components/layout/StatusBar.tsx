@@ -148,6 +148,27 @@ function getStatusBarReadiness(status: AppStatus): StatusBarReadiness {
   return 'ready';
 }
 
+function getStatusBarReadinessLabel(status: AppStatus, readiness: StatusBarReadiness): string {
+  if (readiness === 'ready') {
+    return 'Ready';
+  }
+
+  switch (status) {
+    case 'loading-project':
+      return 'Waiting for project';
+    case 'loading-samples':
+      return 'Waiting for samples';
+    case 'no-project-selected':
+      return 'Blocked: project required';
+    case 'offline':
+      return 'Blocked: offline';
+    case 'error':
+      return 'Blocked: error';
+    default:
+      return readiness.charAt(0).toUpperCase() + readiness.slice(1);
+  }
+}
+
 function getStatusBarFailureTruth({
   errorMessage,
   projectReadinessCurrentState,
@@ -273,7 +294,7 @@ export function StatusBar({ status = 'saved', className }: StatusBarProps) {
       ? savePlan.statusLabel
       : cfg.label;
   const readiness = getStatusBarReadiness(status);
-  const readinessLabel = readiness.charAt(0).toUpperCase() + readiness.slice(1);
+  const readinessLabel = getStatusBarReadinessLabel(status, readiness);
   const labelTitle = getStatusBarLabelTitle({
     status,
     errorMessage,
