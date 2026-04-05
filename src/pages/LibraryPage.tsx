@@ -18,8 +18,11 @@ type LibraryReadinessState = {
 type LibraryBlockedState = {
   title: string;
   detail: string;
+  nextStep: string;
   retryLabel: string;
 };
+
+type LibraryFailureSource = 'load' | 'refresh' | 'delete';
 
 type LibrarySelectionTruth = {
   projectId: string;
@@ -87,31 +90,58 @@ function getLibraryReadinessState({
 }
 
 function getLibraryBlockedState({
+  failureSource,
   systemStatus,
   projectCount,
   errorMessage,
 }: {
+  failureSource: LibraryFailureSource | null;
   systemStatus: string;
   projectCount: number;
   errorMessage: string | null;
 }): LibraryBlockedState | null {
   if (systemStatus === 'offline') {
+    const isRefreshFailure = failureSource === 'refresh' || projectCount > 0;
+
     return {
-      title: projectCount === 0 ? 'Library offline' : 'Library sync offline',
+      title: isRefreshFailure ? 'Library sync offline' : 'Library offline',
       detail:
         errorMessage?.trim() ||
-        'Arrangement Forge is offline, so the library cannot confirm or refresh this workspace right now.',
-      retryLabel: 'Retry library',
+        (isRefreshFailure
+          ? 'Arrangement Forge is offline, so the library cannot refresh this workspace right now.'
+          : 'Arrangement Forge is offline, so the library cannot load this workspace right now.'),
+      nextStep: isRefreshFailure
+        ? 'Reconnect the workspace, then retry the library refresh.'
+        : 'Reconnect the workspace, then retry loading the library.',
+      retryLabel: isRefreshFailure ? 'Retry refresh' : 'Retry library',
     };
   }
 
   if (systemStatus === 'error') {
+    if (failureSource === 'delete') {
+      return {
+        title: 'Delete failed',
+        detail:
+          errorMessage?.trim() ||
+          'Arrangement Forge could not remove this project from the library.',
+        nextStep: 'Review the delete error, then retry once the library can persist changes.',
+        retryLabel: 'Retry library',
+      };
+    }
+
+    const isRefreshFailure = failureSource === 'refresh' || projectCount > 0;
+
     return {
-      title: projectCount === 0 ? 'Unable to load library' : 'Library action failed',
+      title: isRefreshFailure ? 'Unable to refresh library' : 'Unable to load library',
       detail:
         errorMessage?.trim() ||
-        'Arrangement Forge could not finish the requested library action.',
-      retryLabel: 'Retry',
+        (isRefreshFailure
+          ? 'Arrangement Forge could not refresh the current library view.'
+          : 'Arrangement Forge could not load the current library view.'),
+      nextStep: isRefreshFailure
+        ? 'Retry the library refresh. If it keeps failing, keep working from the currently visible projects until the library backend recovers.'
+        : 'Retry loading the library. If it keeps failing, fix the library backend before depending on this route.',
+      retryLabel: isRefreshFailure ? 'Retry refresh' : 'Retry library',
     };
   }
 
@@ -177,6 +207,7 @@ export default function LibraryPage() {
   const [searchInput, setSearchInput] = useState('');
   const [sortKey, setSortKey] = useState<SortKey>('updatedAt');
   const [deleteTarget, setDeleteTarget] = useState<Project | null>(null);
+  const [failureSource, setFailureSource] = useState<LibraryFailureSource | null>(null);
 
   const search = useDebounce(searchInput, 300);
 
@@ -185,7 +216,9 @@ export default function LibraryPage() {
 
     void listProjects().then((loadedProjects) => {
       if (!active) return;
+      const nextSystemStatus = useUiStore.getState().systemStatus;
       setProjects(loadedProjects);
+      setFailureSource(nextSystemStatus === 'ready' ? null : 'load');
       setLoading(false);
     });
 
@@ -196,8 +229,11 @@ export default function LibraryPage() {
 
   async function handleRetry() {
     setLoading(true);
+    setFailureSource(null);
     const loadedProjects = await listProjects();
+    const nextSystemStatus = useUiStore.getState().systemStatus;
     setProjects(loadedProjects);
+    setFailureSource(nextSystemStatus === 'ready' ? null : 'refresh');
     setLoading(false);
   }
 
@@ -211,10 +247,14 @@ export default function LibraryPage() {
   async function handleDelete(project: Project) {
     const deleted = await deleteProject(project.id);
     setDeleteTarget(null);
-    if (!deleted) return;
+    if (!deleted) {
+      setFailureSource('delete');
+      return;
+    }
 
     const nextProjects = projects.filter((candidate) => candidate.id !== project.id);
     setProjects(nextProjects);
+    setFailureSource(null);
     setLibraryCount(nextProjects.length);
   }
 
@@ -253,10 +293,11 @@ export default function LibraryPage() {
     errorMessage,
   });
   const blockedState = !loading
-    ? getLibraryBlockedState({
-        systemStatus,
-        projectCount: projects.length,
-        errorMessage,
+      ? getLibraryBlockedState({
+          failureSource,
+          systemStatus,
+          projectCount: projects.length,
+          errorMessage,
       })
     : null;
   const selectionTruth =
@@ -389,6 +430,7 @@ export default function LibraryPage() {
               <div className="space-y-1">
                 <p className="text-sm font-semibold text-foreground">{blockedState.title}</p>
                 <p className="text-sm text-muted-foreground">{blockedState.detail}</p>
+                <p className="text-sm text-foreground">Next step: {blockedState.nextStep}</p>
               </div>
               <button
                 type="button"

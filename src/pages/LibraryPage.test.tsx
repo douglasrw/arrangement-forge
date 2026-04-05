@@ -153,6 +153,10 @@ describe('LibraryPage', () => {
 
     expect(mounted.container.textContent).toContain('Unable to load library');
     expect(mounted.container.textContent).toContain('Library backend offline');
+    expect(mounted.container.textContent).toContain(
+      'Next step: Retry loading the library. If it keeps failing, fix the library backend before depending on this route.'
+    );
+    expect(mounted.container.textContent).toContain('Retry library');
     expect(mounted.container.textContent).not.toContain('No projects yet.');
     expect(mounted.container.textContent).toContain('Library readiness');
     expect(mounted.container.textContent).toContain('Blocked');
@@ -177,6 +181,9 @@ describe('LibraryPage', () => {
     expect(readiness?.textContent).toContain('Blocked');
     expect(readiness?.textContent).toContain('Connection lost while loading the library');
     expect(mounted.container.textContent).toContain('Library offline');
+    expect(mounted.container.textContent).toContain(
+      'Next step: Reconnect the workspace, then retry loading the library.'
+    );
     expect(mounted.container.textContent).toContain('Retry library');
     expect(mounted.container.textContent).not.toContain('No projects yet.');
   });
@@ -342,7 +349,7 @@ describe('LibraryPage', () => {
     expect(useUiStore.getState().libraryCount).toBe(0);
   });
 
-  it('keeps the project visible and surfaces the failure when delete does not persist', async () => {
+  it('keeps the project visible and identifies delete failure truth when the removal does not persist', async () => {
     projectApi.listProjects.mockResolvedValue([
       makeProject({ id: 'project-stuck', name: 'Stuck Delete' }),
     ]);
@@ -380,10 +387,38 @@ describe('LibraryPage', () => {
     });
 
     expect(getVisibleProjectNames(mounted.container)).toEqual(['Stuck Delete']);
-    expect(mounted.container.textContent).toContain('Library action failed');
+    expect(mounted.container.textContent).toContain('Delete failed');
     expect(mounted.container.textContent).toContain('Delete blocked by policy');
+    expect(mounted.container.textContent).toContain(
+      'Next step: Review the delete error, then retry once the library can persist changes.'
+    );
     expect(mounted.container.textContent).not.toContain('No projects yet.');
     expect(useUiStore.getState().libraryCount).toBe(1);
+  });
+
+  it('distinguishes refresh failure from initial load failure when a populated library becomes blocked', async () => {
+    projectApi.listProjects.mockResolvedValue([
+      makeProject({ id: 'project-refresh', name: 'Refresh Truth' }),
+    ]);
+
+    const mounted = renderLibrary();
+    mountedRoot = mounted.root;
+    mountedContainer = mounted.container;
+
+    await act(async () => {
+      await Promise.resolve();
+    });
+
+    act(() => {
+      useUiStore.getState().setSystemStatus('error', 'Refresh request timed out');
+    });
+
+    expect(mounted.container.textContent).toContain('Unable to refresh library');
+    expect(mounted.container.textContent).toContain('Refresh request timed out');
+    expect(mounted.container.textContent).toContain(
+      'Next step: Retry the library refresh. If it keeps failing, keep working from the currently visible projects until the library backend recovers.'
+    );
+    expect(mounted.container.textContent).toContain('Retry refresh');
   });
 
   it('debounces library search and matches name, genre, and key fields', async () => {
