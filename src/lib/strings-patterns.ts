@@ -3,7 +3,7 @@
 
 import type { MidiNoteData } from '@/types';
 import { getChordTones } from './midi-generator';
-import { getSupportedInstrumentStyles } from './genre-config';
+import { getInstrumentStyleSelectionTruth } from './genre-config';
 
 // ---------- Types ----------
 
@@ -24,9 +24,15 @@ export interface StringsPatternSelectionTruth {
   requestedStyleId: string | null;
   energy: number;
   energyThreshold: number;
+  defaultStyleId: string;
+  defaultStyleLabel: string;
   selectedStyleId: string;
   selectedStyleLabel: string;
   selectedPattern: StringsPattern;
+  fallbackStyleId: string;
+  fallbackStyleLabel: string;
+  patternSource: 'energy_threshold' | 'requested_style' | 'unsupported_style_energy_fallback';
+  selectionPolicy: string;
   supportedStyleIds: string[];
   supportedStyleLabels: string[];
   fallbackApplied: boolean;
@@ -92,66 +98,89 @@ export function getStringsPatternSelectionTruth(
   styleOverride: string | null | undefined,
   energy: number
 ): StringsPatternSelectionTruth {
-  const requestedStyleId = styleOverride?.trim() ? styleOverride : null;
-  const supportedStyles = getSupportedInstrumentStyles('strings');
-  const supportedStyleIds = supportedStyles.map((option) => option.id);
-  const supportedStyleLabels = supportedStyles.map((option) => option.label);
+  const styleTruth = getInstrumentStyleSelectionTruth('strings', styleOverride);
   const selectedByEnergy = energy > STRINGS_TREMOLO_ENERGY_THRESHOLD ? TREMOLO : SUSTAINED_PAD;
   const selectedOptionByEnergy =
-    supportedStyles.find((option) => option.id === selectedByEnergy.style) ??
-    supportedStyles[0] ?? { id: selectedByEnergy.style, label: selectedByEnergy.style };
-  const availableLabels = supportedStyleLabels.join(', ');
+    styleTruth.supportedStyleIds.find((supportedStyleId) => supportedStyleId === selectedByEnergy.style) === undefined
+      ? { id: selectedByEnergy.style, label: selectedByEnergy.style }
+      : {
+          id: selectedByEnergy.style,
+          label:
+            styleTruth.supportedStyleLabels[
+              styleTruth.supportedStyleIds.findIndex((supportedStyleId) => supportedStyleId === selectedByEnergy.style)
+            ] ?? selectedByEnergy.style,
+        };
+  const availableLabels = styleTruth.supportedStyleLabels.join(', ');
 
-  if (requestedStyleId === null) {
+  if (styleTruth.requestedStyleId === null) {
     return {
-      requestedStyleId,
+      requestedStyleId: styleTruth.requestedStyleId,
       energy,
       energyThreshold: STRINGS_TREMOLO_ENERGY_THRESHOLD,
+      defaultStyleId: styleTruth.defaultStyleId,
+      defaultStyleLabel: styleTruth.defaultStyleLabel,
       selectedStyleId: selectedByEnergy.style,
       selectedStyleLabel: selectedOptionByEnergy.label,
       selectedPattern: selectedByEnergy,
-      supportedStyleIds,
-      supportedStyleLabels,
+      fallbackStyleId: selectedByEnergy.style,
+      fallbackStyleLabel: selectedOptionByEnergy.label,
+      patternSource: 'energy_threshold',
+      selectionPolicy: `When no strings style is requested, energy drives strings selection. Energy above ${STRINGS_TREMOLO_ENERGY_THRESHOLD} uses ${TREMOLO.id}; energy at or below ${STRINGS_TREMOLO_ENERGY_THRESHOLD} uses ${SUSTAINED_PAD.id}. The canonical strings default style remains ${styleTruth.defaultStyleLabel} when an explicit default is needed elsewhere.`,
+      supportedStyleIds: styleTruth.supportedStyleIds,
+      supportedStyleLabels: styleTruth.supportedStyleLabels,
       fallbackApplied: false,
       selectionSource: 'energy_threshold',
       summary: `Energy ${energy} selects the ${selectedOptionByEnergy.label} strings pattern ${selectedByEnergy.id}.`,
-      currentState: `No explicit strings style was requested, so energy ${energy} is driving strings selection and ${selectedOptionByEnergy.label} is active.`,
-      nextStep: `Keep the energy-driven strings selection, choose ${availableLabels} explicitly, or move energy above or below ${STRINGS_TREMOLO_ENERGY_THRESHOLD} if you want a different default result.`,
+      currentState: `No explicit strings style was requested, so energy ${energy} is driving strings selection and ${selectedOptionByEnergy.label} is active. The canonical default strings style is still ${styleTruth.defaultStyleLabel} when energy is not the selector.`,
+      nextStep: `Keep the energy-driven strings selection, choose ${availableLabels} explicitly, or move energy above or below ${STRINGS_TREMOLO_ENERGY_THRESHOLD} if you want a different automatic result.`,
     };
   }
 
-  const requestedOption = supportedStyles.find((option) => option.id === requestedStyleId);
-  if (requestedOption) {
+  if (!styleTruth.fallbackApplied) {
+    const selectedPattern = PATTERNS[styleTruth.selectedStyleId] ?? selectedByEnergy;
+
     return {
-      requestedStyleId,
+      requestedStyleId: styleTruth.requestedStyleId,
       energy,
       energyThreshold: STRINGS_TREMOLO_ENERGY_THRESHOLD,
-      selectedStyleId: requestedOption.id,
-      selectedStyleLabel: requestedOption.label,
-      selectedPattern: PATTERNS[requestedOption.id] ?? selectedByEnergy,
-      supportedStyleIds,
-      supportedStyleLabels,
+      defaultStyleId: styleTruth.defaultStyleId,
+      defaultStyleLabel: styleTruth.defaultStyleLabel,
+      selectedStyleId: styleTruth.selectedStyleId,
+      selectedStyleLabel: styleTruth.selectedStyleLabel,
+      selectedPattern,
+      fallbackStyleId: selectedByEnergy.style,
+      fallbackStyleLabel: selectedOptionByEnergy.label,
+      patternSource: 'requested_style',
+      selectionPolicy: `Supported explicit strings styles override energy-driven selection. When the request is unsupported, strings fall back to the current energy-selected pattern instead of blindly using the canonical default ${styleTruth.defaultStyleLabel}.`,
+      supportedStyleIds: styleTruth.supportedStyleIds,
+      supportedStyleLabels: styleTruth.supportedStyleLabels,
       fallbackApplied: false,
       selectionSource: 'explicit_style',
-      summary: `Explicit strings style ${requestedOption.label} selects pattern ${(PATTERNS[requestedOption.id] ?? selectedByEnergy).id}.`,
-      currentState: `Strings style ${requestedOption.label} is active because the explicit style override takes priority over energy ${energy}.`,
-      nextStep: `Keep ${requestedOption.label}, switch to one of the supported strings styles: ${availableLabels}, or clear the override to let energy drive selection again.`,
+      summary: `Explicit strings style ${styleTruth.selectedStyleLabel} selects pattern ${selectedPattern.id}.`,
+      currentState: `Strings style ${styleTruth.selectedStyleLabel} is active because the explicit style override takes priority over energy ${energy}. If you clear the override, energy would currently select ${selectedOptionByEnergy.label}.`,
+      nextStep: `Keep ${styleTruth.selectedStyleLabel}, switch to one of the supported strings styles: ${availableLabels}, or clear the override to let energy drive selection again.`,
     };
   }
 
   return {
-    requestedStyleId,
+    requestedStyleId: styleTruth.requestedStyleId,
     energy,
     energyThreshold: STRINGS_TREMOLO_ENERGY_THRESHOLD,
+    defaultStyleId: styleTruth.defaultStyleId,
+    defaultStyleLabel: styleTruth.defaultStyleLabel,
     selectedStyleId: selectedOptionByEnergy.id,
     selectedStyleLabel: selectedOptionByEnergy.label,
     selectedPattern: selectedByEnergy,
-    supportedStyleIds,
-    supportedStyleLabels,
+    fallbackStyleId: selectedByEnergy.style,
+    fallbackStyleLabel: selectedOptionByEnergy.label,
+    patternSource: 'unsupported_style_energy_fallback',
+    selectionPolicy: `Unsupported strings styles fall back to the current energy-selected pattern. They do not silently reuse the canonical default ${styleTruth.defaultStyleLabel} unless energy already selects it.`,
+    supportedStyleIds: styleTruth.supportedStyleIds,
+    supportedStyleLabels: styleTruth.supportedStyleLabels,
     fallbackApplied: true,
     selectionSource: 'energy_threshold',
-    summary: `Requested strings style ${requestedStyleId} is unsupported, so energy ${energy} falls back to ${selectedOptionByEnergy.label} pattern ${selectedByEnergy.id}.`,
-    currentState: `Strings style "${requestedStyleId}" is unavailable, so the override is ignored and energy ${energy} selects ${selectedOptionByEnergy.label}.`,
+    summary: `Requested strings style ${styleTruth.requestedStyleId} is unsupported, so energy ${energy} falls back to ${selectedOptionByEnergy.label} pattern ${selectedByEnergy.id}.`,
+    currentState: `Strings style "${styleTruth.requestedStyleId}" is unavailable, so the override is ignored and energy ${energy} selects ${selectedOptionByEnergy.label}. The canonical default remains ${styleTruth.defaultStyleLabel}.`,
     nextStep: `Choose one of the supported strings styles: ${availableLabels}, or clear the unsupported override and keep the current energy-driven selection.`,
   };
 }

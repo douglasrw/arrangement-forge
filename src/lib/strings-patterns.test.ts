@@ -14,9 +14,14 @@ describe('buildStringsFromPattern', () => {
         requestedStyleId: null,
         energy: 50,
         energyThreshold: STRINGS_TREMOLO_ENERGY_THRESHOLD,
+        defaultStyleId: 'sustained_pad',
+        defaultStyleLabel: 'Sustained Pad',
         selectedStyleId: 'sustained_pad',
         selectedStyleLabel: 'Sustained Pad',
+        fallbackStyleId: 'sustained_pad',
+        fallbackStyleLabel: 'Sustained Pad',
         fallbackApplied: false,
+        patternSource: 'energy_threshold',
         selectionSource: 'energy_threshold',
       });
 
@@ -24,9 +29,14 @@ describe('buildStringsFromPattern', () => {
         requestedStyleId: null,
         energy: 71,
         energyThreshold: STRINGS_TREMOLO_ENERGY_THRESHOLD,
+        defaultStyleId: 'sustained_pad',
+        defaultStyleLabel: 'Sustained Pad',
         selectedStyleId: 'tremolo',
         selectedStyleLabel: 'Tremolo',
+        fallbackStyleId: 'tremolo',
+        fallbackStyleLabel: 'Tremolo',
         fallbackApplied: false,
+        patternSource: 'energy_threshold',
         selectionSource: 'energy_threshold',
       });
     });
@@ -35,9 +45,14 @@ describe('buildStringsFromPattern', () => {
       expect(getStringsPatternSelectionTruth('tremolo', 50)).toMatchObject({
         requestedStyleId: 'tremolo',
         energy: 50,
+        defaultStyleId: 'sustained_pad',
+        defaultStyleLabel: 'Sustained Pad',
         selectedStyleId: 'tremolo',
         selectedStyleLabel: 'Tremolo',
+        fallbackStyleId: 'sustained_pad',
+        fallbackStyleLabel: 'Sustained Pad',
         fallbackApplied: false,
+        patternSource: 'requested_style',
         selectionSource: 'explicit_style',
       });
     });
@@ -47,11 +62,28 @@ describe('buildStringsFromPattern', () => {
         requestedStyleId: 'spiccato',
         energy: 80,
         energyThreshold: STRINGS_TREMOLO_ENERGY_THRESHOLD,
+        defaultStyleId: 'sustained_pad',
+        defaultStyleLabel: 'Sustained Pad',
         selectedStyleId: 'tremolo',
         selectedStyleLabel: 'Tremolo',
+        fallbackStyleId: 'tremolo',
+        fallbackStyleLabel: 'Tremolo',
         fallbackApplied: true,
+        patternSource: 'unsupported_style_energy_fallback',
         selectionSource: 'energy_threshold',
       });
+    });
+
+    it('makes the strings policy explicit when energy selection differs from the canonical default', () => {
+      expect(getStringsPatternSelectionTruth(null, 71)).toMatchObject({
+        defaultStyleId: 'sustained_pad',
+        defaultStyleLabel: 'Sustained Pad',
+        selectedStyleId: 'tremolo',
+        selectedStyleLabel: 'Tremolo',
+      });
+      expect(getStringsPatternSelectionTruth(null, 71).selectionPolicy).toContain(
+        'The canonical strings default style remains Sustained Pad'
+      );
     });
   });
 
