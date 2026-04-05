@@ -35,6 +35,8 @@ describe('getPianoPatternSelectionTruth', () => {
       defaultStyleLabel: 'Jazz Comping',
       selectedStyleId: 'arpeggiated',
       selectedStyleLabel: 'Arpeggiated',
+      patternSource: 'requested_style',
+      selectionPolicy: 'Supported piano styles use their matching named pattern, so Arpeggiated selects arpeggiated_01.',
       fallbackApplied: false,
       supportedStyleIds: ['jazz_comp', 'block_chords', 'arpeggiated'],
       supportedStyleLabels: ['Jazz Comping', 'Block Chords', 'Arpeggiated'],
@@ -55,6 +57,9 @@ describe('getPianoPatternSelectionTruth', () => {
       defaultStyleLabel: 'Jazz Comping',
       selectedStyleId: 'jazz_comp',
       selectedStyleLabel: 'Jazz Comping',
+      patternSource: 'default_style',
+      selectionPolicy:
+        'When no piano style is requested, piano uses the default Jazz Comping style and its matching pattern jazz_comp_01.',
       fallbackApplied: false,
       summary: 'No piano style was requested, so the default Jazz Comping pattern jazz_comp_01 is active.',
       currentState: 'Piano is using the default Jazz Comping style with pattern jazz_comp_01 because no explicit style was requested.',
@@ -73,10 +78,16 @@ describe('getPianoPatternSelectionTruth', () => {
       defaultStyleLabel: 'Jazz Comping',
       selectedStyleId: 'block_chords',
       selectedStyleLabel: 'Block Chords',
+      patternSource: 'unsupported_style_safe_fallback',
+      selectionPolicy:
+        'Unsupported piano styles do not fall back to the default Jazz Comping style. They fall back to the safer Block Chords pattern block_chords_01.',
       fallbackApplied: true,
-      summary: 'Requested piano style stride falls back to Block Chords with pattern block_chords_01.',
-      currentState: 'Requested piano style "stride" is unavailable, so piano style Block Chords is active with fallback pattern block_chords_01.',
-      nextStep: 'Choose one of the supported piano styles: Jazz Comping, Block Chords, Arpeggiated (jazz_comp, block_chords, arpeggiated).',
+      summary:
+        'Requested piano style stride is unsupported, so piano uses the safer Block Chords fallback pattern block_chords_01 instead of the default Jazz Comping style.',
+      currentState:
+        'Requested piano style "stride" is unavailable. Piano is currently using the Block Chords fallback pattern block_chords_01; the normal default remains Jazz Comping.',
+      nextStep:
+        'Choose one of the supported piano styles if you want something other than the current Block Chords fallback: Jazz Comping, Block Chords, Arpeggiated (jazz_comp, block_chords, arpeggiated).',
     });
     expect(selection.selectedPattern.id).toBe('block_chords_01');
   });

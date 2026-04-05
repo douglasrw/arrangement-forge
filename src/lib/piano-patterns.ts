@@ -102,6 +102,8 @@ export interface PianoPatternSelectionTruth {
   selectedStyleId: string;
   selectedStyleLabel: string;
   selectedPattern: PianoPattern;
+  patternSource: 'default_style' | 'requested_style' | 'unsupported_style_safe_fallback';
+  selectionPolicy: string;
   supportedStyleIds: string[];
   supportedStyleLabels: string[];
   fallbackApplied: boolean;
@@ -133,6 +135,8 @@ export function getPianoPatternSelectionTruth(style: string | null | undefined):
       selectedStyleId: styleTruth.selectedStyleId,
       selectedStyleLabel: styleTruth.selectedStyleLabel,
       selectedPattern,
+      patternSource: 'default_style',
+      selectionPolicy: `When no piano style is requested, piano uses the default ${styleTruth.defaultStyleLabel} style and its matching pattern ${selectedPattern.id}.`,
       supportedStyleIds: styleTruth.supportedStyleIds,
       supportedStyleLabels: styleTruth.supportedStyleLabels,
       fallbackApplied: false,
@@ -153,6 +157,8 @@ export function getPianoPatternSelectionTruth(style: string | null | undefined):
       selectedStyleId: styleTruth.selectedStyleId,
       selectedStyleLabel: styleTruth.selectedStyleLabel,
       selectedPattern,
+      patternSource: 'requested_style',
+      selectionPolicy: `Supported piano styles use their matching named pattern, so ${styleTruth.selectedStyleLabel} selects ${selectedPattern.id}.`,
       supportedStyleIds: styleTruth.supportedStyleIds,
       supportedStyleLabels: styleTruth.supportedStyleLabels,
       fallbackApplied: false,
@@ -175,12 +181,14 @@ export function getPianoPatternSelectionTruth(style: string | null | undefined):
         styleTruth.supportedStyleIds.findIndex((supportedStyleId) => supportedStyleId === selectedPattern.style)
       ] ?? 'Block Chords',
     selectedPattern,
+    patternSource: 'unsupported_style_safe_fallback',
+    selectionPolicy: `Unsupported piano styles do not fall back to the default ${styleTruth.defaultStyleLabel} style. They fall back to the safer Block Chords pattern ${selectedPattern.id}.`,
     supportedStyleIds: styleTruth.supportedStyleIds,
     supportedStyleLabels: styleTruth.supportedStyleLabels,
     fallbackApplied: true,
-    summary: `Requested piano style ${styleTruth.requestedStyleId ?? 'default'} falls back to Block Chords with pattern ${selectedPattern.id}.`,
-    currentState: `Requested piano style "${styleTruth.requestedStyleId}" is unavailable, so piano style Block Chords is active with fallback pattern ${selectedPattern.id}.`,
-    nextStep: `Choose one of the supported piano styles: ${supportedStyleLabels} (${supportedStyleIds}).`,
+    summary: `Requested piano style ${styleTruth.requestedStyleId ?? 'default'} is unsupported, so piano uses the safer Block Chords fallback pattern ${selectedPattern.id} instead of the default ${styleTruth.defaultStyleLabel} style.`,
+    currentState: `Requested piano style "${styleTruth.requestedStyleId}" is unavailable. Piano is currently using the Block Chords fallback pattern ${selectedPattern.id}; the normal default remains ${styleTruth.defaultStyleLabel}.`,
+    nextStep: `Choose one of the supported piano styles if you want something other than the current Block Chords fallback: ${supportedStyleLabels} (${supportedStyleIds}).`,
   };
 }
 
