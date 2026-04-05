@@ -12,6 +12,7 @@ import {
   PATTERNS,
   FILLS,
   resolveDrumPattern,
+  getDrumPatternSelectionTruth,
 } from './drum-patterns';
 import type { MidiNoteData } from '@/types';
 
@@ -262,6 +263,62 @@ describe('drum-patterns', () => {
     }));
 
     expect(missingOverrideNotes).toEqual(fallbackNotes);
+  });
+
+  it('makes the genre-selected drum pattern explicit when no override is requested', () => {
+    const selection = getDrumPatternSelectionTruth({
+      genre: 'Rock',
+      substyle: 'Classic',
+    });
+
+    expect(selection.requestedPatternId).toBeNull();
+    expect(selection.resolvedPatternId).toBe('rock_straight');
+    expect(selection.usedFallback).toBe(false);
+    expect(selection.selectedPattern.id).toBe('rock_straight');
+    expect(selection.summary).toBe(
+      'No drum pattern override was requested, so Rock Classic uses pattern rock_straight.'
+    );
+    expect(selection.currentState).toBe(
+      'Drums are using pattern rock_straight from the Rock / Classic mapping because no explicit pattern override was requested.'
+    );
+    expect(selection.nextStep).toContain('rock_straight');
+  });
+
+  it('keeps an explicit supported drum pattern visible without fallback', () => {
+    const selection = getDrumPatternSelectionTruth({
+      genre: 'Rock',
+      substyle: 'Classic',
+      patternIdOverride: 'funk_pocket',
+    });
+
+    expect(selection.requestedPatternId).toBe('funk_pocket');
+    expect(selection.resolvedPatternId).toBe('funk_pocket');
+    expect(selection.usedFallback).toBe(false);
+    expect(selection.selectedPattern.id).toBe('funk_pocket');
+    expect(selection.summary).toBe('Requested drum pattern funk_pocket is active.');
+    expect(selection.currentState).toBe(
+      'Drums are using explicit pattern funk_pocket. No fallback was needed.'
+    );
+  });
+
+  it('reports fallback drum truth when an explicit override is unsupported', () => {
+    const selection = getDrumPatternSelectionTruth({
+      genre: 'Rock',
+      substyle: 'Classic',
+      patternIdOverride: 'garage_halftime',
+    });
+
+    expect(selection.requestedPatternId).toBe('garage_halftime');
+    expect(selection.resolvedPatternId).toBe(DEFAULT_DRUM_PATTERN_ID);
+    expect(selection.usedFallback).toBe(true);
+    expect(selection.selectedPattern.id).toBe('rock_straight');
+    expect(selection.summary).toBe(
+      'Requested drum pattern garage_halftime falls back to rock_straight.'
+    );
+    expect(selection.currentState).toBe(
+      'Requested drum pattern "garage_halftime" is unavailable, so drums are using fallback pattern rock_straight.'
+    );
+    expect(selection.nextStep).toContain('rock_straight');
   });
 
   // ---- Bar Variation ----

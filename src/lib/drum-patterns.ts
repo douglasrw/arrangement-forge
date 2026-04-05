@@ -39,6 +39,17 @@ export interface DrumPatternResolution {
   pattern: DrumPattern;
 }
 
+export interface DrumPatternSelectionTruth {
+  requestedPatternId: string | null;
+  resolvedPatternId: string;
+  usedFallback: boolean;
+  selectedPattern: DrumPattern;
+  availablePatternIds: string[];
+  summary: string;
+  currentState: string;
+  nextStep: string;
+}
+
 // ---------- Valid GM drum note names (used in tests) ----------
 
 export const VALID_DRUM_NOTES = new Set([
@@ -931,6 +942,64 @@ export function resolveDrumPattern(patternId: string): DrumPatternResolution {
   };
 }
 
+export function getDrumPatternSelectionTruth(params: {
+  genre: string;
+  substyle: string;
+  patternIdOverride?: string | null;
+}): DrumPatternSelectionTruth {
+  const requestedPatternId = params.patternIdOverride?.trim() || null;
+  const resolved = resolveDrumPattern(
+    requestedPatternId ?? getDrumPatternId(params.genre, params.substyle)
+  );
+  const availablePatternIds = Array.from(PATTERNS.keys()).sort();
+  const availablePatternList = availablePatternIds.join(', ');
+
+  if (requestedPatternId === null) {
+    return {
+      requestedPatternId: null,
+      resolvedPatternId: resolved.resolvedPatternId,
+      usedFallback: false,
+      selectedPattern: resolved.pattern,
+      availablePatternIds,
+      summary:
+        `No drum pattern override was requested, so ${params.genre}` +
+        `${params.substyle ? ` ${params.substyle}` : ''} uses pattern ${resolved.pattern.id}.`,
+      currentState:
+        `Drums are using pattern ${resolved.pattern.id} from the ${params.genre}` +
+        `${params.substyle ? ` / ${params.substyle}` : ''} mapping because no explicit pattern override was requested.`,
+      nextStep:
+        `Keep pattern ${resolved.pattern.id}, or choose an explicit drum pattern override from: ${availablePatternList}.`,
+    };
+  }
+
+  if (!resolved.usedFallback) {
+    return {
+      requestedPatternId,
+      resolvedPatternId: resolved.resolvedPatternId,
+      usedFallback: false,
+      selectedPattern: resolved.pattern,
+      availablePatternIds,
+      summary: `Requested drum pattern ${requestedPatternId} is active.`,
+      currentState: `Drums are using explicit pattern ${resolved.pattern.id}. No fallback was needed.`,
+      nextStep:
+        `Keep explicit pattern ${resolved.pattern.id}, or switch to another supported drum pattern: ${availablePatternList}.`,
+    };
+  }
+
+  return {
+    requestedPatternId,
+    resolvedPatternId: resolved.resolvedPatternId,
+    usedFallback: true,
+    selectedPattern: resolved.pattern,
+    availablePatternIds,
+    summary: `Requested drum pattern ${requestedPatternId} falls back to ${resolved.pattern.id}.`,
+    currentState:
+      `Requested drum pattern "${requestedPatternId}" is unavailable, so drums are using fallback pattern ${resolved.pattern.id}.`,
+    nextStep:
+      `Choose a supported drum pattern override instead: ${availablePatternList}.`,
+  };
+}
+
 /** Select a fill based on energy bracket and deterministic hash */
 function selectFill(energy: number, barNumber: number): DrumFill {
   const bracket = energy <= 33 ? 'low' : energy <= 66 ? 'med' : 'high';
@@ -974,8 +1043,12 @@ export function buildDrumMidi(params: {
   barNumberGlobal: number;
   totalBarsInSection: number;
 }): MidiNoteData[] {
-  const patternId = params.patternIdOverride ?? getDrumPatternId(params.genre, params.substyle);
-  const { pattern } = resolveDrumPattern(patternId);
+  const selectionTruth = getDrumPatternSelectionTruth({
+    genre: params.genre,
+    substyle: params.substyle,
+    patternIdOverride: params.patternIdOverride,
+  });
+  const pattern = selectionTruth.selectedPattern;
 
   // Determine if this bar should be a fill
   const isLastBarOfSection =
