@@ -117,18 +117,33 @@ function getArrangementLaneTruth(instrument: Instrument, hasStem: boolean, block
   }
 }
 
-function getArrangementFailureTruth(errorMessage: string | null) {
+type ArrangementFailureKind = "generation" | "system"
+
+function getArrangementFailureTruth(
+  errorMessage: string | null,
+  kind: ArrangementFailureKind = "generation",
+) {
   const normalizedMessage = errorMessage
     ?.trim()
     .replace(/^error:\s*/i, "")
-    .replace(/^generation failed:\s*/i, "")
+    .replace(kind === "generation" ? /^generation failed:\s*/i : /^arrangement blocked:\s*/i, "")
     .trim()
 
   if (!normalizedMessage) {
+    if (kind === "generation") {
+      return {
+        summary: "Generation failed",
+        detail: "Arrangement Forge could not build the arrangement from the current project inputs.",
+        nextStep: "Review the current input blockers, then generate again.",
+        actionLabel: "Generate again",
+      }
+    }
+
     return {
-      summary: "Generation failed",
-      detail: "Arrangement Forge could not build the arrangement from the current project inputs.",
-      nextStep: "Review the current input blockers, then generate again.",
+      summary: "Arrangement blocked",
+      detail: "Arrangement Forge hit a system error while loading or updating this arrangement surface.",
+      nextStep: "Resolve the current system error, then return to the arrangement.",
+      actionLabel: null,
     }
   }
 
@@ -136,12 +151,24 @@ function getArrangementFailureTruth(errorMessage: string | null) {
   const detail = detailSegment?.trim() || normalizedMessage
   const nextStep = nextStepSegment?.trim()
 
+  if (kind === "generation") {
+    return {
+      summary: "Generation failed",
+      detail,
+      nextStep: nextStep
+        ? `Next step: ${nextStep}`
+        : "Next step: Review the current input blockers, then generate again.",
+      actionLabel: "Generate again",
+    }
+  }
+
   return {
-    summary: "Generation failed",
+    summary: "Arrangement blocked",
     detail,
     nextStep: nextStep
       ? `Next step: ${nextStep}`
-      : "Next step: Review the current input blockers, then generate again.",
+      : "Next step: Resolve the current system error, then return to the arrangement.",
+    actionLabel: null,
   }
 }
 
@@ -371,7 +398,8 @@ function FailureState({
   errorMessage: string | null
   onGenerate: () => void
 }) {
-  const failureTruth = getArrangementFailureTruth(errorMessage)
+  const failureKind = isGenerationFailure(errorMessage) ? "generation" : "system"
+  const failureTruth = getArrangementFailureTruth(errorMessage, failureKind)
 
   return (
     <div
@@ -400,13 +428,15 @@ function FailureState({
           {failureTruth.nextStep}
         </p>
       </div>
-      <button
-        type="button"
-        onClick={onGenerate}
-        className="mt-2 rounded-xl border border-destructive/30 bg-destructive/10 px-8 py-3 text-sm font-semibold text-zinc-100 transition-colors hover:bg-destructive/20"
-      >
-        Generate again
-      </button>
+      {failureTruth.actionLabel ? (
+        <button
+          type="button"
+          onClick={onGenerate}
+          className="mt-2 rounded-xl border border-destructive/30 bg-destructive/10 px-8 py-3 text-sm font-semibold text-zinc-100 transition-colors hover:bg-destructive/20"
+        >
+          {failureTruth.actionLabel}
+        </button>
+      ) : null}
     </div>
   )
 }
@@ -418,7 +448,8 @@ function ArrangementFailureBanner({
   errorMessage: string | null
   onGenerate: () => void
 }) {
-  const failureTruth = getArrangementFailureTruth(errorMessage)
+  const failureKind = isGenerationFailure(errorMessage) ? "generation" : "system"
+  const failureTruth = getArrangementFailureTruth(errorMessage, failureKind)
 
   return (
     <div
@@ -441,13 +472,15 @@ function ArrangementFailureBanner({
             Previous arrangement remains loaded below for reference.
           </p>
         </div>
-        <button
-          type="button"
-          onClick={onGenerate}
-          className="shrink-0 rounded-xl border border-destructive/30 bg-destructive/10 px-4 py-2 text-sm font-semibold text-zinc-100 transition-colors hover:bg-destructive/20"
-        >
-          Generate again
-        </button>
+        {failureTruth.actionLabel ? (
+          <button
+            type="button"
+            onClick={onGenerate}
+            className="shrink-0 rounded-xl border border-destructive/30 bg-destructive/10 px-4 py-2 text-sm font-semibold text-zinc-100 transition-colors hover:bg-destructive/20"
+          >
+            {failureTruth.actionLabel}
+          </button>
+        ) : null}
       </div>
     </div>
   )

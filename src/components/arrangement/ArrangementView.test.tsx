@@ -249,6 +249,31 @@ describe('ArrangementView empty-state truth', () => {
     ).toBeNull();
   });
 
+  it('shows a blocked arrangement state for non-generation errors instead of mislabeling them as generation failures', () => {
+    useUiStore.setState({
+      generationState: 'idle',
+      systemStatus: 'error',
+      errorMessage: 'AudioContext was not allowed to start',
+    });
+
+    const mounted = renderArrangementView();
+    mountedRoot = mounted.root;
+    mountedContainer = mounted.container;
+
+    const failureState = mounted.container.querySelector(
+      '[data-testid="arrangement-failure-state"]'
+    );
+
+    expect(failureState).not.toBeNull();
+    expect(mounted.container.textContent).toContain('Arrangement blocked');
+    expect(mounted.container.textContent).toContain('AudioContext was not allowed to start');
+    expect(mounted.container.textContent).toContain(
+      'Resolve the current system error, then return to the arrangement.'
+    );
+    expect(mounted.container.textContent).not.toContain('Generation failed');
+    expect(mounted.container.textContent).not.toContain('Generate again');
+  });
+
   it('keeps regeneration failures visible inside the arrangement surface when the last arrangement stays loaded', () => {
     useUiStore.setState({
       generationState: 'complete',
