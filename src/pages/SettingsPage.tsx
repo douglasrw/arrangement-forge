@@ -409,6 +409,7 @@ export default function SettingsPage() {
       setFailureTruth(
         describeSettingsProfileFailureTruth({
           detail: err.message,
+          hasSavedProfile: profile !== null,
           kind: 'save-rejected',
         })
       );
@@ -416,6 +417,7 @@ export default function SettingsPage() {
       setFailureTruth(
         describeSettingsProfileFailureTruth({
           detail: 'Profile save succeeded but no persisted profile row was returned.',
+          hasSavedProfile: profile !== null,
           kind: 'missing-saved-row',
         })
       );
@@ -432,6 +434,7 @@ export default function SettingsPage() {
               profileError instanceof Error
                 ? profileError.message
                 : 'The saved profile row was invalid.',
+            hasSavedProfile: profile !== null,
             kind: 'invalid-saved-row',
           })
         );

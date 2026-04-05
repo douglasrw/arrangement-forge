@@ -6,6 +6,7 @@ import type { User } from '@supabase/supabase-js';
 import { MemoryRouter } from 'react-router-dom';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { useAuthStore } from '@/store/auth-store';
+import { describeSettingsProfileFailureTruth } from '@/lib/profile';
 import { useUiStore } from '@/store/ui-store';
 import type { Profile } from '@/types';
 import SettingsPage, {
@@ -347,7 +348,8 @@ describe('SettingsPage truth surface', () => {
       failureTruth: {
         title: 'Settings save failed',
         currentState: 'The profile save request failed: generator offline',
-        nextStep: 'Fix the save failure, then try saving these settings again.',
+        nextStep:
+          'Your last confirmed saved settings remain loaded. Fix the save failure, then try saving these pending changes again.',
       },
       pendingFields: ['displayName'],
       profile: makeProfile(),
@@ -358,9 +360,24 @@ describe('SettingsPage truth surface', () => {
       badgeLabel: 'Error',
       badgeVariant: 'destructive',
       detail:
-        'The profile save request failed: generator offline Next step: Fix the save failure, then try saving these settings again.',
+        'The profile save request failed: generator offline Next step: Your last confirmed saved settings remain loaded. Fix the save failure, then try saving these pending changes again.',
       status: 'error',
       title: 'Settings save failed',
+    });
+  });
+
+  it('keeps first-save validation failure truth explicit when no saved profile exists yet', () => {
+    expect(
+      describeSettingsProfileFailureTruth({
+        detail: 'Profile save succeeded but no persisted profile row was returned.',
+        hasSavedProfile: false,
+        kind: 'missing-saved-row',
+      })
+    ).toEqual({
+      title: 'Saved profile could not be confirmed',
+      currentState: 'Profile save succeeded but no persisted profile row was returned.',
+      nextStep:
+        'These settings are still local only. Retry the save until the persisted profile row comes back for validation.',
     });
   });
 
@@ -756,7 +773,7 @@ describe('SettingsPage truth surface', () => {
     expect(pageReadiness?.textContent).toContain('Settings save failed');
     expect(pageReadiness?.textContent).toContain('Error');
     expect(pageReadiness?.textContent).toContain(
-      'Fix the save failure, then try saving these settings again.'
+      'Your last confirmed saved settings remain loaded. Fix the save failure, then try saving these pending changes again.'
     );
     expect(useAuthStore.getState().profile?.displayName).toBe('Doug');
     expect(saveButton?.disabled).toBe(false);
@@ -803,7 +820,7 @@ describe('SettingsPage truth surface', () => {
     expect(pageReadiness?.getAttribute('data-settings-page-readiness')).toBe('error');
     expect(pageReadiness?.textContent).toContain('Saved profile could not be confirmed');
     expect(pageReadiness?.textContent).toContain(
-      'Retry the save until the persisted profile row comes back for validation.'
+      'Your last confirmed saved settings remain loaded. Retry the save until the persisted profile row comes back for validation.'
     );
     expect(useAuthStore.getState().profile?.displayName).toBe('Doug');
     expect(saveButton?.disabled).toBe(false);

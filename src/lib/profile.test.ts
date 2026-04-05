@@ -104,36 +104,41 @@ describe('rowToProfile', () => {
     expect(
       describeSettingsProfileFailureTruth({
         detail: 'new row violates row-level security policy for table "profiles"',
+        hasSavedProfile: true,
         kind: 'save-rejected',
       })
     ).toEqual({
       title: 'Settings save failed',
       currentState:
         'The profile save request failed: new row violates row-level security policy for table "profiles"',
-      nextStep: 'Fix the save failure, then try saving these settings again.',
+      nextStep:
+        'Your last confirmed saved settings remain loaded. Fix the save failure, then try saving these pending changes again.',
     });
 
     expect(
       describeSettingsProfileFailureTruth({
         detail: 'Profile save succeeded but no persisted profile row was returned.',
+        hasSavedProfile: true,
         kind: 'missing-saved-row',
       })
     ).toEqual({
       title: 'Saved profile could not be confirmed',
       currentState: 'Profile save succeeded but no persisted profile row was returned.',
-      nextStep: 'Retry the save until the persisted profile row comes back for validation.',
+      nextStep:
+        'Your last confirmed saved settings remain loaded. Retry the save until the persisted profile row comes back for validation.',
     });
 
     expect(
       describeSettingsProfileFailureTruth({
         detail: 'Invalid profile chord display mode: solfege.',
+        hasSavedProfile: true,
         kind: 'invalid-saved-row',
       })
     ).toEqual({
       title: 'Saved profile row was invalid',
       currentState: 'Invalid profile chord display mode: solfege.',
       nextStep:
-        'Fix the returned profile data, then save again so Settings can load confirmed saved values.',
+        'Your last confirmed saved settings remain loaded. Fix the returned profile data, then save again so Settings can load confirmed saved values.',
     });
   });
 

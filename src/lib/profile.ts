@@ -164,9 +164,11 @@ export type SettingsProfileFailureKind =
 
 export function describeSettingsProfileFailureTruth({
   detail,
+  hasSavedProfile,
   kind,
 }: {
   detail: string;
+  hasSavedProfile: boolean;
   kind: SettingsProfileFailureKind;
 }): {
   currentState: string;
@@ -177,7 +179,9 @@ export function describeSettingsProfileFailureTruth({
     return {
       title: 'Settings save failed',
       currentState: `The profile save request failed: ${detail}`,
-      nextStep: 'Fix the save failure, then try saving these settings again.',
+      nextStep: hasSavedProfile
+        ? 'Your last confirmed saved settings remain loaded. Fix the save failure, then try saving these pending changes again.'
+        : 'These settings are still local only. Fix the save failure, then try saving again to create a saved profile.',
     };
   }
 
@@ -185,14 +189,18 @@ export function describeSettingsProfileFailureTruth({
     return {
       title: 'Saved profile could not be confirmed',
       currentState: detail,
-      nextStep: 'Retry the save until the persisted profile row comes back for validation.',
+      nextStep: hasSavedProfile
+        ? 'Your last confirmed saved settings remain loaded. Retry the save until the persisted profile row comes back for validation.'
+        : 'These settings are still local only. Retry the save until the persisted profile row comes back for validation.',
     };
   }
 
   return {
     title: 'Saved profile row was invalid',
     currentState: detail,
-    nextStep: 'Fix the returned profile data, then save again so Settings can load confirmed saved values.',
+    nextStep: hasSavedProfile
+      ? 'Your last confirmed saved settings remain loaded. Fix the returned profile data, then save again so Settings can load confirmed saved values.'
+      : 'These settings are still local only. Fix the returned profile data, then save again so Settings can load confirmed saved values.',
   };
 }
 
