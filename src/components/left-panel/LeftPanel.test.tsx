@@ -288,6 +288,42 @@ describe('LeftPanel inspector truth regression', () => {
     );
   });
 
+  it('keeps the shell blocked when the latest assistant request failed', () => {
+    useProjectStore.setState({
+      project: makeProject({
+        chordChartRaw: '[Verse]\nCmaj7 | Dm7 | G7 | Cmaj7',
+      }),
+      chatMessages: [
+        {
+          id: 'message-1',
+          projectId: 'project-1',
+          role: 'assistant',
+          content: 'Generation failed: Generator offline Next step: Reconnect the generator, then try again.',
+          createdAt: '2026-03-29T00:00:00Z',
+          scope: 'song',
+          scopeTarget: 'Whole song default',
+        },
+      ],
+    });
+    useUiStore.setState({
+      generationState: 'complete',
+      systemStatus: 'ready',
+      errorMessage: null,
+    });
+
+    const mounted = renderLeftPanel({ mode: 'default' });
+    mountedRoot = mounted.root;
+    mountedContainer = mounted.container;
+
+    expect(mounted.container.querySelector('[data-left-panel-coordination="blocked"]')).not.toBeNull();
+    expect(mounted.container.querySelector('[data-left-panel-readiness="blocked"]')).not.toBeNull();
+    expect(mounted.container.textContent).toContain('Failed');
+    expect(mounted.container.textContent).toContain('Assistant request failed');
+    expect(mounted.container.textContent).toContain('Generator offline');
+    expect(mounted.container.textContent).toContain('Next step: Reconnect the generator, then try again.');
+    expect(mounted.container.textContent).not.toContain('The left panel is coordinated');
+  });
+
   it('keeps the operator-visible inspector honest across section and block contexts', () => {
     const mounted = renderLeftPanel({
       mode: 'section',

@@ -18,6 +18,7 @@ import {
 import { useProjectStore } from "@/store/project-store"
 import { useUiStore } from "@/store/ui-store"
 import { parseChordChart } from "@/lib/chord-chart-parser"
+import { isGenerationFailureContent } from "@/lib/assistant-chat"
 import type { Instrument } from "@/components/sequencer-block"
 
 type AccordionSection = "input" | "style" | "ai" | null
@@ -154,19 +155,31 @@ export function LeftPanel({
   onContextClose,
 }: LeftPanelProps) {
   const project = useProjectStore((s) => s.project)
+  const chatMessages = useProjectStore((s) => s.chatMessages)
   const isInspector = context.mode !== "default"
   const generationState = useUiStore((s) => s.generationState)
+  const systemStatus = useUiStore((s) => s.systemStatus)
+  const errorMessage = useUiStore((s) => s.errorMessage)
   const hasChordChart = Boolean(project?.chordChartRaw.trim())
   const parseTruth = project && hasChordChart
     ? parseChordChart(project.chordChartRaw, project.key).truth
     : null
   const hasParseIssues = parseTruth?.state === "blocked"
+  const latestAssistantReply = [...chatMessages]
+    .reverse()
+    .find((message) => message.role === "assistant" && message.scope !== "setup")
+  const latestAssistantFailure =
+    latestAssistantReply && isGenerationFailureContent(latestAssistantReply.content)
+      ? latestAssistantReply
+      : null
   const coordinationTruth = getLeftPanelCoordinationTruth({
     hasProject: Boolean(project),
     hasChordChart,
     hasParseIssues,
     parseTruth,
     generationState,
+    systemStatus: latestAssistantFailure ? "error" : systemStatus,
+    errorMessage: latestAssistantFailure?.content ?? errorMessage,
   })
   const defaultSection: AccordionSection =
     generationState === "complete" ? "style" : "input"

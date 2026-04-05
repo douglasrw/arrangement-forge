@@ -345,6 +345,21 @@ export function getLeftPanelCoordinationTruth(
     }
   }
 
+  if (aiTruth.status === "blocked") {
+    return {
+      state: "blocked",
+      badge: aiTruth.badge,
+      title: aiTruth.title,
+      detail: aiTruth.detail,
+      tone: "attention",
+      sections: {
+        input: toInputSectionTruth(inputTruth),
+        style: styleTruth,
+        ai: aiTruth,
+      },
+    }
+  }
+
   return {
     state: "ready",
     badge: "Ready",
