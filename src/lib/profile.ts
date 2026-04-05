@@ -1,5 +1,5 @@
 import type { Profile } from '@/types';
-import { GENRES } from '@/lib/genre-config';
+import { GENRES, getDefaultProjectStyleTruth } from '@/lib/genre-config';
 
 const VALID_CHORD_DISPLAY_MODES = new Set<Profile['chordDisplayMode']>(['letter', 'roman']);
 const VALID_GENRES = new Set(GENRES);
@@ -108,10 +108,12 @@ export function describeDefaultGenreSelectionTruth(
   profile: Profile | null
 ): SettingsSelectionTruth {
   if (!profile && draftDefaultGenre.length === 0) {
+    const defaultProjectStyleTruth = getDefaultProjectStyleTruth(null);
+
     return {
       badgeLabel: 'No default',
       badgeVariant: 'outline',
-      detail: 'No default genre is selected yet, so new projects stay unset until you choose one and save.',
+      detail: `No default genre is selected yet, so new projects currently follow the canonical ${defaultProjectStyleTruth.effectiveGenre} fallback until you choose one and save.`,
     };
   }
 
@@ -124,10 +126,12 @@ export function describeDefaultGenreSelectionTruth(
   }
 
   if (!profile.defaultGenre && draftDefaultGenre.length === 0) {
+    const defaultProjectStyleTruth = getDefaultProjectStyleTruth(null);
+
     return {
       badgeLabel: 'No default',
       badgeVariant: 'secondary',
-      detail: 'No default genre is saved, and this page still has no default selected.',
+      detail: `No default genre is saved, so new projects still start as ${defaultProjectStyleTruth.effectiveGenre} with ${defaultProjectStyleTruth.effectiveSubStyle}.`,
     };
   }
 

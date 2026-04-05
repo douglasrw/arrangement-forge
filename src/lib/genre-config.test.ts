@@ -5,6 +5,7 @@ import {
   GENRE_SLIDERS,
   GENRE_SUBSTYLES,
   getDefaultProjectStyle,
+  getDefaultProjectStyleTruth,
   getDefaultSubStyleForGenre,
   getInstrumentStyleSelectionTruth,
   normalizeGenrePreference,
@@ -73,6 +74,28 @@ describe('project style defaults', () => {
     expect(getDefaultProjectStyle('Unsupported')).toEqual({
       genre: 'Jazz',
       subStyle: 'Swing',
+    });
+  });
+
+  it('makes the canonical fallback path explicit when no saved genre exists', () => {
+    expect(getDefaultProjectStyleTruth(null)).toEqual({
+      requestedGenre: null,
+      effectiveGenre: 'Jazz',
+      effectiveSubStyle: 'Swing',
+      usedCanonicalDefault: true,
+      currentState: 'No saved default genre is active, so new projects currently start as Jazz with Swing.',
+      nextStep: 'Save a supported default genre here if you want new projects to start somewhere other than Jazz.',
+    });
+  });
+
+  it('states the current starting point when a saved genre is present', () => {
+    expect(getDefaultProjectStyleTruth('Pop')).toEqual({
+      requestedGenre: 'Pop',
+      effectiveGenre: 'Pop',
+      effectiveSubStyle: 'Synth Pop',
+      usedCanonicalDefault: false,
+      currentState: 'New projects currently start as Pop with Synth Pop.',
+      nextStep: 'Choose a different genre here if you want to change that starting point.',
     });
   });
 });

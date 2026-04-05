@@ -83,6 +83,15 @@ export interface GenreSliderConfig {
   dynamics: boolean;
 }
 
+export interface DefaultProjectStyleTruth {
+  requestedGenre: string | null;
+  effectiveGenre: string;
+  effectiveSubStyle: string;
+  usedCanonicalDefault: boolean;
+  currentState: string;
+  nextStep: string;
+}
+
 export const GENRE_SLIDERS: Record<string, GenreSliderConfig> = {
   Jazz: { energy: true, groove: true, feel: true, swing: true, dynamics: true },
   Blues: { energy: true, groove: true, feel: true, swing: true, dynamics: true },
@@ -210,6 +219,34 @@ export function getDefaultProjectStyle(genre: string | null | undefined): {
   return {
     genre: normalizedGenre,
     subStyle: getDefaultSubStyleForGenre(normalizedGenre),
+  };
+}
+
+export function getDefaultProjectStyleTruth(
+  genre: string | null | undefined
+): DefaultProjectStyleTruth {
+  const requestedGenre = genre?.trim() ? genre : null;
+  const defaultProjectStyle = getDefaultProjectStyle(requestedGenre);
+  const usedCanonicalDefault = requestedGenre !== defaultProjectStyle.genre;
+
+  if (usedCanonicalDefault) {
+    return {
+      requestedGenre,
+      effectiveGenre: defaultProjectStyle.genre,
+      effectiveSubStyle: defaultProjectStyle.subStyle,
+      usedCanonicalDefault,
+      currentState: `No saved default genre is active, so new projects currently start as ${defaultProjectStyle.genre} with ${defaultProjectStyle.subStyle}.`,
+      nextStep: `Save a supported default genre here if you want new projects to start somewhere other than ${defaultProjectStyle.genre}.`,
+    };
+  }
+
+  return {
+    requestedGenre,
+    effectiveGenre: defaultProjectStyle.genre,
+    effectiveSubStyle: defaultProjectStyle.subStyle,
+    usedCanonicalDefault,
+    currentState: `New projects currently start as ${defaultProjectStyle.genre} with ${defaultProjectStyle.subStyle}.`,
+    nextStep: 'Choose a different genre here if you want to change that starting point.',
   };
 }
 

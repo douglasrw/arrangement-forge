@@ -478,7 +478,7 @@ describe('SettingsPage truth surface', () => {
       'Letter names is the saved chord display mode currently selected on this page.'
     );
     expect(mounted.container.textContent).toContain(
-      'Pre-selected when creating a new project. Saved profile truth accepts Jazz, Blues, Rock, Funk, Country, Gospel, R&B, Latin, or Pop. Saved now as Jazz. Choose a different genre here to update the saved project default.'
+      'Pre-selected when creating a new project. Saved profile truth accepts Jazz, Blues, Rock, Funk, Country, Gospel, R&B, Latin, or Pop. New projects currently start as Jazz with Swing. Choose a different genre here if you want to change that starting point.'
     );
     expect(genreSelectionTruth?.textContent).toContain('Saved selection');
     expect(genreSelectionTruth?.textContent).toContain(
@@ -595,7 +595,7 @@ describe('SettingsPage truth surface', () => {
     );
     expect(genreSelectionTruth?.textContent).toContain('No default');
     expect(genreSelectionTruth?.textContent).toContain(
-      'No default genre is selected yet, so new projects stay unset until you choose one and save.'
+      'No default genre is selected yet, so new projects currently follow the canonical Jazz fallback until you choose one and save.'
     );
   });
 
@@ -901,7 +901,7 @@ describe('SettingsPage truth surface', () => {
       'No saved chord display mode exists yet. The first save will create the profile with Letter names as the chord display mode.'
     );
     expect(mounted.container.textContent).toContain(
-      'Pre-selected when creating a new project. Saved profile truth accepts Jazz, Blues, Rock, Funk, Country, Gospel, R&B, Latin, or Pop. No saved default genre exists yet. The first save will create the profile with no default genre for new projects.'
+      'Pre-selected when creating a new project. Saved profile truth accepts Jazz, Blues, Rock, Funk, Country, Gospel, R&B, Latin, or Pop. No saved default genre is active, so new projects currently start as Jazz with Swing. The first save will create the profile with no default genre for new projects.'
     );
   });
 

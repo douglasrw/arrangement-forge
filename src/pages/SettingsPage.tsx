@@ -13,7 +13,7 @@ import {
 import { cn } from '@/lib/utils';
 import { getAuthTruth, useAuthStore } from '@/store/auth-store';
 import { useUiStore } from '@/store/ui-store';
-import { GENRES } from '@/lib/genre-config';
+import { GENRES, getDefaultProjectStyleTruth } from '@/lib/genre-config';
 import type { Profile } from '@/types';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -172,19 +172,20 @@ function getDefaultGenreTruth(
   const savedDefaultGenre = profile?.defaultGenre ?? null;
   const draftDefaultGenre = draft.defaultGenre || null;
   const hasPendingChange = draftDefaultGenre !== savedDefaultGenre;
+  const savedProjectStyleTruth = getDefaultProjectStyleTruth(savedDefaultGenre);
 
   if (!profile) {
     return {
-      currentState: 'No saved default genre exists yet.',
+      currentState: savedProjectStyleTruth.currentState,
       nextStep: `The first save will create the profile with ${formatDefaultGenreValue(draftDefaultGenre)} for new projects.`,
     };
   }
 
   return {
-    currentState: `Saved now as ${formatDefaultGenreValue(savedDefaultGenre)}.`,
+    currentState: savedProjectStyleTruth.currentState,
     nextStep: hasPendingChange
       ? `Next save will store ${formatDefaultGenreValue(draftDefaultGenre)} for new projects.`
-      : 'Choose a different genre here to update the saved project default.',
+      : savedProjectStyleTruth.nextStep,
   };
 }
 

@@ -78,7 +78,7 @@ describe('rowToProfile', () => {
     ).toEqual({
       badgeLabel: 'No default',
       badgeVariant: 'outline',
-      detail: 'No default genre is selected yet, so new projects stay unset until you choose one and save.',
+      detail: 'No default genre is selected yet, so new projects currently follow the canonical Jazz fallback until you choose one and save.',
     });
 
     expect(
@@ -97,6 +97,24 @@ describe('rowToProfile', () => {
       badgeLabel: 'Pending selection',
       badgeVariant: 'outline',
       detail: 'No default genre is selected locally. Jazz stays saved until you save.',
+    });
+
+    expect(
+      describeDefaultGenreSelectionTruth(
+        '',
+        {
+          id: 'profile-1',
+          displayName: 'Doug',
+          chordDisplayMode: 'letter',
+          defaultGenre: null,
+          createdAt: '2026-03-28T00:00:00Z',
+          updatedAt: '2026-03-28T01:00:00Z',
+        }
+      )
+    ).toEqual({
+      badgeLabel: 'No default',
+      badgeVariant: 'secondary',
+      detail: 'No default genre is saved, so new projects still start as Jazz with Swing.',
     });
   });
 
