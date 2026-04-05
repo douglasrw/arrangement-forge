@@ -264,8 +264,12 @@ describe('ArrangementView empty-state truth', () => {
     const failureBanner = mounted.container.querySelector(
       '[data-testid="arrangement-failure-banner"]'
     );
+    const chordLane = mounted.container.querySelector('[data-chord-lane-state="blocked"]');
+    const chordReadiness = mounted.container.querySelector('[data-chord-lane-readiness="blocked"]');
 
     expect(failureBanner).not.toBeNull();
+    expect(chordLane).not.toBeNull();
+    expect(chordReadiness?.textContent).toContain('Failed');
     expect(mounted.container.querySelector('[data-testid="arrangement-view"]')).not.toBeNull();
     expect(mounted.container.textContent).toContain(
       'Generator offline while refreshing the arrangement preview.'
@@ -275,6 +279,9 @@ describe('ArrangementView empty-state truth', () => {
     );
     expect(mounted.container.textContent).toContain(
       'Previous arrangement remains loaded below for reference.'
+    );
+    expect(mounted.container.textContent).not.toContain(
+      'Chord lane is waiting for chord bars to load for this arrangement.'
     );
     expect(
       mounted.container.querySelector('button[aria-label="drums block, bars 1-4"]')

@@ -144,12 +144,18 @@ function getArrangementFailureTruth(errorMessage: string | null) {
   }
 }
 
+function isGenerationFailure(errorMessage: string | null) {
+  return /^generation failed:/i.test(errorMessage?.trim() ?? "")
+}
+
 function getChordLaneTruth({
   projectReadiness,
+  generationFailure,
   totalBars,
   chordCount,
 }: {
   projectReadiness: ReturnType<typeof getProjectStoreReadiness>
+  generationFailure: ReturnType<typeof getArrangementFailureTruth> | null
   totalBars: number
   chordCount: number
 }): ChordLaneTruth {
@@ -157,12 +163,13 @@ function getChordLaneTruth({
     const detail = [projectReadiness.currentState, projectReadiness.detail]
       .filter(Boolean)
       .join(" ")
+    const visibleDetail = [detail, projectReadiness.nextStep].filter(Boolean).join(" ")
 
     return {
       state: "blocked",
       badge: "Blocked",
-      detail,
-      title: [detail, projectReadiness.nextStep].filter(Boolean).join(" "),
+      detail: visibleDetail,
+      title: visibleDetail,
     }
   }
 
@@ -172,6 +179,17 @@ function getChordLaneTruth({
       badge: "Waiting",
       detail: projectReadiness.currentState,
       title: `${projectReadiness.currentState} ${projectReadiness.nextStep}`.trim(),
+    }
+  }
+
+  if (generationFailure) {
+    const detail = [generationFailure.detail, generationFailure.nextStep].filter(Boolean).join(" ")
+
+    return {
+      state: "blocked",
+      badge: "Failed",
+      detail,
+      title: detail,
     }
   }
 
@@ -490,8 +508,13 @@ export function ArrangementView({
     projectLoadFailureTarget,
   })
   const totalBars = sortedSections.reduce((sum, s) => sum + s.barCount, 0)
+  const generationFailure =
+    systemStatus === "error" && isGenerationFailure(errorMessage)
+      ? getArrangementFailureTruth(errorMessage)
+      : null
   const chordLaneTruth = getChordLaneTruth({
     projectReadiness,
+    generationFailure,
     totalBars,
     chordCount: chords.length,
   })
