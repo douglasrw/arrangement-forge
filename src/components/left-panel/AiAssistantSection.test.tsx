@@ -367,11 +367,63 @@ describe('AiAssistantSection', () => {
     expect(composerState?.textContent).not.toContain('Assistant is ready');
   });
 
+  it('keeps the latest assistant failure visible even after global status returns to ready', () => {
+    useUiStore.setState({
+      generationState: 'complete',
+      systemStatus: 'ready',
+      errorMessage: null,
+    });
+    useProjectStore.setState({
+      chatMessages: [
+        makeMessage({ id: 'm0', role: 'user', content: 'Thin out the drums' }),
+        makeMessage({ id: 'm1', content: 'Generation failed: Generator offline Next step: Reconnect the generator, then try again.' }),
+      ],
+    });
+
+    const mounted = renderSection();
+    mountedRoot = mounted.root;
+    mountedContainer = mounted.container;
+
+    const composerState = mounted.container.querySelector(
+      '[data-testid="ai-assistant-composer-state"]'
+    );
+
+    expect(composerState?.textContent).toContain('Assistant request failed');
+    expect(composerState?.textContent).toContain('Generator offline');
+    expect(composerState?.textContent).toContain(
+      'Next step: Reconnect the generator, then try again.'
+    );
+    expect(composerState?.textContent).not.toContain('Assistant is ready');
+  });
+
   it('keeps the assistant ready when the last failure came from non-assistant generation', () => {
     useUiStore.setState({
       generationState: 'complete',
       systemStatus: 'error',
       errorMessage: 'Generator offline',
+    });
+
+    const mounted = renderSection();
+    mountedRoot = mounted.root;
+    mountedContainer = mounted.container;
+
+    const composerState = mounted.container.querySelector(
+      '[data-testid="ai-assistant-composer-state"]'
+    );
+
+    expect(composerState?.textContent).toContain('Assistant is ready');
+    expect(composerState?.textContent).not.toContain('Assistant request failed');
+    expect(composerState?.textContent).not.toContain('Generator offline');
+  });
+
+  it('keeps setup-scoped generation failures from masquerading as assistant chat failures', () => {
+    useUiStore.setState({
+      generationState: 'complete',
+      systemStatus: 'ready',
+      errorMessage: null,
+    });
+    useProjectStore.setState({
+      chatMessages: [makeMessage({ scope: 'setup', content: 'Generation failed: Generator offline' })],
     });
 
     const mounted = renderSection();

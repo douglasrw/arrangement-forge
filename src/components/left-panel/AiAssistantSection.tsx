@@ -37,6 +37,10 @@ function isFailureMessage(message: AiChatMessage) {
   return message.role === "assistant" && isGenerationFailureContent(message.content)
 }
 
+function isAssistantReplyMessage(message: AiChatMessage) {
+  return message.role === "assistant" && message.scope !== "setup"
+}
+
 function formatScopeTarget(message: AiChatMessage) {
   return getScopeLabel(message)
 }
@@ -68,18 +72,19 @@ export function AiAssistantSection() {
   const hasParseIssues = parseTruth?.state === "blocked"
   const isGenerating = generationState === "generating"
   const canSend = Boolean(project && hasChordChart && !hasParseIssues && trimmedInput && !isGenerating)
-  const latestAssistantFailure = [...chatMessages]
+  const latestAssistantReply = [...chatMessages]
     .reverse()
-    .find((message) => isFailureMessage(message))
-  const hasActiveAssistantFailure = systemStatus === "error" && Boolean(latestAssistantFailure)
+    .find((message) => isAssistantReplyMessage(message))
+  const latestAssistantFailure =
+    latestAssistantReply && isFailureMessage(latestAssistantReply) ? latestAssistantReply : null
   const assistantReadiness = getAiAssistantReadinessTruth({
     hasProject: Boolean(project),
     hasChordChart,
     hasParseIssues,
     parseTruth,
     generationState,
-    systemStatus: hasActiveAssistantFailure ? systemStatus : undefined,
-    errorMessage: hasActiveAssistantFailure ? latestAssistantFailure?.content ?? errorMessage : null,
+    systemStatus: latestAssistantFailure ? "error" : undefined,
+    errorMessage: latestAssistantFailure?.content ?? errorMessage,
   })
   const composerStatus = {
     badge: assistantReadiness.badge,
