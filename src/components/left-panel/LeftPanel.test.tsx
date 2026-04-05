@@ -171,7 +171,9 @@ describe('LeftPanel inspector truth regression', () => {
     mountedRoot = mounted.root;
     mountedContainer = mounted.container;
 
-    expect(mounted.container.querySelector('[data-left-panel-coordination="input first"]')).not.toBeNull();
+    expect(mounted.container.querySelector('[data-left-panel-coordination="waiting"]')).not.toBeNull();
+    expect(mounted.container.querySelector('[data-left-panel-readiness="waiting"]')).not.toBeNull();
+    expect(mounted.container.textContent).toContain('Waiting');
     expect(mounted.container.textContent).toContain('The chord chart unlocks the rest of the panel');
     expect(mounted.container.textContent).toContain(
       'Start in Input. A chord chart enables generation and assistant requests, while style defaults are already available for the next pass.'
@@ -202,14 +204,16 @@ describe('LeftPanel inspector truth regression', () => {
     mountedRoot = mounted.root;
     mountedContainer = mounted.container;
 
-    expect(mounted.container.querySelector('[data-left-panel-coordination="active"]')).not.toBeNull();
+    expect(mounted.container.querySelector('[data-left-panel-coordination="waiting"]')).not.toBeNull();
+    expect(mounted.container.querySelector('[data-left-panel-readiness="waiting"]')).not.toBeNull();
+    expect(mounted.container.textContent).toContain('Waiting');
     expect(mounted.container.textContent).toContain('Arrangement generation is in progress');
     expect(mounted.container.textContent).toContain(
       'Input stays visible while the assistant waits and any style edits steer the next pass instead of this one.'
     );
     expect(mounted.container.textContent).toContain('Generation in progress');
     expect(mounted.container.textContent).toContain('Style edits steer the next run');
-    expect(mounted.container.textContent).toContain('Assistant requests are paused');
+    expect(mounted.container.textContent).toContain('Assistant is waiting');
     expect(mounted.container.textContent).toContain(
       'The current arrangement pass is still running, so new prompts unlock when it finishes.'
     );
@@ -227,6 +231,7 @@ describe('LeftPanel inspector truth regression', () => {
     mountedContainer = mounted.container;
 
     expect(mounted.container.querySelector('[data-left-panel-coordination="blocked"]')).not.toBeNull();
+    expect(mounted.container.querySelector('[data-left-panel-readiness="blocked"]')).not.toBeNull();
     expect(mounted.container.textContent).toContain('Chord chart fixes are blocking generation');
     expect(mounted.container.textContent).toContain(
       'Bars 2 and 3 currently parse as N.C., so Generate stays blocked until the chart is fixed.'
@@ -254,11 +259,33 @@ describe('LeftPanel inspector truth regression', () => {
     mountedContainer = mounted.container;
 
     expect(mounted.container.querySelector('[data-left-panel-coordination="blocked"]')).not.toBeNull();
+    expect(mounted.container.querySelector('[data-left-panel-readiness="blocked"]')).not.toBeNull();
+    expect(mounted.container.textContent).toContain('Blocked');
     expect(mounted.container.textContent).toContain('Chord chart fixes are blocking generation');
     expect(mounted.container.textContent).toContain(
       'No playable chord bars are present yet, so Generate stays blocked until the chart includes at least one chord bar. Section labels and blank lines do not create playable bars on their own. Next step: Add at least one chord bar such as Cmaj7 | Fmaj7 | G7 | Cmaj7.'
     );
     expect(mounted.container.textContent).not.toContain('Flagged bars would resolve to N.C.');
+  });
+
+  it('shows ready shell truth when input, style controls, and the assistant can all proceed', () => {
+    useProjectStore.setState({
+      project: makeProject({
+        chordChartRaw: '[Verse]\nCmaj7 | Dm7 | G7 | Cmaj7',
+      }),
+    });
+
+    const mounted = renderLeftPanel({ mode: 'default' });
+    mountedRoot = mounted.root;
+    mountedContainer = mounted.container;
+
+    expect(mounted.container.querySelector('[data-left-panel-coordination="ready"]')).not.toBeNull();
+    expect(mounted.container.querySelector('[data-left-panel-readiness="ready"]')).not.toBeNull();
+    expect(mounted.container.textContent).toContain('Ready');
+    expect(mounted.container.textContent).toContain('The left panel is coordinated');
+    expect(mounted.container.textContent).toContain(
+      'Input is ready, style controls shape the next pass, and the assistant can request arrangement changes without hidden prerequisites.'
+    );
   });
 
   it('keeps the operator-visible inspector honest across section and block contexts', () => {
@@ -320,7 +347,7 @@ describe('LeftPanel inspector truth regression', () => {
     );
     expect(mounted.container.textContent).toContain('Block Dynamics Override');
     expect(mounted.container.textContent).toContain(
-      'This block is inheriting the project dynamics default.'
+      'This block is defaulting to the project dynamics value because neither the section nor block overrides it.'
     );
     expect(mounted.container.textContent).toContain('Inherited Audio Truth');
     expect(mounted.container.textContent).toContain(

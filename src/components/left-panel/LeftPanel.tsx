@@ -206,7 +206,8 @@ export function LeftPanel({
         {context.mode === "default" && (
           <div className="flex min-h-0 flex-1 flex-col gap-2 overflow-hidden p-2">
             <div
-              data-left-panel-coordination={coordinationTruth.badge.toLowerCase()}
+              data-left-panel-coordination={coordinationTruth.state}
+              data-left-panel-readiness={coordinationTruth.state}
               role="status"
               aria-live="polite"
               className={cn(

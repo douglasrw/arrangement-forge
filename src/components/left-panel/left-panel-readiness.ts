@@ -45,7 +45,10 @@ export type LeftPanelSectionTruth = {
   tone: LeftPanelTruthTone
 }
 
+export type LeftPanelShellState = "waiting" | "blocked" | "ready"
+
 export type LeftPanelCoordinationTruth = {
+  state: LeftPanelShellState
   badge: string
   title: string
   detail: string
@@ -284,6 +287,7 @@ export function getLeftPanelCoordinationTruth(
 
   if (!inputs.hasProject) {
     return {
+      state: "waiting",
       badge: "Waiting",
       title: "Project context is still missing",
       detail: "Load or create a project to coordinate input, style defaults, and assistant requests from one panel.",
@@ -298,7 +302,8 @@ export function getLeftPanelCoordinationTruth(
 
   if (inputs.generationState === "generating") {
     return {
-      badge: "Active",
+      state: "waiting",
+      badge: "Waiting",
       title: "Arrangement generation is in progress",
       detail: "Input stays visible while the assistant waits and any style edits steer the next pass instead of this one.",
       tone: "neutral",
@@ -312,7 +317,8 @@ export function getLeftPanelCoordinationTruth(
 
   if (!inputs.hasChordChart) {
     return {
-      badge: "Input first",
+      state: "waiting",
+      badge: "Waiting",
       title: "The chord chart unlocks the rest of the panel",
       detail: "Start in Input. A chord chart enables generation and assistant requests, while style defaults are already available for the next pass.",
       tone: "neutral",
@@ -326,6 +332,7 @@ export function getLeftPanelCoordinationTruth(
 
   if (inputs.hasParseIssues) {
     return {
+      state: "blocked",
       badge: "Blocked",
       title: "Chord chart fixes are blocking generation",
       detail: aiTruth.detail,
@@ -339,6 +346,7 @@ export function getLeftPanelCoordinationTruth(
   }
 
   return {
+    state: "ready",
     badge: "Ready",
     title: "The left panel is coordinated",
     detail: "Input is ready, style controls shape the next pass, and the assistant can request arrangement changes without hidden prerequisites.",
