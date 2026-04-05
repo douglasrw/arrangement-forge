@@ -11,6 +11,7 @@ describe('getTransportReadinessTruth', () => {
         timelineAvailable: true,
         transportReady: true,
         playbackAction: 'play',
+        playbackReason: 'ready',
         playbackSummary: 'Ready',
       })
     ).toEqual({
@@ -27,6 +28,7 @@ describe('getTransportReadinessTruth', () => {
         timelineAvailable: true,
         transportReady: false,
         playbackAction: 'load-and-play',
+        playbackReason: 'awaiting-user-play',
         playbackSummary: 'Load to play',
       })
     ).toEqual({
@@ -43,6 +45,7 @@ describe('getTransportReadinessTruth', () => {
         timelineAvailable: true,
         transportReady: false,
         playbackAction: 'retry-play',
+        playbackReason: 'arrangement-load-failed',
         playbackSummary: 'Audio load failed',
       })
     ).toEqual({
@@ -59,6 +62,7 @@ describe('getTransportReadinessTruth', () => {
         timelineAvailable: false,
         transportReady: false,
         playbackAction: 'wait',
+        playbackReason: 'loading-arrangement',
         playbackSummary: 'Unavailable',
       })
     ).toEqual({
@@ -75,10 +79,28 @@ describe('getTransportReadinessTruth', () => {
         timelineAvailable: false,
         transportReady: false,
         playbackAction: 'unavailable',
+        playbackReason: 'saved-arrangement-not-loaded',
         playbackSummary: 'Reload arrangement',
       })
     ).toEqual({
       detailLabel: 'Reload arrangement',
+      state: 'blocked',
+      summaryLabel: 'Blocked',
+      summaryClassName: 'bg-rose-500/10 text-rose-300',
+    });
+  });
+
+  it('returns explicit no-stems truth when the timeline exists but playback is blocked', () => {
+    expect(
+      getTransportReadinessTruth({
+        timelineAvailable: true,
+        transportReady: false,
+        playbackAction: 'unavailable',
+        playbackReason: 'no-stems',
+        playbackSummary: 'Unavailable',
+      })
+    ).toEqual({
+      detailLabel: 'No stems',
       state: 'blocked',
       summaryLabel: 'Blocked',
       summaryClassName: 'bg-rose-500/10 text-rose-300',

@@ -205,6 +205,7 @@ export function TransportBar() {
     timelineAvailable,
     transportReady,
     playbackAction,
+    playbackReason: playbackTruth.reason,
     playbackSummary: playbackTruth.summary,
   })
   const transportSelectionTruth = getTransportSelectionTruth({

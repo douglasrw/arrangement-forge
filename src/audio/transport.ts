@@ -2,7 +2,7 @@
 // Converts between seconds and bar positions using tempo and time signature.
 
 import * as Tone from 'tone';
-import type { PlaybackTruthAction } from '@/types';
+import type { PlaybackTruthAction, PlaybackTruthReason } from '@/types';
 
 export type TransportReadinessState = 'ready' | 'waiting' | 'blocked' | 'error';
 
@@ -32,11 +32,13 @@ export function getTransportReadinessTruth({
   timelineAvailable,
   transportReady,
   playbackAction,
+  playbackReason,
   playbackSummary,
 }: {
   timelineAvailable: boolean;
   transportReady: boolean;
   playbackAction: PlaybackTruthAction;
+  playbackReason: PlaybackTruthReason;
   playbackSummary: string;
 }): TransportReadinessTruth {
   if (transportReady) {
@@ -68,7 +70,7 @@ export function getTransportReadinessTruth({
 
   if (playbackAction === 'unavailable') {
     return {
-      detailLabel: playbackSummary,
+      detailLabel: playbackReason === 'no-stems' ? 'No stems' : playbackSummary,
       state: 'blocked',
       summaryLabel: 'Blocked',
       summaryClassName: 'bg-rose-500/10 text-rose-300',

@@ -913,6 +913,40 @@ describe('TransportBar transport controls', () => {
     );
   });
 
+  it('surfaces no-stems transport truth explicitly when the timeline exists but playback is blocked', () => {
+    useAudioState.playbackReadiness = 'unavailable';
+    useAudioState.playbackTruth = {
+      status: 'unavailable',
+      action: 'unavailable',
+      reason: 'no-stems',
+      summary: 'Unavailable',
+      detail: 'No playable stems are loaded for this arrangement yet.',
+      nextStep: 'Regenerate or import stems before starting playback.',
+    };
+
+    const mounted = renderTransportBar();
+    mountedRoot = mounted.root;
+    mountedContainer = mounted.container;
+
+    const playButton = mounted.container.querySelector(
+      'button[aria-label="Play unavailable"]'
+    ) as HTMLButtonElement | null;
+    const guidance = mounted.container.querySelector(
+      '[data-transport-guidance="no-stems"]'
+    ) as HTMLDivElement | null;
+    const readinessBadge = mounted.container.querySelector(
+      '[data-transport-readiness-state]'
+    ) as HTMLSpanElement | null;
+
+    expect(playButton?.disabled).toBe(true);
+    expect(guidance?.textContent).toContain('No playable stems are loaded for this arrangement yet.');
+    expect(guidance?.textContent).toContain('Regenerate or import stems before starting playback.');
+    expect(readinessBadge?.getAttribute('data-transport-readiness-state')).toBe('blocked');
+    expect(readinessBadge?.textContent).toBe('Blocked');
+    expect(mounted.container.textContent).toContain('No stems');
+    expect(mounted.container.textContent).not.toContain('Load to play');
+  });
+
   it('surfaces loading readiness truth before playback is ready', () => {
     useAudioState.transportState = {
       ...useAudioState.transportState,
