@@ -330,10 +330,64 @@ describe('ArrangementView empty-state truth', () => {
     mountedContainer = mounted.container;
 
     expect(mounted.container.textContent).toContain('Pattern missing');
-    expect(mounted.container.textContent).toContain('Choose a pattern');
+    expect(mounted.container.textContent).toContain('Needs pattern');
+    expect(mounted.container.textContent).toContain(
+      'Choose a pattern in Block Inspector to make this block playable.'
+    );
     expect(mounted.container.textContent).not.toContain('Default');
   });
 
+  it('keeps missing block style truth honest when a block is selected into inspector context', () => {
+    const onBlockSelect = vi.fn();
+
+    useProjectStore.setState({
+      blocks: [
+        makeBlock({
+          id: 'block-drums',
+          stemId: 'stem-drums',
+          sectionId: 'section-1',
+          style: null,
+        }),
+      ],
+    });
+
+    const container = document.createElement('div');
+    document.body.appendChild(container);
+    const root = createRoot(container);
+
+    act(() => {
+      root.render(<ArrangementView onBlockSelect={onBlockSelect} />);
+    });
+
+    mountedRoot = root;
+    mountedContainer = container;
+
+    const blockButton = container.querySelector(
+      'button[aria-label="drums block, bars 1-4"]'
+    ) as HTMLButtonElement | null;
+
+    expect(blockButton).not.toBeNull();
+
+    act(() => {
+      blockButton?.click();
+    });
+
+    expect(onBlockSelect).toHaveBeenCalledWith({
+      instrument: 'drums',
+      styleName: null,
+      startBar: 1,
+      endBar: 4,
+    });
+    expect(container.textContent).toContain('Pattern missing');
+    expect(container.textContent).toContain('Needs pattern');
+    expect(container.textContent).toContain(
+      'Choose a pattern in Block Inspector to make this block playable.'
+    );
+    expect(container.textContent).toContain(
+      'Pattern missing for bars 1-4. Choose a pattern in Block Inspector to make this block playable.'
+    );
+    expect(container.textContent).not.toContain('Default');
+  });
   it('surfaces song-default selection truth and marks each lane entry point explicitly', () => {
     const mounted = renderArrangementView();
     mountedRoot = mounted.root;

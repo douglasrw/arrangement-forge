@@ -9,9 +9,7 @@ import type { SignUpResult } from '@/hooks/useAuth';
 const authApi = vi.hoisted(() => ({
   authStatus: 'signed-out',
   signedOutReason: 'no-session',
-  get authReadiness() {
-    return this.authTruth.readiness;
-  },
+  chordDisplayMode: 'roman',
   get authTruth() {
     if (this.authStatus === 'checking-session') {
       return {
@@ -98,6 +96,27 @@ const authApi = vi.hoisted(() => ({
                   ? 'Sign in again to continue.'
                   : 'Sign in to reopen the app.',
       signedOutReason: this.signedOutReason,
+    };
+  },
+  get authSelectionTruth() {
+    if (this.authStatus === 'authenticated') {
+      return {
+        chordDisplayMode: this.chordDisplayMode,
+        selectionSource: 'profile',
+        currentState:
+          `The auth store is using the saved ${this.chordDisplayMode} chord display mode from the authenticated profile.`,
+        nextStep:
+          'Open the app with this saved display mode, or update the profile preference to change the next authenticated default.',
+      };
+    }
+
+    return {
+      chordDisplayMode: 'letter',
+      selectionSource: 'default',
+      currentState:
+        'No authenticated profile preference is available, so the auth store is defaulting chord display mode to letter.',
+      nextStep:
+        'Sign in with a saved profile to inherit its chord display mode, or continue with the letter default.',
     };
   },
   get authGate() {
@@ -217,6 +236,7 @@ beforeEach(() => {
   authApi.signInWithGoogle.mockReset();
   authApi.authStatus = 'signed-out';
   authApi.signedOutReason = 'no-session';
+  authApi.chordDisplayMode = 'roman';
   navigateMock.mockReset();
   locationMock.pathname = '/login';
   locationMock.search = '';
@@ -320,7 +340,14 @@ describe('LoginPage failure truth', () => {
     mountedContainer = mounted.container;
 
     expect(mounted.container.textContent).toContain('Authentication blocked');
+    expect(mounted.container.textContent).toContain('Readiness: Blocked');
     expect(mounted.container.textContent).toContain('return you to project project-1 in the editor');
+    expect(mounted.container.textContent).toContain('Chord display mode');
+    expect(mounted.container.textContent).toContain('Current selection: Letter names');
+    expect(mounted.container.textContent).toContain('Selection source: Default fallback');
+    expect(mounted.container.textContent).toContain(
+      'No authenticated profile preference is available, so the auth store is defaulting chord display mode to letter.'
+    );
     expect(mounted.container.querySelector('form')).not.toBeNull();
   });
 
@@ -334,6 +361,7 @@ describe('LoginPage failure truth', () => {
     mountedContainer = mounted.container;
 
     expect(mounted.container.textContent).toContain('Authentication blocked');
+    expect(mounted.container.textContent).toContain('Readiness: Blocked');
     expect(mounted.container.textContent).toContain('return you to project selection in the editor');
     expect(mounted.container.querySelector('form')).not.toBeNull();
   });
@@ -352,6 +380,7 @@ describe('LoginPage failure truth', () => {
     expect(mounted.container.textContent).toContain(
       'The saved profile is missing, so the session cannot reopen yet.'
     );
+    expect(mounted.container.textContent).toContain('Readiness: Blocked');
     expect(mounted.container.textContent).toContain(
       'Restore or complete the profile, then sign in again.'
     );
@@ -406,6 +435,7 @@ describe('LoginPage failure truth', () => {
 
     expect(authApi.signIn).toHaveBeenCalledWith('ash@example.com', 'secret-1');
     expect(mounted.container.textContent).toContain('Waiting on authentication');
+    expect(mounted.container.textContent).toContain('Readiness: Blocked');
     expect(mounted.container.textContent).toContain('continue to the library');
     expect(
       (mounted.container.querySelector('button[type="submit"]') as HTMLButtonElement | null)
@@ -581,6 +611,7 @@ describe('LoginPage failure truth', () => {
 
     expect(mounted.container.querySelector('[data-testid="auth-loading-screen"]')).not.toBeNull();
     expect(mounted.container.textContent).toContain('Waiting on authentication');
+    expect(mounted.container.textContent).toContain('Readiness: Waiting');
     expect(mounted.container.textContent).toContain('Checking for an existing session.');
     expect(mounted.container.textContent).toContain('Next step: Wait for session bootstrap.');
     expect(mounted.container.textContent).toContain('continue to settings');
@@ -614,6 +645,7 @@ describe('LoginPage failure truth', () => {
 
     expect(mounted.container.querySelector('[data-testid="auth-loading-screen"]')).not.toBeNull();
     expect(mounted.container.textContent).toContain('Authentication ready');
+    expect(mounted.container.textContent).toContain('Readiness: Ready');
     expect(mounted.container.textContent).not.toContain('Waiting on authentication');
     expect(mounted.container.textContent).toContain('An authenticated session is ready.');
     expect(mounted.container.textContent).toContain('Returning you to settings');
@@ -639,6 +671,12 @@ describe('LoginPage failure truth', () => {
     expect(mounted.container.querySelector('[data-testid="auth-loading-screen"]')).not.toBeNull();
     expect(mounted.container.textContent).toContain('Authentication ready');
     expect(mounted.container.textContent).toContain('Returning you to project selection in the editor');
+    expect(mounted.container.textContent).toContain('Chord display mode');
+    expect(mounted.container.textContent).toContain('Current selection: Roman numerals');
+    expect(mounted.container.textContent).toContain('Selection source: Inherited from profile');
+    expect(mounted.container.textContent).toContain(
+      'The auth store is using the saved roman chord display mode from the authenticated profile.'
+    );
     expect(mounted.container.querySelector('form')).toBeNull();
 
     await act(async () => {

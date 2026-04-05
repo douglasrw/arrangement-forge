@@ -47,7 +47,8 @@ function getBlockPatternTruth(instrument: Instrument, styleName?: string) {
   if (!normalizedStyleName) {
     return {
       title: "Pattern missing",
-      detail: "Choose a pattern",
+      detail: "Choose a pattern in Block Inspector to make this block playable.",
+      badge: "Needs pattern",
       isMissing: true,
     }
   }
@@ -59,6 +60,7 @@ function getBlockPatternTruth(instrument: Instrument, styleName?: string) {
   return {
     title: option?.label ?? toTitleCase(normalizedStyleName),
     detail: "Pattern ready",
+    badge: null,
     isMissing: false,
   }
 }
@@ -133,13 +135,20 @@ export function SequencerBlock({
         </span>
       ) : null}
       <span className="flex min-w-0 flex-col gap-1">
-        <span
-          className={cn(
-            "truncate text-xs font-semibold uppercase tracking-[0.16em]",
-            blockTruth.isMissing ? "text-warning" : "text-foreground",
-          )}
-        >
-          {blockTruth.title}
+        <span className="flex min-w-0 items-center gap-1.5">
+          <span
+            className={cn(
+              "truncate text-xs font-semibold uppercase tracking-[0.16em]",
+              blockTruth.isMissing ? "text-warning" : "text-foreground",
+            )}
+          >
+            {blockTruth.title}
+          </span>
+          {blockTruth.badge ? (
+            <span className="shrink-0 rounded-full border border-warning/30 bg-warning/10 px-1.5 py-0.5 text-[8px] font-semibold uppercase tracking-[0.16em] text-warning">
+              {blockTruth.badge}
+            </span>
+          ) : null}
         </span>
         <span
           className={cn(

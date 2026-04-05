@@ -55,6 +55,15 @@ type AssistantMessageScope = {
   scopeTarget: string | null;
 };
 
+export type AssistantSelectionPresentation = {
+  tone: 'ready' | 'blocked';
+  badge: string;
+  value: string;
+  detail: string;
+  scope: AiChatMessage['scope'];
+  scopeTarget: string | null;
+};
+
 function createChatMessage(
   projectId: string,
   role: AiChatMessage['role'],
@@ -208,11 +217,11 @@ function formatBarRange(startBar: number, endBar: number): string {
   return startBar === endBar ? `bar ${startBar}` : `bars ${startBar}-${endBar}`;
 }
 
-function getAssistantMessageScope(state: {
+export function getAssistantSelectionPresentation(state: {
   sections: Section[];
   blocks: Block[];
   stems: Stem[];
-}): AssistantMessageScope {
+}): AssistantSelectionPresentation {
   const selectionTruth = getProjectSelectionTruth(state, useSelectionStore.getState());
 
   if (selectionTruth.status === 'selected-section') {
@@ -220,6 +229,10 @@ function getAssistantMessageScope(state: {
 
     if (section) {
       return {
+        tone: 'ready',
+        badge: 'Selected scope',
+        value: `${section.name} (${section.startBar}-${section.startBar + section.barCount - 1})`,
+        detail: selectionTruth.nextStep,
         scope: 'section',
         scopeTarget: `${section.name} (${formatBarRange(section.startBar, section.startBar + section.barCount - 1)})`,
       };
@@ -235,6 +248,10 @@ function getAssistantMessageScope(state: {
       const instrumentLabel = `${stem.instrument.charAt(0).toUpperCase()}${stem.instrument.slice(1)}`;
 
       return {
+        tone: 'ready',
+        badge: 'Selected scope',
+        value: `${stem.instrument} ${block.startBar}-${block.endBar} in ${section.name}`,
+        detail: selectionTruth.nextStep,
         scope: 'block',
         scopeTarget: `${instrumentLabel} ${formatBarRange(block.startBar, block.endBar)} in ${section.name}`,
       };
@@ -243,12 +260,20 @@ function getAssistantMessageScope(state: {
 
   if (selectionTruth.status === 'missing-selection') {
     return {
+      tone: 'blocked',
+      badge: 'Fallback scope',
+      value: 'Whole song fallback',
+      detail: `${selectionTruth.currentState} ${selectionTruth.nextStep}`.trim(),
       scope: 'song',
       scopeTarget: 'Whole song fallback',
     };
   }
 
   return {
+    tone: 'ready',
+    badge: 'Default scope',
+    value: 'Whole song default',
+    detail: `${selectionTruth.currentState} ${selectionTruth.nextStep}`.trim(),
     scope: 'song',
     scopeTarget: 'Whole song default',
   };
@@ -286,7 +311,7 @@ export function useGenerate() {
     const hadArrangement = hasArrangementRows;
     const shouldRegenerate = hadArrangement || isRegeneration;
     const generationScope = getGenerationScope(shouldRegenerate, Boolean(trimmedAssistantPrompt));
-    const assistantMessageScope = getAssistantMessageScope({
+    const assistantSelection = getAssistantSelectionPresentation({
       sections,
       blocks,
       stems,
@@ -298,14 +323,12 @@ export function useGenerate() {
           project.id,
           'user',
           trimmedAssistantPrompt,
-          assistantMessageScope.scope,
-          assistantMessageScope.scopeTarget
+          assistantSelection.scope,
+          assistantSelection.scopeTarget
         )
       );
     }
 
-    // Capture pre-generation state for undo when the run is replacing an
-    // existing arrangement.
     const before = shouldRegenerate
       ? snapshotArrangement({ stems, sections, blocks, chords })
       : null;
@@ -325,7 +348,6 @@ export function useGenerate() {
         );
       }
 
-      // Parse chord chart
       const parseResult = parseChordChart(project.chordChartRaw, project.key);
       const parseIssues = parseResult.issues ?? [];
 
@@ -354,12 +376,10 @@ export function useGenerate() {
         stems: ['drums', 'bass', 'piano', 'guitar', 'strings'],
       };
 
-      // Call generator (client-side for MVP)
       const response = generate(request);
 
       const now = new Date().toISOString();
 
-      // Build sections with UUIDs
       const newSections: Section[] = response.sections.map((s) => ({
         id: crypto.randomUUID(),
         projectId: project.id,
@@ -375,7 +395,6 @@ export function useGenerate() {
         createdAt: now,
       }));
 
-      // Build stems with UUIDs
       const newStems: Stem[] = response.stems.map((s) => ({
         id: crypto.randomUUID(),
         projectId: project.id,
@@ -388,7 +407,6 @@ export function useGenerate() {
         createdAt: now,
       }));
 
-      // Build blocks: map stem_instrument → stemId, section_name → sectionId
       const stemByInstrument = new Map(newStems.map((s) => [s.instrument, s]));
       const sectionByName = new Map(newSections.map((s) => [s.name, s]));
 
@@ -412,7 +430,6 @@ export function useGenerate() {
         };
       });
 
-      // Build chords
       const newChords: Chord[] = response.chords.map((c) => ({
         id: crypto.randomUUID(),
         projectId: project.id,
@@ -422,7 +439,6 @@ export function useGenerate() {
         bassDegree: c.bass_degree,
       }));
 
-      // Populate stores
       setArrangement({ stems: newStems, sections: newSections, blocks: newBlocks, chords: newChords });
       updateProject({
         generatedAt: now,
@@ -437,12 +453,11 @@ export function useGenerate() {
             assistantPrompt: trimmedAssistantPrompt,
             hadArrangement: shouldRegenerate,
           }),
-          trimmedAssistantPrompt ? assistantMessageScope.scope : generationScope,
-          trimmedAssistantPrompt ? assistantMessageScope.scopeTarget : null
+          trimmedAssistantPrompt ? assistantSelection.scope : generationScope,
+          trimmedAssistantPrompt ? assistantSelection.scopeTarget : null
         )
       );
 
-      // Push single undo entry after generation completes
       if (shouldRegenerate && before) {
         const after = snapshotArrangement({
           stems: newStems, sections: newSections, blocks: newBlocks, chords: newChords,
@@ -453,7 +468,6 @@ export function useGenerate() {
       setGenerationState('complete');
       setSystemStatus('ready');
 
-      // Save to Supabase
       await saveArrangement();
     } catch (err) {
       addChatMessage(
@@ -461,8 +475,8 @@ export function useGenerate() {
           project.id,
           'assistant',
           formatGenerationFailureMessage(err),
-          trimmedAssistantPrompt ? assistantMessageScope.scope : generationScope,
-          trimmedAssistantPrompt ? assistantMessageScope.scopeTarget : null
+          trimmedAssistantPrompt ? assistantSelection.scope : generationScope,
+          trimmedAssistantPrompt ? assistantSelection.scopeTarget : null
         )
       );
       await saveProject();
@@ -479,9 +493,6 @@ export function useGenerate() {
     pushUndo, saveArrangement, saveProject, addChatMessage,
   ]);
 
-  /** Regenerate MIDI data for all existing blocks using current style params.
-   * Does NOT create new sections/stems/blocks — only updates midiData on existing blocks.
-   * Used for reactive slider → playback updates. */
   const regenerateMidi = useCallback(() => {
     if (!project || !hasArrangementRows) return;
     if (blocks.length === 0 || sections.length === 0 || stems.length === 0) return;
@@ -493,7 +504,6 @@ export function useGenerate() {
       const stem = stems.find((s) => s.id === block.stemId);
       if (!section || !stem) return block;
 
-      // Resolve cascaded style values
       const energy = section.energyOverride ?? project.energy;
       const groove = section.grooveOverride ?? project.groove;
       const feel = section.feelOverride ?? project.feel;
@@ -502,7 +512,6 @@ export function useGenerate() {
 
       const barCount = block.endBar - block.startBar + 1;
 
-      // Build chord entries for this block's bar range
       const blockChords: ChordEntry[] = chords
         .filter((c) => c.barNumber >= block.startBar && c.barNumber <= block.endBar)
         .map((c) => ({
@@ -512,7 +521,6 @@ export function useGenerate() {
           bass_degree: c.bassDegree,
         }));
 
-      // Regenerate MIDI for this block
       const newMidi = generateMidiForBlock(
         stem.instrument,
         barCount,
@@ -542,31 +550,24 @@ export function useGenerate() {
       return { ...block, midiData: newMidi };
     });
 
-    // Update blocks in store — this triggers useAudio's loadArrangement effect
     setArrangement({ stems, sections, blocks: updatedBlocks, chords });
   }, [project, hasArrangementRows, blocks, sections, stems, chords, setArrangement]);
 
-  /** Regenerate MIDI data for drum blocks only.
-   * Non-drum blocks remain reference-equal (unchanged).
-   * Sets the drumOnlyUpdate flag so useAudio can hot-swap instead of full reload. */
   const regenerateDrumsOnly = useCallback(() => {
     if (!project || !hasArrangementRows) return;
     if (blocks.length === 0 || sections.length === 0 || stems.length === 0) return;
 
     const beatsPerBar = parseInt(project.timeSignature.split('/')[0]) || 4;
 
-    // Find the drums stem
     const drumStem = stems.find((s) => s.instrument === 'drums');
     if (!drumStem) return;
 
     const updatedBlocks = blocks.map((block) => {
-      // Only regenerate blocks belonging to the drums stem
       if (block.stemId !== drumStem.id) return block;
 
       const section = sections.find((s) => s.id === block.sectionId);
       if (!section) return block;
 
-      // Resolve cascaded style values (section override ?? project default)
       const energy = section.energyOverride ?? project.energy;
       const groove = section.grooveOverride ?? project.groove;
       const feel = section.feelOverride ?? project.feel;
@@ -575,7 +576,6 @@ export function useGenerate() {
 
       const barCount = block.endBar - block.startBar + 1;
 
-      // Build chord entries for this block's bar range
       const blockChords: ChordEntry[] = chords
         .filter((c) => c.barNumber >= block.startBar && c.barNumber <= block.endBar)
         .map((c) => ({
@@ -585,7 +585,6 @@ export function useGenerate() {
           bass_degree: c.bassDegree,
         }));
 
-      // Regenerate MIDI for this drum block
       const newMidi = generateMidiForBlock(
         'drums',
         barCount,
@@ -613,13 +612,10 @@ export function useGenerate() {
       return { ...block, midiData: newMidi };
     });
 
-    // Update blocks via drum-only path — sets drumOnlyUpdate flag
     setDrumBlocks(updatedBlocks);
     useUiStore.getState().markDirty();
   }, [project, hasArrangementRows, blocks, sections, stems, chords, setDrumBlocks]);
 
-  /** Regenerate MIDI data for ALL instrument blocks (drums + pitched).
-   * Uses per-instrument hot-swap path so playback is not interrupted. */
   const regenerateAllInstruments = useCallback(() => {
     if (!project || !hasArrangementRows) return;
     if (blocks.length === 0 || sections.length === 0 || stems.length === 0) return;
@@ -631,7 +627,6 @@ export function useGenerate() {
       const stem = stems.find((s) => s.id === block.stemId);
       if (!section || !stem) return block;
 
-      // Resolve cascaded style values (section override ?? project default)
       const energy = section.energyOverride ?? project.energy;
       const groove = section.grooveOverride ?? project.groove;
       const feel = section.feelOverride ?? project.feel;
@@ -640,7 +635,6 @@ export function useGenerate() {
 
       const barCount = block.endBar - block.startBar + 1;
 
-      // Build chord entries for this block's bar range
       const blockChords: ChordEntry[] = chords
         .filter((c) => c.barNumber >= block.startBar && c.barNumber <= block.endBar)
         .map((c) => ({
@@ -650,7 +644,6 @@ export function useGenerate() {
           bass_degree: c.bassDegree,
         }));
 
-      // Regenerate MIDI for this block
       const newMidi = generateMidiForBlock(
         stem.instrument,
         barCount,
@@ -680,20 +673,16 @@ export function useGenerate() {
       return { ...block, midiData: newMidi };
     });
 
-    // Update blocks via all-instruments path — sets allInstrumentsUpdate flag
     setAllInstrumentBlocks(updatedBlocks);
     useUiStore.getState().markDirty();
   }, [project, hasArrangementRows, blocks, sections, stems, chords, setAllInstrumentBlocks]);
 
-  // Reactive MIDI regeneration on style slider changes
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const isInitialRender = useRef(true);
 
   useEffect(() => {
-    // Only react if arrangement exists
     if (!hasArrangementRows || blocks.length === 0) return;
 
-    // Skip the initial render (don't regenerate on page load)
     if (isInitialRender.current) {
       isInitialRender.current = false;
       return;
@@ -707,7 +696,6 @@ export function useGenerate() {
     return () => {
       if (debounceRef.current) clearTimeout(debounceRef.current);
     };
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [hasArrangementRows, project?.energy, project?.groove, project?.feel, project?.swingPct, project?.dynamics]);
 
   return { runGeneration, regenerateMidi, regenerateDrumsOnly, regenerateAllInstruments };

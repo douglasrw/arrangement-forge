@@ -1,12 +1,19 @@
 import { useState, useEffect, FormEvent } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
-import type { AuthTruth } from '@/store/auth-store';
+import type { LoginFlowMode, LoginFlowSelectionTruth } from '@/hooks/useAuth';
+import type { AuthStoreSelectionTruth, AuthTruth } from '@/store/auth-store';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { getProtectedRouteTruth } from '@/lib/editor-route-truth';
+import { formatChordDisplayModeLabel } from '@/lib/profile';
+
+function getRequestedLoginFlowMode(search: string): LoginFlowMode {
+  const mode = new URLSearchParams(search).get('mode');
+  return mode === 'signup' ? 'signup' : 'signin';
+}
 
 function resolveRecoveryPath(state: unknown) {
   if (state && typeof state === 'object' && 'redirectTo' in state) {
@@ -31,10 +38,121 @@ function describeRecoveryDestination(path: string) {
   return getProtectedRouteTruth(path).recoveryDestination;
 }
 
+function formatReadinessLabel(readiness: AuthTruth['readiness']) {
+  switch (readiness) {
+    case 'ready':
+      return 'Ready';
+    case 'waiting':
+      return 'Waiting';
+    default:
+      return 'Blocked';
+  }
+}
+
+function getSelectionSourceLabel(selectionSource: AuthStoreSelectionTruth['selectionSource']) {
+  return selectionSource === 'profile' ? 'Inherited from profile' : 'Default fallback';
+}
+
+function getLoginFlowLabel(mode: LoginFlowMode) {
+  return mode === 'signup' ? 'Sign up' : 'Sign in';
+}
+
+function getLoginFlowSourceLabel(
+  selectionSource: 'default' | 'request' | 'selected',
+  defaultMode: LoginFlowMode
+) {
+  if (selectionSource === 'selected') {
+    return 'Selected on this page';
+  }
+
+  if (selectionSource === 'request') {
+    return 'Inherited from this link';
+  }
+
+  return `Default opening flow (${getLoginFlowLabel(defaultMode)})`;
+}
+
+function getLoginFlowSelectionTruth(
+  loginFlowSelectionTruth: LoginFlowSelectionTruth,
+  selectedMode: LoginFlowMode
+) {
+  if (selectedMode === loginFlowSelectionTruth.selectedMode) {
+    return {
+      selectedMode,
+      defaultMode: loginFlowSelectionTruth.defaultMode,
+      selectionSource: loginFlowSelectionTruth.selectionSource,
+      currentState: loginFlowSelectionTruth.currentState,
+      nextStep: loginFlowSelectionTruth.nextStep,
+    };
+  }
+
+  const baselineFlowLabel =
+    loginFlowSelectionTruth.selectionSource === 'request'
+      ? `the requested ${getLoginFlowLabel(loginFlowSelectionTruth.selectedMode)} opening flow`
+      : `the default ${getLoginFlowLabel(loginFlowSelectionTruth.defaultMode)} flow`;
+
+  return {
+    selectedMode,
+    defaultMode: loginFlowSelectionTruth.defaultMode,
+    selectionSource: 'selected' as const,
+    currentState: `${getLoginFlowLabel(selectedMode)} is selected on this page instead of ${baselineFlowLabel}.`,
+    nextStep:
+      selectedMode === 'signup'
+        ? 'Create an account with email and password, switch back to sign in if you already have one, or use Google sign-in instead.'
+        : 'Continue with sign in, switch to sign up for a new account, or use Google sign-in instead.',
+  };
+}
+
+function AuthSelectionNotice({
+  authSelectionTruth,
+}: {
+  authSelectionTruth: AuthStoreSelectionTruth;
+}) {
+  const chordDisplayModeLabel = formatChordDisplayModeLabel(authSelectionTruth.chordDisplayMode);
+
+  return (
+    <Alert data-testid="auth-selection-notice">
+      <AlertTitle>Chord display mode</AlertTitle>
+      <AlertDescription>
+        <p>Current selection: {chordDisplayModeLabel}</p>
+        <p>Selection source: {getSelectionSourceLabel(authSelectionTruth.selectionSource)}</p>
+        <p>{authSelectionTruth.currentState}</p>
+        <p>{authSelectionTruth.nextStep}</p>
+      </AlertDescription>
+    </Alert>
+  );
+}
+
+function LoginFlowSelectionNotice({
+  loginFlowSelectionTruth,
+}: {
+  loginFlowSelectionTruth: ReturnType<typeof getLoginFlowSelectionTruth>;
+}) {
+  return (
+    <Alert data-testid="login-flow-selection-notice">
+      <AlertTitle>Login flow</AlertTitle>
+      <AlertDescription>
+        <p>Current selection: {getLoginFlowLabel(loginFlowSelectionTruth.selectedMode)}</p>
+        <p>
+          Selection source:{' '}
+          {getLoginFlowSourceLabel(
+            loginFlowSelectionTruth.selectionSource,
+            loginFlowSelectionTruth.defaultMode
+          )}
+        </p>
+        <p>{loginFlowSelectionTruth.currentState}</p>
+        <p>{loginFlowSelectionTruth.nextStep}</p>
+      </AlertDescription>
+    </Alert>
+  );
+}
+
 function AuthLoadingScreen({
+  authSelectionTruth,
   authTruth,
   recoveryPath,
 }: {
+  authSelectionTruth: AuthStoreSelectionTruth;
   authTruth: AuthTruth;
   recoveryPath: string;
 }) {
@@ -55,8 +173,14 @@ function AuthLoadingScreen({
           <div className="h-8 w-8 rounded-full border-2 border-primary border-t-transparent animate-spin" />
           <div className="space-y-1">
             <h1 className="text-base font-semibold text-foreground">{title}</h1>
+            <p className="text-xs font-medium uppercase tracking-[0.2em] text-muted-foreground">
+              Readiness: {formatReadinessLabel(authTruth.readiness)}
+            </p>
             <p className="text-sm text-muted-foreground">{description}</p>
           </div>
+        </div>
+        <div className="mt-4 text-left">
+          <AuthSelectionNotice authSelectionTruth={authSelectionTruth} />
         </div>
       </div>
     </div>
@@ -115,7 +239,10 @@ function AuthStatusNotice({
     return (
       <Alert data-testid="auth-status-notice">
         <AlertTitle>Waiting on authentication</AlertTitle>
-        <AlertDescription>{waitingDescription}</AlertDescription>
+        <AlertDescription>
+          <p>Readiness: {formatReadinessLabel(authTruth.readiness)}</p>
+          <p>{waitingDescription}</p>
+        </AlertDescription>
       </Alert>
     );
   }
@@ -126,6 +253,7 @@ function AuthStatusNotice({
         {authTruth.blockingState === 'error' ? 'Authentication failed' : 'Authentication blocked'}
       </AlertTitle>
       <AlertDescription>
+        <p>Readiness: {formatReadinessLabel(authTruth.readiness)}</p>
         <p>{authTruth.currentState}</p>
         <p>
           Next step: {authTruth.nextStepLabel}. {authTruth.nextStepDetail} After authentication,
@@ -139,9 +267,11 @@ function AuthStatusNotice({
 export default function LoginPage() {
   const navigate = useNavigate();
   const location = useLocation();
-  const { authReadiness, authTruth, signIn, signUp, signInWithGoogle } = useAuth();
+  const requestedLoginFlowMode = getRequestedLoginFlowMode(location.search);
+  const { authSelectionTruth, authTruth, loginFlowSelectionTruth, signIn, signUp, signInWithGoogle } =
+    useAuth({ openingLoginFlowMode: requestedLoginFlowMode });
 
-  const [mode, setMode] = useState<'signin' | 'signup'>('signin');
+  const [mode, setMode] = useState<LoginFlowMode>(requestedLoginFlowMode);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [activeSubmissionPath, setActiveSubmissionPath] = useState<
@@ -152,9 +282,15 @@ export default function LoginPage() {
     message: string;
   } | null>(null);
   const recoveryPath = resolveRecoveryPath(location.state);
+  const currentLoginFlowTruth = getLoginFlowSelectionTruth(loginFlowSelectionTruth, mode);
   const isSubmitting = activeSubmissionPath !== null;
-  const isCheckingSession = authReadiness === 'waiting';
-  const hasAuthenticatedSession = authReadiness === 'ready';
+  const isCheckingSession = authTruth.readiness === 'waiting';
+  const hasAuthenticatedSession = authTruth.readiness === 'ready';
+
+  useEffect(() => {
+    setMode(requestedLoginFlowMode);
+    setError(null);
+  }, [requestedLoginFlowMode]);
 
   useEffect(() => {
     if (hasAuthenticatedSession) {
@@ -199,7 +335,13 @@ export default function LoginPage() {
   }
 
   if (isCheckingSession || hasAuthenticatedSession) {
-    return <AuthLoadingScreen authTruth={authTruth} recoveryPath={recoveryPath} />;
+    return (
+      <AuthLoadingScreen
+        authSelectionTruth={authSelectionTruth}
+        authTruth={authTruth}
+        recoveryPath={recoveryPath}
+      />
+    );
   }
 
   return (
@@ -218,6 +360,8 @@ export default function LoginPage() {
             error={error}
             recoveryPath={recoveryPath}
           />
+          <LoginFlowSelectionNotice loginFlowSelectionTruth={currentLoginFlowTruth} />
+          <AuthSelectionNotice authSelectionTruth={authSelectionTruth} />
 
           {/* Mode toggle */}
           <div className="flex gap-2 bg-secondary rounded-lg p-1">

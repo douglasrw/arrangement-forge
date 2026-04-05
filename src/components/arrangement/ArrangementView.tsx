@@ -155,11 +155,14 @@ function getArrangementSelectionTruth({
 }) {
   if (selectedBlock && selectedLaneLabel) {
     const normalizedStyle = selectedBlock.styleName?.trim()
+    const detail = normalizedStyle
+      ? `${formatArrangementStyleLabel(normalizedStyle)} covers bars ${selectedBlock.startBar}-${selectedBlock.endBar}.`
+      : `Pattern missing for bars ${selectedBlock.startBar}-${selectedBlock.endBar}. Choose a pattern in Block Inspector to make this block playable.`
 
     return {
       state: "selected" as const,
       summary: `${selectedLaneLabel} selected`,
-      detail: `${normalizedStyle ? formatArrangementStyleLabel(normalizedStyle) : "Pattern missing"} covers bars ${selectedBlock.startBar}-${selectedBlock.endBar}.`,
+      detail,
     }
   }
 
@@ -316,7 +319,7 @@ function ArrangementFailureBanner({
 interface ArrangementViewProps {
   onBlockSelect?: (info: {
     instrument: Instrument
-    styleName: string
+    styleName: string | null
     startBar: number
     endBar: number
   } | null) => void
@@ -544,7 +547,7 @@ export function ArrangementView({
                   selectBlock(lane.laneBlocks[0].id, lane.stemId)
                   onBlockSelect?.({
                     instrument: lane.instrument,
-                    styleName: lane.laneBlocks[0].style ?? "Default",
+                    styleName: lane.laneBlocks[0].style?.trim() ? lane.laneBlocks[0].style : null,
                     startBar: lane.laneBlocks[0].startBar,
                     endBar: lane.laneBlocks[0].endBar,
                   })
@@ -800,7 +803,7 @@ export function ArrangementView({
                         >
                           <SequencerBlock
                             instrument={lane.instrument}
-                            styleName={block.style ?? "Default"}
+                            styleName={block.style ?? undefined}
                             state={isSelected ? "selected" : "default"}
                             selectionLabel={selectionLabel}
                             selectionState={selectionState}
@@ -815,7 +818,7 @@ export function ArrangementView({
                                 selectBlock(block.id, lane.stemId)
                                 onBlockSelect?.({
                                   instrument: lane.instrument,
-                                  styleName: block.style ?? "Default",
+                                  styleName: block.style?.trim() ? block.style : null,
                                   startBar: block.startBar,
                                   endBar: block.endBar,
                                 })

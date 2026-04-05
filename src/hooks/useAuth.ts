@@ -6,7 +6,6 @@ import { useShallow } from 'zustand/react/shallow';
 import { supabase } from '@/lib/supabase';
 import { rowToProfile } from '@/lib/profile';
 import type {
-  AuthReadiness,
   AuthStoreSelectionTruth,
   AuthStoreTruthSlice,
   AuthTruth,
@@ -18,12 +17,23 @@ import { useAuthStore } from '@/store/auth-store';
 import { useUiStore } from '@/store/ui-store';
 
 export type SignUpResult = { status: 'session-pending' } | { status: 'confirmation-required' };
+export type LoginFlowMode = 'signin' | 'signup';
+export type LoginFlowSelectionTruth = {
+  selectedMode: LoginFlowMode;
+  defaultMode: LoginFlowMode;
+  selectionSource: 'default' | 'request';
+  currentState: string;
+  nextStep: string;
+};
+export type UseAuthOptions = {
+  openingLoginFlowMode?: LoginFlowMode;
+};
 export type UseAuthResult = {
   user: User | null;
   profile: ReturnType<typeof useAuthStore.getState>['profile'];
   authStoreTruth: AuthStoreTruthSlice;
   authSelectionTruth: AuthStoreSelectionTruth;
-  authReadiness: AuthReadiness;
+  loginFlowSelectionTruth: LoginFlowSelectionTruth;
   authTruth: AuthTruth;
   initAuth: () => () => void;
   signIn: (email: string, password: string) => Promise<void>;
@@ -38,10 +48,37 @@ type HydrationResult =
   | { status: 'signed-out'; reason: SignedOutReason }
   | { status: 'stale' };
 
-export function useAuth(): UseAuthResult {
+function createLoginFlowSelectionTruth(
+  openingLoginFlowMode: LoginFlowMode = 'signin'
+): LoginFlowSelectionTruth {
+  if (openingLoginFlowMode === 'signup') {
+    return {
+      selectedMode: 'signup',
+      defaultMode: 'signin',
+      selectionSource: 'request',
+      currentState:
+        'This login link opened on sign up from an explicit request instead of the default sign in flow.',
+      nextStep:
+        'Create an account with email and password, switch back to sign in if you already have one, or use Google sign-in instead.',
+    };
+  }
+
+  return {
+    selectedMode: 'signin',
+    defaultMode: 'signin',
+    selectionSource: 'default',
+    currentState:
+      'The login page opens on sign in by default until you explicitly choose account creation.',
+    nextStep:
+      'Continue with sign in, switch to sign up for account creation, or use Google sign-in when you want an external auth handoff.',
+  };
+}
+
+export function useAuth(options: UseAuthOptions = {}): UseAuthResult {
   const authStoreTruth = useAuthStore(useShallow(selectAuthStoreTruthSlice));
   const { user, profile, authTruth, authSelectionTruth } = authStoreTruth;
   const authTransitionIdRef = useRef(0);
+  const loginFlowSelectionTruth = createLoginFlowSelectionTruth(options.openingLoginFlowMode);
 
   const beginSessionCheck = useCallback(() => {
     authTransitionIdRef.current += 1;
@@ -218,7 +255,7 @@ export function useAuth(): UseAuthResult {
     profile,
     authStoreTruth,
     authSelectionTruth,
-    authReadiness: authTruth.readiness,
+    loginFlowSelectionTruth,
     authTruth,
     initAuth,
     signIn,

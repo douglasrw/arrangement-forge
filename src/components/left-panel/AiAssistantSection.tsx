@@ -1,11 +1,10 @@
 import { ArrowUp } from "lucide-react"
 import { useEffect, useRef, useState } from "react"
 import { ScrollArea } from "@/components/ui/scroll-area"
-import { useGenerate } from "@/hooks/useGenerate"
+import { getAssistantSelectionPresentation, useGenerate } from "@/hooks/useGenerate"
 import { getGenerationFailureDetail, isGenerationFailureContent } from "@/lib/assistant-chat"
 import { parseChordChart } from "@/lib/chord-chart-parser"
-import { getProjectSelectionTruth, useProjectStore } from "@/store/project-store"
-import { useSelectionStore } from "@/store/selection-store"
+import { useProjectStore } from "@/store/project-store"
 import { useUiStore } from "@/store/ui-store"
 import { cn } from "@/lib/utils"
 import type { AiChatMessage } from "@/types"
@@ -38,71 +37,6 @@ function formatScopeTarget(message: AiChatMessage) {
   return getScopeLabel(message)
 }
 
-function getAssistantSelectionTruth({
-  selectionLevel,
-  sectionId,
-  blockId,
-  stemId,
-  sections,
-  blocks,
-  stems,
-}: {
-  selectionLevel: "song" | "section" | "block"
-  sectionId: string | null
-  blockId: string | null
-  stemId: string | null
-  sections: ReturnType<typeof useProjectStore.getState>["sections"]
-  blocks: ReturnType<typeof useProjectStore.getState>["blocks"]
-  stems: ReturnType<typeof useProjectStore.getState>["stems"]
-}) {
-  const selectionTruth = getProjectSelectionTruth(
-    { sections, blocks, stems },
-    { level: selectionLevel, sectionId, blockId, stemId }
-  )
-
-  if (selectionTruth.status === "selected-section") {
-    const section = sections.find((candidate) => candidate.id === sectionId)
-
-    return {
-      tone: "ready" as const,
-      badge: "Selected scope",
-      value: section ? `${section.name} (${section.startBar}-${section.startBar + section.barCount - 1})` : "Section selected",
-      detail: `The next assistant prompt will stay scoped to this section until you clear the selection. ${selectionTruth.nextStep}`,
-    }
-  }
-
-  if (selectionTruth.status === "selected-block") {
-    const block = blocks.find((candidate) => candidate.id === blockId)
-    const stem = stems.find((candidate) => candidate.id === stemId)
-    const section = sections.find((candidate) => candidate.id === selectionTruth.sectionId)
-
-    return {
-      tone: "ready" as const,
-      badge: "Selected scope",
-      value: block && stem && section
-        ? `${stem.instrument} ${block.startBar}-${block.endBar} in ${section.name}`
-        : "Block selected",
-      detail: `The next assistant prompt will stay scoped to this block until you clear the selection. ${selectionTruth.nextStep}`,
-    }
-  }
-
-  if (selectionTruth.status === "missing-selection") {
-    return {
-      tone: "blocked" as const,
-      badge: "Fallback scope",
-      value: "Whole song fallback",
-      detail: `${selectionTruth.currentState} The next assistant prompt will fall back to whole-song scope until the missing selection is repaired. ${selectionTruth.nextStep}`,
-    }
-  }
-
-  return {
-    tone: "ready" as const,
-    badge: "Default scope",
-    value: "Whole song default",
-    detail: `${selectionTruth.currentState} The next assistant prompt will use whole-song scope until you select a section or block. ${selectionTruth.nextStep}`,
-  }
-}
-
 export function AiAssistantSection() {
   const [input, setInput] = useState("")
   const project = useProjectStore((state) => state.project)
@@ -113,10 +47,6 @@ export function AiAssistantSection() {
   const generationState = useUiStore((state) => state.generationState)
   const systemStatus = useUiStore((state) => state.systemStatus)
   const errorMessage = useUiStore((state) => state.errorMessage)
-  const selectionLevel = useSelectionStore((state) => state.level)
-  const sectionId = useSelectionStore((state) => state.sectionId)
-  const blockId = useSelectionStore((state) => state.blockId)
-  const stemId = useSelectionStore((state) => state.stemId)
   const { runGeneration } = useGenerate()
   const bottomRef = useRef<HTMLDivElement>(null)
 
@@ -152,11 +82,7 @@ export function AiAssistantSection() {
         ? "active"
         : "ready",
   }
-  const assistantSelectionTruth = getAssistantSelectionTruth({
-    selectionLevel,
-    sectionId,
-    blockId,
-    stemId,
+  const assistantSelectionTruth = getAssistantSelectionPresentation({
     sections,
     blocks,
     stems,
@@ -174,9 +100,9 @@ export function AiAssistantSection() {
       ? "Add a chord chart before asking the assistant to generate or revise the arrangement."
       : hasParseIssues
         ? `${assistantReadiness.detail} Assistant history will appear here after the chord chart is fixed and you send a request.`
-      : isGenerating
-        ? "Generating from your latest request..."
-        : "Assistant history is empty. Ask for a generation or revision and the result will be tracked here."
+        : isGenerating
+          ? "Generating from your latest request..."
+          : "Assistant history is empty. Ask for a generation or revision and the result will be tracked here."
 
   return (
     <div className="flex flex-1 flex-col gap-2 overflow-hidden">
