@@ -24,7 +24,7 @@ export type InputReadinessTruth = {
 }
 
 export type AiAssistantReadinessTruth = {
-  status: "blocked" | "active" | "ready"
+  status: "blocked" | "waiting" | "ready"
   badge: string
   title: string
   detail: string
@@ -213,9 +213,9 @@ export function getAiAssistantReadinessTruth({
 
   if (generationState === "generating") {
     return {
-      status: "active",
-      badge: "Active",
-      title: "Assistant requests are paused",
+      status: "waiting",
+      badge: "Waiting",
+      title: "Assistant is waiting",
       detail: "The current arrangement pass is still running, so new prompts unlock when it finishes.",
       tone: "neutral",
     }

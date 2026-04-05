@@ -74,12 +74,13 @@ export function AiAssistantSection() {
     errorMessage,
   })
   const composerStatus = {
+    badge: assistantReadiness.badge,
     title: assistantReadiness.title,
     detail: assistantReadiness.detail,
     tone: assistantReadiness.status === "blocked"
       ? "blocked"
-      : assistantReadiness.status === "active"
-        ? "active"
+      : assistantReadiness.status === "waiting"
+        ? "waiting"
         : "ready",
   }
   const assistantSelectionTruth = getAssistantSelectionPresentation({
@@ -193,10 +194,10 @@ export function AiAssistantSection() {
           <div
             data-testid="ai-assistant-composer-state"
             role="status"
-            aria-live={composerStatus.tone === "active" ? "polite" : undefined}
+            aria-live={composerStatus.tone === "waiting" ? "polite" : undefined}
             className={cn(
               "flex items-start gap-2 rounded-md border px-2 py-1.5 text-[11px] leading-relaxed",
-              composerStatus.tone === "active"
+              composerStatus.tone === "waiting"
                 ? "border-ring/30 bg-ring/10 text-foreground"
                 : composerStatus.tone === "ready"
                   ? "border-emerald-500/30 bg-emerald-500/10 text-foreground"
@@ -207,7 +208,7 @@ export function AiAssistantSection() {
               aria-hidden="true"
               className={cn(
                 "mt-1 size-1.5 shrink-0 rounded-full",
-                composerStatus.tone === "active"
+                composerStatus.tone === "waiting"
                   ? "bg-ring"
                   : composerStatus.tone === "ready"
                     ? "bg-emerald-500"
@@ -215,7 +216,21 @@ export function AiAssistantSection() {
               )}
             />
             <div className="min-w-0">
-              <div className="font-medium">{composerStatus.title}</div>
+              <div className="flex flex-wrap items-center gap-2">
+                <span
+                  className={cn(
+                    "rounded-full border px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.18em]",
+                    composerStatus.tone === "waiting"
+                      ? "border-ring/30 bg-ring/10 text-foreground"
+                      : composerStatus.tone === "ready"
+                        ? "border-emerald-500/30 bg-emerald-500/10 text-emerald-700"
+                        : "border-warning/30 bg-warning/10 text-warning"
+                  )}
+                >
+                  {composerStatus.badge}
+                </span>
+                <div className="font-medium">{composerStatus.title}</div>
+              </div>
               <div className="text-muted-foreground">{composerStatus.detail}</div>
             </div>
           </div>

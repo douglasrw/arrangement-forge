@@ -156,6 +156,7 @@ describe('AiAssistantSection', () => {
       '[data-testid="ai-assistant-composer-state"]'
     );
 
+    expect(composerState?.textContent).toContain('Blocked');
     expect(composerState?.textContent).toContain('Project required');
     expect(composerState?.textContent).toContain('Load a project to enable assistant requests.');
 
@@ -177,13 +178,14 @@ describe('AiAssistantSection', () => {
       '[data-testid="ai-assistant-composer-state"]'
     );
 
+    expect(composerState?.textContent).toContain('Blocked');
     expect(composerState?.textContent).toContain('Chord chart required');
     expect(composerState?.textContent).toContain(
       'Add a chord chart in Input before asking the assistant to generate or revise the arrangement.'
     );
   });
 
-  it('shows an active generating readiness state beyond the input placeholder', () => {
+  it('shows a waiting generating readiness state beyond the input placeholder', () => {
     useProjectStore.setState({
       chatMessages: [makeMessage()],
     });
@@ -200,7 +202,8 @@ describe('AiAssistantSection', () => {
       '[data-testid="ai-assistant-composer-state"]'
     );
 
-    expect(composerState?.textContent).toContain('Assistant requests are paused');
+    expect(composerState?.textContent).toContain('Waiting');
+    expect(composerState?.textContent).toContain('Assistant is waiting');
     expect(composerState?.textContent).toContain(
       'The current arrangement pass is still running, so new prompts unlock when it finishes.'
     );
@@ -226,6 +229,7 @@ describe('AiAssistantSection', () => {
       '[data-testid="ai-assistant-send"]'
     ) as HTMLButtonElement | null;
 
+    expect(composerState?.textContent).toContain('Ready');
     expect(composerState?.textContent).toContain('Assistant is ready');
     expect(composerState?.textContent).toContain(
       'Ask for a generation or revision once the chord chart reflects the song you want.'
