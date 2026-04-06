@@ -1,4 +1,8 @@
 import { cn } from "@/lib/utils"
+import {
+  getGenerationFailureDetail,
+  isGenerationFailureContent,
+} from "@/lib/assistant-chat"
 import { ChordLane, CHORD_LANE_HEIGHT, type ChordLaneTruth } from "@/components/arrangement/ChordLane"
 import { SequencerBlock, INSTRUMENT_COLORS } from "@/components/sequencer-block"
 import { getProjectStoreReadiness, useProjectStore } from "@/store/project-store"
@@ -9,7 +13,7 @@ import { useGenerate } from "@/hooks/useGenerate"
 import { useShallow } from "zustand/react/shallow"
 import { useRef, useState, useEffect, useCallback } from "react"
 import type { Instrument } from "@/components/sequencer-block"
-import type { Block, Section, Stem } from "@/types"
+import type { AiChatMessage, Block, Section, Stem } from "@/types"
 
 /* ------------------------------------------------------------------ */
 /*  Constants                                                          */
@@ -172,8 +176,33 @@ function getArrangementFailureTruth(
   }
 }
 
-function isGenerationFailure(errorMessage: string | null) {
-  return /^generation failed:/i.test(errorMessage?.trim() ?? "")
+function getLatestGenerationFailureMessage(chatMessages: AiChatMessage[]) {
+  const latestGenerationFailure = [...chatMessages]
+    .reverse()
+    .find(
+      (message) =>
+        message.role === "assistant" && isGenerationFailureContent(message.content),
+    )
+
+  return latestGenerationFailure?.content ?? null
+}
+
+function getArrangementFailureKind({
+  errorMessage,
+  generationFailureMessage,
+}: {
+  errorMessage: string | null
+  generationFailureMessage: string | null
+}): ArrangementFailureKind {
+  const normalizedErrorMessage = errorMessage?.trim()
+
+  if (!normalizedErrorMessage || !generationFailureMessage) {
+    return "system"
+  }
+
+  return getGenerationFailureDetail(generationFailureMessage) === normalizedErrorMessage
+    ? "generation"
+    : "system"
 }
 
 function getChordLaneTruth({
@@ -393,12 +422,17 @@ function EmptyState({ onGenerate }: { onGenerate: () => void }) {
 
 function FailureState({
   errorMessage,
+  generationFailureMessage,
   onGenerate,
 }: {
   errorMessage: string | null
+  generationFailureMessage: string | null
   onGenerate: () => void
 }) {
-  const failureKind = isGenerationFailure(errorMessage) ? "generation" : "system"
+  const failureKind = getArrangementFailureKind({
+    errorMessage,
+    generationFailureMessage,
+  })
   const failureTruth = getArrangementFailureTruth(errorMessage, failureKind)
 
   return (
@@ -443,12 +477,17 @@ function FailureState({
 
 function ArrangementFailureBanner({
   errorMessage,
+  generationFailureMessage,
   onGenerate,
 }: {
   errorMessage: string | null
+  generationFailureMessage: string | null
   onGenerate: () => void
 }) {
-  const failureKind = isGenerationFailure(errorMessage) ? "generation" : "system"
+  const failureKind = getArrangementFailureKind({
+    errorMessage,
+    generationFailureMessage,
+  })
   const failureTruth = getArrangementFailureTruth(errorMessage, failureKind)
 
   return (
@@ -516,6 +555,7 @@ export function ArrangementView({
     blocks,
     stems,
     chords,
+    chatMessages,
   } = useProjectStore(
     useShallow((s) => ({
       project: s.project,
@@ -527,6 +567,7 @@ export function ArrangementView({
       blocks: s.blocks,
       stems: s.stems,
       chords: s.chords,
+      chatMessages: s.chatMessages,
     }))
   )
   const { generationState, systemStatus, errorMessage } = useUiStore(
@@ -547,6 +588,7 @@ export function ArrangementView({
   const { transportState, playbackReadiness, playbackTruth, seek } = useAudio()
   const { runGeneration } = useGenerate()
   const hasAnyBlockSelected = selectedBlockId !== null
+  const generationFailureMessage = getLatestGenerationFailureMessage(chatMessages)
 
   /* Measure container height → compute dynamic lane height */
   const containerRef = useRef<HTMLDivElement>(null)
@@ -591,6 +633,7 @@ export function ArrangementView({
       return (
         <FailureState
           errorMessage={errorMessage}
+          generationFailureMessage={generationFailureMessage}
           onGenerate={() => void runGeneration()}
         />
       )
@@ -610,8 +653,12 @@ export function ArrangementView({
   })
   const totalBars = sortedSections.reduce((sum, s) => sum + s.barCount, 0)
   const generationFailure =
-    systemStatus === "error" && isGenerationFailure(errorMessage)
-      ? getArrangementFailureTruth(errorMessage)
+    systemStatus === "error" &&
+      getArrangementFailureKind({
+        errorMessage,
+        generationFailureMessage,
+      }) === "generation"
+      ? getArrangementFailureTruth(errorMessage, "generation")
       : null
   const chordLaneTruth = getChordLaneTruth({
     projectReadiness,
@@ -698,6 +745,7 @@ export function ArrangementView({
       {showArrangementFailureBanner ? (
         <ArrangementFailureBanner
           errorMessage={errorMessage}
+          generationFailureMessage={generationFailureMessage}
           onGenerate={() => void runGeneration()}
         />
       ) : null}

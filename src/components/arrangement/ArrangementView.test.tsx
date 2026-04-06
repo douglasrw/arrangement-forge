@@ -3,7 +3,16 @@
 import { act } from 'react';
 import { createRoot, type Root } from 'react-dom/client';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import type { Block, PlaybackReadiness, PlaybackTruth, Project, Section, Stem, TransportState } from '@/types';
+import type {
+  AiChatMessage,
+  Block,
+  PlaybackReadiness,
+  PlaybackTruth,
+  Project,
+  Section,
+  Stem,
+  TransportState,
+} from '@/types';
 import { useProjectStore } from '@/store/project-store';
 import { useSelectionStore } from '@/store/selection-store';
 import { useUiStore } from '@/store/ui-store';
@@ -138,6 +147,19 @@ function makeBlock(partial: Partial<Block> = {}): Block {
   };
 }
 
+function makeChatMessage(partial: Partial<AiChatMessage> = {}): AiChatMessage {
+  return {
+    id: 'chat-1',
+    projectId: 'project-1',
+    role: 'assistant',
+    content: 'Generation failed: Generator offline',
+    scope: 'setup',
+    scopeTarget: null,
+    createdAt: '2026-03-30T00:00:00Z',
+    ...partial,
+  };
+}
+
 function renderArrangementView() {
   const container = document.createElement('div');
   document.body.appendChild(container);
@@ -218,12 +240,14 @@ afterEach(() => {
 });
 
 describe('ArrangementView empty-state truth', () => {
-  it('shows explicit generation failure truth instead of neutral empty-state copy', () => {
+  it('treats raw generator failures as generation-origin failures and keeps regenerate available', () => {
+    useProjectStore.setState({
+      chatMessages: [makeChatMessage({ content: 'Generation failed: Generator offline' })],
+    });
     useUiStore.setState({
       generationState: 'idle',
       systemStatus: 'error',
-      errorMessage:
-        'Generation failed: Bars 2 and 3 currently parse as N.C., so Generate stays blocked until the chart is fixed. Next step: Replace bars 2 and 3 with explicit chords or fix the bar before them.',
+      errorMessage: 'Generator offline',
     });
 
     const mounted = renderArrangementView();
@@ -236,13 +260,12 @@ describe('ArrangementView empty-state truth', () => {
 
     expect(failureState).not.toBeNull();
     expect(mounted.container.textContent).toContain('Generation failed');
+    expect(mounted.container.textContent).toContain('Generator offline');
     expect(mounted.container.textContent).toContain(
-      'Bars 2 and 3 currently parse as N.C., so Generate stays blocked until the chart is fixed.'
-    );
-    expect(mounted.container.textContent).toContain(
-      'Next step: Replace bars 2 and 3 with explicit chords or fix the bar before them.'
+      'Next step: Review the current input blockers, then generate again.'
     );
     expect(mounted.container.textContent).toContain('Generate again');
+    expect(mounted.container.textContent).not.toContain('Arrangement blocked');
     expect(mounted.container.textContent).not.toContain('Ready to generate');
     expect(
       mounted.container.querySelector('[data-testid="arrangement-empty-state"]')
@@ -275,11 +298,20 @@ describe('ArrangementView empty-state truth', () => {
   });
 
   it('keeps regeneration failures visible inside the arrangement surface when the last arrangement stays loaded', () => {
+    useProjectStore.setState({
+      chatMessages: [
+        makeChatMessage({
+          content:
+            'Generation failed: Generator offline while refreshing the arrangement preview. Next step: Reconnect the generator, then run Generate again.',
+          scope: 'song',
+        }),
+      ],
+    });
     useUiStore.setState({
       generationState: 'complete',
       systemStatus: 'error',
       errorMessage:
-        'Generation failed: Generator offline while refreshing the arrangement preview. Next step: Reconnect the generator, then run Generate again.',
+        'Generator offline while refreshing the arrangement preview. Next step: Reconnect the generator, then run Generate again.',
     });
 
     const mounted = renderArrangementView();
@@ -296,6 +328,7 @@ describe('ArrangementView empty-state truth', () => {
     expect(chordLane).not.toBeNull();
     expect(chordReadiness?.textContent).toContain('Failed');
     expect(mounted.container.querySelector('[data-testid="arrangement-view"]')).not.toBeNull();
+    expect(mounted.container.textContent).toContain('Generation failed');
     expect(mounted.container.textContent).toContain(
       'Generator offline while refreshing the arrangement preview.'
     );
@@ -305,6 +338,7 @@ describe('ArrangementView empty-state truth', () => {
     expect(mounted.container.textContent).toContain(
       'Previous arrangement remains loaded below for reference.'
     );
+    expect(mounted.container.textContent).toContain('Generate again');
     expect(mounted.container.textContent).not.toContain(
       'Chord lane is waiting for chord bars to load for this arrangement.'
     );
