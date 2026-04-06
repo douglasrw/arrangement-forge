@@ -345,6 +345,28 @@ describe('StatusBar', () => {
     );
   });
 
+  it('surfaces explicit section selection truth instead of leaving scope generic', () => {
+    useProjectStore.setState({
+      project: makeProject({ hasArrangement: true }),
+      stems: [makeStem({ instrument: 'piano' })],
+      sections: [makeSection({ name: 'Chorus', startBar: 9, barCount: 8 })],
+      blocks: [makeBlock({ sectionId: 'section-1', startBar: 9, endBar: 16 })],
+      chords: [makeChord()],
+    });
+    useSelectionStore.getState().selectSection('section-1');
+
+    const container = renderStatusBar('saved');
+    const selectionTruth = container.querySelector(
+      '[data-testid="status-bar-selection-truth"]'
+    ) as HTMLSpanElement | null;
+
+    expect(selectionTruth?.textContent).toBe('Section: Chorus 9-16');
+    expect(selectionTruth?.getAttribute('data-selection-source')).toBe('explicit');
+    expect(selectionTruth?.title).toBe(
+      'Section Chorus is selected in the project store for bars 9-16. Keep editing this section, or clear the selection to return to whole-song defaults.'
+    );
+  });
+
   it('surfaces explicit block selection truth instead of leaving scope implicit', () => {
     useProjectStore.setState({
       project: makeProject({ hasArrangement: true }),
@@ -360,7 +382,7 @@ describe('StatusBar', () => {
       '[data-testid="status-bar-selection-truth"]'
     ) as HTMLSpanElement | null;
 
-    expect(selectionTruth?.textContent).toBe('Block selected');
+    expect(selectionTruth?.textContent).toBe('Block: Piano 1-4');
     expect(selectionTruth?.getAttribute('data-selection-source')).toBe('explicit');
     expect(selectionTruth?.title).toBe(
       'Piano block 1-4 in Verse is selected in the project store. Keep editing this block, or clear the selection to return to whole-song defaults.'

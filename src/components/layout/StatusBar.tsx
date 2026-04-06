@@ -1,4 +1,4 @@
-import type { GenerationState, SystemStatus } from '@/types';
+import type { Block, GenerationState, Section, Stem, SystemStatus } from '@/types';
 import { cn } from '@/lib/utils';
 import {
   getProjectArrangementTruth,
@@ -197,32 +197,79 @@ function getStatusBarFailureTruth({
   };
 }
 
-function getStatusBarSelectionLabel() {
-  const selectionTruth = getProjectSelectionTruth(useProjectStore.getState());
+function formatSelectionRangeLabel(startBar: number, endBar: number): string {
+  return startBar === endBar ? `${startBar}` : `${startBar}-${endBar}`;
+}
+
+function formatStatusBarInstrumentLabel(instrument: Stem['instrument']): string {
+  return instrument.charAt(0).toUpperCase() + instrument.slice(1);
+}
+
+function getStatusBarSelectionLabel({
+  sections,
+  blocks,
+  stems,
+}: {
+  sections: Section[];
+  blocks: Block[];
+  stems: Stem[];
+}) {
+  const selectionTruth = getProjectSelectionTruth({ sections, blocks, stems });
+  const tooltip = `${selectionTruth.currentState} ${selectionTruth.nextStep}`.trim();
 
   if (selectionTruth.selectionSource === 'missing') {
     return {
       label: 'Scope fallback: Whole song default',
       tone: 'warning',
-      tooltip: `${selectionTruth.currentState} ${selectionTruth.nextStep}`.trim(),
+      tooltip,
       source: selectionTruth.selectionSource,
     } as const;
   }
 
   if (selectionTruth.selectionLevel === 'section') {
+    const section =
+      selectionTruth.sectionId !== null
+        ? sections.find((candidate) => candidate.id === selectionTruth.sectionId)
+        : null;
+    const sectionName = section?.name?.trim();
+    const sectionRange =
+      section !== null
+        ? formatSelectionRangeLabel(section.startBar, section.startBar + section.barCount - 1)
+        : null;
+
     return {
-      label: `Section selected`,
+      label:
+        sectionName && sectionRange
+          ? `Section: ${sectionName} ${sectionRange}`
+          : sectionName
+          ? `Section: ${sectionName}`
+          : 'Section selected',
       tone: 'ready',
-      tooltip: `${selectionTruth.currentState} ${selectionTruth.nextStep}`.trim(),
+      tooltip,
       source: selectionTruth.selectionSource,
     } as const;
   }
 
   if (selectionTruth.selectionLevel === 'block') {
+    const block =
+      selectionTruth.blockId !== null
+        ? blocks.find((candidate) => candidate.id === selectionTruth.blockId)
+        : null;
+    const stem =
+      selectionTruth.stemId !== null
+        ? stems.find((candidate) => candidate.id === selectionTruth.stemId)
+        : null;
+    const blockRange =
+      block !== null ? formatSelectionRangeLabel(block.startBar, block.endBar) : null;
+    const blockScope =
+      stem !== null && blockRange !== null
+        ? `${formatStatusBarInstrumentLabel(stem.instrument)} ${blockRange}`
+        : null;
+
     return {
-      label: 'Block selected',
+      label: blockScope ? `Block: ${blockScope}` : 'Block selected',
       tone: 'ready',
-      tooltip: `${selectionTruth.currentState} ${selectionTruth.nextStep}`.trim(),
+      tooltip,
       source: selectionTruth.selectionSource,
     } as const;
   }
@@ -230,7 +277,7 @@ function getStatusBarSelectionLabel() {
   return {
     label: 'Whole song default',
     tone: 'muted',
-    tooltip: `${selectionTruth.currentState} ${selectionTruth.nextStep}`.trim(),
+    tooltip,
     source: selectionTruth.selectionSource,
   } as const;
 }
@@ -258,7 +305,7 @@ export function StatusBar({ status = 'saved', className }: StatusBarProps) {
     blocks,
     chords,
   });
-  const selectionTruth = getStatusBarSelectionLabel();
+  const selectionTruth = getStatusBarSelectionLabel({ sections, blocks, stems });
   const cfg = STATUS_CONFIG[status];
   const savePlan = getProjectSavePlan({
     project,
