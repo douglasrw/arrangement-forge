@@ -29,10 +29,11 @@ interface ChannelState {
 }
 
 interface MixerReadinessTruth {
-  status: "ready" | "loading" | "unavailable" | "error"
-  badge: string
+  status: "ready" | "waiting" | "blocked"
+  badge: "Ready" | "Waiting" | "Blocked"
+  detailLabel: string | null
   message: string | null
-  tone: "ready" | "loading" | "default" | "error"
+  tone: "ready" | "waiting" | "blocked" | "error"
 }
 
 interface DrumSubMixTruth {
@@ -117,28 +118,31 @@ function getMixerReadinessTruth({
 }): MixerReadinessTruth {
   if (arrangementTruthStatus === "missing") {
     return {
-      status: "unavailable",
-      badge: "Unavailable",
+      status: "blocked",
+      badge: "Blocked",
+      detailLabel: "No arrangement",
       message: "Generate or import an arrangement to enable mixer controls.",
-      tone: "default",
+      tone: "blocked",
     }
   }
 
   if (arrangementTruthStatus === "persisted-only") {
     return {
-      status: "unavailable",
-      badge: "Reload arrangement",
+      status: "blocked",
+      badge: "Blocked",
+      detailLabel: "Reload arrangement",
       message: "A saved arrangement snapshot exists, but its rows are not loaded in this session. Use Reload saved snapshot in the top bar to enable mixer controls.",
-      tone: "default",
+      tone: "blocked",
     }
   }
 
   if (stemsCount === 0) {
     return {
-      status: "unavailable",
-      badge: "Unavailable",
+      status: "blocked",
+      badge: "Blocked",
+      detailLabel: "No channels",
       message: "No mixer channels are loaded for this arrangement yet.",
-      tone: "default",
+      tone: "blocked",
     }
   }
 
@@ -148,25 +152,28 @@ function getMixerReadinessTruth({
       || playbackTruth.reason === "instrument-update-failed"
 
     return {
-      status: playbackFailureTone ? "error" : "unavailable",
-      badge: playbackTruth.summary,
+      status: "blocked",
+      badge: "Blocked",
+      detailLabel: playbackTruth.summary,
       message: `${playbackTruth.detail} ${playbackTruth.nextStep}`.trim(),
-      tone: playbackFailureTone ? "error" : "default",
+      tone: playbackFailureTone ? "error" : "blocked",
     }
   }
 
   if (playbackTruth.status === "loading") {
     return {
-      status: "loading",
-      badge: playbackTruth.summary,
+      status: "waiting",
+      badge: "Waiting",
+      detailLabel: playbackTruth.summary,
       message: `${playbackTruth.detail} ${playbackTruth.nextStep}`.trim(),
-      tone: "loading",
+      tone: "waiting",
     }
   }
 
   return {
     status: "ready",
     badge: "Ready",
+    detailLabel: null,
     message: null,
     tone: "ready",
   }
@@ -629,17 +636,30 @@ export function MixerDrawer() {
             data-mixer-readiness={mixerReadiness.status}
             className={cn(
               "rounded-full px-2 py-0.5 text-[9px] font-semibold uppercase tracking-[0.18em]",
-              mixerReadiness.tone === "ready"
+              mixerReadiness.status === "ready"
                 ? "bg-emerald-500/10 text-emerald-300"
-                : mixerReadiness.tone === "loading"
+                : mixerReadiness.status === "waiting"
                   ? "bg-amber-500/10 text-amber-300"
-                  : mixerReadiness.tone === "error"
-                    ? "bg-destructive/10 text-destructive"
-                    : "bg-card text-muted-foreground"
+                  : "bg-rose-500/10 text-rose-300"
             )}
           >
             {mixerReadiness.badge}
           </span>
+          {mixerReadiness.detailLabel && (
+            <span
+              data-mixer-readiness-detail={mixerReadiness.tone}
+              className={cn(
+                "rounded-full px-2 py-0.5 text-[9px] font-semibold uppercase tracking-[0.18em]",
+                mixerReadiness.tone === "waiting"
+                  ? "bg-amber-500/10 text-amber-200"
+                  : mixerReadiness.tone === "error"
+                    ? "bg-destructive/10 text-destructive"
+                    : "bg-card text-muted-foreground"
+              )}
+            >
+              {mixerReadiness.detailLabel}
+            </span>
+          )}
         </div>
         {open ? (
           <X className="size-3.5 text-zinc-500" />
@@ -656,9 +676,11 @@ export function MixerDrawer() {
                 "mx-2 mb-2 rounded-md border px-3 py-2 text-[11px]",
                 mixerReadiness.tone === "error"
                   ? "border-destructive/40 bg-destructive/10 text-destructive"
-                  : mixerReadiness.tone === "loading"
+                  : mixerReadiness.status === "waiting"
                     ? "border-amber-500/30 bg-amber-500/10 text-amber-200"
-                    : "border-border bg-card/80 text-muted-foreground"
+                    : mixerReadiness.status === "blocked"
+                      ? "border-rose-500/30 bg-rose-500/10 text-rose-200"
+                      : "border-border bg-card/80 text-muted-foreground"
               )}
             >
               {mixerReadiness.message}

@@ -131,6 +131,14 @@ function findElementByTitle(container: HTMLElement, title: string): HTMLElement 
   ) ?? null;
 }
 
+function queryMixerReadiness(container: HTMLElement): HTMLSpanElement | null {
+  return container.querySelector('[data-mixer-readiness]') as HTMLSpanElement | null;
+}
+
+function queryMixerReadinessDetail(container: HTMLElement): HTMLSpanElement | null {
+  return container.querySelector('[data-mixer-readiness-detail]') as HTMLSpanElement | null;
+}
+
 function makeDrumKit(overrides: Partial<DrumKitLike> = {}): DrumKitLike {
   const defaultSelectionTruth: DrumKitSelectionTruth = {
     kitId: 'salamander',
@@ -291,6 +299,7 @@ describe('MixerDrawer', () => {
 
     expect(mixerReadiness?.textContent).toBe('Ready');
     expect(mixerReadiness?.getAttribute('data-mixer-readiness')).toBe('ready');
+    expect(queryMixerReadinessDetail(mounted.container)).toBeNull();
     expect(pianoMuteButton?.getAttribute('aria-pressed')).toBe('true');
     expect(pianoSlider?.getAttribute('aria-valuenow')).toBe('40');
     expect(pianoPan?.value).toBe('-40');
@@ -344,6 +353,75 @@ describe('MixerDrawer', () => {
     ).toBe(true);
   });
 
+  it('exposes ready, waiting, and blocked mixer readiness directly from the drawer surface', () => {
+    useProjectStore.setState({
+      stems: [makeStem({ id: 'st-piano', instrument: 'piano', sortOrder: 0 })],
+    });
+
+    let mounted = renderMixer();
+
+    expect(queryMixerReadiness(mounted.container)?.textContent).toBe('Ready');
+    expect(queryMixerReadiness(mounted.container)?.getAttribute('data-mixer-readiness')).toBe('ready');
+    expect(queryMixerReadinessDetail(mounted.container)).toBeNull();
+
+    act(() => {
+      mounted.root.unmount();
+    });
+    mounted.container.remove();
+
+    useAudioState.playbackReadiness = 'loading';
+    useAudioState.playbackTruth = {
+      status: 'loading',
+      action: 'load-and-play',
+      reason: 'awaiting-user-play',
+      summary: 'Load to play',
+      detail: 'Arrangement audio is not loaded into the engine yet.',
+      nextStep: 'Press play to load arrangement audio.',
+    };
+
+    mounted = renderMixer();
+
+    expect(queryMixerReadiness(mounted.container)?.textContent).toBe('Waiting');
+    expect(queryMixerReadiness(mounted.container)?.getAttribute('data-mixer-readiness')).toBe('waiting');
+    expect(queryMixerReadinessDetail(mounted.container)?.textContent).toBe('Load to play');
+
+    act(() => {
+      mounted.root.unmount();
+    });
+    mounted.container.remove();
+
+    useAudioState.playbackReadiness = 'ready';
+    useAudioState.playbackTruth = {
+      status: 'ready',
+      action: 'play',
+      reason: 'ready',
+      summary: 'Ready',
+      detail: 'Arrangement audio is loaded into the engine.',
+      nextStep: 'Play, scrub, or adjust the transport.',
+    };
+    useProjectStore.setState({
+      project: makeProject({ hasArrangement: false }),
+      stems: [],
+      sections: [],
+      blocks: [],
+      chords: [],
+    });
+
+    mounted = renderMixer();
+
+    expect(queryMixerReadiness(mounted.container)?.textContent).toBe('Blocked');
+    expect(queryMixerReadiness(mounted.container)?.getAttribute('data-mixer-readiness')).toBe('blocked');
+    expect(queryMixerReadinessDetail(mounted.container)?.textContent).toBe('No arrangement');
+    expect(mounted.container.textContent).toContain(
+      'Generate or import an arrangement to enable mixer controls.'
+    );
+
+    act(() => {
+      mounted.root.unmount();
+    });
+    mounted.container.remove();
+  });
+
   it('keeps saved arrangement snapshot truth explicit when mixer rows are not loaded', () => {
     useProjectStore.setState({
       project: makeProject({ hasArrangement: true }),
@@ -357,12 +435,12 @@ describe('MixerDrawer', () => {
     mountedRoot = mounted.root;
     mountedContainer = mounted.container;
 
-    const mixerReadiness = mounted.container.querySelector(
-      '[data-mixer-readiness]'
-    ) as HTMLSpanElement | null;
+    const mixerReadiness = queryMixerReadiness(mounted.container);
+    const mixerReadinessDetail = queryMixerReadinessDetail(mounted.container);
 
-    expect(mixerReadiness?.textContent).toBe('Reload arrangement');
-    expect(mixerReadiness?.getAttribute('data-mixer-readiness')).toBe('unavailable');
+    expect(mixerReadiness?.textContent).toBe('Blocked');
+    expect(mixerReadiness?.getAttribute('data-mixer-readiness')).toBe('blocked');
+    expect(mixerReadinessDetail?.textContent).toBe('Reload arrangement');
     expect(mounted.container.textContent).toContain(
       'A saved arrangement snapshot exists, but its rows are not loaded in this session. Use Reload saved snapshot in the top bar to enable mixer controls.'
     );
@@ -502,9 +580,8 @@ describe('MixerDrawer', () => {
     mountedRoot = mounted.root;
     mountedContainer = mounted.container;
 
-    const mixerReadiness = mounted.container.querySelector(
-      '[data-mixer-readiness]'
-    ) as HTMLSpanElement | null;
+    const mixerReadiness = queryMixerReadiness(mounted.container);
+    const mixerReadinessDetail = queryMixerReadinessDetail(mounted.container);
     const pianoMuteButton = mounted.container.querySelector(
       'button[aria-label="Toggle PIANO mute"]'
     ) as HTMLButtonElement | null;
@@ -518,8 +595,9 @@ describe('MixerDrawer', () => {
       '[aria-label="Master volume fader"]'
     ) as HTMLDivElement | null;
 
-    expect(mixerReadiness?.textContent).toBe('Loading audio');
-    expect(mixerReadiness?.getAttribute('data-mixer-readiness')).toBe('loading');
+    expect(mixerReadiness?.textContent).toBe('Waiting');
+    expect(mixerReadiness?.getAttribute('data-mixer-readiness')).toBe('waiting');
+    expect(mixerReadinessDetail?.textContent).toBe('Loading audio');
     expect(mounted.container.textContent).toContain(
       'Arrangement audio is loading into the engine right now. Wait for the current audio load to finish.'
     );
@@ -566,9 +644,8 @@ describe('MixerDrawer', () => {
     mountedRoot = mounted.root;
     mountedContainer = mounted.container;
 
-    const mixerReadiness = mounted.container.querySelector(
-      '[data-mixer-readiness]'
-    ) as HTMLSpanElement | null;
+    const mixerReadiness = queryMixerReadiness(mounted.container);
+    const mixerReadinessDetail = queryMixerReadinessDetail(mounted.container);
     const pianoMuteButton = mounted.container.querySelector(
       'button[aria-label="Toggle PIANO mute"]'
     ) as HTMLButtonElement | null;
@@ -576,8 +653,9 @@ describe('MixerDrawer', () => {
       '[aria-label="Master volume fader"]'
     ) as HTMLDivElement | null;
 
-    expect(mixerReadiness?.textContent).toBe('Load to play');
-    expect(mixerReadiness?.getAttribute('data-mixer-readiness')).toBe('loading');
+    expect(mixerReadiness?.textContent).toBe('Waiting');
+    expect(mixerReadiness?.getAttribute('data-mixer-readiness')).toBe('waiting');
+    expect(mixerReadinessDetail?.textContent).toBe('Load to play');
     expect(mounted.container.textContent).toContain(
       'Arrangement audio is not loaded into the engine yet. Press play to load arrangement audio.'
     );
@@ -609,9 +687,8 @@ describe('MixerDrawer', () => {
     mountedRoot = mounted.root;
     mountedContainer = mounted.container;
 
-    const mixerReadiness = mounted.container.querySelector(
-      '[data-mixer-readiness]'
-    ) as HTMLSpanElement | null;
+    const mixerReadiness = queryMixerReadiness(mounted.container);
+    const mixerReadinessDetail = queryMixerReadinessDetail(mounted.container);
     const pianoMuteButton = mounted.container.querySelector(
       'button[aria-label="Toggle PIANO mute"]'
     ) as HTMLButtonElement | null;
@@ -622,8 +699,9 @@ describe('MixerDrawer', () => {
       '[aria-label="Master volume fader"]'
     ) as HTMLDivElement | null;
 
-    expect(mixerReadiness?.textContent).toBe('Audio load failed');
-    expect(mixerReadiness?.getAttribute('data-mixer-readiness')).toBe('error');
+    expect(mixerReadiness?.textContent).toBe('Blocked');
+    expect(mixerReadiness?.getAttribute('data-mixer-readiness')).toBe('blocked');
+    expect(mixerReadinessDetail?.textContent).toBe('Audio load failed');
     expect(mounted.container.textContent).toContain(
       'Audio failed to load: Salamander drum samples missing Fix the sample error, then press play to try again.'
     );
