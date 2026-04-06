@@ -4,17 +4,32 @@ import { parseChordInput } from "@/lib/chords"
 import { parseChordChart } from "@/lib/chord-chart-parser"
 import { ChordPalette } from "./ChordPalette"
 import { getInputReadinessTruth } from "./left-panel-readiness"
-import { useProjectStore } from "@/store/project-store"
+import { getProjectSelectionTruth, useProjectStore, type ProjectSelectionTruth } from "@/store/project-store"
 import { useGenerate } from "@/hooks/useGenerate"
 import { useUiStore } from "@/store/ui-store"
+import { useSelectionStore } from "@/store/selection-store"
+import type { Block, Section, Stem } from "@/types"
 
 const INPUT_TABS = ["Chord", "Text", "Upload"] as const
 type InputTab = (typeof INPUT_TABS)[number]
 type UploadFeedbackTone = "neutral" | "success" | "blocked" | "error"
 type InputTabSelectionTone = "default" | "selected"
+type InputScopeTone = "default" | "selected" | "fallback"
 type ImportedChordChartUpload = {
   chordChartRaw: string
   generationHints: string
+}
+
+type InputScopeTruth = {
+  badge: string
+  title: string
+  summary: string
+  rows: Array<{
+    label: string
+    value: string
+  }>
+  footer: string
+  tone: InputScopeTone
 }
 
 const DEFAULT_UPLOAD_FEEDBACK = "Accepted format: plain-text chord chart (.txt)."
@@ -109,6 +124,18 @@ function isChordChartLine(line: string, key: string) {
 
 function isBarDelimitedChordChartLine(line: string) {
   return line.includes("|")
+}
+
+function formatBarRange(startBar: number, endBar: number) {
+  return startBar === endBar ? `Bar ${startBar}` : `Bars ${startBar}-${endBar}`
+}
+
+function formatInstrumentLabel(stem?: Stem) {
+  if (!stem) {
+    return "Selected"
+  }
+
+  return stem.instrument.charAt(0).toUpperCase() + stem.instrument.slice(1)
 }
 
 function isLooselyChordChartLine(line: string, key: string) {
@@ -372,6 +399,122 @@ function getInputTabSelectionTruth(args: {
   }
 }
 
+function getInputScopeTruth(args: {
+  activeTab: Exclude<InputTab, "Chord">
+  selectionTruth: ProjectSelectionTruth
+  sections: Section[]
+  blocks: Block[]
+  stems: Stem[]
+}): InputScopeTruth {
+  const { activeTab, selectionTruth, sections, blocks, stems } = args
+  const targetLabel = activeTab === "Upload" ? "Import target" : "Edit target"
+  const tabActionFooter = activeTab === "Upload"
+    ? "Imports here replace the whole-song chord chart and only update Description when the file includes note text."
+    : "Text edits here update the whole-song chord chart and Description for the full project."
+
+  if (selectionTruth.selectionSource === "missing") {
+    return {
+      badge: "Fallback",
+      title: "Whole-song fallback",
+      summary: `${selectionTruth.currentState} This tab falls back to the whole-song chord chart until the missing selection is cleared.`,
+      rows: [
+        {
+          label: "Current arrangement selection",
+          value: "Unavailable",
+        },
+        {
+          label: targetLabel,
+          value: "Whole-song chord chart fallback",
+        },
+      ],
+      footer: `${selectionTruth.nextStep} ${tabActionFooter}`.trim(),
+      tone: "fallback",
+    }
+  }
+
+  if (selectionTruth.selectionLevel === "section") {
+    const section = selectionTruth.sectionId !== null
+      ? sections.find((candidate) => candidate.id === selectionTruth.sectionId) ?? null
+      : null
+    const selectionValue = section
+      ? `${section.name} (${formatBarRange(section.startBar, section.startBar + section.barCount - 1)})`
+      : "Section selection"
+
+    return {
+      badge: "Selected",
+      title: "Section selection is inherited",
+      summary: `${selectionTruth.currentState} This tab still edits the whole-song chord chart that this section inherits.`,
+      rows: [
+        {
+          label: "Current arrangement selection",
+          value: selectionValue,
+        },
+        {
+          label: targetLabel,
+          value: "Whole-song chord chart",
+        },
+      ],
+      footer: activeTab === "Upload"
+        ? "Imports replace the full-song chord chart for the project, not just this section."
+        : "Text edits still update the whole-song chord chart and Description for the full project, not just this section.",
+      tone: "selected",
+    }
+  }
+
+  if (selectionTruth.selectionLevel === "block") {
+    const block = selectionTruth.blockId !== null
+      ? blocks.find((candidate) => candidate.id === selectionTruth.blockId) ?? null
+      : null
+    const stem = block?.stemId !== undefined
+      ? stems.find((candidate) => candidate.id === block.stemId)
+      : undefined
+    const section = block?.sectionId !== undefined
+      ? sections.find((candidate) => candidate.id === block.sectionId)
+      : undefined
+    const blockLabel = block
+      ? `${formatInstrumentLabel(stem)} block (${formatBarRange(block.startBar, block.endBar)})`
+      : "Block selection"
+
+    return {
+      badge: "Selected",
+      title: "Block selection is inherited",
+      summary: `${selectionTruth.currentState} This tab still edits the whole-song chord chart that ${section?.name ?? "the selected arrangement block"} inherits.`,
+      rows: [
+        {
+          label: "Current arrangement selection",
+          value: blockLabel,
+        },
+        {
+          label: targetLabel,
+          value: "Whole-song chord chart",
+        },
+      ],
+      footer: activeTab === "Upload"
+        ? "Imports replace the full-song chord chart for the project, not just this block."
+        : "Text edits still update the whole-song chord chart and Description for the full project, not just this block.",
+      tone: "selected",
+    }
+  }
+
+  return {
+    badge: "Default",
+    title: "Whole-song input default",
+    summary: `${selectionTruth.currentState} This tab is already pointed at the whole-song chord chart.`,
+    rows: [
+      {
+        label: "Current arrangement selection",
+        value: "Whole song default",
+      },
+      {
+        label: targetLabel,
+        value: "Whole-song chord chart",
+      },
+    ],
+    footer: tabActionFooter,
+    tone: "default",
+  }
+}
+
 interface InputSectionProps {
   onImportingChange?: (isImporting: boolean) => void
 }
@@ -391,9 +534,13 @@ export function InputSection({ onImportingChange }: InputSectionProps = {}) {
   })
   const chordChartEditorRef = useRef<HTMLTextAreaElement | null>(null)
 
-  const { project, updateProject } = useProjectStore()
+  const { project, updateProject, sections, blocks, stems } = useProjectStore()
   const { runGeneration } = useGenerate()
   const { generationState } = useUiStore()
+  const selectionLevel = useSelectionStore((state) => state.level)
+  const selectionSectionId = useSelectionStore((state) => state.sectionId)
+  const selectionBlockId = useSelectionStore((state) => state.blockId)
+  const selectionStemId = useSelectionStore((state) => state.stemId)
 
   const hasProject = project !== null
   const chordChartRaw = project?.chordChartRaw ?? ""
@@ -467,6 +614,27 @@ export function InputSection({ onImportingChange }: InputSectionProps = {}) {
     hasParseBlockers,
     reviewLineNumber: activeTab === "Text" ? activeReviewLineNumber : null,
   })
+  const inputScopeTruth = hasProject && activeTab !== "Chord"
+    ? getInputScopeTruth({
+      activeTab,
+      selectionTruth: getProjectSelectionTruth(
+        {
+          stems,
+          sections,
+          blocks,
+        },
+        {
+          level: selectionLevel,
+          sectionId: selectionSectionId,
+          blockId: selectionBlockId,
+          stemId: selectionStemId,
+        }
+      ),
+      sections,
+      blocks,
+      stems,
+    })
+    : null
 
   useEffect(() => {
     if (!shouldFocusChordChartEditor || activeTab !== "Text") {
@@ -682,6 +850,58 @@ export function InputSection({ onImportingChange }: InputSectionProps = {}) {
         </p>
         <p className="mt-1 text-muted-foreground">{inputTabSelectionTruth.footer}</p>
       </div>
+
+      {inputScopeTruth && (
+        <div
+          data-input-scope-state={inputScopeTruth.tone}
+          className={cn(
+            "rounded-md border px-3 py-2 text-xs leading-relaxed",
+            inputScopeTruth.tone === "default"
+              ? "border-border bg-secondary/40 text-foreground"
+              : inputScopeTruth.tone === "selected"
+                ? "border-sky-500/30 bg-sky-500/10 text-foreground"
+                : "border-amber-500/30 bg-amber-500/10 text-foreground"
+          )}
+        >
+          <div className="flex flex-wrap items-center gap-2">
+            <span
+              className={cn(
+                "rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.18em]",
+                inputScopeTruth.tone === "default"
+                  ? "bg-card text-muted-foreground"
+                  : inputScopeTruth.tone === "selected"
+                    ? "bg-sky-500/10 text-sky-200"
+                    : "bg-amber-500/10 text-amber-200"
+              )}
+            >
+              {inputScopeTruth.badge}
+            </span>
+            <span className="font-medium text-foreground">{inputScopeTruth.title}</span>
+          </div>
+          <p className="mt-1 text-muted-foreground">{inputScopeTruth.summary}</p>
+          <div className="mt-2 grid gap-2">
+            {inputScopeTruth.rows.map((row) => (
+              <div
+                key={row.label}
+                className={cn(
+                  "flex flex-wrap items-center justify-between gap-2 rounded-md px-2 py-1.5",
+                  inputScopeTruth.tone === "default"
+                    ? "bg-background/40"
+                    : inputScopeTruth.tone === "selected"
+                      ? "bg-sky-500/5"
+                      : "bg-amber-500/5"
+                )}
+              >
+                <span className="text-[10px] font-medium uppercase tracking-[0.12em] text-muted-foreground">
+                  {row.label}
+                </span>
+                <span className="text-[11px] font-medium text-foreground">{row.value}</span>
+              </div>
+            ))}
+          </div>
+          <p className="mt-2 text-muted-foreground">{inputScopeTruth.footer}</p>
+        </div>
+      )}
 
       {/* Tab switcher row */}
       <div className="flex gap-1 rounded-md bg-secondary p-0.5">

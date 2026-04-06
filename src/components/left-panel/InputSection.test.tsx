@@ -5,8 +5,9 @@ import { createRoot, type Root } from 'react-dom/client';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { InputSection } from './InputSection';
 import { useProjectStore } from '@/store/project-store';
+import { useSelectionStore } from '@/store/selection-store';
 import { useUiStore } from '@/store/ui-store';
-import type { Project } from '@/types';
+import type { Block, Project, Section, Stem } from '@/types';
 
 const runGenerationMock = vi.hoisted(() => vi.fn());
 
@@ -46,6 +47,58 @@ function makeProject(partial: Partial<Project> = {}): Project {
     generatedTempo: null,
     createdAt: '2026-03-29T00:00:00Z',
     updatedAt: '2026-03-29T00:00:00Z',
+    ...partial,
+  };
+}
+
+function makeSection(partial: Partial<Section> = {}): Section {
+  return {
+    id: 'section-1',
+    projectId: 'p1',
+    name: 'Verse',
+    sortOrder: 0,
+    barCount: 8,
+    startBar: 1,
+    energyOverride: null,
+    grooveOverride: null,
+    feelOverride: null,
+    swingPctOverride: null,
+    dynamicsOverride: null,
+    createdAt: '2026-03-29T00:00:00Z',
+    ...partial,
+  };
+}
+
+function makeStem(partial: Partial<Stem> = {}): Stem {
+  return {
+    id: 'stem-1',
+    projectId: 'p1',
+    instrument: 'piano',
+    sortOrder: 0,
+    volume: 0.8,
+    pan: 0,
+    isMuted: false,
+    isSolo: false,
+    createdAt: '2026-03-29T00:00:00Z',
+    ...partial,
+  };
+}
+
+function makeBlock(partial: Partial<Block> = {}): Block {
+  return {
+    id: 'block-1',
+    stemId: 'stem-1',
+    sectionId: 'section-1',
+    startBar: 3,
+    endBar: 6,
+    chordDegree: 'I',
+    chordQuality: 'maj7',
+    chordBassDegree: null,
+    style: 'jazz_comp',
+    energyOverride: null,
+    dynamicsOverride: null,
+    midiData: [],
+    createdAt: '2026-03-29T00:00:00Z',
     ...partial,
   };
 }
@@ -142,6 +195,13 @@ beforeEach(() => {
     unsavedChanges: false,
     lastSavedAt: null,
   });
+
+  useSelectionStore.setState({
+    level: 'song',
+    sectionId: null,
+    blockId: null,
+    stemId: null,
+  });
 });
 
 afterEach(() => {
@@ -157,6 +217,7 @@ afterEach(() => {
 
   mountedRoot = null;
   mountedContainer = null;
+  useSelectionStore.getState().clearSelection();
 });
 
 describe('InputSection upload tab', () => {
@@ -223,6 +284,137 @@ describe('InputSection upload tab', () => {
       'Upload is active so the next plain-text file import will replace the current chord chart.'
     );
     expect(tabTruth()?.textContent).toContain('Current selection: File import');
+  });
+
+  it('keeps whole-song input defaults explicit on the text tab', () => {
+    useProjectStore.setState({
+      project: makeProject({
+        chordChartRaw: '[Verse]\nCmaj7 | Dm7 | G7 | Cmaj7',
+      }),
+    });
+
+    const mounted = renderSection();
+    mountedRoot = mounted.root;
+    mountedContainer = mounted.container;
+    openTextTab(mounted.container);
+
+    const scopeTruth = mounted.container.querySelector('[data-input-scope-state]') as HTMLDivElement | null;
+
+    expect(scopeTruth?.getAttribute('data-input-scope-state')).toBe('default');
+    expect(scopeTruth?.textContent).toContain('Whole-song input default');
+    expect(scopeTruth?.textContent).toContain(
+      'No section or block is selected, so the project store is using whole-song defaults right now.'
+    );
+    expect(scopeTruth?.textContent).toContain('Current arrangement selection');
+    expect(scopeTruth?.textContent).toContain('Whole song default');
+    expect(scopeTruth?.textContent).toContain('Edit target');
+    expect(scopeTruth?.textContent).toContain('Whole-song chord chart');
+    expect(scopeTruth?.textContent).toContain(
+      'Text edits here update the whole-song chord chart and Description for the full project.'
+    );
+  });
+
+  it('keeps section selection visible when the text tab still edits the whole-song chart', () => {
+    useProjectStore.setState({
+      project: makeProject({
+        chordChartRaw: '[Verse]\nCmaj7 | Dm7 | G7 | Cmaj7',
+      }),
+      sections: [makeSection()],
+    });
+    useSelectionStore.getState().selectSection('section-1');
+
+    const mounted = renderSection();
+    mountedRoot = mounted.root;
+    mountedContainer = mounted.container;
+    openTextTab(mounted.container);
+
+    const scopeTruth = mounted.container.querySelector('[data-input-scope-state]') as HTMLDivElement | null;
+
+    expect(scopeTruth?.getAttribute('data-input-scope-state')).toBe('selected');
+    expect(scopeTruth?.textContent).toContain('Section selection is inherited');
+    expect(scopeTruth?.textContent).toContain(
+      'Section Verse is selected in the project store for bars 1-8.'
+    );
+    expect(scopeTruth?.textContent).toContain(
+      'This tab still edits the whole-song chord chart that this section inherits.'
+    );
+    expect(scopeTruth?.textContent).toContain('Verse (Bars 1-8)');
+    expect(scopeTruth?.textContent).toContain('Edit target');
+    expect(scopeTruth?.textContent).toContain('Whole-song chord chart');
+    expect(scopeTruth?.textContent).toContain(
+      'Text edits still update the whole-song chord chart and Description for the full project, not just this section.'
+    );
+  });
+
+  it('keeps block selection visible when uploads still replace the whole-song chart', () => {
+    useProjectStore.setState({
+      project: makeProject({
+        chordChartRaw: '[Verse]\nCmaj7 | Dm7 | G7 | Cmaj7',
+      }),
+      stems: [makeStem()],
+      sections: [makeSection()],
+      blocks: [makeBlock()],
+    });
+    useSelectionStore.getState().selectBlock('block-1', 'stem-1');
+
+    const mounted = renderSection();
+    mountedRoot = mounted.root;
+    mountedContainer = mounted.container;
+    openUploadTab(mounted.container);
+
+    const scopeTruth = mounted.container.querySelector('[data-input-scope-state]') as HTMLDivElement | null;
+
+    expect(scopeTruth?.getAttribute('data-input-scope-state')).toBe('selected');
+    expect(scopeTruth?.textContent).toContain('Block selection is inherited');
+    expect(scopeTruth?.textContent).toContain(
+      'Piano block 3-6 in Verse is selected in the project store.'
+    );
+    expect(scopeTruth?.textContent).toContain(
+      'This tab still edits the whole-song chord chart that Verse inherits.'
+    );
+    expect(scopeTruth?.textContent).toContain('Piano block (Bars 3-6)');
+    expect(scopeTruth?.textContent).toContain('Import target');
+    expect(scopeTruth?.textContent).toContain('Whole-song chord chart');
+    expect(scopeTruth?.textContent).toContain(
+      'Imports replace the full-song chord chart for the project, not just this block.'
+    );
+  });
+
+  it('falls back to explicit whole-song truth when the selected block is stale on the text tab', () => {
+    useProjectStore.setState({
+      project: makeProject({
+        chordChartRaw: '[Verse]\nCmaj7 | Dm7 | G7 | Cmaj7',
+      }),
+    });
+    useSelectionStore.setState({
+      level: 'block',
+      sectionId: null,
+      blockId: 'missing-block',
+      stemId: 'missing-stem',
+    });
+
+    const mounted = renderSection();
+    mountedRoot = mounted.root;
+    mountedContainer = mounted.container;
+    openTextTab(mounted.container);
+
+    const scopeTruth = mounted.container.querySelector('[data-input-scope-state]') as HTMLDivElement | null;
+
+    expect(scopeTruth?.getAttribute('data-input-scope-state')).toBe('fallback');
+    expect(scopeTruth?.textContent).toContain('Whole-song fallback');
+    expect(scopeTruth?.textContent).toContain(
+      'The project store still references a block selection that no longer resolves to live arrangement rows, so whole-song defaults are the only safe scope right now.'
+    );
+    expect(scopeTruth?.textContent).toContain(
+      'This tab falls back to the whole-song chord chart until the missing selection is cleared.'
+    );
+    expect(scopeTruth?.textContent).toContain('Current arrangement selection');
+    expect(scopeTruth?.textContent).toContain('Unavailable');
+    expect(scopeTruth?.textContent).toContain('Edit target');
+    expect(scopeTruth?.textContent).toContain('Whole-song chord chart fallback');
+    expect(scopeTruth?.textContent).toContain(
+      'Clear the stale block selection or reload the matching arrangement rows before relying on block-scoped edits.'
+    );
   });
 
   it('surfaces ready readiness when the project already has a chord chart', () => {
