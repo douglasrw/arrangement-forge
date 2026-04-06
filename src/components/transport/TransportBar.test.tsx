@@ -826,6 +826,41 @@ describe('TransportBar transport controls', () => {
     expect(metronomeTruth?.getAttribute('data-transport-selection-state')).toBe('default');
   });
 
+  it('surfaces mixed transport selection truth when loop is selected but metronome stays at the default', () => {
+    useAudioState.audioConfig = {
+      ...useAudioState.audioConfig,
+      loopEnabled: true,
+      metronomeEnabled: false,
+    };
+
+    const mounted = renderTransportBar();
+    mountedRoot = mounted.root;
+    mountedContainer = mounted.container;
+
+    const selectionTruth = mounted.container.querySelector(
+      '[data-testid="transport-selection-truth"]'
+    ) as HTMLDivElement | null;
+    const loopTruth = mounted.container.querySelector(
+      '[data-transport-selection="loop"]'
+    ) as HTMLDivElement | null;
+    const metronomeTruth = mounted.container.querySelector(
+      '[data-transport-selection="metronome"]'
+    ) as HTMLDivElement | null;
+
+    expect(selectionTruth?.textContent).toContain('Loop on');
+    expect(selectionTruth?.textContent).toContain('Metronome default off');
+    expect(selectionTruth?.getAttribute('title')).toContain('Loop is selected for playback.');
+    expect(selectionTruth?.getAttribute('title')).toContain(
+      'Metronome is off by default until you select it.'
+    );
+    expect(loopTruth?.getAttribute('data-transport-selection-state')).toBe('selected');
+    expect(loopTruth?.getAttribute('title')).toBe('Loop is selected for playback.');
+    expect(metronomeTruth?.getAttribute('data-transport-selection-state')).toBe('default');
+    expect(metronomeTruth?.getAttribute('title')).toBe(
+      'Metronome is off by default until you select it.'
+    );
+  });
+
   it('keeps the transport timeline available for loaded draft arrangement rows', () => {
     useAudioState.transportState = {
       ...useAudioState.transportState,
