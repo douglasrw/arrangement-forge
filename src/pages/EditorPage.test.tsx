@@ -544,6 +544,83 @@ describe('EditorPage route loading gate', () => {
     );
   });
 
+  it('surfaces missing block selection truth from the ready editor page banner', async () => {
+    useProjectStore.setState({
+      project: makeProject('project-a'),
+      stems: [
+        {
+          id: 'stem-1',
+          projectId: 'project-a',
+          instrument: 'piano',
+          sortOrder: 0,
+          volume: 0.8,
+          pan: 0,
+          isMuted: false,
+          isSolo: false,
+          createdAt: '2026-03-28T00:00:00Z',
+        },
+      ],
+      sections: [
+        {
+          id: 'section-1',
+          projectId: 'project-a',
+          name: 'Verse',
+          sortOrder: 0,
+          barCount: 4,
+          startBar: 1,
+          energyOverride: null,
+          grooveOverride: null,
+          feelOverride: null,
+          swingPctOverride: null,
+          dynamicsOverride: null,
+          createdAt: '2026-03-28T00:00:00Z',
+        },
+      ],
+      blocks: [],
+    });
+    useSelectionStore.setState({
+      level: 'block',
+      sectionId: null,
+      blockId: 'missing-block',
+      stemId: 'stem-1',
+    });
+
+    let resolveLoad: (() => void) | undefined;
+    loadProjectMock.mockImplementation(
+      (projectId) =>
+        new Promise<LoadProjectResult>((resolve) => {
+          useProjectStore.setState({
+            project: makeProject(projectId),
+            projectLoadStatus: 'loading',
+            projectLoadTargetId: projectId,
+            projectLoadMessage: null,
+          });
+          resolveLoad = () => {
+            resolve({ status: 'ready' });
+          };
+        })
+    );
+
+    const mounted = renderEditor('project-a');
+    mountedRoot = mounted.root;
+    mountedContainer = mounted.container;
+
+    await act(async () => {
+      resolveLoad?.();
+      await Promise.resolve();
+    });
+
+    expect(queryReadyBanner()).not.toBeNull();
+    expect(document.body.textContent).toContain('Selection scope: Block');
+    expect(document.body.textContent).toContain('Selection source: missing');
+    expect(document.body.textContent).toContain(
+      'Selection state: The project store still references a block selection that no longer resolves to live arrangement rows, so whole-song defaults are the only safe scope right now.'
+    );
+    expect(document.body.textContent).toContain(
+      'Selection next step: Clear the stale block selection or reload the matching arrangement rows before relying on block-scoped edits.'
+    );
+  });
+
   it('keeps the exact requested editor route visible after the project is ready', async () => {
     useProjectStore.setState({ project: makeProject('project-a') });
 
