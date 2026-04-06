@@ -176,15 +176,14 @@ function getArrangementFailureTruth(
   }
 }
 
-function getLatestGenerationFailureMessage(chatMessages: AiChatMessage[]) {
-  const latestGenerationFailure = [...chatMessages]
+function getLatestAssistantGenerationFailureMessage(chatMessages: AiChatMessage[]) {
+  const latestAssistantMessage = [...chatMessages]
     .reverse()
-    .find(
-      (message) =>
-        message.role === "assistant" && isGenerationFailureContent(message.content),
-    )
+    .find((message) => message.role === "assistant")
 
-  return latestGenerationFailure?.content ?? null
+  return latestAssistantMessage && isGenerationFailureContent(latestAssistantMessage.content)
+    ? latestAssistantMessage.content
+    : null
 }
 
 function getArrangementFailureKind({
@@ -588,7 +587,9 @@ export function ArrangementView({
   const { transportState, playbackReadiness, playbackTruth, seek } = useAudio()
   const { runGeneration } = useGenerate()
   const hasAnyBlockSelected = selectedBlockId !== null
-  const generationFailureMessage = getLatestGenerationFailureMessage(chatMessages)
+  const generationFailureMessage = getLatestAssistantGenerationFailureMessage(chatMessages)
+  const arrangementFailureMessage =
+    systemStatus === "error" ? errorMessage : generationFailureMessage
 
   /* Measure container height → compute dynamic lane height */
   const containerRef = useRef<HTMLDivElement>(null)
@@ -629,10 +630,10 @@ export function ArrangementView({
   }, [totalBarsForClamp])
 
   if (generationState !== "complete") {
-    if (systemStatus === "error") {
+    if (arrangementFailureMessage) {
       return (
         <FailureState
-          errorMessage={errorMessage}
+          errorMessage={arrangementFailureMessage}
           generationFailureMessage={generationFailureMessage}
           onGenerate={() => void runGeneration()}
         />
@@ -653,12 +654,12 @@ export function ArrangementView({
   })
   const totalBars = sortedSections.reduce((sum, s) => sum + s.barCount, 0)
   const generationFailure =
-    systemStatus === "error" &&
+    arrangementFailureMessage &&
       getArrangementFailureKind({
-        errorMessage,
+        errorMessage: arrangementFailureMessage,
         generationFailureMessage,
       }) === "generation"
-      ? getArrangementFailureTruth(errorMessage, "generation")
+      ? getArrangementFailureTruth(arrangementFailureMessage, "generation")
       : null
   const chordLaneTruth = getChordLaneTruth({
     projectReadiness,
@@ -734,7 +735,8 @@ export function ArrangementView({
     currentBeat: transportState.currentBeat,
     totalBars,
   })
-  const showArrangementFailureBanner = generationState === "complete" && systemStatus === "error"
+  const showArrangementFailureBanner =
+    generationState === "complete" && arrangementFailureMessage !== null
 
   return (
     <div
@@ -744,7 +746,7 @@ export function ArrangementView({
     >
       {showArrangementFailureBanner ? (
         <ArrangementFailureBanner
-          errorMessage={errorMessage}
+          errorMessage={arrangementFailureMessage}
           generationFailureMessage={generationFailureMessage}
           onGenerate={() => void runGeneration()}
         />

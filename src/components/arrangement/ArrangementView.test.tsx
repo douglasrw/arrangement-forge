@@ -297,6 +297,39 @@ describe('ArrangementView empty-state truth', () => {
     expect(mounted.container.textContent).not.toContain('Generate again');
   });
 
+  it('keeps the latest assistant generation failure visible in the empty arrangement state after global status returns to ready', () => {
+    useUiStore.setState({
+      generationState: 'idle',
+      systemStatus: 'ready',
+      errorMessage: null,
+    });
+    useProjectStore.setState({
+      chatMessages: [
+        makeChatMessage({
+          content:
+            'Generation failed: Generator offline Next step: Reconnect the generator, then run Generate again.',
+          scope: 'song',
+        }),
+      ],
+    });
+
+    const mounted = renderArrangementView();
+    mountedRoot = mounted.root;
+    mountedContainer = mounted.container;
+
+    expect(
+      mounted.container.querySelector('[data-testid="arrangement-failure-state"]')
+    ).not.toBeNull();
+    expect(mounted.container.textContent).toContain('Generation failed');
+    expect(mounted.container.textContent).toContain('Generator offline');
+    expect(mounted.container.textContent).toContain(
+      'Next step: Reconnect the generator, then run Generate again.'
+    );
+    expect(
+      mounted.container.querySelector('[data-testid="arrangement-empty-state"]')
+    ).toBeNull();
+  });
+
   it('keeps regeneration failures visible inside the arrangement surface when the last arrangement stays loaded', () => {
     useProjectStore.setState({
       chatMessages: [
@@ -346,6 +379,83 @@ describe('ArrangementView empty-state truth', () => {
       mounted.container.querySelector('button[aria-label="drums block, bars 1-4"]')
     ).not.toBeNull();
     expect(mounted.container.textContent).not.toContain('Ready to generate');
+  });
+
+  it('keeps the latest assistant generation failure banner visible after global status returns to ready', () => {
+    useUiStore.setState({
+      generationState: 'complete',
+      systemStatus: 'ready',
+      errorMessage: null,
+    });
+    useProjectStore.setState({
+      chatMessages: [
+        makeChatMessage({
+          id: 'm0',
+          role: 'user',
+          content: 'Try a leaner arrangement.',
+        }),
+        makeChatMessage({
+          id: 'm1',
+          content:
+            'Generation failed: Generator offline while refreshing the arrangement preview. Next step: Reconnect the generator, then run Generate again.',
+          scope: 'song',
+        }),
+      ],
+    });
+
+    const mounted = renderArrangementView();
+    mountedRoot = mounted.root;
+    mountedContainer = mounted.container;
+
+    expect(
+      mounted.container.querySelector('[data-testid="arrangement-failure-banner"]')
+    ).not.toBeNull();
+    expect(mounted.container.textContent).toContain(
+      'Generator offline while refreshing the arrangement preview.'
+    );
+    expect(mounted.container.textContent).toContain(
+      'Next step: Reconnect the generator, then run Generate again.'
+    );
+    expect(mounted.container.textContent).toContain(
+      'Previous arrangement remains loaded below for reference.'
+    );
+  });
+
+  it('clears stale arrangement failure truth after a later assistant success replaces the failed reply', () => {
+    useUiStore.setState({
+      generationState: 'complete',
+      systemStatus: 'ready',
+      errorMessage: null,
+    });
+    useProjectStore.setState({
+      chatMessages: [
+        makeChatMessage({
+          id: 'm0',
+          content: 'Generation failed: Generator offline',
+          scope: 'song',
+        }),
+        makeChatMessage({
+          id: 'm1',
+          content: 'Arrangement updated with a leaner groove and lighter harmony.',
+          scope: 'song',
+        }),
+      ],
+    });
+
+    const mounted = renderArrangementView();
+    mountedRoot = mounted.root;
+    mountedContainer = mounted.container;
+
+    expect(
+      mounted.container.querySelector('[data-testid="arrangement-failure-banner"]')
+    ).toBeNull();
+    expect(
+      mounted.container.querySelector('[data-testid="arrangement-view"]')
+    ).not.toBeNull();
+    expect(mounted.container.textContent).not.toContain('Generation failed');
+    expect(mounted.container.textContent).not.toContain(
+      'Previous arrangement remains loaded below for reference.'
+    );
   });
 
   it('marks empty, unavailable, and waiting chord truth instead of rendering them like normal loaded rows', () => {
