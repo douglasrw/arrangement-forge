@@ -114,6 +114,7 @@ export function AiAssistantSection() {
     stems,
     selection,
   })
+  const assistantScopeTarget = assistantSelectionTruth.scopeTarget ?? assistantSelectionTruth.value
 
   function handleSend() {
     if (!canSend) return
@@ -122,23 +123,17 @@ export function AiAssistantSection() {
   }
 
   const emptyStateCopy = !project
-    ? "Load a project to use the assistant."
+    ? `${assistantReadiness.detail} Assistant history stays empty until a project is loaded.`
     : !hasChordChart
-      ? "Add a chord chart before asking the assistant to generate or revise the arrangement."
+      ? `${assistantReadiness.detail} Assistant history unlocks after the song has a chord chart and you send a request.`
       : hasParseIssues
-        ? `${assistantReadiness.detail} Assistant history will appear here after the chord chart is fixed and you send a request.`
-        : isGenerating
-          ? "Generating from your latest request..."
-          : "Assistant history is empty. Ask for a generation or revision and the result will be tracked here."
-  const assistantPromptPlaceholder = !project
-    ? "Load a project to use the assistant..."
-    : !hasChordChart
-      ? "Add a chord chart first..."
-      : hasParseIssues
-        ? "Fix blocked chord bars first..."
-        : isGenerating
-          ? "Generating..."
-          : `Describe the arrangement change you want for ${assistantSelectionTruth.scopeTarget ?? assistantSelectionTruth.value}...`
+        ? `${assistantReadiness.detail} Assistant history unlocks after the chord chart is fixed and you send a request.`
+        : assistantReadiness.status === "waiting"
+          ? `${assistantReadiness.detail} Assistant history updates when the current arrangement pass finishes.`
+          : `Assistant history is empty. Ask for a generation or revision for ${assistantScopeTarget} and the result will be tracked here.`
+  const assistantPromptPlaceholder = assistantReadiness.status === "ready"
+    ? `Describe the arrangement change you want for ${assistantScopeTarget}...`
+    : assistantReadiness.detail
 
   return (
     <div className="flex flex-1 flex-col gap-2 overflow-hidden">

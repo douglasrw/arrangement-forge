@@ -138,6 +138,9 @@ describe('AiAssistantSection', () => {
     mountedContainer = mounted.container;
 
     expect(mounted.container.textContent).toContain('Assistant history is empty.');
+    expect(mounted.container.textContent).toContain(
+      'Ask for a generation or revision for Whole song default and the result will be tracked here.'
+    );
     expect(mounted.container.textContent).not.toContain('late-night trio');
     expect(mounted.container.textContent).not.toContain('push swing to about 70%');
   });
@@ -162,6 +165,7 @@ describe('AiAssistantSection', () => {
 
     const input = mounted.container.querySelector('#ai-input') as HTMLInputElement | null;
     expect(input?.disabled).toBe(true);
+    expect(input?.placeholder).toBe('Load a project to enable assistant requests.');
   });
 
   it('keeps the blocked reason visible when the project has no chord chart', () => {
@@ -183,9 +187,14 @@ describe('AiAssistantSection', () => {
     expect(composerState?.textContent).toContain(
       'Add a chord chart in Input before asking the assistant to generate or revise the arrangement.'
     );
+
+    const input = mounted.container.querySelector('#ai-input') as HTMLInputElement | null;
+    expect(input?.placeholder).toBe(
+      'Add a chord chart in Input before asking the assistant to generate or revise the arrangement.'
+    );
   });
 
-  it('shows a waiting generating readiness state beyond the input placeholder', () => {
+  it('uses the waiting readiness truth in the placeholder while generation is running', () => {
     useProjectStore.setState({
       chatMessages: [makeMessage()],
     });
@@ -210,6 +219,9 @@ describe('AiAssistantSection', () => {
 
     const input = mounted.container.querySelector('#ai-input') as HTMLInputElement | null;
     expect(input?.disabled).toBe(true);
+    expect(input?.placeholder).toBe(
+      'The current arrangement pass is still running, so new prompts unlock when it finishes.'
+    );
   });
 
   it('shows a ready assistant state when prompts can be sent', () => {
@@ -256,6 +268,9 @@ describe('AiAssistantSection', () => {
     const input = mounted.container.querySelector('#ai-input') as HTMLInputElement | null;
     expect(input?.placeholder).toBe(
       'Describe the arrangement change you want for Whole song default...'
+    );
+    expect(mounted.container.textContent).toContain(
+      'Ask for a generation or revision for Whole song default and the result will be tracked here.'
     );
   });
 
@@ -537,6 +552,7 @@ describe('AiAssistantSection', () => {
     const composerState = mounted.container.querySelector(
       '[data-testid="ai-assistant-composer-state"]'
     );
+    const input = mounted.container.querySelector('#ai-input') as HTMLInputElement | null;
     const sendButton = mounted.container.querySelector(
       '[data-testid="ai-assistant-send"]'
     ) as HTMLButtonElement | null;
@@ -556,11 +572,17 @@ describe('AiAssistantSection', () => {
     expect(composerState?.textContent).toContain(
       'Fix the chord chart in Input before asking the assistant to generate or revise the arrangement.'
     );
+    expect(input?.placeholder).toContain(
+      'Bars 2 and 3 currently parse as N.C., so Generate stays blocked until the chart is fixed.'
+    );
+    expect(input?.placeholder).toContain(
+      'Fix the chord chart in Input before asking the assistant to generate or revise the arrangement.'
+    );
     expect(mounted.container.textContent).toContain(
       'Bars 2 and 3 currently parse as N.C., so Generate stays blocked until the chart is fixed.'
     );
     expect(mounted.container.textContent).toContain(
-      'Assistant history will appear here after the chord chart is fixed and you send a request.'
+      'Assistant history unlocks after the chord chart is fixed and you send a request.'
     );
     expect(sendButton?.disabled).toBe(true);
   });
@@ -578,6 +600,7 @@ describe('AiAssistantSection', () => {
     const composerState = mounted.container.querySelector(
       '[data-testid="ai-assistant-composer-state"]'
     );
+    const input = mounted.container.querySelector('#ai-input') as HTMLInputElement | null;
 
     expect(composerState?.textContent).toContain('Chord chart needs fixes');
     expect(composerState?.textContent).toContain(
@@ -590,11 +613,17 @@ describe('AiAssistantSection', () => {
       'Fix the chord chart in Input before asking the assistant to generate or revise the arrangement.'
     );
     expect(composerState?.textContent).not.toContain('flagged bars');
+    expect(input?.placeholder).toContain(
+      'No playable chord bars are present yet, so Generate stays blocked until the chart includes at least one chord bar.'
+    );
+    expect(input?.placeholder).toContain(
+      'Fix the chord chart in Input before asking the assistant to generate or revise the arrangement.'
+    );
     expect(mounted.container.textContent).toContain(
       'No playable chord bars are present yet, so Generate stays blocked until the chart includes at least one chord bar.'
     );
     expect(mounted.container.textContent).toContain(
-      'Assistant history will appear here after the chord chart is fixed and you send a request.'
+      'Assistant history unlocks after the chord chart is fixed and you send a request.'
     );
   });
 
